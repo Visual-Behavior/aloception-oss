@@ -1,0 +1,7 @@
+pycocotools==2.0.2
+scipy==1.6.3
+more_itertools==8.8.0
+requests==2.25.1
+pytorch_lightning==1.4.1
+opencv-python==4.5.3.56
+#onnx_graphsurgeon==0.0.1

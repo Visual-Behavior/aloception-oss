@@ -1,0 +1,514 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Models &mdash; Aloception 0.0.1 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Architecture" href="detr_architecture.html" />
+    <link rel="prev" title="Detr" href="detr.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> Aloception
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption" role="heading"><span class="caption-text">Geting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/getting_started.html">Install</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/aloscene.html">Aloscene: Handling your computer visiion data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/alodataset.html">Alodataset: Loading your datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/alonet.html">Alonet: Loading &amp; training your models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/augmented_tensor.html">About Augmented Tensor</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Turorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/data_setup.html">How to setup your data?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/training_detr.html">Training Detr</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/finetuning_detr.html">Finetuning DETR</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/training_deformable_detr.html">Training Deformable DETR</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/finetuning_deformable_detr.html">Finetuning Deformanble DETR</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/tensort_inference.html">Exporting DETR / Deformable-DETR to TensorRT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/training_raft.html">Training RAFT</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Aloception API</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../aloscene/aloscene.html">Aloscene</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../alodataset/alodataset.html">Alodataset</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="alonet.html">Alonet</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="detr.html">Detr</a><ul class="current">
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Models</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#module-alonet.detr.detr">Detr Base</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-alonet.detr.detr_r50">Detr R50</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-alonet.detr.detr_r50_finetune">Detr R50 Finetune</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="detr_architecture.html">Architecture</a></li>
+<li class="toctree-l3"><a class="reference internal" href="detr_training.html">Training</a></li>
+<li class="toctree-l3"><a class="reference internal" href="detr_connectors.html">Detr: Data connectors</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="deformable.html">Deformable DETR</a></li>
+<li class="toctree-l2"><a class="reference internal" href="alonet.callbacks.html">Callbacks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="alonet.metrics.html">Metrics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="alonet.transformers.html">Transformer</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Aloception</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="alonet.html">Alonet</a> &raquo;</li>
+        
+          <li><a href="detr.html">Detr</a> &raquo;</li>
+        
+      <li>Models</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../_sources/alonet/detr_models.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast.container,
+.nboutput.nblast.container {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast.container + .nbinput.container {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="models">
+<h1>Models<a class="headerlink" href="#models" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-alonet.detr.detr">
+<span id="detr-base"></span><h2>Detr Base<a class="headerlink" href="#module-alonet.detr.detr" title="Permalink to this headline">¶</a></h2>
+<p>DETR model and criterion classes.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="alonet.detr.detr.Detr">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">alonet.detr.detr.</span></span><span class="sig-name descname"><span class="pre">Detr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">backbone</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transformer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_classes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_queries</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">background_class</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aux_loss</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weights</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_dec_outputs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">device(type='cpu')</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">strict_load_weights</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.detr.detr.Detr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">torch.nn.modules.module.Module</span></code></p>
+<p>This is the DETR module that performs object detection</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="alonet.detr.detr.Detr.INPUT_MEAN_STD">
+<span class="sig-name descname"><span class="pre">INPUT_MEAN_STD</span></span><em class="property"> <span class="pre">=</span> <span class="pre">((0.485,</span> <span class="pre">0.456,</span> <span class="pre">0.406),</span> <span class="pre">(0.229,</span> <span class="pre">0.224,</span> <span class="pre">0.225))</span></em><a class="headerlink" href="#alonet.detr.detr.Detr.INPUT_MEAN_STD" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alonet.detr.detr.Detr.build_backbone">
+<span class="sig-name descname"><span class="pre">build_backbone</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">backbone_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">train_backbone</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_interm_layers</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dilation</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aug_tensor_compatible</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.detr.detr.Detr.build_backbone" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alonet.detr.detr.Detr.build_bbox_embed">
+<span class="sig-name descname"><span class="pre">build_bbox_embed</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#alonet.detr.detr.Detr.build_bbox_embed" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alonet.detr.detr.Detr.build_class_embed">
+<span class="sig-name descname"><span class="pre">build_class_embed</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#alonet.detr.detr.Detr.build_class_embed" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alonet.detr.detr.Detr.build_decoder">
+<span class="sig-name descname"><span class="pre">build_decoder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hidden_dim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">256</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dropout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nheads</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">8</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim_feedforward</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2048</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normalize_before</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_decoder_layers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">6</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.detr.detr.Detr.build_decoder" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alonet.detr.detr.Detr.build_decoder_layer">
+<span class="sig-name descname"><span class="pre">build_decoder_layer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hidden_dim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">256</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dropout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nheads</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">8</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim_feedforward</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2048</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normalize_before</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.detr.detr.Detr.build_decoder_layer" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alonet.detr.detr.Detr.build_positional_encoding">
+<span class="sig-name descname"><span class="pre">build_positional_encoding</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hidden_dim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">256</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position_embedding</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'sin'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">center</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.detr.detr.Detr.build_positional_encoding" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alonet.detr.detr.Detr.build_transformer">
+<span class="sig-name descname"><span class="pre">build_transformer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hidden_dim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">256</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dropout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nheads</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">8</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim_feedforward</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2048</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_encoder_layers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_decoder_layers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normalize_before</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.detr.detr.Detr.build_transformer" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alonet.detr.detr.Detr.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">frames</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.detr.detr.Detr.forward" title="Permalink to this definition">¶</a></dt>
+<dd><p>Detr model</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>frames: aloscene.Frame</strong></dt><dd><p>batched images, of shape [batch_size x 3 x H x W]
+with frames.mask: a binary mask of shape [batch_size x 1 x H x W], containing 1 on padded pixels</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>m_outputs: dict</dt><dd><dl class="simple">
+<dt>It outputs a dict with the following elements:</dt><dd><ul class="simple">
+<li><dl class="simple">
+<dt>“pred_logits”: the classification logits (including no-object) for all queries.</dt><dd><p>Shape= [batch_size x num_queries x (num_classes + 1)]</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>“pred_boxes”: The normalized boxes coordinates for all queries, represented as</dt><dd><p>(center_x, center_y, height, width). These values are normalized in [0, 1],
+relative to the size of each individual image (disregarding possible padding).
+See PostProcess for information on how to retrieve the unnormalized bounding box.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>“aux_outputs”: Optional, only returned when auxilary losses are activated. It is a list of</dt><dd><p>dictionnaries containing the two above keys for each decoder layer.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alonet.detr.detr.Detr.forward_class_heads">
+<span class="sig-name descname"><span class="pre">forward_class_heads</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">transformer_outptus</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.detr.detr.Detr.forward_class_heads" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alonet.detr.detr.Detr.forward_heads">
+<span class="sig-name descname"><span class="pre">forward_heads</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">transformer_outptus</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.detr.detr.Detr.forward_heads" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply Detr heads and the final output and
+on the auxiliarry outputs as well.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alonet.detr.detr.Detr.forward_position_heads">
+<span class="sig-name descname"><span class="pre">forward_position_heads</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">transformer_outptus</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.detr.detr.Detr.forward_position_heads" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alonet.detr.detr.Detr.get_outs_filter">
+<span class="sig-name descname"><span class="pre">get_outs_filter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">outs_scores</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outs_labels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">m_outputs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">background_class</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.detr.detr.Detr.get_outs_filter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given the model outs_scores and the model outs_labels whit method return
+a list of filter for each output. If <cite>out_scores</cite> and <cite>outs_labels</cite> are not provided,
+the method will rely on the model forward outputs (<cite>m_outputs</cite>) to extract the outs_scores
+and the outs_labels on its own.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>outs_scores: torch.Tensor | None</strong></dt><dd></dd>
+<dt><strong>outs_labels: torch.Tensor | None</strong></dt><dd></dd>
+<dt><strong>m_outputs: dict | None</strong></dt><dd></dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>filters: list</dt><dd><p>List of filter to select the query predicting an object.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alonet.detr.detr.Detr.get_outs_labels">
+<span class="sig-name descname"><span class="pre">get_outs_labels</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">m_outputs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.detr.detr.Detr.get_outs_labels" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method will return the label and class of each slot.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>m_outputs: dict</strong></dt><dd><p>Model forward output</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>labels: torch.Tensor</dt><dd><p>predictec class for each slot</p>
+</dd>
+<dt>scores: torch.Tensor</dt><dd><p>predicted score for each slot</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alonet.detr.detr.Detr.inference">
+<span class="sig-name descname"><span class="pre">inference</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">forward_out</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">background_class</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.detr.detr.Detr.inference" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given the model forward outputs, this method
+will retrun an aloscene.BoundingBoxes2D tensor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>forward_out: dict</strong></dt><dd><p>Dict with the model forward outptus</p>
+</dd>
+<dt><strong>filters: list | None</strong></dt><dd><p>list of torch.Tensor will a filter on which prediction to select to create the set
+of aloscene.Boxes2D.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>boxes: aloscene.BoundingBoxes2D</dt><dd></dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="alonet.detr.detr.Detr.training">
+<span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="pre">:</span> <span class="pre">bool</span></em><a class="headerlink" href="#alonet.detr.detr.Detr.training" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-alonet.detr.detr_r50">
+<span id="detr-r50"></span><h2>Detr R50<a class="headerlink" href="#module-alonet.detr.detr_r50" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="alonet.detr.detr_r50.DetrR50">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">alonet.detr.detr_r50.</span></span><span class="sig-name descname"><span class="pre">DetrR50</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_classes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">91</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">background_class</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">91</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.detr.detr_r50.DetrR50" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#alonet.detr.detr.Detr" title="alonet.detr.detr.Detr"><code class="xref py py-class docutils literal notranslate"><span class="pre">alonet.detr.detr.Detr</span></code></a></p>
+<p>DETR R50 as described in the paper: <a class="reference external" href="https://arxiv.org/abs/2005.12872">https://arxiv.org/abs/2005.12872</a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="alonet.detr.detr_r50.DetrR50.training">
+<span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="pre">:</span> <span class="pre">bool</span></em><a class="headerlink" href="#alonet.detr.detr_r50.DetrR50.training" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="alonet.detr.detr_r50.main">
+<span class="sig-prename descclassname"><span class="pre">alonet.detr.detr_r50.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image_path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.detr.detr_r50.main" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-alonet.detr.detr_r50_finetune">
+<span id="detr-r50-finetune"></span><h2>Detr R50 Finetune<a class="headerlink" href="#module-alonet.detr.detr_r50_finetune" title="Permalink to this headline">¶</a></h2>
+<p>Module to create a custom <a class="reference internal" href="#module-alonet.detr.detr_r50" title="alonet.detr.detr_r50"><code class="xref py py-mod docutils literal notranslate"><span class="pre">DetrR50</span></code></a> model which allows to upload a decided pretrained weights
+and change the <cite>class_embed</cite> layer in order to train custom classes.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="alonet.detr.detr_r50_finetune.DetrR50Finetune">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">alonet.detr.detr_r50_finetune.</span></span><span class="sig-name descname"><span class="pre">DetrR50Finetune</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_classes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">background_class</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.detr.detr_r50_finetune.DetrR50Finetune" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#alonet.detr.detr_r50.DetrR50" title="alonet.detr.detr_r50.DetrR50"><code class="xref py py-class docutils literal notranslate"><span class="pre">alonet.detr.detr_r50.DetrR50</span></code></a></p>
+<p>Pre made helpfull class to finetune the <a class="reference internal" href="#module-alonet.detr.detr_r50" title="alonet.detr.detr_r50"><code class="xref py py-mod docutils literal notranslate"><span class="pre">DetrR50</span></code></a> model on a custom class.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>num_classes</strong><span class="classifier">int</span></dt><dd><p>Number of classes to use</p>
+</dd>
+<dt><strong>background_class</strong><span class="classifier">int, optional</span></dt><dd><p>Background class id, by default the last id</p>
+</dd>
+<dt><strong>*args</strong><span class="classifier">Namespace</span></dt><dd><p>Arguments used in <a class="reference internal" href="#module-alonet.detr.detr_r50" title="alonet.detr.detr_r50"><code class="xref py py-mod docutils literal notranslate"><span class="pre">DetrR50</span></code></a> module</p>
+</dd>
+<dt><strong>**kwargs</strong><span class="classifier">dict</span></dt><dd><p>Aditional arguments used in <a class="reference internal" href="#module-alonet.detr.detr_r50" title="alonet.detr.detr_r50"><code class="xref py py-mod docutils literal notranslate"><span class="pre">DetrR50</span></code></a> module</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="alonet.detr.detr_r50_finetune.DetrR50Finetune.training">
+<span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="pre">:</span> <span class="pre">bool</span></em><a class="headerlink" href="#alonet.detr.detr_r50_finetune.DetrR50Finetune.training" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="detr_architecture.html" class="btn btn-neutral float-right" title="Architecture" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="detr.html" class="btn btn-neutral float-left" title="Detr" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2021, Visual Behavior.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

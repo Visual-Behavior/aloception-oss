@@ -1,0 +1,797 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Waymo Dataset &mdash; Aloception 0.0.1 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="MOT17" href="mot17.html" />
+    <link rel="prev" title="FlyingChairs2" href="flying_chairs2_dataset.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> Aloception
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption" role="heading"><span class="caption-text">Geting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/getting_started.html">Install</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/aloscene.html">Aloscene: Handling your computer visiion data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/alodataset.html">Alodataset: Loading your datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/alonet.html">Alonet: Loading &amp; training your models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/augmented_tensor.html">About Augmented Tensor</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Turorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/data_setup.html">How to setup your data?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/training_detr.html">Training Detr</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/finetuning_detr.html">Finetuning DETR</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/training_deformable_detr.html">Training Deformable DETR</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/finetuning_deformable_detr.html">Finetuning Deformanble DETR</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/tensort_inference.html">Exporting DETR / Deformable-DETR to TensorRT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/training_raft.html">Training RAFT</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Aloception API</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../aloscene/aloscene.html">Aloscene</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="alodataset.html">Alodataset</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="transform.html">Transformations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="base_dataset.html">Base dataset</a></li>
+<li class="toctree-l2"><a class="reference internal" href="merge_dataset.html">Merging datasets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chairssdhom_dataset.html">ChairsSDHom</a></li>
+<li class="toctree-l2"><a class="reference internal" href="coco_detection_dataset.html">Coco detection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="crowd_human_dataset.html">Crowd human</a></li>
+<li class="toctree-l2"><a class="reference internal" href="flyingthings3D_subset_dataset.html">Flyingthings3D Subset</a></li>
+<li class="toctree-l2"><a class="reference internal" href="flying_chairs2_dataset.html">FlyingChairs2</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Waymo Dataset</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#dataset-preparation">Dataset preparation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#basic-usage">Basic usage</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-alodataset.waymo_dataset">API</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="mot17.html">MOT17</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sintel_flow_dataset.html">Sintel Optical Flow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sintel_disparity_dataset.html">Sintel Disparity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sintel_multi_dataset.html">Sintel Multi (Flow + Disparity)</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../alonet/alonet.html">Alonet</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Aloception</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="alodataset.html">Alodataset</a> &raquo;</li>
+        
+      <li>Waymo Dataset</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../_sources/alodataset/waymo_dataset.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast.container,
+.nboutput.nblast.container {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast.container + .nbinput.container {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="waymo-dataset">
+<h1>Waymo Dataset<a class="headerlink" href="#waymo-dataset" title="Permalink to this headline">¶</a></h1>
+<p>This module reads <a class="reference external" href="https://waymo.com/open/">Waymo Open Dataset</a> images, camera calibrations and labels 2D/3D.</p>
+<div class="section" id="dataset-preparation">
+<h2>Dataset preparation<a class="headerlink" href="#dataset-preparation" title="Permalink to this headline">¶</a></h2>
+<p>Waymo Open Dataset is stored originally in compressed tar file containing TFRecord files.
+Once the dataset is downloaded, it is needed to be decompressed and converted from TFRecord format to jpeg files and pickle files.
+This process is called dataset preparation and handled by the method <cite>self.prepare()</cite>.</p>
+<p>For this preparation we need to install additional packages in <cite>alodataset/prepare/waymo-requirements.txt</cite>.</p>
+<p>Steps to prepare Waymo Open Dataset:</p>
+<blockquote>
+<div><ol class="arabic">
+<li><p>Download Waymo Open Dataset, decompressed it in a directory called <cite>waymo</cite>. The full path can be <cite>YOUR_PATH/waymo</cite>.
+This directory should have structure as follow:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">YOUR_PATH</span><span class="o">/</span><span class="n">waymo</span><span class="o">/</span>
+<span class="o">|</span><span class="n">__testing</span>
+<span class="o">|</span>  <span class="o">|</span><span class="n">__</span> <span class="o">*.</span><span class="n">tfrecord</span>
+<span class="o">|</span><span class="n">__training</span>
+<span class="o">|</span>  <span class="o">|</span><span class="n">__</span> <span class="o">*.</span><span class="n">tfrecord</span>
+<span class="o">|</span><span class="n">__validation</span>
+   <span class="o">|</span><span class="n">__</span> <span class="o">*.</span><span class="n">tfrecord</span>
+</pre></div>
+</div>
+</li>
+<li><p>Add in <cite>YOUR_HOME/.aloception/alodataset_config.json</cite> a pair key-value</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="nt">&quot;waymo&quot;</span> <span class="p">:</span> <span class="s2">&quot;YOUR_PATH/waymo&quot;</span>
+</pre></div>
+</div>
+</li>
+<li><p>From the aloception root, run:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>python alodataset/prepare/waymo_prepare.py
+</pre></div>
+</div>
+<p>This script will convert TFRecord files in a new directory <cite>YOUR_PATH/waymo_prepared</cite> and replace this new path in <cite>YOUR_HOME/.aloception/alodataset_config.json</cite>.
+This conversion can takes hours to complete depending on the system hardware.
+In case it is stopped/killed in the middle of preparation, we can always resume the preparation by executing the script.</p>
+</li>
+</ol>
+</div></blockquote>
+<p>The new prepared directory will be as follow:</p>
+<blockquote>
+<div><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">YOUR_PATH</span><span class="o">/</span><span class="n">waymo_prepared</span><span class="o">/</span>
+<span class="o">|</span><span class="n">__testing</span>
+<span class="o">|</span><span class="n">__training</span>
+<span class="o">|</span><span class="n">__validation</span>
+</pre></div>
+</div>
+<p>In each subdirectory, we have:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">|</span><span class="n">__calib</span><span class="o">.</span><span class="n">pkl</span>
+<span class="o">|</span><span class="n">__camera_label</span><span class="o">.</span><span class="n">pkl</span>
+<span class="o">|</span><span class="n">__lidar_label</span><span class="o">.</span><span class="n">pkl</span>
+<span class="o">|</span><span class="n">__pose</span><span class="o">.</span><span class="n">pkl</span>
+<span class="o">|</span><span class="n">__image0</span>
+<span class="o">|</span><span class="n">__</span><span class="o">|</span><span class="n">__</span><span class="o">*.</span><span class="n">jpeg</span>
+<span class="o">|</span><span class="n">__image1</span>
+<span class="o">|</span><span class="n">__</span><span class="o">|</span><span class="n">__</span><span class="o">*.</span><span class="n">jpeg</span>
+<span class="o">|</span><span class="n">__image2</span>
+<span class="o">|</span><span class="n">__</span><span class="o">|</span><span class="n">__</span><span class="o">*.</span><span class="n">jpeg</span>
+<span class="o">|</span><span class="n">__image3</span>
+<span class="o">|</span><span class="n">__</span><span class="o">|</span><span class="n">__</span><span class="o">*.</span><span class="n">jpeg</span>
+<span class="o">|</span><span class="n">__image4</span>
+<span class="o">|</span><span class="n">__</span><span class="o">|</span><span class="n">__</span><span class="o">*.</span><span class="n">jpeg</span>
+<span class="o">|</span><span class="n">__velodyne</span>
+</pre></div>
+</div>
+</div></blockquote>
+<ul class="simple">
+<li><p><cite>calib.pkl</cite> is a pickle file containing camera calibrations.</p></li>
+<li><p><cite>camera_label.pkl</cite> is a pickle file containing labels 2D: boxes, classes, track id, camera id.</p></li>
+<li><p><cite>lidar_label.pkl</cite> is a pickle file containing labels 3D: boxes 3d, boxes 3d projected on image, class, track id, camera id, speed, acceleration.</p></li>
+<li><p><cite>pose.pkl</cite> is a pickle file containing vehicle pose.</p></li>
+<li><p><cite>imageX</cite> folders contain images from camera <cite>X</cite> in jpeg format.</p></li>
+<li><p><cite>velodyne</cite> directory should be empty.</p></li>
+</ul>
+</div>
+<div class="section" id="basic-usage">
+<h2>Basic usage<a class="headerlink" href="#basic-usage" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">alodataset</span> <span class="kn">import</span> <span class="n">Split</span><span class="p">,</span> <span class="n">WaymoDataset</span>
+
+<span class="n">waymo_dataset</span> <span class="o">=</span> <span class="n">WaymoDataset</span><span class="p">(</span>
+   <span class="c1"># Split.VAL for data in `validation` directory,</span>
+   <span class="c1"># use Split.TRAIN/Split.TEST for `training`/`testing` directory</span>
+   <span class="n">split</span><span class="o">=</span><span class="n">Split</span><span class="o">.</span><span class="n">VAL</span><span class="p">,</span>
+   <span class="n">labels</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;gt_boxes_2d&quot;</span><span class="p">,</span> <span class="s2">&quot;gt_boxes_3d&quot;</span><span class="p">],</span>
+   <span class="n">sequence_size</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+
+<span class="c1"># prepare waymo dataset from tfrecord file</span>
+<span class="c1"># if the dataset is already prepared, it simply checks the prepared dataset</span>
+<span class="c1"># this line is optional if the dataset is fully prepared</span>
+<span class="n">waymo_dataset</span><span class="o">.</span><span class="n">prepare</span><span class="p">()</span>
+
+<span class="k">for</span> <span class="n">frames</span> <span class="ow">in</span> <span class="n">waymo_dataset</span><span class="o">.</span><span class="n">train_loader</span><span class="p">(</span><span class="n">batch_size</span><span class="o">=</span><span class="mi">2</span><span class="p">):</span>
+   <span class="c1"># frames is a list (with len=batch size) of dict</span>
+   <span class="c1"># dict key is camera name</span>
+   <span class="c1"># dict value is a Frame of shape (t, c, h, w) with t sequence_size</span>
+
+   <span class="c1"># convert a list of front camera&#39;s frames into a batch</span>
+   <span class="n">front_frames</span> <span class="o">=</span> <span class="n">Frame</span><span class="o">.</span><span class="n">batch_list</span><span class="p">([</span><span class="n">frame</span><span class="p">[</span><span class="s2">&quot;front&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">frame</span> <span class="ow">in</span> <span class="n">frames</span><span class="p">])</span>
+   <span class="nb">print</span><span class="p">(</span><span class="n">front_frames</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="c1"># (b, t, c, h, w), in this case b=batch=2, t=sequence_size=3</span>
+   <span class="c1"># access to labels</span>
+   <span class="nb">print</span><span class="p">(</span><span class="n">front_frames</span><span class="o">.</span><span class="n">boxes2d</span><span class="p">)</span>
+   <span class="nb">print</span><span class="p">(</span><span class="n">front_frames</span><span class="o">.</span><span class="n">boxes3d</span><span class="p">)</span>
+   <span class="nb">print</span><span class="p">(</span><span class="n">front_frames</span><span class="o">.</span><span class="n">cam_intrinsic</span><span class="p">)</span>
+   <span class="nb">print</span><span class="p">(</span><span class="n">front_frames</span><span class="o">.</span><span class="n">cam_extrinsic</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="module-alodataset.waymo_dataset">
+<span id="api"></span><h2>API<a class="headerlink" href="#module-alodataset.waymo_dataset" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="alodataset.waymo_dataset.WaymoDataset">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">alodataset.waymo_dataset.</span></span><span class="sig-name descname"><span class="pre">WaymoDataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">segments</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cameras</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random_step</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alodataset.waymo_dataset.WaymoDataset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Generic</span></code>[<code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.utils.data.dataset.T_co</span></code>]</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="alodataset.waymo_dataset.WaymoDataset.CAMERAS">
+<span class="sig-name descname"><span class="pre">CAMERAS</span></span><em class="property"> <span class="pre">=</span> <span class="pre">['front',</span> <span class="pre">'front_left',</span> <span class="pre">'front_right',</span> <span class="pre">'side_left',</span> <span class="pre">'side_right']</span></em><a class="headerlink" href="#alodataset.waymo_dataset.WaymoDataset.CAMERAS" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="alodataset.waymo_dataset.WaymoDataset.CLASSES">
+<span class="sig-name descname"><span class="pre">CLASSES</span></span><em class="property"> <span class="pre">=</span> <span class="pre">['UNKNOWN',</span> <span class="pre">'VEHICLE',</span> <span class="pre">'PEDESTRIAN',</span> <span class="pre">'SIGN',</span> <span class="pre">'CYCLIST']</span></em><a class="headerlink" href="#alodataset.waymo_dataset.WaymoDataset.CLASSES" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="alodataset.waymo_dataset.WaymoDataset.LABELS">
+<span class="sig-name descname"><span class="pre">LABELS</span></span><em class="property"> <span class="pre">=</span> <span class="pre">['gt_boxes_2d',</span> <span class="pre">'gt_boxes_3d',</span> <span class="pre">'camera_parameters']</span></em><a class="headerlink" href="#alodataset.waymo_dataset.WaymoDataset.LABELS" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="alodataset.waymo_dataset.WaymoDataset.SPLIT_FOLDERS">
+<span class="sig-name descname"><span class="pre">SPLIT_FOLDERS</span></span><em class="property"> <span class="pre">=</span> <span class="pre">{&lt;Split.VAL:</span> <span class="pre">'val'&gt;:</span> <span class="pre">'validation',</span> <span class="pre">&lt;Split.TRAIN:</span> <span class="pre">'train'&gt;:</span> <span class="pre">'training',</span> <span class="pre">&lt;Split.TEST:</span> <span class="pre">'test'&gt;:</span> <span class="pre">'testing'}</span></em><a class="headerlink" href="#alodataset.waymo_dataset.WaymoDataset.SPLIT_FOLDERS" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alodataset.waymo_dataset.WaymoDataset.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">segments</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cameras</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random_step</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alodataset.waymo_dataset.WaymoDataset.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>WaymoDataset</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>segments: list or None</strong></dt><dd><p>List waymo segments to load. If None, all segments will be loaded.</p>
+</dd>
+<dt><strong>cameras: list or None</strong></dt><dd><p>List of camera to use. If none, all cameras data will be loaded
+List could be some of [“front”, “front_left”, “front_right”, “side_left”, “side_right”, “all”].
+If “all” is selected, data from cameras will be merge independently of the source.</p>
+</dd>
+<dt><strong>random_step: int</strong></dt><dd><p>None by default. Otherwise, sample t+1 randomly on each sequence.</p>
+</dd>
+<dt><strong>labels: list of strings</strong></dt><dd><p>List could be some of [“gt_boxes_2d”, “gt_boxes_3d”, “camera_parameters”]</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alodataset.waymo_dataset.WaymoDataset.get_frame_boxes2d">
+<span class="sig-name descname"><span class="pre">get_frame_boxes2d</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">frame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">camera</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">segment</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sequence_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">idstring2int</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alodataset.waymo_dataset.WaymoDataset.get_frame_boxes2d" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parse preloaded dict and return BoundingBoxes2D</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl>
+<dt><strong>frame</strong><span class="classifier">Frame</span></dt><dd></dd>
+<dt><strong>camera</strong><span class="classifier">str</span></dt><dd><p>Camera name. One of [“front”, “front_left”, “front_right”, “side_left”, “side_right”]</p>
+</dd>
+<dt><strong>segment</strong><span class="classifier">str</span></dt><dd><p>Segment name</p>
+</dd>
+<dt><strong>sequence_id</strong><span class="classifier">int</span></dt><dd><p>Sequence id in segment</p>
+</dd>
+<dt><strong>idstring2int</strong><span class="classifier">dict</span></dt><dd><ul class="simple">
+<li><p>key: str, track id string</p></li>
+<li><p>value: int, unique value represents a track id string</p></li>
+</ul>
+<p><cite>idstring2int</cite> can be empty. A mapping of id string and int will be created on the fly.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>BoundingBoxes2D</dt><dd><p>Shape (n, 4). Each box is associtated with label and track id</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">rtype</dt>
+<dd class="field-odd"><p><a class="reference internal" href="../aloscene/bounding_boxes_2d.html#aloscene.bounding_boxes_2d.BoundingBoxes2D" title="aloscene.bounding_boxes_2d.BoundingBoxes2D"><code class="xref py py-class docutils literal notranslate"><span class="pre">BoundingBoxes2D</span></code></a>
+..</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alodataset.waymo_dataset.WaymoDataset.get_frame_boxes3d">
+<span class="sig-name descname"><span class="pre">get_frame_boxes3d</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">frame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">camera</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">segment</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sequence_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alodataset.waymo_dataset.WaymoDataset.get_frame_boxes3d" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parse preloaded dict and return BoundingBoxes3D</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>frame</strong><span class="classifier">Frame</span></dt><dd></dd>
+<dt><strong>camera</strong><span class="classifier">str</span></dt><dd><p>Camera name. One of [“front”, “front_left”, “front_right”, “side_left”, “side_right”]</p>
+</dd>
+<dt><strong>segment</strong><span class="classifier">str</span></dt><dd><p>Segment name</p>
+</dd>
+<dt><strong>sequence_id</strong><span class="classifier">int</span></dt><dd><p>Sequence id in segment</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>BoundingBoxes3D</dt><dd><p>boxes 3d, shape (n, 7)</p>
+</dd>
+<dt>BoundingBoxes2D</dt><dd><p>boxes 3d projected on image, shape (n, 4)</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">rtype</dt>
+<dd class="field-odd"><p><a class="reference internal" href="../aloscene/bounding_boxes_3d.html#aloscene.bounding_boxes_3d.BoundingBoxes3D" title="aloscene.bounding_boxes_3d.BoundingBoxes3D"><code class="xref py py-class docutils literal notranslate"><span class="pre">BoundingBoxes3D</span></code></a>
+..</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alodataset.waymo_dataset.WaymoDataset.get_frame_camera_parameters">
+<span class="sig-name descname"><span class="pre">get_frame_camera_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">frame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">camera</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">segment</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sequence_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alodataset.waymo_dataset.WaymoDataset.get_frame_camera_parameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parse preloaded dict and return a tuple of CamIntrinsic and CamExtrinsic</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>frame</strong><span class="classifier">Frame</span></dt><dd></dd>
+<dt><strong>camera</strong><span class="classifier">str</span></dt><dd><p>Camera name. One of [“front”, “front_left”, “front_right”, “side_left”, “side_right”]</p>
+</dd>
+<dt><strong>segment</strong><span class="classifier">str</span></dt><dd><p>Segment name</p>
+</dd>
+<dt><strong>sequence_id</strong><span class="classifier">int</span></dt><dd><p>Sequence id in segment</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>Tuple[CameraIntrinsic, CameraExtrinsic]</dt><dd><ul class="simple">
+<li><p>CameraIntrinsic: shape (3, 4)</p></li>
+<li><p>CameraExtrinsic: shape (4, 4)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">rtype</dt>
+<dd class="field-odd"><p><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<a class="reference internal" href="../aloscene/camera_calib.html#aloscene.camera_calib.CameraIntrinsic" title="aloscene.camera_calib.CameraIntrinsic"><code class="xref py py-class docutils literal notranslate"><span class="pre">CameraIntrinsic</span></code></a>, <a class="reference internal" href="../aloscene/camera_calib.html#aloscene.camera_calib.CameraExtrinsic" title="aloscene.camera_calib.CameraExtrinsic"><code class="xref py py-class docutils literal notranslate"><span class="pre">CameraExtrinsic</span></code></a>]
+..</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alodataset.waymo_dataset.WaymoDataset.get_frames">
+<span class="sig-name descname"><span class="pre">get_frames</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">camera</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">segment</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sequence</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alodataset.waymo_dataset.WaymoDataset.get_frames" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a tensor Frame given a camera, a segment name and the list of sequence ids</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>camera</strong><span class="classifier">str</span></dt><dd><p>Camera name. One of [“front”, “front_left”, “front_right”, “side_left”, “side_right”]</p>
+</dd>
+<dt><strong>segment</strong><span class="classifier">str</span></dt><dd><p>Segment name</p>
+</dd>
+<dt><strong>sequence</strong><span class="classifier">list of int</span></dt><dd><p>List of sequence id</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>aloscene.Frame</dt><dd><p>Frame contain ground truth boxes 2d, 3d with labels and camera intrinsic/extrinsic matrix
+based on <cite>self.labels</cite> set at <cite>self.__init__</cite></p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">rtype</dt>
+<dd class="field-odd"><p><a class="reference internal" href="../aloscene/frame.html#aloscene.frame.Frame" title="aloscene.frame.Frame"><code class="xref py py-class docutils literal notranslate"><span class="pre">Frame</span></code></a>
+..</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alodataset.waymo_dataset.WaymoDataset.get_segments">
+<span class="sig-name descname"><span class="pre">get_segments</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#alodataset.waymo_dataset.WaymoDataset.get_segments" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read dataset directory based on <cite>self.dataset_dir</cite> and <cite>self.split</cite>.
+Return a list of segment names found in that directory.</p>
+<dl class="field-list">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><dl class="simple">
+<dt>List[str]</dt><dd><p>List of segment names</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">rtype</dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>]
+..</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alodataset.waymo_dataset.WaymoDataset.getitem">
+<span class="sig-name descname"><span class="pre">getitem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alodataset.waymo_dataset.WaymoDataset.getitem" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given item id, get a dict of which keys are camera name and value are a Frame with ground truth</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>idx</strong><span class="classifier">int</span></dt><dd><p>Item id, see <cite>self.read_sequences()</cite> for more details.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>Dict[str, aloscene.Frame]</dt><dd><ul class="simple">
+<li><p>key: str, camera name</p></li>
+<li><dl class="simple">
+<dt>value: aloscene.Frame containing labels 2d, 3d and camera intrinsic/extrinsic</dt><dd><p>based on <cite>self.labels</cite> set by <cite>self.__init__</cite></p>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">rtype</dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>, <a class="reference internal" href="../aloscene/frame.html#aloscene.frame.Frame" title="aloscene.frame.Frame"><code class="xref py py-class docutils literal notranslate"><span class="pre">Frame</span></code></a>]
+..</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alodataset.waymo_dataset.WaymoDataset.np_convert_waymo_to_aloception_coordinate_system">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">np_convert_waymo_to_aloception_coordinate_system</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">np_boxes3d</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alodataset.waymo_dataset.WaymoDataset.np_convert_waymo_to_aloception_coordinate_system" title="Permalink to this definition">¶</a></dt>
+<dd><p>Transform boxes3d from waymo coordinates to aloception coordinates</p>
+<dl class="simple">
+<dt>Waymo coordinates:</dt><dd><ul class="simple">
+<li><p>X forward</p></li>
+<li><p>Y left</p></li>
+<li><p>Z upward</p></li>
+</ul>
+</dd>
+<dt>Aloception coordinates:</dt><dd><ul class="simple">
+<li><p>X right</p></li>
+<li><p>Y downward</p></li>
+<li><p>Z forward</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>np_boxes3d</strong><span class="classifier">np.ndarray</span></dt><dd><p>boxes 3d in waymo coordinates, shape (n, 7)</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>np.ndarray</dt><dd><p>boxes 3d in aloception coordinates, shape (n, 7)</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">rtype</dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>
+..</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alodataset.waymo_dataset.WaymoDataset.prepare">
+<span class="sig-name descname"><span class="pre">prepare</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_processes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alodataset.waymo_dataset.WaymoDataset.prepare" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prepre Waymo Open Dataset from tfrecord files.
+The preparation can be resumed if it was stopped suddenly.</p>
+<p>The expected tree:</p>
+<blockquote>
+<div><p>waymo_data_dir</p>
+<p>|__validation</p>
+<p>|__training</p>
+<p>|__test</p>
+</div></blockquote>
+<p>Each subdirectory must contains tfrecord files extracted from Waymo Open Dataset tar files.</p>
+<p>Read TFRecord files recursively in <cite>self.dataset_dir</cite> and prepare pickle files and images
+in <cite>self.dataset_dir + “_prepare”</cite> directory. Once the dataset is all prepared, the path
+to the dir in /.aloception/alodataset_config.json will be replace by the new prepared one.
+If <cite>self.dataset_dir</cite> aldready ends with “_prepare”, this function does nothing.</p>
+<p>Please install alodataset/prepare/waymo-requirements.txt</p>
+<p class="rubric">Notes</p>
+<p>If the dataset is already prepared, this method will simply check that all file
+are prepared and stored into the prepared folder. If the original directory is no longer
+on the disk, the method will simply use the prepared dir as it is and the prepare step will be skiped.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alodataset.waymo_dataset.WaymoDataset.read_sequences">
+<span class="sig-name descname"><span class="pre">read_sequences</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#alodataset.waymo_dataset.WaymoDataset.read_sequences" title="Permalink to this definition">¶</a></dt>
+<dd><p>Populate all dictionaries used internally by this class to manage sequences, segments, etc.</p>
+<dl class="simple">
+<dt>Dictionaries:</dt><dd><ul class="simple">
+<li><dl class="simple">
+<dt><cite>self.items</cite>:</dt><dd><ul>
+<li><p>key: int, item id</p></li>
+<li><dl class="simple">
+<dt>value: dict of</dt><dd><ul>
+<li><p>“sequence” : tuple of sequence id</p></li>
+<li><p>“segment” : str, segment name</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><cite>self.preloaded_labels_2d</cite>:</dt><dd><ul>
+<li><p>key: str, segment name</p></li>
+<li><dl class="simple">
+<dt>value: dict</dt><dd><ul>
+<li><p>key: sequence id</p></li>
+<li><dl class="simple">
+<dt>value: dict of</dt><dd><ul>
+<li><p>key: str, camera id</p></li>
+<li><p>value: list of labels as dict of keys “bbox”, “track_id”, “class”, “camera_id”</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><cite>self.preloaded_labels_3d</cite>:</dt><dd><ul>
+<li><p>key: str, segment name</p></li>
+<li><dl class="simple">
+<dt>value: dict</dt><dd><ul>
+<li><p>key: sequence id</p></li>
+<li><dl class="simple">
+<dt>value: dict of</dt><dd><ul>
+<li><p>key: str, camera id</p></li>
+<li><dl class="simple">
+<dt>value: list of labels as dict of keys “bbox_proj”, “bbox_3d”, “track_id”, “class”,</dt><dd><p>“camera_id”, “speed”, “accel”</p>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><cite>self.preloaded_calib</cite>:</dt><dd><ul>
+<li><p>key: str, segment name</p></li>
+<li><dl class="simple">
+<dt>value: dict</dt><dd><ul>
+<li><p>key: sequence id</p></li>
+<li><dl class="simple">
+<dt>value: dict of</dt><dd><ul>
+<li><p>key: “cam_intrinsic”, “cam_extrinsic”</p></li>
+<li><dl class="simple">
+<dt>value: dict of:</dt><dd><ul>
+<li><p>key: int, camera id + 1</p></li>
+<li><p>value: np.ndarray of shape (3, 4) for cam_intrisic or shape (4, 4) for cam_extrinsic</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="alodataset.waymo_dataset.main">
+<span class="sig-prename descclassname"><span class="pre">alodataset.waymo_dataset.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#alodataset.waymo_dataset.main" title="Permalink to this definition">¶</a></dt>
+<dd><p>Main</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="mot17.html" class="btn btn-neutral float-right" title="MOT17" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="flying_chairs2_dataset.html" class="btn btn-neutral float-left" title="FlyingChairs2" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2021, Visual Behavior.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

@@ -1,0 +1,4 @@
+# ninja log v5
+0	12392	1630925914680258205	/home/thibault/work/aloception/aloscene/utils/rotated_iou/cuda_op/build/temp.linux-x86_64-3.8/sort_vert.o	2d2fe61c5d5a0e5c
+1	6508	1630926122393554458	/home/thibault/work/aloception/aloscene/utils/rotated_iou/cuda_op/build/temp.linux-x86_64-3.8/sort_vert_kernel.o	2146f1f8c5ae4202
+1	12590	1630926128469592730	/home/thibault/work/aloception/aloscene/utils/rotated_iou/cuda_op/build/temp.linux-x86_64-3.8/sort_vert.o	2d2fe61c5d5a0e5c

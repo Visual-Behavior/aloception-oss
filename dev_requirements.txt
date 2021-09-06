@@ -1,0 +1,4 @@
+flake8>=3.0.0
+flake8_black>=0.2.3
+black>=21.7
+pydocstyle>=6.1.1

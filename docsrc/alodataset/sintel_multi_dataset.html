@@ -1,0 +1,356 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Sintel Multi (Flow + Disparity) &mdash; Aloception 0.0.1 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Alonet" href="../alonet/alonet.html" />
+    <link rel="prev" title="Sintel Disparity" href="sintel_disparity_dataset.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> Aloception
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption" role="heading"><span class="caption-text">Geting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/getting_started.html">Getting started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/aloscene.html">Aloscene: Computer vision with ease</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/alodataset.html">Alodataset: Loading your datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/alonet.html">Alonet: Loading &amp; training your models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/augmented_tensor.html">About Augmented Tensor</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Turorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/data_setup.html">How to setup your data?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/training_detr.html">Training Detr</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/finetuning_detr.html">Finetuning DETR</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/training_deformable_detr.html">Training Deformable DETR</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/finetuning_deformable_detr.html">Finetuning Deformanble DETR</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/tensort_inference.html">Exporting DETR / Deformable-DETR to TensorRT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/training_raft.html">Training RAFT</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Aloception API</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../aloscene/aloscene.html">Aloscene</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="alodataset.html">Alodataset</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="transform.html">Transformations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="base_dataset.html">Base dataset</a></li>
+<li class="toctree-l2"><a class="reference internal" href="merge_dataset.html">Merging datasets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chairssdhom_dataset.html">ChairsSDHom</a></li>
+<li class="toctree-l2"><a class="reference internal" href="coco_detection_dataset.html">Coco detection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="crowd_human_dataset.html">Crowd human</a></li>
+<li class="toctree-l2"><a class="reference internal" href="flyingthings3D_subset_dataset.html">Flyingthings3D Subset</a></li>
+<li class="toctree-l2"><a class="reference internal" href="flying_chairs2_dataset.html">FlyingChairs2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="waymo_dataset.html">Waymo Dataset</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mot17.html">MOT17</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sintel_flow_dataset.html">Sintel Optical Flow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sintel_disparity_dataset.html">Sintel Disparity</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Sintel Multi (Flow + Disparity)</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../alonet/alonet.html">Alonet</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Aloception</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="alodataset.html">Alodataset</a> &raquo;</li>
+        
+      <li>Sintel Multi (Flow + Disparity)</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../_sources/alodataset/sintel_multi_dataset.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast.container,
+.nboutput.nblast.container {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast.container + .nbinput.container {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<p>Hello, here is the page</p>
+<div class="section" id="module-alodataset.sintel_multi_dataset">
+<span id="sintel-multi-flow-disparity"></span><h1>Sintel Multi (Flow + Disparity)<a class="headerlink" href="#module-alodataset.sintel_multi_dataset" title="Permalink to this headline">¶</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="alodataset.sintel_multi_dataset.SintelMultiDataset">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">alodataset.sintel_multi_dataset.</span></span><span class="sig-name descname"><span class="pre">SintelMultiDataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cameras</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">passes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sintel_sequences</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alodataset.sintel_multi_dataset.SintelMultiDataset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Generic</span></code>[<code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.utils.data.dataset.T_co</span></code>]</p>
+<p>Combination of MPI Sintel dataset for joint use of Optical Flow and Disparity</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>cameras</strong><span class="classifier">list of string</span></dt><dd><p>One frame is returned for each camera.
+Possible cameras : {‘left’, ‘right’}.</p>
+</dd>
+<dt><strong>labels</strong><span class="classifier">list</span></dt><dd><p>Labels that will be attached to the frame
+Possible labels : {‘flow’, ‘flow_occ’}</p>
+</dd>
+<dt><strong>passes</strong><span class="classifier">list</span></dt><dd><p>Image passes {“albedo”, “clean”, “final”}</p>
+</dd>
+<dt><strong>**kwargs :</strong></dt><dd><p>aloscene.BaseDataset parameters</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="alodataset.sintel_multi_dataset.SintelMultiDataset.CAMERAS">
+<span class="sig-name descname"><span class="pre">CAMERAS</span></span><em class="property"> <span class="pre">=</span> <span class="pre">['left',</span> <span class="pre">'right']</span></em><a class="headerlink" href="#alodataset.sintel_multi_dataset.SintelMultiDataset.CAMERAS" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="alodataset.sintel_multi_dataset.SintelMultiDataset.DISP_LABELS">
+<span class="sig-name descname"><span class="pre">DISP_LABELS</span></span><em class="property"> <span class="pre">=</span> <span class="pre">['disp',</span> <span class="pre">'disp_occ']</span></em><a class="headerlink" href="#alodataset.sintel_multi_dataset.SintelMultiDataset.DISP_LABELS" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="alodataset.sintel_multi_dataset.SintelMultiDataset.FLOW_LABELS">
+<span class="sig-name descname"><span class="pre">FLOW_LABELS</span></span><em class="property"> <span class="pre">=</span> <span class="pre">['flow',</span> <span class="pre">'flow_occ']</span></em><a class="headerlink" href="#alodataset.sintel_multi_dataset.SintelMultiDataset.FLOW_LABELS" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="alodataset.sintel_multi_dataset.SintelMultiDataset.LABELS">
+<span class="sig-name descname"><span class="pre">LABELS</span></span><em class="property"> <span class="pre">=</span> <span class="pre">['flow',</span> <span class="pre">'flow_occ',</span> <span class="pre">'disp',</span> <span class="pre">'disp_occ']</span></em><a class="headerlink" href="#alodataset.sintel_multi_dataset.SintelMultiDataset.LABELS" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="alodataset.sintel_multi_dataset.SintelMultiDataset.PASSES">
+<span class="sig-name descname"><span class="pre">PASSES</span></span><em class="property"> <span class="pre">=</span> <span class="pre">['clean',</span> <span class="pre">'final']</span></em><a class="headerlink" href="#alodataset.sintel_multi_dataset.SintelMultiDataset.PASSES" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="alodataset.sintel_multi_dataset.SintelMultiDataset.SINTEL_SEQUENCES">
+<span class="sig-name descname"><span class="pre">SINTEL_SEQUENCES</span></span><em class="property"> <span class="pre">=</span> <span class="pre">['alley_1',</span> <span class="pre">'alley_2',</span> <span class="pre">'ambush_2',</span> <span class="pre">'ambush_4',</span> <span class="pre">'ambush_5',</span> <span class="pre">'ambush_6',</span> <span class="pre">'ambush_7',</span> <span class="pre">'bamboo_1',</span> <span class="pre">'bamboo_2',</span> <span class="pre">'bandage_1',</span> <span class="pre">'bandage_2',</span> <span class="pre">'cave_2',</span> <span class="pre">'cave_4',</span> <span class="pre">'market_2',</span> <span class="pre">'market_5',</span> <span class="pre">'market_6',</span> <span class="pre">'mountain_1',</span> <span class="pre">'shaman_2',</span> <span class="pre">'shaman_3',</span> <span class="pre">'sleeping_1',</span> <span class="pre">'sleeping_2',</span> <span class="pre">'temple_2',</span> <span class="pre">'temple_3']</span></em><a class="headerlink" href="#alodataset.sintel_multi_dataset.SintelMultiDataset.SINTEL_SEQUENCES" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alodataset.sintel_multi_dataset.SintelMultiDataset.get_dataset_dir">
+<span class="sig-name descname"><span class="pre">get_dataset_dir</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#alodataset.sintel_multi_dataset.SintelMultiDataset.get_dataset_dir" title="Permalink to this definition">¶</a></dt>
+<dd><p>Look for dataset_dir based on the given name. To work properly a alodataset_config.json
+file must be save into /home/USER/.aloception/alodataset_config.json</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alodataset.sintel_multi_dataset.SintelMultiDataset.getitem">
+<span class="sig-name descname"><span class="pre">getitem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alodataset.sintel_multi_dataset.SintelMultiDataset.getitem" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alodataset.sintel_multi_dataset.SintelMultiDataset.set_dataset_dir">
+<span class="sig-name descname"><span class="pre">set_dataset_dir</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset_dir</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alodataset.sintel_multi_dataset.SintelMultiDataset.set_dataset_dir" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the dataset_dir into the config file. This method will
+write the  path into /home/USER/.aloception/alodataset_config.json by replacing the current one
+(if any)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>dataset_dir: str</strong></dt><dd><p>Path to the new directory</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="../alonet/alonet.html" class="btn btn-neutral float-right" title="Alonet" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="sintel_disparity_dataset.html" class="btn btn-neutral float-left" title="Sintel Disparity" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2021, Visual Behavior.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

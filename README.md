@@ -1,10 +1,8 @@
-
+<p align="center">
+  <img src="images/aloception.png" style="text-align:center; width: 50%;" alt="Logo aloception" />
+</p>
 
 # About Aloception
-
-<img src="images/aloception.png" width="50%" style="float:right;" alt="Logo aloception" />
-
-
 
 **Aloception** is a set of packages for computer vision built on top of popular deep learning libraries:
 [pytorch](<https://pytorch.org/>)  and  [pytorch lightnig](https://www.pytorchlightning.ai/).
@@ -19,6 +17,8 @@
 
 **Alonet** integrates several promising computer vision architectures. You can use it for research purposes or to finetune and deploy your model using TensorRT. Alonet is mainly built on top  of [ lightnig](https://www.pytorchlightning.ai/) with the help of
   **aloscene** and **alodataset**.
+
+
 
 
 **NOTE**

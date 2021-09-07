@@ -1,4 +1,3 @@
-from aloscene.disparity import Disparity
 from importlib.abc import ExecutionLoader
 import torch
 import torchvision.transforms.functional as F
@@ -13,8 +12,9 @@ import time
 
 import aloscene
 from aloscene.renderer import View, Renderer
-from aloscene import BoundingBoxes2D, Labels, Flow, Mask, Disparity
-from aloscene import BoundingBoxes2D, Labels, Flow, Mask, BoundingBoxes3D
+from aloscene.panoptic import Panoptic
+from aloscene.disparity import Disparity
+from aloscene import BoundingBoxes2D, BoundingBoxes3D, Labels, Flow, Mask
 from aloscene.camera_calib import CameraExtrinsic, CameraIntrinsic
 from aloscene.io.image import load_image
 
@@ -33,6 +33,7 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         flow: Flow = None,
         mask: Mask = None,
         disparity: Disparity = None,
+        panoptic: Panoptic = None,
         normalization="255",
         mean_std=None,
         *args,
@@ -52,6 +53,7 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         tensor.add_label("flow", flow, align_dim=["B", "T"], mergeable=False)
         tensor.add_label("mask", mask, align_dim=["B", "T"], mergeable=True)
         tensor.add_label("disparity", disparity, align_dim=["B", "T"], mergeable=True)
+        tensor.add_label("panoptic", panoptic, align_dim=["B", "T"], mergeable=True)
 
         # Add other tensor property
         tensor.add_property("normalization", normalization)
@@ -141,6 +143,19 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
             disparity are attached to the frame, the disparity will be added to the set of flow.
         """
         self._append_label("disparity", disparity, name)
+
+    def append_panoptic(self, panoptic, name=None):
+        """Attach a panoptic map to the frame.
+
+        Parameters
+        ----------
+        panoptic: aloscene.Panoptic
+            Panoptic to attach to the Frame
+        name: str
+            If none, the panoptic will be attached without name (if possible). Otherwise if no other unnamed
+            panoptic are attached to the frame, the panoptic will be added to the set of flow.
+        """
+        self._append_label("panoptic", panoptic, name)
 
     @staticmethod
     def _get_mean_std_tensor(shape, names, mean_std: tuple, device="cpu"):

@@ -834,7 +834,10 @@ class AugmentedTensor(torch.Tensor):
         croped : aloscene AugmentedTensor
             croped tensor
         """
-
+        if H_crop[0] < 0.0 or H_crop[1] > 1.0:
+            raise Exception("H_crop is expected to be between 0 and 1 but found {}".format(H_crop))
+        elif W_crop[0] < 0.0 or W_crop[1] > 1.0:
+            raise Exception("W_crop is expected to be between 0 and 1 but found {}".format(W_crop))
         croped = self._crop(H_crop, W_crop, **kwargs)
         croped.recursive_apply_on_labels_(lambda l: self._crop_label(l, H_crop, W_crop, **kwargs))
 

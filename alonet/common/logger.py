@@ -2,7 +2,6 @@ import aloscene
 from pytorch_lightning.loggers import WandbLogger, TensorBoardLogger
 import warnings
 import aloscene
-import torch
 import numpy as np
 import wandb
 
@@ -103,10 +102,10 @@ def log_image(trainer, key, images):
 
     elif isinstance(trainer.logger, TensorBoardLogger):
 
-        for i, image in enumerate(images):
+        for i, image_obj in enumerate(images):
             batch_el_key = (f"{key}_{i}",)
-            image = image["image"]
-            boxes = image["boxes"]
+            image = image_obj["image"]
+            boxes = image_obj["boxes"]
 
             if boxes is not None:
                 image = np.transpose(image, (2, 0, 1))

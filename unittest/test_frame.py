@@ -6,8 +6,8 @@ import aloscene
 import torch
 import numpy as np
 
-# waymo_dataset = WaymoDataset(sample=True)
-waymo_dataset = WaymoDataset(split=Split.VAL, labels=["gt_boxes_2d", "gt_boxes_3d"], sequence_size=2)
+waymo_dataset = WaymoDataset(sample=True)
+# waymo_dataset = WaymoDataset(split=Split.VAL, labels=["gt_boxes_2d", "gt_boxes_3d"], sequence_size=2)
 
 TEST_FRAME = 0
 

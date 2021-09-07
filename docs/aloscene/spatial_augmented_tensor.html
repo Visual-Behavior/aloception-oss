@@ -1,0 +1,388 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Spatial Augmented Tensor &mdash; Aloception 0.0.1 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Alodataset" href="../alodataset/alodataset.html" />
+    <link rel="prev" title="Augmented Tensor" href="augmented_tensor.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> Aloception
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption" role="heading"><span class="caption-text">Geting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/getting_started.html">Getting started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/aloscene.html">Aloscene: Computer vision with ease</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/alodataset.html">Alodataset: Loading your datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/alonet.html">Alonet: Loading &amp; training your models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/augmented_tensor.html">About Augmented Tensor</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Turorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/data_setup.html">How to setup your data?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/training_detr.html">Training Detr</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/finetuning_detr.html">Finetuning DETR</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/training_deformable_detr.html">Training Deformable DETR</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/finetuning_deformable_detr.html">Finetuning Deformanble DETR</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/tensort_inference.html">Exporting DETR / Deformable-DETR to TensorRT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/training_raft.html">Training RAFT</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Aloception API</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="aloscene.html">Aloscene</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="frame.html">Frame</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bounding_boxes_2d.html">BoundingBoxes2D</a></li>
+<li class="toctree-l2"><a class="reference internal" href="oriented_boxes_2d.html">OrientedBoxes2D</a></li>
+<li class="toctree-l2"><a class="reference internal" href="labels.html">Label</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mask.html">Mask</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mask.html#module-aloscene.mask">Mask API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="flow.html">Flow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="disparity.html">Disparity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bounding_boxes_3d.html">BoundingBoxes3D</a></li>
+<li class="toctree-l2"><a class="reference internal" href="camera_calib.html">Camera calibration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="augmented_tensor.html">Augmented Tensor</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Spatial Augmented Tensor</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../alodataset/alodataset.html">Alodataset</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../alonet/alonet.html">Alonet</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Aloception</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="aloscene.html">Aloscene</a> &raquo;</li>
+        
+      <li>Spatial Augmented Tensor</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../_sources/aloscene/spatial_augmented_tensor.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast.container,
+.nboutput.nblast.container {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast.container + .nbinput.container {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<p>Here is the spatial augmented tensor page</p>
+<div class="section" id="module-aloscene.tensors.spatial_augmented_tensor">
+<span id="spatial-augmented-tensor"></span><h1>Spatial Augmented Tensor<a class="headerlink" href="#module-aloscene.tensors.spatial_augmented_tensor" title="Permalink to this headline">¶</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="aloscene.tensors.spatial_augmented_tensor.SpatialAugmentedTensor">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">aloscene.tensors.spatial_augmented_tensor.</span></span><span class="sig-name descname"><span class="pre">SpatialAugmentedTensor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cam_intrinsic</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="camera_calib.html#aloscene.camera_calib.CameraIntrinsic" title="aloscene.camera_calib.CameraIntrinsic"><span class="pre">aloscene.camera_calib.CameraIntrinsic</span></a><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cam_extrinsic</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="camera_calib.html#aloscene.camera_calib.CameraExtrinsic" title="aloscene.camera_calib.CameraExtrinsic"><span class="pre">aloscene.camera_calib.CameraExtrinsic</span></a><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aloscene.tensors.spatial_augmented_tensor.SpatialAugmentedTensor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="augmented_tensor.html#aloscene.tensors.augmented_tensor.AugmentedTensor" title="aloscene.tensors.augmented_tensor.AugmentedTensor"><code class="xref py py-class docutils literal notranslate"><span class="pre">aloscene.tensors.augmented_tensor.AugmentedTensor</span></code></a></p>
+<dl class="py property">
+<dt class="sig sig-object py" id="aloscene.tensors.spatial_augmented_tensor.SpatialAugmentedTensor.H">
+<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">H</span></span><a class="headerlink" href="#aloscene.tensors.spatial_augmented_tensor.SpatialAugmentedTensor.H" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="aloscene.tensors.spatial_augmented_tensor.SpatialAugmentedTensor.HW">
+<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">HW</span></span><a class="headerlink" href="#aloscene.tensors.spatial_augmented_tensor.SpatialAugmentedTensor.HW" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="aloscene.tensors.spatial_augmented_tensor.SpatialAugmentedTensor.W">
+<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">W</span></span><a class="headerlink" href="#aloscene.tensors.spatial_augmented_tensor.SpatialAugmentedTensor.W" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aloscene.tensors.spatial_augmented_tensor.SpatialAugmentedTensor.append_cam_extrinsic">
+<span class="sig-name descname"><span class="pre">append_cam_extrinsic</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cam_extrinsic</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aloscene.tensors.spatial_augmented_tensor.SpatialAugmentedTensor.append_cam_extrinsic" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aloscene.tensors.spatial_augmented_tensor.SpatialAugmentedTensor.append_cam_intrinsic">
+<span class="sig-name descname"><span class="pre">append_cam_intrinsic</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cam_intrinsic</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aloscene.tensors.spatial_augmented_tensor.SpatialAugmentedTensor.append_cam_intrinsic" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aloscene.tensors.spatial_augmented_tensor.SpatialAugmentedTensor.batch">
+<span class="sig-name descname"><span class="pre">batch</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aloscene.tensors.spatial_augmented_tensor.SpatialAugmentedTensor.batch" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a batch dimension on the tensor</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><dl class="simple">
+<dt>batch_frame: aloscene.Frame</dt><dd><p>A frame with a batch dimension</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aloscene.tensors.spatial_augmented_tensor.SpatialAugmentedTensor.batch_list">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">batch_list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sa_tensors</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pad_boxes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aloscene.tensors.spatial_augmented_tensor.SpatialAugmentedTensor.batch_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a list of Spatial Augmeted tensor of potentially different size (otherwise cat is enough) this method
+will create a new set of frame of same size (the max size across the frames)
+and add to each frame a mask with 1. on the padded area.</p>
+<p>Note that in order to work proprly, all attached label must implement the <cite>pad</cite> method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>sa_tensors: list</strong></dt><dd><p>List of any aloscene.tensors.SpatialAugmentedTensor (or list of dicts or SpatialAugmentedTensor)</p>
+</dd>
+<dt><strong>pad_boxes: bool</strong></dt><dd><p>By default, do not rescale the boxes attached to the sptial augmented Tensor (see explanation in boxes2d.pad)</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>batch_frame: a child of aloscene.tensors.SpatialAugmentedTensor (or dict of SpatialAugmentedTensor)</dt><dd><p>Multiple sa_tensor with mask label</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aloscene.tensors.spatial_augmented_tensor.SpatialAugmentedTensor.get_view">
+<span class="sig-name descname"><span class="pre">get_view</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">views</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exclude</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grid_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aloscene.tensors.spatial_augmented_tensor.SpatialAugmentedTensor.get_view" title="Permalink to this definition">¶</a></dt>
+<dd><p>Render the spatial augmented tensor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>views: list</strong></dt><dd><p>List of <cite>View</cite> or <cite>AugmentedTensor</cite>. If this is
+<cite>AugmentedTensor</cite>, the <cite>get_view</cite> method will be call with default
+parameters.</p>
+</dd>
+<dt><strong>exclude</strong><span class="classifier">list</span></dt><dd><p>List of ‘ <cite>AugmentedTensor</cite> label to exclude from the final view.</p>
+</dd>
+<dt><strong>size</strong><span class="classifier">int</span></dt><dd><p>Size of each element of the grid</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>view: View</dt><dd></dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aloscene.tensors.spatial_augmented_tensor.SpatialAugmentedTensor.relative_to_absolute">
+<span class="sig-name descname"><span class="pre">relative_to_absolute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">assert_integer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aloscene.tensors.spatial_augmented_tensor.SpatialAugmentedTensor.relative_to_absolute" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aloscene.tensors.spatial_augmented_tensor.SpatialAugmentedTensor.temporal">
+<span class="sig-name descname"><span class="pre">temporal</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aloscene.tensors.spatial_augmented_tensor.SpatialAugmentedTensor.temporal" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a temporal dimension on the tensor</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><dl class="simple">
+<dt>temporal_frame: aloscene.Frame</dt><dd><p>A frame with a temporal dimension</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="../alodataset/alodataset.html" class="btn btn-neutral float-right" title="Alodataset" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="augmented_tensor.html" class="btn btn-neutral float-left" title="Augmented Tensor" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2021, Visual Behavior.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

@@ -1,0 +1,319 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Camera calibration &mdash; Aloception 0.0.1 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Augmented Tensor" href="augmented_tensor.html" />
+    <link rel="prev" title="Visualization" href="notebooks/bounding_boxes_3d.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> Aloception
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption" role="heading"><span class="caption-text">Geting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/getting_started.html">Getting started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/aloscene.html">Aloscene: Computer vision with ease</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/alodataset.html">Alodataset: Loading your datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/alonet.html">Alonet: Loading &amp; training your models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/augmented_tensor.html">About Augmented Tensor</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Turorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/data_setup.html">How to setup your data?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/training_detr.html">Training Detr</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/finetuning_detr.html">Finetuning DETR</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/training_deformable_detr.html">Training Deformable DETR</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/finetuning_deformable_detr.html">Finetuning Deformanble DETR</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/tensort_inference.html">Exporting DETR / Deformable-DETR to TensorRT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/training_raft.html">Training RAFT</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Aloception API</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="aloscene.html">Aloscene</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="frame.html">Frame</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bounding_boxes_2d.html">BoundingBoxes2D</a></li>
+<li class="toctree-l2"><a class="reference internal" href="oriented_boxes_2d.html">OrientedBoxes2D</a></li>
+<li class="toctree-l2"><a class="reference internal" href="labels.html">Label</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mask.html">Mask</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mask.html#module-aloscene.mask">Mask API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="flow.html">Flow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="disparity.html">Disparity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bounding_boxes_3d.html">BoundingBoxes3D</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Camera calibration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="augmented_tensor.html">Augmented Tensor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="spatial_augmented_tensor.html">Spatial Augmented Tensor</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../alodataset/alodataset.html">Alodataset</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../alonet/alonet.html">Alonet</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Aloception</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="aloscene.html">Aloscene</a> &raquo;</li>
+        
+      <li>Camera calibration</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../_sources/aloscene/camera_calib.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast.container,
+.nboutput.nblast.container {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast.container + .nbinput.container {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="module-aloscene.camera_calib">
+<span id="camera-calibration"></span><h1>Camera calibration<a class="headerlink" href="#module-aloscene.camera_calib" title="Permalink to this headline">¶</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="aloscene.camera_calib.CameraExtrinsic">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">aloscene.camera_calib.</span></span><span class="sig-name descname"><span class="pre">CameraExtrinsic</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aloscene.camera_calib.CameraExtrinsic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="augmented_tensor.html#aloscene.tensors.augmented_tensor.AugmentedTensor" title="aloscene.tensors.augmented_tensor.AugmentedTensor"><code class="xref py py-class docutils literal notranslate"><span class="pre">aloscene.tensors.augmented_tensor.AugmentedTensor</span></code></a></p>
+<p>Camera Extrinsic of shape […, 4, 4].
+This matrix transforms real world coordinates to camera coordinates by translation and rotation.</p>
+<p>The last two dimension forms a transformation matrix (translation vector and rotation matrix):</p>
+<blockquote>
+<div><p>R11 R12 R13  t1</p>
+<p>R21 R22 R23  t2</p>
+<p>R31 R32 R33  t3</p>
+<p>0   0   0    1</p>
+</div></blockquote>
+<dl class="py method">
+<dt class="sig sig-object py" id="aloscene.camera_calib.CameraExtrinsic.get_view">
+<span class="sig-name descname"><span class="pre">get_view</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aloscene.camera_calib.CameraExtrinsic.get_view" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="aloscene.camera_calib.CameraIntrinsic">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">aloscene.camera_calib.</span></span><span class="sig-name descname"><span class="pre">CameraIntrinsic</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aloscene.camera_calib.CameraIntrinsic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="augmented_tensor.html#aloscene.tensors.augmented_tensor.AugmentedTensor" title="aloscene.tensors.augmented_tensor.AugmentedTensor"><code class="xref py py-class docutils literal notranslate"><span class="pre">aloscene.tensors.augmented_tensor.AugmentedTensor</span></code></a></p>
+<p>Camera Intrinsic matrix of shape […, 3, 4]
+The intrinsic matrix transforms 3D camera cooordinates to 2D homogeneous image coordinates.
+This perspective projection is modeled by the ideal pinhole camera</p>
+<p>The last two dimensions is:</p>
+<blockquote>
+<div><p>fx   s    x0   0</p>
+<p>0    fy   y0   0</p>
+<p>0    0     1   0</p>
+</div></blockquote>
+<ul class="simple">
+<li><p>Focal length: fx, fy. For true pinhole camera, fx and fy have the same value.</p></li>
+<li><p>Princial Point Offset: x0, y0</p></li>
+<li><p>Axis skew: s, in most cases, this value should be 0</p></li>
+</ul>
+<p>For more information: <a class="reference external" href="https://ksimek.github.io/2013/08/13/intrinsic/">https://ksimek.github.io/2013/08/13/intrinsic/</a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="aloscene.camera_calib.CameraIntrinsic.get_view">
+<span class="sig-name descname"><span class="pre">get_view</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aloscene.camera_calib.CameraIntrinsic.get_view" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="augmented_tensor.html" class="btn btn-neutral float-right" title="Augmented Tensor" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="notebooks/bounding_boxes_3d.html" class="btn btn-neutral float-left" title="Visualization" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2021, Visual Behavior.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

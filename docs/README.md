@@ -10,6 +10,8 @@ install using:
 pip install -r requirements.txt
 ```
 
+It also need to have Pandoc installed: [Pandoc](https://pandoc.org/installing.html)
+
 ## Building the documentation
 
 Once you have setup `sphinx`, you can build the documentation by running the following command in the `/docs` folder:

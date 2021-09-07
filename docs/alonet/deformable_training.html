@@ -1,0 +1,592 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Training &mdash; Aloception 0.0.1 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Callbacks" href="alonet.callbacks.html" />
+    <link rel="prev" title="Architecture" href="deformable_architecture.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> Aloception
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption" role="heading"><span class="caption-text">Geting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/getting_started.html">Getting started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/aloscene.html">Aloscene: Computer vision with ease</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/alodataset.html">Alodataset: Loading your datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/alonet.html">Alonet: Loading &amp; training your models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/augmented_tensor.html">About Augmented Tensor</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Turorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/data_setup.html">How to setup your data?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/training_detr.html">Training Detr</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/finetuning_detr.html">Finetuning DETR</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/training_deformable_detr.html">Training Deformable DETR</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/finetuning_deformable_detr.html">Finetuning Deformanble DETR</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/tensort_inference.html">Exporting DETR / Deformable-DETR to TensorRT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/training_raft.html">Training RAFT</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Aloception API</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../aloscene/aloscene.html">Aloscene</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../alodataset/alodataset.html">Alodataset</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="alonet.html">Alonet</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="detr.html">Detr</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="deformable.html">Deformable DETR</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="deformable_models.html">Models</a></li>
+<li class="toctree-l3"><a class="reference internal" href="deformable_architecture.html">Architecture</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Training</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#id1">Training</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-alonet.deformable_detr.callbacks">Callbacks</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-alonet.deformable_detr.criterion">Criterion</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-alonet.deformable_detr.matcher">Matcher</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="alonet.callbacks.html">Callbacks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="alonet.metrics.html">Metrics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="alonet.transformers.html">Transformer</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Aloception</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="alonet.html">Alonet</a> &raquo;</li>
+        
+          <li><a href="deformable.html">Deformable DETR</a> &raquo;</li>
+        
+      <li>Training</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../_sources/alonet/deformable_training.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast.container,
+.nboutput.nblast.container {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast.container + .nbinput.container {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="training">
+<h1>Training<a class="headerlink" href="#training" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="id1">
+<h2>Training<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<span class="target" id="module-alonet.deformable_detr.train"></span><dl class="py class">
+<dt class="sig sig-object py" id="alonet.deformable_detr.train.LitDeformableDetr">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">alonet.deformable_detr.train.</span></span><span class="sig-name descname"><span class="pre">LitDeformableDetr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.deformable_detr.train.LitDeformableDetr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="detr_training.html#alonet.detr.train.LitDetr" title="alonet.detr.train.LitDetr"><code class="xref py py-class docutils literal notranslate"><span class="pre">alonet.detr.train.LitDetr</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="alonet.deformable_detr.train.LitDeformableDetr.add_argparse_args">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">add_argparse_args</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parent_parser</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parser</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.deformable_detr.train.LitDeformableDetr.add_argparse_args" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add argument for Deformable DETR</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>parent_parser</strong><span class="classifier">ArgumentParser</span></dt><dd><p>parser to be added new argument</p>
+</dd>
+<dt><strong>parser</strong><span class="classifier">[type], optional</span></dt><dd><p>parser to overwrite parent_parser if not None, by default None</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>ArgumentParser</dt><dd><p>Parser with arguments for Deformable DETR added</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alonet.deformable_detr.train.LitDeformableDetr.build_criterion">
+<span class="sig-name descname"><span class="pre">build_criterion</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">matcher</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loss_label_weight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loss_boxes_weight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loss_giou_weight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">losses</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">['labels',</span> <span class="pre">'boxes']</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aux_loss_stage</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eos_coef</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.deformable_detr.train.LitDeformableDetr.build_criterion" title="Permalink to this definition">¶</a></dt>
+<dd><p>Build criterion module to calculate losses</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>matcher</strong><span class="classifier">DeformableDetrHungarianMatcher</span></dt><dd><p>Hungarian matcher to match between predictions and targets</p>
+</dd>
+<dt><strong>loss_label_weight</strong><span class="classifier">int, optional</span></dt><dd><p>Weight of the classification loss, by default 1</p>
+</dd>
+<dt><strong>loss_boxes_weight</strong><span class="classifier">int, optional</span></dt><dd><p>Weight of the L1 loss of the bounding box coordinates, by default 5</p>
+</dd>
+<dt><strong>loss_giou_weight</strong><span class="classifier">int, optional</span></dt><dd><p>Weight of the giou loss of the bounding box, by default 2</p>
+</dd>
+<dt><strong>losses</strong><span class="classifier">list, optional</span></dt><dd><p>Type of loss use in training, by default [‘labels’, ‘boxes’]</p>
+</dd>
+<dt><strong>aux_loss_stage</strong><span class="classifier">int, optional</span></dt><dd><p>Number of auxiliary decoder stages, by default 6</p>
+</dd>
+<dt><strong>eos_coef</strong><span class="classifier">float, optional</span></dt><dd><p>Relative classification weight applied to the no-object category, by default 0.1.
+This factor is applied only when softmax activation is used in model.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>DeformableCriterion</dt><dd></dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">rtype</dt>
+<dd class="field-odd"><p><a class="reference internal" href="#alonet.deformable_detr.criterion.DeformableCriterion" title="alonet.deformable_detr.criterion.DeformableCriterion"><code class="xref py py-class docutils literal notranslate"><span class="pre">DeformableCriterion</span></code></a>
+..</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alonet.deformable_detr.train.LitDeformableDetr.build_matcher">
+<span class="sig-name descname"><span class="pre">build_matcher</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cost_class</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cost_boxes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cost_giou</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.deformable_detr.train.LitDeformableDetr.build_matcher" title="Permalink to this definition">¶</a></dt>
+<dd><p>Build matcher to match between predictions and targets</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>cost_class</strong><span class="classifier">int, optional</span></dt><dd><p>Weight of the classification error in the matching cost, by default 1</p>
+</dd>
+<dt><strong>cost_boxes</strong><span class="classifier">int, optional</span></dt><dd><p>Weight of the L1 error of the bounding box coordinates in the matching cost, by default 5</p>
+</dd>
+<dt><strong>cost_giou</strong><span class="classifier">int, optional</span></dt><dd><p>Weight of the giou loss of the bounding box in the matching cost, by default 2</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>DeformableDetrHungarianMatcher</dt><dd></dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">rtype</dt>
+<dd class="field-odd"><p><a class="reference internal" href="#alonet.deformable_detr.matcher.DeformableDetrHungarianMatcher" title="alonet.deformable_detr.matcher.DeformableDetrHungarianMatcher"><code class="xref py py-class docutils literal notranslate"><span class="pre">DeformableDetrHungarianMatcher</span></code></a>
+..</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alonet.deformable_detr.train.LitDeformableDetr.build_model">
+<span class="sig-name descname"><span class="pre">build_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_classes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">91</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aux_loss</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weights</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">activation_fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'sigmoid'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.deformable_detr.train.LitDeformableDetr.build_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>Build model for training</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>num_classes</strong><span class="classifier">int, optional</span></dt><dd><p>Number of classes to detect, by default 91</p>
+</dd>
+<dt><strong>aux_loss</strong><span class="classifier">bool, optional</span></dt><dd><p>aux_loss : bool, optional
+If True, the model will returns auxilary outputs at each decoder layer 
+to calculate auxiliary decoding losses. By default True.</p>
+</dd>
+<dt><strong>weights</strong><span class="classifier">str, optional</span></dt><dd><p>Pretrained weights, by default None</p>
+</dd>
+<dt><strong>activation_fn</strong><span class="classifier">str, optional</span></dt><dd><p>Activation function for classification head. Either “sigmoid” or “softmax”. By default “sigmoid”.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>Union[DeformableDetrR50Refinement, DeformableDetrR50]</dt><dd><p>Deformable DETR for training</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">rtype</dt>
+<dd class="field-odd"><p><code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<a class="reference internal" href="deformable_models.html#alonet.deformable_detr.deformable_detr_r50_refinement.DeformableDetrR50Refinement" title="alonet.deformable_detr.deformable_detr_r50_refinement.DeformableDetrR50Refinement"><code class="xref py py-class docutils literal notranslate"><span class="pre">DeformableDetrR50Refinement</span></code></a>, <a class="reference internal" href="deformable_models.html#alonet.deformable_detr.deformable_detr_r50.DeformableDetrR50" title="alonet.deformable_detr.deformable_detr_r50.DeformableDetrR50"><code class="xref py py-class docutils literal notranslate"><span class="pre">DeformableDetrR50</span></code></a>]
+..</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alonet.deformable_detr.train.LitDeformableDetr.configure_optimizers">
+<span class="sig-name descname"><span class="pre">configure_optimizers</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#alonet.deformable_detr.train.LitDeformableDetr.configure_optimizers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Configure optimzier using AdamW</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="alonet.deformable_detr.train.LitDeformableDetr.training">
+<span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="pre">:</span> <span class="pre">bool</span></em><a class="headerlink" href="#alonet.deformable_detr.train.LitDeformableDetr.training" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-alonet.deformable_detr.callbacks">
+<span id="callbacks"></span><h2>Callbacks<a class="headerlink" href="#module-alonet.deformable_detr.callbacks" title="Permalink to this headline">¶</a></h2>
+<p>Callbacks for Deformable DETR training is the same as DETR training</p>
+</div>
+<div class="section" id="module-alonet.deformable_detr.criterion">
+<span id="criterion"></span><h2>Criterion<a class="headerlink" href="#module-alonet.deformable_detr.criterion" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="alonet.deformable_detr.criterion.DeformableCriterion">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">alonet.deformable_detr.criterion.</span></span><span class="sig-name descname"><span class="pre">DeformableCriterion</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">loss_label_weight</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">focal_alpha</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.25</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.deformable_detr.criterion.DeformableCriterion" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="detr_training.html#alonet.detr.criterion.DetrCriterion" title="alonet.detr.criterion.DetrCriterion"><code class="xref py py-class docutils literal notranslate"><span class="pre">alonet.detr.criterion.DetrCriterion</span></code></a></p>
+<p>This class computes the loss for Deformable DETR. The process happens in two steps</p>
+<blockquote>
+<div><ol class="arabic simple">
+<li><p>we compute hungarian assignment between ground truth boxes and the outputs of the model</p></li>
+<li><p>we supervise each pair of matched ground-truth / prediction (supervise class and box)</p></li>
+</ol>
+</div></blockquote>
+<p>This Criterion is rouhgly smilar to <cite>DetrCriterion</cite> except for the labels loss and the metrics.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="alonet.deformable_detr.criterion.DeformableCriterion.get_metrics">
+<span class="sig-name descname"><span class="pre">get_metrics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">outputs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frames</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">indices</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_boxes</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.deformable_detr.criterion.DeformableCriterion.get_metrics" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute some usefull metrics related to the model performance</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>outputs</strong><span class="classifier">dict</span></dt><dd><p>model forward outputs</p>
+</dd>
+<dt><strong>frames</strong><span class="classifier">aloscene.Frame</span></dt><dd><p>Target frame with ground truth boxes2d and labels</p>
+</dd>
+<dt><strong>indices</strong><span class="classifier">list</span></dt><dd><p>List of tuple with matching predicted indices and target indices. <cite>len(indices)</cite> is equal to batch size.</p>
+</dd>
+<dt><strong>num_boxes</strong><span class="classifier">torch.Tensor</span></dt><dd><p>Number of total target boxes</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>dict</dt><dd><ul class="simple">
+<li><p>“recall” : Percentage of detected class among all the GT class</p></li>
+<li><p>“precision”: Among the positive prediction of the model. How much are well classify ?</p></li>
+</ul>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>Metrics are calculated based on threshold = 0.3 to filter out positive prediction.
+Positive prediction = prediction with score &gt;= threshold, otherwise negative prediction
+This threshold value can be change in inference. That being said, it is still a usefull
+information to monitor the training progress.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alonet.deformable_detr.criterion.DeformableCriterion.loss_labels">
+<span class="sig-name descname"><span class="pre">loss_labels</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">outputs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frames</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">indices</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_boxes</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.deformable_detr.criterion.DeformableCriterion.loss_labels" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the clasification loss</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>outputs</strong><span class="classifier">dict</span></dt><dd><p>model forward outputs</p>
+</dd>
+<dt><strong>frames</strong><span class="classifier">aloscene.Frame</span></dt><dd><p>Target frame with ground truth boxes2d and labels</p>
+</dd>
+<dt><strong>indices</strong><span class="classifier">list</span></dt><dd><p>List of tuple with matching predicted indices and target indices. <cite>len(indices)</cite> is equal to batch size.</p>
+</dd>
+<dt><strong>num_boxes</strong><span class="classifier">torch.Tensor</span></dt><dd><p>Number of total target boxes</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>torch.Tensor</dt><dd><p>Classification loss</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">rtype</dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>
+..</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="alonet.deformable_detr.criterion.DeformableCriterion.training">
+<span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="pre">:</span> <span class="pre">bool</span></em><a class="headerlink" href="#alonet.deformable_detr.criterion.DeformableCriterion.training" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="alonet.deformable_detr.criterion.sigmoid_focal_loss">
+<span class="sig-prename descclassname"><span class="pre">alonet.deformable_detr.criterion.</span></span><span class="sig-name descname"><span class="pre">sigmoid_focal_loss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inputs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">targets</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_boxes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.25</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gamma</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.deformable_detr.criterion.sigmoid_focal_loss" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sigmoid focal loss for classification</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>inputs</strong><span class="classifier">torch.Tensor</span></dt><dd><p>The predictions for each example.</p>
+</dd>
+<dt><strong>targets</strong><span class="classifier">torch.Tensor</span></dt><dd><p>A float tensor with the same shape as inputs. Stores the binary
+classification label for each element in inputs
+(0 for the negative class and 1 for the positive class).</p>
+</dd>
+<dt><strong>num_boxes</strong><span class="classifier">torch.Tensor</span></dt><dd></dd>
+<dt><strong>alpha</strong><span class="classifier">float, optional</span></dt><dd><p>(optional) Weighting factor in range (0,1) to balance
+positive vs negative examples. -1 for no weighting. By default 0.25.</p>
+</dd>
+<dt><strong>gamma</strong><span class="classifier">float, optional</span></dt><dd><p>Exponent of the modulating factor (1 - p_t) to
+balance easy vs hard examples. By default 2</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>torch.Tensor</dt><dd><p>Scalar</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">rtype</dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>
+..</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="module-alonet.deformable_detr.matcher">
+<span id="matcher"></span><h2>Matcher<a class="headerlink" href="#module-alonet.deformable_detr.matcher" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="alonet.deformable_detr.matcher.DeformableDetrHungarianMatcher">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">alonet.deformable_detr.matcher.</span></span><span class="sig-name descname"><span class="pre">DeformableDetrHungarianMatcher</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cost_class</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cost_boxes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cost_giou</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.deformable_detr.matcher.DeformableDetrHungarianMatcher" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="detr_training.html#alonet.detr.matcher.DetrHungarianMatcher" title="alonet.detr.matcher.DetrHungarianMatcher"><code class="xref py py-class docutils literal notranslate"><span class="pre">alonet.detr.matcher.DetrHungarianMatcher</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="alonet.deformable_detr.matcher.DeformableDetrHungarianMatcher.hungarian_cost_class">
+<span class="sig-name descname"><span class="pre">hungarian_cost_class</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tgt_boxes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">m_outputs</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.deformable_detr.matcher.DeformableDetrHungarianMatcher.hungarian_cost_class" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the cost class for the Hungarian matcher</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>m_outputs: dict</strong></dt><dd><dl class="simple">
+<dt>Dict output of the alonet.detr.Detr model. This is a dict that contains at least these entries:</dt><dd><ul class="simple">
+<li><p>“pred_logits”: Tensor of dim [batch_size, num_queries, num_classes] with the classification logits</p></li>
+<li><p>“pred_boxes”: Tensor of dim [batch_size, num_queries, 4] with the predicted box coordinates</p></li>
+</ul>
+</dd>
+</dl>
+</dd>
+<dt><strong>tgt_boxes: aloscene.BoundingBoxes2D</strong></dt><dd><p>Target boxes2d across the batch</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="alonet.deformable_detr.matcher.DeformableDetrHungarianMatcher.training">
+<span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="pre">:</span> <span class="pre">bool</span></em><a class="headerlink" href="#alonet.deformable_detr.matcher.DeformableDetrHungarianMatcher.training" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="alonet.callbacks.html" class="btn btn-neutral float-right" title="Callbacks" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="deformable_architecture.html" class="btn btn-neutral float-left" title="Architecture" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2021, Visual Behavior.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

@@ -1,7 +1,6 @@
 import aloscene
-from pytorch_lightning.loggers import WandbLogger, TensorBoardLogger
+from pytorch_lightning.loggers import TensorBoardLogger, WandbLogger
 import warnings
-import aloscene
 import numpy as np
 import wandb
 

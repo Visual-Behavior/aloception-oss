@@ -302,18 +302,12 @@ def main():
     )
     log = logging.getLogger("aloception")
 
-    coco_dataset = CocoDetectionDataset(
-        img_folder="val2017",
-        ann_file="annotations/instances_val2017.json",
-        stuff_ann_file="annotations/stuff_val2017.json",
-        return_masks=True,
-    )
+    coco_dataset = CocoDetectionDataset(sample=True)
     log.info(repr(coco_dataset))
     for f, frames in enumerate(coco_dataset.train_loader(batch_size=1)):
-        # frames = Frame.batch_list(frames)
-        # print(frames[0].panoptic.shape)
-        # frames[0].panoptic.get_view(frames[0]).render()
-        frames[0].get_view([frames[0].panoptic.get_view(frames[0]), frames[0].boxes2d.get_view(frames[0])]).render()
+        # frames[0].get_view([frames[0].panoptic.get_view(frames[0]), frames[0].boxes2d.get_view(frames[0])]).render()
+        frames = Frame.batch_list(frames)
+        frames.get_view().render()
         if f > 1:
             break
 

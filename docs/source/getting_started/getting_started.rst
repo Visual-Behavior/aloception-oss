@@ -4,6 +4,10 @@ Getting started
 About Aloception
 ===========================
 
+.. image:: ../images/aloception.png
+  :width: 400
+  :alt: Alternative text
+
 Aloception is a set of packages for computer vision built on top of popular deep learning libraries:
 `pytorch <https://pytorch.org/>`_  and  `pytorch lightnig <https://www.pytorchlightning.ai/>`_ .
 

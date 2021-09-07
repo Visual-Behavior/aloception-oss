@@ -1,0 +1,618 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>OrientedBoxes2D &mdash; Aloception 0.0.1 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Label" href="labels.html" />
+    <link rel="prev" title="BoundingBoxes2D" href="bounding_boxes_2d.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> Aloception
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption" role="heading"><span class="caption-text">Geting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/getting_started.html">Getting started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/aloscene.html">Aloscene: Computer vision with ease</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/alodataset.html">Alodataset: Loading your datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/alonet.html">Alonet: Loading &amp; training your models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/augmented_tensor.html">About Augmented Tensor</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Turorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/data_setup.html">How to setup your data?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/training_detr.html">Training Detr</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/finetuning_detr.html">Finetuning DETR</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/training_deformable_detr.html">Training Deformable DETR</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/finetuning_deformable_detr.html">Finetuning Deformanble DETR</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/tensort_inference.html">Exporting DETR / Deformable-DETR to TensorRT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/training_raft.html">Training RAFT</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Aloception API</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="aloscene.html">Aloscene</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="frame.html">Frame</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bounding_boxes_2d.html">BoundingBoxes2D</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">OrientedBoxes2D</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#basic-usage">Basic usage</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-aloscene.oriented_boxes_2d">API</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="labels.html">Label</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mask.html">Mask</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mask.html#module-aloscene.mask">Mask API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="flow.html">Flow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="disparity.html">Disparity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bounding_boxes_3d.html">BoundingBoxes3D</a></li>
+<li class="toctree-l2"><a class="reference internal" href="camera_calib.html">Camera calibration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="augmented_tensor.html">Augmented Tensor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="spatial_augmented_tensor.html">Spatial Augmented Tensor</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../alodataset/alodataset.html">Alodataset</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../alonet/alonet.html">Alonet</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Aloception</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="aloscene.html">Aloscene</a> &raquo;</li>
+        
+      <li>OrientedBoxes2D</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../_sources/aloscene/oriented_boxes_2d.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast.container,
+.nboutput.nblast.container {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast.container + .nbinput.container {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="orientedboxes2d">
+<h1>OrientedBoxes2D<a class="headerlink" href="#orientedboxes2d" title="Permalink to this headline">¶</a></h1>
+<p>Oriented Boxes 2D is defined by [x, y, w, h, theta] in which:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>x, y: center coordinates (could be relative or absolute values)</p></li>
+<li><p>w, h: width, height (could be relative or absolute values)</p></li>
+<li><p>theta: rotation angle</p></li>
+</ul>
+</div></blockquote>
+<div class="section" id="basic-usage">
+<h2>Basic usage<a class="headerlink" href="#basic-usage" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">from</span> <span class="nn">aloscene</span> <span class="kn">import</span> <span class="n">OrientedBoxes2D</span>
+
+<span class="n">boxes</span> <span class="o">=</span> <span class="n">OrientedBoxes2D</span><span class="p">(</span>
+    <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span>
+        <span class="p">[</span>
+            <span class="c1"># [x,   y,   w,   h, theta]</span>
+            <span class="p">[</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+            <span class="p">[</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">6</span><span class="p">],</span>
+            <span class="p">[</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">3</span><span class="p">],</span>
+            <span class="p">[</span><span class="mf">0.6</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">4</span><span class="p">],</span>
+        <span class="p">],</span>
+        <span class="n">device</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&quot;cuda&quot;</span><span class="p">),</span>
+    <span class="p">),</span>
+    <span class="n">absolute</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="c1"># use relative values for x, y, w, h</span>
+<span class="p">)</span>
+
+<span class="n">boxes</span><span class="o">.</span><span class="n">get_view</span><span class="p">()</span><span class="o">.</span><span class="n">render</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Get coordinates of 4 corners for each boxes:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">boxes</span><span class="o">.</span><span class="n">corners</span><span class="p">())</span>
+</pre></div>
+</div>
+<p>Convert to absolute value format with frame size = (300, 300):</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">abs_boxes</span> <span class="o">=</span> <span class="n">boxes</span><span class="o">.</span><span class="n">abs_boxes</span><span class="p">((</span><span class="mi">300</span><span class="p">,</span> <span class="mi">300</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">abs_boxes</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">abs_boxes</span><span class="o">.</span><span class="n">absolute</span><span class="p">)</span>  <span class="c1"># True</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">abs_boxes</span><span class="o">.</span><span class="n">rel_pos</span><span class="p">()</span> <span class="o">==</span> <span class="n">boxes</span><span class="p">)</span> <span class="c1"># True</span>
+</pre></div>
+</div>
+<p>Calucate oriented IoU/GIoU with another set of boxes:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">boxes2</span> <span class="o">=</span> <span class="n">OrientedBoxes2D</span><span class="p">(</span>
+    <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span>
+            <span class="p">[</span>
+                <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+                <span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">6</span><span class="p">],</span>
+                <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">3</span><span class="p">],</span>
+                <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">4</span><span class="p">]</span>
+            <span class="p">],</span>
+            <span class="n">device</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&quot;cuda&quot;</span><span class="p">)</span>
+    <span class="p">)</span>
+<span class="p">)</span>
+<span class="n">iou</span> <span class="o">=</span> <span class="n">boxes</span><span class="o">.</span><span class="n">rotated_iou_with</span><span class="p">(</span><span class="n">boxes2</span><span class="p">)</span>
+<span class="n">giou</span> <span class="o">=</span> <span class="n">boxes</span><span class="o">.</span><span class="n">rotated_giou_with</span><span class="p">(</span><span class="n">boxes2</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">iou</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">giou</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="module-aloscene.oriented_boxes_2d">
+<span id="api"></span><h2>API<a class="headerlink" href="#module-aloscene.oriented_boxes_2d" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="aloscene.oriented_boxes_2d.OrientedBoxes2D">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">aloscene.oriented_boxes_2d.</span></span><span class="sig-name descname"><span class="pre">OrientedBoxes2D</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">absolute</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frame_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">,</span> </span><a class="reference internal" href="labels.html#aloscene.labels.Labels" title="aloscene.labels.Labels"><span class="pre">aloscene.labels.Labels</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">('N',</span> <span class="pre">None)</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aloscene.oriented_boxes_2d.OrientedBoxes2D" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="augmented_tensor.html#aloscene.tensors.augmented_tensor.AugmentedTensor" title="aloscene.tensors.augmented_tensor.AugmentedTensor"><code class="xref py py-class docutils literal notranslate"><span class="pre">aloscene.tensors.augmented_tensor.AugmentedTensor</span></code></a></p>
+<p>Oriented Boxes 2D is defined by [x, y, w, h, theta] in which:
+- x, y: center coordinates
+- w, h: width, height
+- theta: rotation angle</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="aloscene.oriented_boxes_2d.OrientedBoxes2D.GLOBAL_COLOR_SET">
+<span class="sig-name descname"><span class="pre">GLOBAL_COLOR_SET</span></span><em class="property"> <span class="pre">=</span> <span class="pre">array([[0.00118002,</span> <span class="pre">0.74518912,</span> <span class="pre">0.47727193],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.37222852,</span> <span class="pre">0.47009443,</span> <span class="pre">0.20713143],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.04309085,</span> <span class="pre">0.13991002,</span> <span class="pre">0.99804079],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.90112274,</span> <span class="pre">0.52142412,</span> <span class="pre">0.49012414],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.4794812</span> <span class="pre">,</span> <span class="pre">0.93305758,</span> <span class="pre">0.33156731],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.83926099,</span> <span class="pre">0.47125355,</span> <span class="pre">0.06012648],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.69960784,</span> <span class="pre">0.05619821,</span> <span class="pre">0.58169768],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.3775167</span> <span class="pre">,</span> <span class="pre">0.74752751,</span> <span class="pre">0.02883796],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.64588982,</span> <span class="pre">0.92749301,</span> <span class="pre">0.22778251],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.29043578,</span> <span class="pre">0.30162925,</span> <span class="pre">0.09944847],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.51269938,</span> <span class="pre">0.86828543,</span> <span class="pre">0.76154367],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.68144745,</span> <span class="pre">0.44381922,</span> <span class="pre">0.20179248],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.66872923,</span> <span class="pre">0.38653206,</span> <span class="pre">0.86169894],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.89900782,</span> <span class="pre">0.78755552,</span> <span class="pre">0.83199276],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.33944167,</span> <span class="pre">0.17925432,</span> <span class="pre">0.31495589],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.47465643,</span> <span class="pre">0.28031433,</span> <span class="pre">0.29083894],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.6736361</span> <span class="pre">,</span> <span class="pre">0.5509044</span> <span class="pre">,</span> <span class="pre">0.33266983],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.01705813,</span> <span class="pre">0.55702817,</span> <span class="pre">0.85950568],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.13354908,</span> <span class="pre">0.17152739,</span> <span class="pre">0.46216056],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.38510807,</span> <span class="pre">0.36002453,</span> <span class="pre">0.39924805],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.72328354,</span> <span class="pre">0.42527793,</span> <span class="pre">0.63839296],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.02235207,</span> <span class="pre">0.46239781,</span> <span class="pre">0.13855171],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.688201</span>&#160; <span class="pre">,</span> <span class="pre">0.6079774</span> <span class="pre">,</span> <span class="pre">0.22651046],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.54243678,</span> <span class="pre">0.92223318,</span> <span class="pre">0.25011829],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.57667641,</span> <span class="pre">0.27224439,</span> <span class="pre">0.81018672],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.81183749,</span> <span class="pre">0.93967555,</span> <span class="pre">0.57133573],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.84510663,</span> <span class="pre">0.68958938,</span> <span class="pre">0.27277845],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.91372732,</span> <span class="pre">0.69492193,</span> <span class="pre">0.9762151</span> <span class="pre">],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.58247528,</span> <span class="pre">0.44054663,</span> <span class="pre">0.84171854],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.28599605,</span> <span class="pre">0.60070224,</span> <span class="pre">0.04848961],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.05591561,</span> <span class="pre">0.44367861,</span> <span class="pre">0.03498405],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.06191903,</span> <span class="pre">0.40229181,</span> <span class="pre">0.10573411],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.44150888,</span> <span class="pre">0.47435925,</span> <span class="pre">0.3954389</span> <span class="pre">],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.77586958,</span> <span class="pre">0.98503993,</span> <span class="pre">0.06628837],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.45646578,</span> <span class="pre">0.8983642</span> <span class="pre">,</span> <span class="pre">0.29767841],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.35958511,</span> <span class="pre">0.32286238,</span> <span class="pre">0.25354432],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.56233462,</span> <span class="pre">0.38381478,</span> <span class="pre">0.27209001],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.01649777,</span> <span class="pre">0.45354715,</span> <span class="pre">0.35965309],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.7480085</span> <span class="pre">,</span> <span class="pre">0.85859753,</span> <span class="pre">0.83368131],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.15437035,</span> <span class="pre">0.07405045,</span> <span class="pre">0.61247671],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.75042653,</span> <span class="pre">0.06926825,</span> <span class="pre">0.39038726],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.39190272,</span> <span class="pre">0.67039464,</span> <span class="pre">0.46481481],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.76404618,</span> <span class="pre">0.52672417,</span> <span class="pre">0.02101088],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.80632835,</span> <span class="pre">0.85900956,</span> <span class="pre">0.83930476],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.94259821,</span> <span class="pre">0.58299387,</span> <span class="pre">0.07161485],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.29917235,</span> <span class="pre">0.26429859,</span> <span class="pre">0.78887642],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.76150034,</span> <span class="pre">0.21323198,</span> <span class="pre">0.95230818],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.89857816,</span> <span class="pre">0.44013134,</span> <span class="pre">0.76602788],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.05592704,</span> <span class="pre">0.72132859,</span> <span class="pre">0.44391532],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.61941186,</span> <span class="pre">0.65129523,</span> <span class="pre">0.96688852],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.58944848,</span> <span class="pre">0.02067939,</span> <span class="pre">0.20267625],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.99742174,</span> <span class="pre">0.67348859,</span> <span class="pre">0.37730658],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.54111081,</span> <span class="pre">0.88537732,</span> <span class="pre">0.74746522],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.97319765,</span> <span class="pre">0.51317308,</span> <span class="pre">0.12258168],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.55528125,</span> <span class="pre">0.76759217,</span> <span class="pre">0.13365969],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.21041821,</span> <span class="pre">0.66890454,</span> <span class="pre">0.29223047],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.85071575,</span> <span class="pre">0.73070079,</span> <span class="pre">0.66250031],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.37569695,</span> <span class="pre">0.69464696,</span> <span class="pre">0.98166946],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.00216894,</span> <span class="pre">0.49874048,</span> <span class="pre">0.34205806],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.02002154,</span> <span class="pre">0.79502791,</span> <span class="pre">0.97016959],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.06920739,</span> <span class="pre">0.41820481,</span> <span class="pre">0.41555898],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.30833292,</span> <span class="pre">0.68949304,</span> <span class="pre">0.01614328],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.30490872,</span> <span class="pre">0.26707563,</span> <span class="pre">0.08230024],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.1698573</span> <span class="pre">,</span> <span class="pre">0.1886855</span> <span class="pre">,</span> <span class="pre">0.00988057],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.88094069,</span> <span class="pre">0.00833365,</span> <span class="pre">0.60334972],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.44975658,</span> <span class="pre">0.20370212,</span> <span class="pre">0.57060727],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.58368459,</span> <span class="pre">0.62101606,</span> <span class="pre">0.65997741],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.10924014,</span> <span class="pre">0.82465175,</span> <span class="pre">0.50510029],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.19923388,</span> <span class="pre">0.71871057,</span> <span class="pre">0.99935022],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.17415934,</span> <span class="pre">0.18482602,</span> <span class="pre">0.94343051],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.65161317,</span> <span class="pre">0.59815901,</span> <span class="pre">0.89505708],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.96425713,</span> <span class="pre">0.05985259,</span> <span class="pre">0.58549723],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.46427918,</span> <span class="pre">0.10960782,</span> <span class="pre">0.40706822],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.89818316,</span> <span class="pre">0.77661782,</span> <span class="pre">0.52340885],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.74535732,</span> <span class="pre">0.84276917,</span> <span class="pre">0.14020576],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.12645306,</span> <span class="pre">0.57471532,</span> <span class="pre">0.05541352],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.97385982,</span> <span class="pre">0.36477328,</span> <span class="pre">0.47216918],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.8396143</span> <span class="pre">,</span> <span class="pre">0.73660743,</span> <span class="pre">0.153323</span>&#160; <span class="pre">],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.51356531,</span> <span class="pre">0.37667757,</span> <span class="pre">0.06435368],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.54992934,</span> <span class="pre">0.94876137,</span> <span class="pre">0.42175693],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.83664477,</span> <span class="pre">0.31232778,</span> <span class="pre">0.53441047],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.39938049,</span> <span class="pre">0.01633982,</span> <span class="pre">0.1793101</span> <span class="pre">],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.54800852,</span> <span class="pre">0.74188429,</span> <span class="pre">0.82638262],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.59518643,</span> <span class="pre">0.33495809,</span> <span class="pre">0.29423651],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.48887261,</span> <span class="pre">0.27951181,</span> <span class="pre">0.75366199],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.13619353,</span> <span class="pre">0.92981553,</span> <span class="pre">0.71160411],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.28540687,</span> <span class="pre">0.99075685,</span> <span class="pre">0.47220707],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.98851107,</span> <span class="pre">0.21701702,</span> <span class="pre">0.53691364],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.76504462,</span> <span class="pre">0.40060495,</span> <span class="pre">0.99595778],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.19864116,</span> <span class="pre">0.71701141,</span> <span class="pre">0.93475209],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.7721416</span> <span class="pre">,</span> <span class="pre">0.81799167,</span> <span class="pre">0.73318308],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.42970275,</span> <span class="pre">0.64860889,</span> <span class="pre">0.85438345],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.0923447</span> <span class="pre">,</span> <span class="pre">0.10835092,</span> <span class="pre">0.11781564],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.87597728,</span> <span class="pre">0.59232903,</span> <span class="pre">0.11771377],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.7218118</span> <span class="pre">,</span> <span class="pre">0.7402655</span> <span class="pre">,</span> <span class="pre">0.22642496],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.79445919,</span> <span class="pre">0.78190254,</span> <span class="pre">0.55823789],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.18337229,</span> <span class="pre">0.52641642,</span> <span class="pre">0.15097931],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.05192823,</span> <span class="pre">0.01695294,</span> <span class="pre">0.03500552],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.42894043,</span> <span class="pre">0.03948232,</span> <span class="pre">0.97790374],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.8229499</span> <span class="pre">,</span> <span class="pre">0.01738251,</span> <span class="pre">0.85265613],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.56675135,</span> <span class="pre">0.58909757,</span> <span class="pre">0.73394241],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.52878631,</span> <span class="pre">0.32553092,</span> <span class="pre">0.28520837],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.4267848</span> <span class="pre">,</span> <span class="pre">0.70876122,</span> <span class="pre">0.53589357],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.70734764,</span> <span class="pre">0.43117126,</span> <span class="pre">0.95339545],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.04102852,</span> <span class="pre">0.07035456,</span> <span class="pre">0.17811298],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.29716854,</span> <span class="pre">0.73470376,</span> <span class="pre">0.57007053],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.07791892,</span> <span class="pre">0.45655467,</span> <span class="pre">0.39262766],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.5373283</span> <span class="pre">,</span> <span class="pre">0.54367711,</span> <span class="pre">0.99215507],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.7379612</span> <span class="pre">,</span> <span class="pre">0.70820318,</span> <span class="pre">0.43909455],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.05748168,</span> <span class="pre">0.61303306,</span> <span class="pre">0.2482178</span> <span class="pre">],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.89836614,</span> <span class="pre">0.18095702,</span> <span class="pre">0.006531</span>&#160; <span class="pre">],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.48022053,</span> <span class="pre">0.07359223,</span> <span class="pre">0.43263488],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.78351189,</span> <span class="pre">0.02936898,</span> <span class="pre">0.90968588],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.78146763,</span> <span class="pre">0.16302409,</span> <span class="pre">0.8400272</span> <span class="pre">],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.97893373,</span> <span class="pre">0.59437741,</span> <span class="pre">0.11023142],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.95365234,</span> <span class="pre">0.83093263,</span> <span class="pre">0.02416368],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.19736746,</span> <span class="pre">0.73181733,</span> <span class="pre">0.88528529],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.32777984,</span> <span class="pre">0.86232441,</span> <span class="pre">0.43372078],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.45808373,</span> <span class="pre">0.47530074,</span> <span class="pre">0.69281493],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.27096221,</span> <span class="pre">0.987392</span>&#160; <span class="pre">,</span> <span class="pre">0.93835493],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.48055817,</span> <span class="pre">0.58896423,</span> <span class="pre">0.97792974],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.11144807,</span> <span class="pre">0.50532667,</span> <span class="pre">0.2087002</span> <span class="pre">],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.80706495,</span> <span class="pre">0.06682497,</span> <span class="pre">0.51124473],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.24186601,</span> <span class="pre">0.32993187,</span> <span class="pre">0.165024</span>&#160; <span class="pre">],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.72396011,</span> <span class="pre">0.84924541,</span> <span class="pre">0.90851914],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.50786334,</span> <span class="pre">0.4722974</span> <span class="pre">,</span> <span class="pre">0.62391689],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.69878581,</span> <span class="pre">0.2510952</span> <span class="pre">,</span> <span class="pre">0.0531368</span> <span class="pre">],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.35476472,</span> <span class="pre">0.86435731,</span> <span class="pre">0.81753489],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.83334843,</span> <span class="pre">0.42360547,</span> <span class="pre">0.3486029</span> <span class="pre">],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.95155016,</span> <span class="pre">0.30645608,</span> <span class="pre">0.11249497],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.89346969,</span> <span class="pre">0.96117875,</span> <span class="pre">0.77329284],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.12563898,</span> <span class="pre">0.92735258,</span> <span class="pre">0.19154488],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.45382932,</span> <span class="pre">0.50495633,</span> <span class="pre">0.21660572],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.03143005,</span> <span class="pre">0.44797506,</span> <span class="pre">0.89186063],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.07413565,</span> <span class="pre">0.05317263,</span> <span class="pre">0.07132761],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.11066196,</span> <span class="pre">0.63410236,</span> <span class="pre">0.38341217],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.34322084,</span> <span class="pre">0.57776471,</span> <span class="pre">0.28715082],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.96364422,</span> <span class="pre">0.49146144,</span> <span class="pre">0.15092568],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.95182591,</span> <span class="pre">0.53754592,</span> <span class="pre">0.34910574],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.75267963,</span> <span class="pre">0.53448968,</span> <span class="pre">0.601015</span>&#160; <span class="pre">],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.32731874,</span> <span class="pre">0.26431038,</span> <span class="pre">0.74619083],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.5891956</span> <span class="pre">,</span> <span class="pre">0.02366226,</span> <span class="pre">0.01055022],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.43074324,</span> <span class="pre">0.40812302,</span> <span class="pre">0.42536528],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.27889863,</span> <span class="pre">0.73156305,</span> <span class="pre">0.51665505],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.53421939,</span> <span class="pre">0.71997626,</span> <span class="pre">0.87134649],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.36377108,</span> <span class="pre">0.21882815,</span> <span class="pre">0.11288515],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.00154753,</span> <span class="pre">0.74477967,</span> <span class="pre">0.04491216],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.44798658,</span> <span class="pre">0.3093764</span> <span class="pre">,</span> <span class="pre">0.87076972],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.01538663,</span> <span class="pre">0.34512569,</span> <span class="pre">0.40143805],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.60306689,</span> <span class="pre">0.84970913,</span> <span class="pre">0.08618309],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.38186552,</span> <span class="pre">0.25218408,</span> <span class="pre">0.40602596],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.06870315,</span> <span class="pre">0.5947719</span> <span class="pre">,</span> <span class="pre">0.87324959],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.28766231,</span> <span class="pre">0.33923617,</span> <span class="pre">0.54756625],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.70207714,</span> <span class="pre">0.64177568,</span> <span class="pre">0.60425556],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.72885654,</span> <span class="pre">0.9585834</span> <span class="pre">,</span> <span class="pre">0.48260973],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.53733048,</span> <span class="pre">0.8549215</span> <span class="pre">,</span> <span class="pre">0.75830848],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.76816408,</span> <span class="pre">0.44998136,</span> <span class="pre">0.06063761],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.65992983,</span> <span class="pre">0.5867767</span> <span class="pre">,</span> <span class="pre">0.74498735],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.99839071,</span> <span class="pre">0.50375779,</span> <span class="pre">0.0195378</span> <span class="pre">],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.28901472,</span> <span class="pre">0.65165329,</span> <span class="pre">0.50746612],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.57760044,</span> <span class="pre">0.26262715,</span> <span class="pre">0.09824711],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.98834116,</span> <span class="pre">0.63970396,</span> <span class="pre">0.2886922</span> <span class="pre">],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.47623345,</span> <span class="pre">0.25737419,</span> <span class="pre">0.80572055],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.08455289,</span> <span class="pre">0.16780983,</span> <span class="pre">0.79755069],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.19810299,</span> <span class="pre">0.04289791,</span> <span class="pre">0.57522704],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.69790182,</span> <span class="pre">0.49512734,</span> <span class="pre">0.49858034],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.71704849,</span> <span class="pre">0.53467317,</span> <span class="pre">0.55592832],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.99182751,</span> <span class="pre">0.28876604,</span> <span class="pre">0.51438625],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.62110267,</span> <span class="pre">0.35186474,</span> <span class="pre">0.18862174],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.85825662,</span> <span class="pre">0.29909501,</span> <span class="pre">0.92635809],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.10399375,</span> <span class="pre">0.36613144,</span> <span class="pre">0.65408727],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.35977425,</span> <span class="pre">0.09450583,</span> <span class="pre">0.85880812],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.34950707,</span> <span class="pre">0.89992998,</span> <span class="pre">0.82827861],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.64397959,</span> <span class="pre">0.30199603,</span> <span class="pre">0.63994557],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.26338036,</span> <span class="pre">0.10970651,</span> <span class="pre">0.87349878],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.76906628,</span> <span class="pre">0.70441193,</span> <span class="pre">0.81432922],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.08377571,</span> <span class="pre">0.62198041,</span> <span class="pre">0.09358097],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.05871394,</span> <span class="pre">0.11003687,</span> <span class="pre">0.42062314],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.37451573,</span> <span class="pre">0.01011021,</span> <span class="pre">0.45255612],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.90632746,</span> <span class="pre">0.5997108</span> <span class="pre">,</span> <span class="pre">0.84852124],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.23014278,</span> <span class="pre">0.07448441,</span> <span class="pre">0.66706748],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.6559531</span> <span class="pre">,</span> <span class="pre">0.28883346,</span> <span class="pre">0.54182472],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.34877742,</span> <span class="pre">0.15261334,</span> <span class="pre">0.84292579],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.06580573,</span> <span class="pre">0.46282828,</span> <span class="pre">0.67094361],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.71892971,</span> <span class="pre">0.56558515,</span> <span class="pre">0.67270231],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.32387096,</span> <span class="pre">0.39043903,</span> <span class="pre">0.47834068],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.70132465,</span> <span class="pre">0.97548117,</span> <span class="pre">0.65997798],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.31163288,</span> <span class="pre">0.21993116,</span> <span class="pre">0.93023095],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.26912821,</span> <span class="pre">0.72372239,</span> <span class="pre">0.88842489],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.6472773</span> <span class="pre">,</span> <span class="pre">0.33947572,</span> <span class="pre">0.72100807],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.24133389,</span> <span class="pre">0.59651078,</span> <span class="pre">0.05280847],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.98509795,</span> <span class="pre">0.23628925,</span> <span class="pre">0.38597027],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.28833364,</span> <span class="pre">0.48568109,</span> <span class="pre">0.1112234</span> <span class="pre">],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.80855788,</span> <span class="pre">0.23427769,</span> <span class="pre">0.25840968],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.75295811,</span> <span class="pre">0.4030804</span> <span class="pre">,</span> <span class="pre">0.88177214],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.7037063</span> <span class="pre">,</span> <span class="pre">0.49244552,</span> <span class="pre">0.39639471],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.39073164,</span> <span class="pre">0.41708745,</span> <span class="pre">0.51830812],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.9000708</span> <span class="pre">,</span> <span class="pre">0.63816252,</span> <span class="pre">0.15144356],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.37768023,</span> <span class="pre">0.46970625,</span> <span class="pre">0.31743086],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.02107204,</span> <span class="pre">0.84793324,</span> <span class="pre">0.68469067],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.07137617,</span> <span class="pre">0.90865268,</span> <span class="pre">0.97279637],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.01259798,</span> <span class="pre">0.7130945</span> <span class="pre">,</span> <span class="pre">0.87364764],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.05355004,</span> <span class="pre">0.22532966,</span> <span class="pre">0.64217416],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.69597817,</span> <span class="pre">0.15575087,</span> <span class="pre">0.51876866],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.88634568,</span> <span class="pre">0.36030542,</span> <span class="pre">0.46376573],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.43835859,</span> <span class="pre">0.5740091</span> <span class="pre">,</span> <span class="pre">0.60849697],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.90531535,</span> <span class="pre">0.47418228,</span> <span class="pre">0.52021281],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.14020752,</span> <span class="pre">0.33012458,</span> <span class="pre">0.08702332],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.67932817,</span> <span class="pre">0.26970891,</span> <span class="pre">0.79255177],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.74574029,</span> <span class="pre">0.85242109,</span> <span class="pre">0.3632892</span> <span class="pre">],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.89398376,</span> <span class="pre">0.16267715,</span> <span class="pre">0.94069335],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.46662876,</span> <span class="pre">0.11978146,</span> <span class="pre">0.0855485</span> <span class="pre">],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.32791386,</span> <span class="pre">0.60178258,</span> <span class="pre">0.3658323</span> <span class="pre">],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.8915916</span> <span class="pre">,</span> <span class="pre">0.72212459,</span> <span class="pre">0.92698041],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.51372558,</span> <span class="pre">0.94781114,</span> <span class="pre">0.15694965],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.92295824,</span> <span class="pre">0.9350499</span> <span class="pre">,</span> <span class="pre">0.4072675</span> <span class="pre">],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.93421059,</span> <span class="pre">0.771057</span>&#160; <span class="pre">,</span> <span class="pre">0.4184624</span> <span class="pre">],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.35092173,</span> <span class="pre">0.94370063,</span> <span class="pre">0.56068534],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.39166626,</span> <span class="pre">0.28857942,</span> <span class="pre">0.66810617],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.88393982,</span> <span class="pre">0.50377515,</span> <span class="pre">0.43998493],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.51848129,</span> <span class="pre">0.10779795,</span> <span class="pre">0.27746227],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.94966708,</span> <span class="pre">0.6154507</span> <span class="pre">,</span> <span class="pre">0.87052383],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.6790085</span> <span class="pre">,</span> <span class="pre">0.56811273,</span> <span class="pre">0.94624435],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.04372736,</span> <span class="pre">0.16232248,</span> <span class="pre">0.55316333],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.68746713,</span> <span class="pre">0.41640563,</span> <span class="pre">0.66031463],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.92346266,</span> <span class="pre">0.51596158,</span> <span class="pre">0.64842269],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.76750962,</span> <span class="pre">0.95659223,</span> <span class="pre">0.36127479],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.51690723,</span> <span class="pre">0.41971078,</span> <span class="pre">0.1373855</span> <span class="pre">],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.63196951,</span> <span class="pre">0.59469156,</span> <span class="pre">0.40026649],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.48828843,</span> <span class="pre">0.92922192,</span> <span class="pre">0.81217956],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.45674923,</span> <span class="pre">0.04775065,</span> <span class="pre">0.4263766</span> <span class="pre">],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.48505096,</span> <span class="pre">0.44006474,</span> <span class="pre">0.08031508],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.61478694,</span> <span class="pre">0.95793167,</span> <span class="pre">0.11959671],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.08840881,</span> <span class="pre">0.28202099,</span> <span class="pre">0.17802619],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.83209198,</span> <span class="pre">0.35297134,</span> <span class="pre">0.11643717],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.61714056,</span> <span class="pre">0.25274194,</span> <span class="pre">0.89935448],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.68636745,</span> <span class="pre">0.65780997,</span> <span class="pre">0.46039634],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.155849</span>&#160; <span class="pre">,</span> <span class="pre">0.94318336,</span> <span class="pre">0.83970022],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.52391532,</span> <span class="pre">0.16670839,</span> <span class="pre">0.67431012],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.40646736,</span> <span class="pre">0.75614272,</span> <span class="pre">0.6544408</span> <span class="pre">],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.68380534,</span> <span class="pre">0.12874801,</span> <span class="pre">0.40107771],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.73723531,</span> <span class="pre">0.49528031,</span> <span class="pre">0.01814524],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.99295538,</span> <span class="pre">0.56597839,</span> <span class="pre">0.02094588],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.01543139,</span> <span class="pre">0.29722939,</span> <span class="pre">0.56541213],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.26503225,</span> <span class="pre">0.28096982,</span> <span class="pre">0.98235554],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.01752167,</span> <span class="pre">0.36575182,</span> <span class="pre">0.51015689],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.74461977,</span> <span class="pre">0.99862789,</span> <span class="pre">0.51853477],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.76968907,</span> <span class="pre">0.45517653,</span> <span class="pre">0.47986515],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.62618082,</span> <span class="pre">0.68840173,</span> <span class="pre">0.75440432],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.06885756,</span> <span class="pre">0.74163034,</span> <span class="pre">0.98044877],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.33118705,</span> <span class="pre">0.67505185,</span> <span class="pre">0.76966311],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.59534254,</span> <span class="pre">0.13859006,</span> <span class="pre">0.23472709],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.78706747,</span> <span class="pre">0.0901026</span> <span class="pre">,</span> <span class="pre">0.85368216],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.73931994,</span> <span class="pre">0.28370409,</span> <span class="pre">0.56374105],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.59007936,</span> <span class="pre">0.60384408,</span> <span class="pre">0.17998786],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.58109132,</span> <span class="pre">0.95823485,</span> <span class="pre">0.93566903],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.23431942,</span> <span class="pre">0.19941083,</span> <span class="pre">0.91008651],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.52780275,</span> <span class="pre">0.89989188,</span> <span class="pre">0.86156966],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.83777626,</span> <span class="pre">0.69139944,</span> <span class="pre">0.14606331],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.44785694,</span> <span class="pre">0.39912209,</span> <span class="pre">0.40975527],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.20885187,</span> <span class="pre">0.9378176</span> <span class="pre">,</span> <span class="pre">0.90477792],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.4888542</span> <span class="pre">,</span> <span class="pre">0.96338305,</span> <span class="pre">0.91393649],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.60337833,</span> <span class="pre">0.27465916,</span> <span class="pre">0.72688261],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.24502151,</span> <span class="pre">0.24339098,</span> <span class="pre">0.35134762],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.66544151,</span> <span class="pre">0.76157321,</span> <span class="pre">0.60621793],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.64149228,</span> <span class="pre">0.64256793,</span> <span class="pre">0.89827644],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.4707925</span> <span class="pre">,</span> <span class="pre">0.1951919</span> <span class="pre">,</span> <span class="pre">0.43607096],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.91626301,</span> <span class="pre">0.99467613,</span> <span class="pre">0.48224758],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.93722767,</span> <span class="pre">0.81819946,</span> <span class="pre">0.58939133],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.32999036,</span> <span class="pre">0.66258151,</span> <span class="pre">0.41097832],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.93939179,</span> <span class="pre">0.20699083,</span> <span class="pre">0.36767751],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.75126244,</span> <span class="pre">0.4068297</span> <span class="pre">,</span> <span class="pre">0.15825582],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.62838041,</span> <span class="pre">0.38194541,</span> <span class="pre">0.63573192],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.68094891,</span> <span class="pre">0.88388022,</span> <span class="pre">0.03084454],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.10233063,</span> <span class="pre">0.360523</span>&#160; <span class="pre">,</span> <span class="pre">0.73429608],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.13787923,</span> <span class="pre">0.68718169,</span> <span class="pre">0.62422476],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.06963858,</span> <span class="pre">0.07201505,</span> <span class="pre">0.17653209],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.22474816,</span> <span class="pre">0.78462125,</span> <span class="pre">0.79203132],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.765522</span>&#160; <span class="pre">,</span> <span class="pre">0.53429206,</span> <span class="pre">0.63896732],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.43368571,</span> <span class="pre">0.79684995,</span> <span class="pre">0.35029969],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.43686656,</span> <span class="pre">0.31085855,</span> <span class="pre">0.71497312],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.21559768,</span> <span class="pre">0.50524753,</span> <span class="pre">0.95599547],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.03582307,</span> <span class="pre">0.948517</span>&#160; <span class="pre">,</span> <span class="pre">0.89336046],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.148932</span>&#160; <span class="pre">,</span> <span class="pre">0.19395239,</span> <span class="pre">0.09644693],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.99846642,</span> <span class="pre">0.67233599,</span> <span class="pre">0.55909331],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.33919748,</span> <span class="pre">0.81544013,</span> <span class="pre">0.86625811],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.01578186,</span> <span class="pre">0.85065486,</span> <span class="pre">0.03431555],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.07784131,</span> <span class="pre">0.46609133,</span> <span class="pre">0.76115501],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.71606918,</span> <span class="pre">0.14097463,</span> <span class="pre">0.11849271],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.17183964,</span> <span class="pre">0.95961123,</span> <span class="pre">0.78603876],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.40212159,</span> <span class="pre">0.1612992</span> <span class="pre">,</span> <span class="pre">0.93410743],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.28205053,</span> <span class="pre">0.92542027,</span> <span class="pre">0.37143283],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.35914355,</span> <span class="pre">0.42500918,</span> <span class="pre">0.30324072],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.43748415,</span> <span class="pre">0.46501293,</span> <span class="pre">0.4734992</span> <span class="pre">],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.33260908,</span> <span class="pre">0.8538007</span> <span class="pre">,</span> <span class="pre">0.70777851],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.19146896,</span> <span class="pre">0.36168401,</span> <span class="pre">0.86736383],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.67496876,</span> <span class="pre">0.65843917,</span> <span class="pre">0.68862869],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.71200006,</span> <span class="pre">0.61644524,</span> <span class="pre">0.36162836],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.54284542,</span> <span class="pre">0.7443986</span> <span class="pre">,</span> <span class="pre">0.1268352</span> <span class="pre">],</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">[0.0743286</span> <span class="pre">,</span> <span class="pre">0.08999373,</span> <span class="pre">0.10740797]])</span></em><a class="headerlink" href="#aloscene.oriented_boxes_2d.OrientedBoxes2D.GLOBAL_COLOR_SET" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aloscene.oriented_boxes_2d.OrientedBoxes2D.abs_pos">
+<span class="sig-name descname"><span class="pre">abs_pos</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">frame_size</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aloscene.oriented_boxes_2d.OrientedBoxes2D.abs_pos" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a new OrientedBoxes2D Tensor with absolute position         relative to the given <cite>frame_size</cite> (H, W)</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>frame_size</strong><span class="classifier">tuple</span></dt><dd><p>(Height, Width)</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>OrientedBoxes2D</dt><dd><p>boxes in absolute coordinates</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">rtype</dt>
+<dd class="field-odd"><p><a class="reference internal" href="#aloscene.oriented_boxes_2d.OrientedBoxes2D" title="aloscene.oriented_boxes_2d.OrientedBoxes2D"><code class="xref py py-class docutils literal notranslate"><span class="pre">OrientedBoxes2D</span></code></a>
+..</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aloscene.oriented_boxes_2d.OrientedBoxes2D.append_labels">
+<span class="sig-name descname"><span class="pre">append_labels</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">labels</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aloscene.oriented_boxes_2d.OrientedBoxes2D.append_labels" title="Permalink to this definition">¶</a></dt>
+<dd><p>Attach a set of labels to the boxes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>labels</strong><span class="classifier">aloscene.Labels</span></dt><dd><p>Set of labels to attached to the frame</p>
+</dd>
+<dt><strong>name</strong><span class="classifier">str</span></dt><dd><p>If none, the label will be attached without name (if possible). Otherwise if no other unnamed
+labels are attached to the frame, the labels will be added to the set of labels.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aloscene.oriented_boxes_2d.OrientedBoxes2D.boxes2abspos">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">boxes2abspos</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frame_size</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aloscene.oriented_boxes_2d.OrientedBoxes2D.boxes2abspos" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a new OrientedBoxes2D Tensor with absolute position         relative to the given <cite>frame_size</cite> (H, W)</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>tensor: OrientedBoxes2D</strong></dt><dd></dd>
+<dt><strong>frame_size</strong><span class="classifier">tuple</span></dt><dd><p>(Height, Width)</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>OrientedBoxes2D</dt><dd><p>boxes in absolute coordinates</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">rtype</dt>
+<dd class="field-odd"><p><a class="reference internal" href="#aloscene.oriented_boxes_2d.OrientedBoxes2D" title="aloscene.oriented_boxes_2d.OrientedBoxes2D"><code class="xref py py-class docutils literal notranslate"><span class="pre">OrientedBoxes2D</span></code></a>
+..</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aloscene.oriented_boxes_2d.OrientedBoxes2D.boxes2relpos">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">boxes2relpos</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tensor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aloscene.oriented_boxes_2d.OrientedBoxes2D.boxes2relpos" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a new OrientedBoxes2D Tensor with relative position
+(between 0 and 1)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>tensor</strong><span class="classifier">OrientedBoxes2D</span></dt><dd></dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>OrientedBoxes2D</dt><dd></dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aloscene.oriented_boxes_2d.OrientedBoxes2D.corners">
+<span class="sig-name descname"><span class="pre">corners</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aloscene.oriented_boxes_2d.OrientedBoxes2D.corners" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get corners in x, y coordinates</p>
+<p>Corners are in counter-clockwise order, started from the top right corner</p>
+<dl class="field-list">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><dl class="simple">
+<dt>torch.Tensor</dt><dd><p>shape (n, 4, 2) for n boxes, 4 vertices, 2 x-y coordinates</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">rtype</dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>
+..</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aloscene.oriented_boxes_2d.OrientedBoxes2D.get_view">
+<span class="sig-name descname"><span class="pre">get_view</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">frame</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels_set</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aloscene.oriented_boxes_2d.OrientedBoxes2D.get_view" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a view of the boxes in a frame</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>frame</strong><span class="classifier">aloscene.Frame</span></dt><dd><p>Tensor of type Frame to display the boxes on.
+If the frame is None, a blank frame will be created.</p>
+</dd>
+<dt><strong>size</strong><span class="classifier">(tuple)</span></dt><dd><p>(height, width) Desired size of the view. None by default</p>
+</dd>
+<dt><strong>color</strong><span class="classifier">tuple</span></dt><dd><p>(R, G, B). None by default, a random color will be choosen.</p>
+</dd>
+<dt><strong>labels_set</strong><span class="classifier">str</span></dt><dd><p>If provided, the boxes will rely on this label set to display the boxes color,
+and <cite>color</cite> parameter will be ignore.
+If not provided while the boxes have multiple labels set,
+the boxes will be display with the same color which can be set with <cite>color</cite> param.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aloscene.oriented_boxes_2d.OrientedBoxes2D.rel_pos">
+<span class="sig-name descname"><span class="pre">rel_pos</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aloscene.oriented_boxes_2d.OrientedBoxes2D.rel_pos" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a new OrientedBoxes2D Tensor with relative position
+(between 0 and 1)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><dl class="simple">
+<dt>OrientedBoxes2D</dt><dd></dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aloscene.oriented_boxes_2d.OrientedBoxes2D.rotated_giou">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">rotated_giou</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">boxes1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boxes2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">enclosing_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'smallest'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ret_iou</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aloscene.oriented_boxes_2d.OrientedBoxes2D.rotated_giou" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate GIoU for 2 sets of rotated boxes in order</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>boxes1</strong><span class="classifier">BoundingBoxes3D</span></dt><dd><p>Shape (n, 7)</p>
+</dd>
+<dt><strong>boxes2</strong><span class="classifier">BoundingBoxes3D</span></dt><dd><p>Shape (n, 7)</p>
+</dd>
+<dt><strong>enclosing_type</strong><span class="classifier">str, optional</span></dt><dd><dl class="simple">
+<dt>Choose the algorithm for finding enclosing box :</dt><dd><ul class="simple">
+<li><p>aligned      # simple and naive. bad performance. fastest</p></li>
+<li><p>pca          # approximated smallest box. slightly worse performance.</p></li>
+<li><p>smallest     # [default]. brute force. smallest box. best performance. slowest</p></li>
+</ul>
+</dd>
+</dl>
+</dd>
+<dt><strong>ret_iou</strong><span class="classifier">bool, optional</span></dt><dd><p>If True, return also rotated IoU , by default False</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl>
+<dt>Tensor or tuple of (Tensor, Tensor)</dt><dd><p>GIoU, of shape (n,)</p>
+<p>IoU, of shape (n,) (if <cite>ret_iou3d</cite> True)</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aloscene.oriented_boxes_2d.OrientedBoxes2D.rotated_giou_with">
+<span class="sig-name descname"><span class="pre">rotated_giou_with</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">boxes2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">enclosing_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'smallest'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ret_iou</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aloscene.oriented_boxes_2d.OrientedBoxes2D.rotated_giou_with" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate GIoU for 2 sets of rotated boxes in order</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>boxes2</strong><span class="classifier">BoundingBoxes3D</span></dt><dd><p>Shape (n, 7)</p>
+</dd>
+<dt><strong>enclosing_type</strong><span class="classifier">str, optional</span></dt><dd><dl class="simple">
+<dt>Choose the algorithm for finding enclosing box :</dt><dd><ul class="simple">
+<li><p>aligned      # simple and naive. bad performance. fastest</p></li>
+<li><p>pca          # approximated smallest box. slightly worse performance.</p></li>
+<li><p>smallest     # [default]. brute force. smallest box. best performance. slowest</p></li>
+</ul>
+</dd>
+</dl>
+</dd>
+<dt><strong>ret_iou</strong><span class="classifier">bool, optional</span></dt><dd><p>If True, return also rotated IoU , by default False</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl>
+<dt>Tensor or tuple of (Tensor, Tensor)</dt><dd><p>GIoU, of shape (n,)</p>
+<p>IoU, of shape (n,) (if <cite>ret_iou3d</cite> True)</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aloscene.oriented_boxes_2d.OrientedBoxes2D.rotated_iou">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">rotated_iou</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">boxes1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boxes2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ret_union</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aloscene.oriented_boxes_2d.OrientedBoxes2D.rotated_iou" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the IOU between the two set of rotated boxes in order</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>boxes1: aloscene.OrientedBoxes2D</strong></dt><dd><p>(n, 5)</p>
+</dd>
+<dt><strong>boxes2: aloscene.OrientedBoxes2D</strong></dt><dd><p>(n, 5)</p>
+</dd>
+<dt><strong>ret_union</strong><span class="classifier">bool, optional</span></dt><dd><p>If True, return union area, by default False</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl>
+<dt>Tensor or tuple of (Tensor, Tensor)</dt><dd><p>IoU, shape (n,), rotated IOU between each pair of boxes</p>
+<p>Union area, shape (n,), union area between each pair of boxes (if <cite>ret_union</cite> True)</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aloscene.oriented_boxes_2d.OrientedBoxes2D.rotated_iou_with">
+<span class="sig-name descname"><span class="pre">rotated_iou_with</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">boxes2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ret_union</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aloscene.oriented_boxes_2d.OrientedBoxes2D.rotated_iou_with" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the IOU between the two set of rotated boxes in order</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>boxes2: aloscene.OrientedBoxes2D</strong></dt><dd><p>(n, 5)</p>
+</dd>
+<dt><strong>ret_union</strong><span class="classifier">bool, optional</span></dt><dd><p>If True, return union area, by default False</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl>
+<dt>Tensor or tuple of (Tensor, Tensor)</dt><dd><p>IoU, shape (n,), rotated IOU between each pair of boxes</p>
+<p>Union area, shape (n,), union area between each pair of boxes (if <cite>ret_union</cite> True)</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="labels.html" class="btn btn-neutral float-right" title="Label" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="bounding_boxes_2d.html" class="btn btn-neutral float-left" title="BoundingBoxes2D" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2021, Visual Behavior.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

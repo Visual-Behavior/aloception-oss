@@ -22,9 +22,7 @@ def vb_fodler():
     home = os.getenv("HOME")
     alofolder = os.path.join(home, ".aloception")
     if not os.path.exists(alofolder):
-        raise Exception(
-            f"{alofolder} do not exists. Please, create the folder with the appropriate files. (Checkout documentation)"
-        )
+        os.mkdir(alofolder)
     return alofolder
 
 

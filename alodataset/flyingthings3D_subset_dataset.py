@@ -359,6 +359,8 @@ class FlyingThings3DSubsetDataset(BaseDataset, SequenceMixin, SplitMixin):
         return frames
 
     def getitem(self, idx):
+        if self.sample:
+            return BaseDataset.__getitem__(self, idx)
         sequence_data = self.items[idx]
         return self.get_frames(sequence_data)
 

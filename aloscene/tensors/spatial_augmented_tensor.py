@@ -507,7 +507,7 @@ class SpatialAugmentedTensor(AugmentedTensor):
 
             if isinstance(label_list, torch.Tensor):
                 assert self._label_property[label_name]["mergeable"]
-                n_slice = self.get_slices({label_list.names[dim_idx]: slicer}, label_list)
+                n_slice = label_list.get_slices({label_list.names[dim_idx]: slicer}, label_list)
                 return label_list[n_slice]
             if curr_dim_idx != dim_idx:
                 n_label_list = []

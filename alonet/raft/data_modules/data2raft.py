@@ -25,6 +25,9 @@ class Data2RAFT(pl.LightningDataModule):
         parser.add_argument("--num_workers", type=int, default=8, help="num_workers to use on the dataset")
         parser.add_argument("--limit_val_batches", type=_int_or_float_type, default=100)
         parser.add_argument("--sequential_sampler", action="store_true", help="sample data sequentially (no shuffle)")
+        parser.add_argument(
+            "--sample", action="store_true", help="Download a sample for train/val process (Default: %(default)s)"
+        )
         return parent_parser
 
     def train_transform(self, frame):

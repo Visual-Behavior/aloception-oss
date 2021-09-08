@@ -12,6 +12,15 @@ waymo_dataset = WaymoDataset(sample=True)
 TEST_FRAME = 0
 
 
+def get_frame():
+    n_frame = waymo_dataset.get(TEST_FRAME)["front"]
+    # Prevent a known issue related to the camera extrinsic parameters
+    n_frame.cam_extrinsic = None
+    n_frame.cam_intrinsic = None
+    n_frame.boxes3d = None
+    return n_frame
+
+
 def tensor_equal(frame1, frame2):
     frame1.rename_(None)
     frame2.rename_(None)
@@ -30,7 +39,7 @@ def test_frame_from_dt():
 
 
 def test_frame_01():
-    frame = waymo_dataset.get(TEST_FRAME)["front"]
+    frame = get_frame()
     frame = frame.norm01()
 
     frame_01 = frame.norm01()
@@ -52,7 +61,7 @@ def test_frame_01():
 
 
 def test_frame_255():
-    frame = waymo_dataset.get(TEST_FRAME)["front"]
+    frame = get_frame()
     frame = frame.norm255()
 
     frame_01 = frame.norm01()
@@ -74,7 +83,7 @@ def test_frame_255():
 
 
 def test_frame_resnet():
-    frame = waymo_dataset.get(TEST_FRAME)["front"]
+    frame = get_frame()
     frame = frame.norm_resnet()
 
     frame_01 = frame.norm01()
@@ -93,7 +102,7 @@ def test_frame_resnet():
 
 
 def test_frame_minmax_sym():
-    frame = waymo_dataset.get(TEST_FRAME)["front"]
+    frame = get_frame()
     frame = frame.norm_minmax_sym()
 
     frame_01 = frame.norm01()
@@ -106,7 +115,7 @@ def test_frame_minmax_sym():
 
 
 def test_frame_concat():
-    frame = waymo_dataset.get(TEST_FRAME)["front"]
+    frame = get_frame()
     assert len(frame.shape) == 4
     assert frame.names == ("T", "C", "H", "W")
 
@@ -130,13 +139,13 @@ def test_frame_concat():
 
 
 def test_frame_crop():
-    frame = waymo_dataset.get(TEST_FRAME)["front"]
+    frame = get_frame()
     cropped_frame = frame[0, :, 400:900, 500:800]
     assert cropped_frame.shape == (3, 500, 300)
 
 
 def test_flip():
-    frame = waymo_dataset.get(TEST_FRAME)["front"]
+    frame = get_frame()
     # Horizontal flip (Only api test for now)
     cropped_frame_hflip = frame.hflip()
 

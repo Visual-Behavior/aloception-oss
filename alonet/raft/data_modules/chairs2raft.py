@@ -1,4 +1,4 @@
-from torch.utils.data import SequentialSampler
+from torch.utils.data import SequentialSampler, RandomSampler
 import pytorch_lightning as pl
 
 from alodataset import FlyingChairs2Dataset, Split
@@ -13,7 +13,7 @@ class Chairs2RAFT(Data2RAFT):
     def train_dataloader(self):
         split = Split.VAL if self.train_on_val else Split.TRAIN
         dataset = FlyingChairs2Dataset(split=split, transform_fn=self.train_transform, sample=self.sample)
-        sampler = SequentialSampler if self.sequential else None
+        sampler = SequentialSampler if self.sequential else RandomSampler
         return dataset.train_loader(batch_size=self.batch_size, num_workers=self.num_workers, sampler=sampler)
 
     def val_dataloader(self):

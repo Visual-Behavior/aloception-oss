@@ -3,8 +3,6 @@
 in a :mod:`Frame object <aloscene.frame>`. Ideal for object detection applications.
 """
 
-import logging
-
 import torch
 import torch.utils.data
 from pycocotools.coco import COCO
@@ -17,7 +15,7 @@ import os
 from torchvision.datasets.coco import CocoDetection
 
 from alodataset import BaseDataset
-from aloscene import BoundingBoxes2D, Frame, Labels, Panoptic
+from aloscene import BoundingBoxes2D, Frame, Labels, Mask
 
 
 class CocoDetectionSample(CocoDetection):
@@ -108,6 +106,9 @@ class CocoDetectionDataset(BaseDataset, CocoDetectionSample):
         # Setup the class names
         nb_category = max(cat["id"] for cat in cats)
         self.CATEGORIES = set([cat["name"] for cat in cats])
+        # aux = set([x.split("-")[0] for x in self.CATEGORIES])
+        # print(aux, len(aux))
+        # print(set([cat["supercategory"] for cat in cats]), len(set([cat["supercategory"] for cat in cats])))
         labels_names = ["N/A"] * (nb_category + 1)
         for cat in cats:
             labels_names[cat["id"]] = cat["name"]
@@ -161,7 +162,6 @@ class CocoDetectionDataset(BaseDataset, CocoDetectionSample):
 
         frame = Frame(np.transpose(np.array(img), [2, 0, 1]), names=("C", "H", "W"))
         _, target = self.prepare(img, target)
-        # print(target["boxes"].shape, target["masks"].shape, target["labels"].shape)
 
         # Clean index by unique classes filtered
         if self._ids_renamed is not None:
@@ -187,8 +187,8 @@ class CocoDetectionDataset(BaseDataset, CocoDetectionSample):
         frame.append_boxes2d(boxes)
 
         if self.prepare.return_masks:
-            mask = Panoptic(target["masks"], names=("C", "H", "W"), labels=labels_2d)
-            frame.append_panoptic(mask)
+            segmentation = Mask(target["masks"], names=("N", "H", "W"), labels=labels_2d)
+            frame.append_segmentation(segmentation)
 
         return frame
 
@@ -297,15 +297,15 @@ def show_random_frame(coco_loader):
 
 def main():
     """Main"""
-    logging.basicConfig(
-        level=logging.INFO, format="[%(asctime)s][%(levelname)s] %(message)s", datefmt="%d-%m-%y %H:%M:%S",
+    coco_dataset = CocoDetectionDataset(
+        img_folder="val2017",
+        # ann_file="annotations/panoptic_val2017.json",
+        stuff_ann_file="annotations/stuff_val2017.json",
+        ann_file="annotations/instances_val2017.json",
+        return_masks=True,
     )
-    log = logging.getLogger("aloception")
 
-    coco_dataset = CocoDetectionDataset(sample=True)
-    log.info(repr(coco_dataset))
-    for f, frames in enumerate(coco_dataset.train_loader(batch_size=1)):
-        # frames[0].get_view([frames[0].panoptic.get_view(frames[0]), frames[0].boxes2d.get_view(frames[0])]).render()
+    for f, frames in enumerate(coco_dataset.train_loader(batch_size=2)):
         frames = Frame.batch_list(frames)
         frames.get_view().render()
         if f > 1:

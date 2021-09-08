@@ -1,21 +1,15 @@
-from importlib.abc import ExecutionLoader
 import torch
-import torchvision.transforms.functional as F
 import torchvision
-from typing import *
-from torch import Tensor
-import numpy as np
-from collections import namedtuple
-import inspect
-import time
+from typing import TypeVar, Union
 
+# from collections import namedtuple
 
 import aloscene
-from aloscene.renderer import View, Renderer
-from aloscene.panoptic import Panoptic
+from aloscene.renderer import View
 from aloscene.disparity import Disparity
-from aloscene import BoundingBoxes2D, BoundingBoxes3D, Labels, Flow, Mask
-from aloscene.camera_calib import CameraExtrinsic, CameraIntrinsic
+from aloscene import BoundingBoxes2D, BoundingBoxes3D, Flow, Mask
+
+# from aloscene.camera_calib import CameraExtrinsic, CameraIntrinsic
 from aloscene.io.image import load_image
 
 Frame = TypeVar("Frame")
@@ -32,8 +26,8 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         boxes3d: Union[dict, BoundingBoxes3D] = None,
         flow: Flow = None,
         mask: Mask = None,
+        segmentation: Mask = None,
         disparity: Disparity = None,
-        panoptic: Panoptic = None,
         normalization="255",
         mean_std=None,
         *args,
@@ -53,7 +47,7 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         tensor.add_label("flow", flow, align_dim=["B", "T"], mergeable=False)
         tensor.add_label("mask", mask, align_dim=["B", "T"], mergeable=True)
         tensor.add_label("disparity", disparity, align_dim=["B", "T"], mergeable=True)
-        tensor.add_label("panoptic", panoptic, align_dim=["B", "T"], mergeable=True)
+        tensor.add_label("segmentation", segmentation, align_dim=["B", "T"], mergeable=False)
 
         # Add other tensor property
         tensor.add_property("normalization", normalization)
@@ -144,18 +138,18 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         """
         self._append_label("disparity", disparity, name)
 
-    def append_panoptic(self, panoptic, name=None):
-        """Attach a panoptic map to the frame.
+    def append_segmentation(self, segmentation: Mask, name: str = None):
+        """Attach a mask to the frame.
 
         Parameters
         ----------
-        panoptic: aloscene.Panoptic
-            Panoptic to attach to the Frame
+        segmentation: aloscene.Mask
+            Couple of mask to attached to the Frame
         name: str
-            If none, the panoptic will be attached without name (if possible). Otherwise if no other unnamed
-            panoptic are attached to the frame, the panoptic will be added to the set of flow.
+            If none, the mask will be attached without name (if possible). Otherwise if no other unnamed
+            mask are attached to the frame, the mask will be added to the set of mask.
         """
-        self._append_label("panoptic", panoptic, name)
+        self._append_label("segmentation", segmentation, name)
 
     @staticmethod
     def _get_mean_std_tensor(shape, names, mean_std: tuple, device="cpu"):
@@ -208,7 +202,8 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
             )
         else:
             raise Exception(
-                f"Can't convert the tensor normalization to the target_frame normalization: {target_frame.normalization}"
+                "Can't convert the tensor normalization to the"
+                + f"target_frame normalization: {target_frame.normalization}"
             )
 
     def norm255(self) -> Frame:

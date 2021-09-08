@@ -297,13 +297,13 @@ def show_random_frame(coco_loader):
 
 def main():
     """Main"""
-    coco_dataset = CocoDetectionDataset(
-        img_folder="val2017",
-        # ann_file="annotations/panoptic_val2017.json",
-        stuff_ann_file="annotations/stuff_val2017.json",
-        ann_file="annotations/instances_val2017.json",
-        return_masks=True,
-    )
+    # coco_dataset = CocoDetectionDataset(
+    #     img_folder="val2017",
+    #     stuff_ann_file="annotations/stuff_val2017.json",
+    #     ann_file="annotations/instances_val2017.json",
+    #     return_masks=True,
+    # )
+    coco_dataset = CocoDetectionDataset(sample=True)
 
     for f, frames in enumerate(coco_dataset.train_loader(batch_size=2)):
         frames = Frame.batch_list(frames)

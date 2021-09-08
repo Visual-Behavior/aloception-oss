@@ -219,9 +219,7 @@ class Mot17(BaseDataset, SequenceMixin, SplitMixin):
 
 def main():
     """Main"""
-    mot_dataset = Mot17(
-        split=Split.TRAIN, validation_sequences=["MOT17-05"], detections_set=["FRCNN"], sequence_size=2, random_step=30
-    )
+    mot_dataset = Mot17(sample=True)
 
     for frames in mot_dataset.stream_loader():
         frames.names

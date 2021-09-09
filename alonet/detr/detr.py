@@ -125,7 +125,7 @@ class Detr(nn.Module):
 
         transformer_outptus = self.transformer(self.input_proj(src), mask, self.query_embed.weight, pos[-1], **kwargs)
 
-        return self.forward_heads(transformer_outptus)
+        return self.forward_heads(transformer_outptus, features=features, mask=mask)
 
     def forward_position_heads(self, transformer_outptus):
         hs = transformer_outptus["hs"]
@@ -153,6 +153,9 @@ class Detr(nn.Module):
 
         if self.return_dec_outputs:
             out["dec_outputs"] = transformer_outptus["hs"]
+            out["dec_outputs_mem"] = transformer_outptus["memory"]
+            for k, v in kwargs.items():
+                out["dec_" + k] = v
 
         return out
 

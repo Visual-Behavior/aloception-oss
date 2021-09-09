@@ -95,8 +95,8 @@ class SintelFlowDataset(SintelBaseDataset):
 
 
 if __name__ == "__main__":
-    dataset = SintelFlowDataset(sequence_size=2)
+    dataset = SintelFlowDataset(sample=True)
     # show some frames at various indices
-    for idx in [1, 15, 64]:
+    for idx in [1, 2, 5]:
         frames = dataset.getitem(idx)["left"]
         frames.get_view().render()

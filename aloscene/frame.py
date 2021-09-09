@@ -1,21 +1,15 @@
-from aloscene.disparity import Disparity
-from importlib.abc import ExecutionLoader
 import torch
-import torchvision.transforms.functional as F
 import torchvision
-from typing import *
-from torch import Tensor
-import numpy as np
-from collections import namedtuple
-import inspect
-import time
+from typing import TypeVar, Union
 
+# from collections import namedtuple
 
 import aloscene
-from aloscene.renderer import View, Renderer
-from aloscene import BoundingBoxes2D, Labels, Flow, Mask, Disparity
-from aloscene import BoundingBoxes2D, Labels, Flow, Mask, BoundingBoxes3D
-from aloscene.camera_calib import CameraExtrinsic, CameraIntrinsic
+from aloscene.renderer import View
+from aloscene.disparity import Disparity
+from aloscene import BoundingBoxes2D, BoundingBoxes3D, Flow, Mask
+
+# from aloscene.camera_calib import CameraExtrinsic, CameraIntrinsic
 from aloscene.io.image import load_image
 
 Frame = TypeVar("Frame")
@@ -32,6 +26,7 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         boxes3d: Union[dict, BoundingBoxes3D] = None,
         flow: Flow = None,
         mask: Mask = None,
+        segmentation: Mask = None,
         disparity: Disparity = None,
         normalization="255",
         mean_std=None,
@@ -52,6 +47,7 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         tensor.add_label("flow", flow, align_dim=["B", "T"], mergeable=False)
         tensor.add_label("mask", mask, align_dim=["B", "T"], mergeable=True)
         tensor.add_label("disparity", disparity, align_dim=["B", "T"], mergeable=True)
+        tensor.add_label("segmentation", segmentation, align_dim=["B", "T"], mergeable=False)
 
         # Add other tensor property
         tensor.add_property("normalization", normalization)
@@ -142,6 +138,20 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         """
         self._append_label("disparity", disparity, name)
 
+    def append_segmentation(self, segmentation: Mask, name: str = None):
+        """Attach a segmentation to the frame.
+
+        Parameters
+        ----------
+        segmentation: aloscene.Mask
+            Mask with size (N,H,W), where N is the features maps, each one for one object.
+            Each feature map must be a binary mask. For that, is a type of aloscene.Mask
+        name: str
+            If none, the mask will be attached without name (if possible). Otherwise if no other unnamed
+            mask are attached to the frame, the mask will be added to the set of mask.
+        """
+        self._append_label("segmentation", segmentation, name)
+
     @staticmethod
     def _get_mean_std_tensor(shape, names, mean_std: tuple, device="cpu"):
         """Utils method to a get the mean and the std
@@ -193,7 +203,8 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
             )
         else:
             raise Exception(
-                f"Can't convert the tensor normalization to the target_frame normalization: {target_frame.normalization}"
+                "Can't convert the tensor normalization to the"
+                + f"target_frame normalization: {target_frame.normalization}"
             )
 
     def norm255(self) -> Frame:

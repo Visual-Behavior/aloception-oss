@@ -105,8 +105,8 @@ class SintelDisparityDataset(SintelBaseDataset):
 
 
 if __name__ == "__main__":
-    dataset = SintelDisparityDataset(sequence_size=2)
+    dataset = SintelDisparityDataset(sample=True)
     # show some frames at various indices
-    for idx in [1, 15, 64]:
+    for idx in [1, 2, 5]:
         frames = dataset.getitem(idx)["left"]
         frames.get_view().render()

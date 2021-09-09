@@ -3,10 +3,9 @@
 in a :mod:`Frame object <aloscene.frame>`. Ideal for object detection applications.
 """
 
-import logging
-
 import torch
 import torch.utils.data
+from pycocotools.coco import COCO
 from pycocotools import mask as coco_mask
 import numpy as np
 import os
@@ -16,7 +15,7 @@ import os
 from torchvision.datasets.coco import CocoDetection
 
 from alodataset import BaseDataset
-from aloscene import BoundingBoxes2D, Frame, Labels
+from aloscene import BoundingBoxes2D, Frame, Labels, Mask
 
 
 class CocoDetectionSample(CocoDetection):
@@ -34,48 +33,51 @@ class CocoDetectionDataset(BaseDataset, CocoDetectionSample):
         name: str = "coco",
         return_masks=False,
         classes: list = None,
+        stuff_ann_file: str = None,
         **kwargs,
     ):
         """
-        Attributes
-        ----------
-        CATEGORIES : set
-            List of all unique tags read from the database
-        labels_names : list
-            List of labels according to their corresponding positions
-        prepare : :mod:`BaseDataset <base_dataset>`
+    Attributes
+    ----------
+    CATEGORIES : set
+        List of all unique tags read from the database
+    labels_names : list
+        List of labels according to their corresponding positions
+    prepare : :mod:`BaseDataset <base_dataset>`
 
-        Parameters
-        ----------
-        img_folder : str
-            Path to the image folder relative at `dataset_dir` (stored into the aloception config file)
-        ann_file : str
-            Path to the annotation file relative at `dataset_dir` (stored into the aloception config file)
-        name : str, optional
-            Key of database name in `alodataset_config.json` file, by default *coco*
-        return_masks : bool, optional
-            Include masks labels in the output, by default False
-        classes : list, optional
-            List of classes to be filtered in the annotation reading process, by default None
-        **kwargs : dict
-            :mod:`BaseDataset <base_dataset>` optional parameters
+    Parameters
+    ----------
+    img_folder : str
+        Path to the image folder relative at `dataset_dir` (stored into the aloception config file)
+    ann_file : str
+        Path to the annotation file relative at `dataset_dir` (stored into the aloception config file)
+    name : str, optional
+        Key of database name in `alodataset_config.json` file, by default *coco*
+    return_masks : bool, optional
+        Include masks labels in the output, by default False
+    classes : list, optional
+        List of classes to be filtered in the annotation reading process, by default None
+    stuff_ann_file: str, optional
+        Additional annotations with new classes, by default None
+    **kwargs : dict
+        :mod:`BaseDataset <base_dataset>` optional parameters
 
-        Raises
-        ------
-        Exception
-            If a classes list is decided, each label must be inside of :attr:`CATEGORIES` list attribute
+    Raises
+    ------
+    Exception
+        If a classes list is decided, each label must be inside of :attr:`CATEGORIES` list attribute
 
-        Examples
-        --------
-            >>> coco_ds = CocoDetectionDataset(
-            ... img_folder = "val2017",
-            ... ann_file = "annotations/instances_val2017.json",
-            ... mode = "validation"
-            )
-            >>> frames = next(iter(coco_ds.train_loader()))
-            >>> frames = frames[0].batch_list(frames)
-            >>> frames.get_view(frames.boxes2d,).render()
-        """
+    Examples
+    --------
+        >>> coco_ds = CocoDetectionDataset(
+        ... img_folder = "val2017",
+        ... ann_file = "annotations/instances_val2017.json",
+        ... mode = "validation"
+        )
+        >>> frames = next(iter(coco_ds.train_loader()))
+        >>> frames = frames[0].batch_list(frames)
+        >>> frames.get_view(frames.boxes2d,).render()
+    """
 
         if "sample" not in kwargs:
             kwargs["sample"] = False
@@ -89,6 +91,7 @@ class CocoDetectionDataset(BaseDataset, CocoDetectionSample):
             dataset_dir = BaseDataset.get_dataset_dir(self)
             img_folder = os.path.join(dataset_dir, img_folder)
             ann_file = os.path.join(dataset_dir, ann_file)
+            stuff_ann_file = None if stuff_ann_file is None else os.path.join(dataset_dir, stuff_ann_file)
             kwargs["sample"] = self.sample
 
         super(CocoDetectionDataset, self).__init__(name=name, root=img_folder, annFile=ann_file, **kwargs)
@@ -96,10 +99,17 @@ class CocoDetectionDataset(BaseDataset, CocoDetectionSample):
             return
 
         cats = self.coco.loadCats(self.coco.getCatIds())
+        self.coco_stuff = None
+        if stuff_ann_file is not None:
+            self.coco_stuff = COCO(stuff_ann_file)
+            cats += self.coco_stuff.loadCats(self.coco_stuff.getCatIds())
 
         # Setup the class names
         nb_category = max(cat["id"] for cat in cats)
         self.CATEGORIES = set([cat["name"] for cat in cats])
+        # aux = set([x.split("-")[0] for x in self.CATEGORIES])
+        # print(aux, len(aux))
+        # print(set([cat["supercategory"] for cat in cats]), len(set([cat["supercategory"] for cat in cats])))
         labels_names = ["N/A"] * (nb_category + 1)
         for cat in cats:
             labels_names[cat["id"]] = cat["name"]
@@ -130,7 +140,7 @@ class CocoDetectionDataset(BaseDataset, CocoDetectionSample):
         self.items = self.ids
 
     def getitem(self, idx):
-        """Get the :mod:`Frame <aloscene.frame>` corresponds to *idx* index
+        """ Get the :mod:`Frame <aloscene.frame>` corresponds to *idx* index
 
         Parameters
         ----------
@@ -145,7 +155,10 @@ class CocoDetectionDataset(BaseDataset, CocoDetectionSample):
         if self.sample:
             return BaseDataset.__getitem__(self, idx)
         img, target = CocoDetectionSample.__getitem__(self, idx)
+
         image_id = self.ids[idx]
+        if self.coco_stuff is not None:
+            target += self.coco_stuff.loadAnns(self.coco_stuff.getAnnIds(image_id))
         target = {"image_id": image_id, "annotations": target}
 
         frame = Frame(np.transpose(np.array(img), [2, 0, 1]), names=("C", "H", "W"))
@@ -172,9 +185,11 @@ class CocoDetectionDataset(BaseDataset, CocoDetectionSample):
             names=("N", None),
             labels=labels_2d,
         )
-
-        # frame.append_boxes2d(boxes.xcyc().rel_pos())
         frame.append_boxes2d(boxes)
+
+        if self.prepare.return_masks:
+            segmentation = Mask(target["masks"], names=("N", "H", "W"), labels=labels_2d)
+            frame.append_segmentation(segmentation)
 
         return frame
 
@@ -199,8 +214,9 @@ class ConvertCocoPolysToMask(object):
     def convert_coco_poly_to_mask(self, segmentations, height, width):
         masks = []
         for polygons in segmentations:
-            rles = coco_mask.frPyObjects(polygons, height, width)
-            mask = coco_mask.decode(rles)
+            if isinstance(polygons, list):
+                polygons = coco_mask.frPyObjects(polygons, height, width)
+            mask = coco_mask.decode(polygons)
             if len(mask.shape) < 3:
                 mask = mask[..., None]
             mask = torch.as_tensor(mask, dtype=torch.uint8)
@@ -282,13 +298,14 @@ def show_random_frame(coco_loader):
 
 def main():
     """Main"""
-    logging.basicConfig(
-        level=logging.INFO, format="[%(asctime)s][%(levelname)s] %(message)s", datefmt="%d-%m-%y %H:%M:%S",
-    )
-    log = logging.getLogger("aloception")
-
+    # coco_dataset = CocoDetectionDataset(
+    #     img_folder="val2017",
+    #     stuff_ann_file="annotations/stuff_val2017.json",
+    #     ann_file="annotations/instances_val2017.json",
+    #     return_masks=True,
+    # )
     coco_dataset = CocoDetectionDataset(sample=True)
-    log.info(repr(coco_dataset))
+
     for f, frames in enumerate(coco_dataset.train_loader(batch_size=2)):
         frames = Frame.batch_list(frames)
         frames.get_view().render()

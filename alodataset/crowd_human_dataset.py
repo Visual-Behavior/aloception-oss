@@ -93,6 +93,9 @@ class CrowdHumanDataset(BaseDataset):
         return bboxes, classes
 
     def getitem(self, idx):
+        if self.sample:
+            return BaseDataset.__getitem__(self, idx)
+        
         record = self.items[idx]
 
         image_id = record["ID"]
@@ -256,7 +259,6 @@ def main():
     crowd_human_dataset = CrowdHumanDataset(sample=True)
 
     crowd_human_dataset.prepare()
-
     for i, frames in enumerate(crowd_human_dataset.train_loader(batch_size=2, sampler=None, num_workers=0)):
         frames = Frame.batch_list(frames)
         frames.get_view().render(figsize=(20, 10))

@@ -72,8 +72,8 @@ class MergeDataset(torch.utils.data.Dataset):
 if __name__ == "__main__":
     from alodataset import ChairsSDHomDataset, FlyingThings3DSubsetDataset, Split
 
-    chairs = ChairsSDHomDataset(split=Split.VAL)
-    flying = FlyingThings3DSubsetDataset(split=Split.VAL, sequence_size=2, transform_fn=lambda f: f["left"])
+    chairs = ChairsSDHomDataset(sample=True)
+    flying = FlyingThings3DSubsetDataset(sample=True, transform_fn=lambda f: f["left"])
 
     multi = MergeDataset([chairs, flying])
 

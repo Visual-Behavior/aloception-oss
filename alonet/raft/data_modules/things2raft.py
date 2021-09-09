@@ -1,4 +1,4 @@
-from torch.utils.data import SequentialSampler
+from torch.utils.data import SequentialSampler, RandomSampler
 
 # import pytorch_lightning as pl
 
@@ -42,7 +42,7 @@ class Things2RAFT(Data2RAFT):
 
         dataset = MergeDataset(datasets)
 
-        sampler = SequentialSampler if self.sequential else None
+        sampler = SequentialSampler if self.sequential else RandomSampler
         return dataset.train_loader(batch_size=self.batch_size, num_workers=self.num_workers, sampler=sampler)
 
     def val_dataloader(self):

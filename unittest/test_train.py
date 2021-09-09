@@ -58,11 +58,11 @@ raft_args["use_sample"] = True
 
 
 @mock.patch("argparse.ArgumentParser.parse_args", return_value=argparse.Namespace(**raft_args))
-def _test_raft(mock_args):
+def test_raft(mock_args):
     raft_train_on_chairs()
 
 
 if __name__ == "__main__":
     test_deformable_detr()
     test_detr()
-    # test_raft()
+    test_raft()

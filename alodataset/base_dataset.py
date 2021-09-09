@@ -12,14 +12,16 @@ from aloscene import Frame
 import aloscene
 
 DATASETS_DOWNLOAD_PATHS = {
-    "coco": "https://storage.googleapis.com/visualbehavior-sample/coco_sample.pkl",
-    "waymo": "https://storage.googleapis.com/visualbehavior-sample/waymo_sample.pkl",
-    "mot17": "https://storage.googleapis.com/visualbehavior-sample/mot17_sample.pkl",
-    "chairsSDHom": "https://storage.googleapis.com/visualbehavior-sample/chairsSDHom_sample.pkl",
-    "crowdhuman": "https://storage.googleapis.com/visualbehavior-sample/crowdhuman_sample.pkl",
-    "flyingChairs2": "https://storage.googleapis.com/visualbehavior-sample/flyingChairs2_sample.pkl",
-    "flyingThings": "https://storage.googleapis.com/visualbehavior-sample/flyingThings_sample.pkl",
-    "Sintel": "https://storage.googleapis.com/visualbehavior-sample/Sintel_sample.pkl",
+    "coco": "https://storage.googleapis.com/visualbehavior-sample/coco.pkl",
+    "waymo": "https://storage.googleapis.com/visualbehavior-sample/waymo.pkl",
+    "mot17": "https://storage.googleapis.com/visualbehavior-sample/mot17.pkl",
+    "chairsSDHom": "https://storage.googleapis.com/visualbehavior-sample/chairsSDHom.pkl",
+    "crowdhuman": "https://storage.googleapis.com/visualbehavior-sample/crowdhuman.pkl",
+    "FlyingChairs2": "https://storage.googleapis.com/visualbehavior-sample/FlyingChairs2.pkl",
+    "FlyingThings3DSubset": "https://storage.googleapis.com/visualbehavior-sample/FlyingThings3DSubset.pkl",
+    "SintelDisparity": "https://storage.googleapis.com/visualbehavior-sample/SintelDisparity.pkl",
+    "SintelFlow": "https://storage.googleapis.com/visualbehavior-sample/SintelFlow.pkl",
+    "SintelMulti": "https://storage.googleapis.com/visualbehavior-sample/SintelMulti.pkl",
 }
 
 

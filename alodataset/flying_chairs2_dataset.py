@@ -22,6 +22,8 @@ class FlyingChairs2Dataset(BaseDataset, SplitMixin):
 
     def __init__(self, **kwargs):
         super(FlyingChairs2Dataset, self).__init__(name="FlyingChairs2", **kwargs)
+        if self.sample:
+            return
         self.dir_path = self._dir_path()
         self.items = self._get_sequences()
 
@@ -73,6 +75,8 @@ class FlyingChairs2Dataset(BaseDataset, SplitMixin):
         idx : int
             index of the sequence
         """
+        if self.sample:
+            return BaseDataset.__getitem__(self, idx)
         sequence_data = self.items[idx]
         return self._get_frames(sequence_data)
 

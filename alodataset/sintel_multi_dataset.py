@@ -117,9 +117,9 @@ class SintelMultiDataset(BaseDataset, SequenceMixin):
 
 
 if __name__ == "__main__":
-    dataset = SintelMultiDataset(sequence_size=2)
+    dataset = SintelMultiDataset(sample=True)
     # show some frames at various indices
-    for idx in [1, 15, 64]:
+    for idx in [1, 2, 5]:
         frames = dataset.getitem(idx)
         frames["left"].get_view().render()
         frames["right"].get_view().render()

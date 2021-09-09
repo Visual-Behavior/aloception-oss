@@ -503,7 +503,6 @@ def main():
     """Main"""
     waymo_dataset = WaymoDataset(sample=True)
     waymo_dataset.prepare()
-    print(waymo_dataset.dataset_dir)
 
     for frames in waymo_dataset.train_loader(batch_size=2):
         frames = Frame.batch_list([frame["front"] for frame in frames])

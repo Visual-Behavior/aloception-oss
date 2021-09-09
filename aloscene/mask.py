@@ -1,6 +1,5 @@
 import numpy as np
 import cv2
-from numpy.lib.arraysetops import isin
 import torch
 
 from typing import Union
@@ -54,16 +53,12 @@ class Mask(aloscene.tensors.SpatialAugmentedTensor):
         assert self.names[0] != "T" and self.names[1] != "B"
         frame = self.cpu().rename(None).permute([1, 2, 0]).detach().contiguous().numpy()
 
-        # If it does not mask, raise Error
-        assert len(self) > 0, "Len(Mask) must be higher than 0"
-
         # Try to retrieve the associated label ID (if any)
         labels = self.labels if isinstance(self.labels, aloscene.Labels) else [None] * len(self)
         annotations = []
-        if isinstance(self.labels, aloscene.Labels):
+        if isinstance(self.labels, aloscene.Labels) and len(self) > 0:
             assert self.labels.encoding == "id"
 
-        if frame.shape[-1] != 1:
             frame = np.concatenate([np.zeros_like(frame[..., [0]]), frame], axis=-1)  # Add background class as 0
             frame = np.argmax(frame, axis=-1).astype("int")  # Get one mask by ID
 
@@ -80,21 +75,11 @@ class Mask(aloscene.tensors.SpatialAugmentedTensor):
                     x, y = np.average(mass_x), np.average(mass_y)
                     color = self.GLOBAL_COLOR_SET[(label + 1) % len(self.GLOBAL_COLOR_SET)]
                     color = (0, 0, 0)
-                    annotations.append({"color": color, "x": int(x), "y": int(y), "text": labels.labels_names[label]})
+                    text = str(label) if labels.labels_names is None else labels.labels_names[label]
+                    annotations.append({"color": color, "x": int(x), "y": int(y), "text": text})
 
             # Frame construction by segmentation masks
             frame = self.GLOBAL_COLOR_SET[frame]
-        elif labels[0] is not None:
-            label = int(labels[0])
-
-            # Get mass center to put text in frame
-            mass_y, mass_x = np.where(frame[..., 0] > 0.5)
-            x, y = np.average(mass_x), np.average(mass_y)
-            color = (0, 0, 0)
-            text = labels.labels_names[label] if "labels_names" in labels else str(label)
-            annotations.append({"color": color, "x": int(x), "y": int(y), "text": text})
-
-            frame = cv2.cvtColor(frame, cv2.COLOR_GRAY2RGB)
 
         # Add relative text in frame
         for anno in annotations:
@@ -128,5 +113,6 @@ class Mask(aloscene.tensors.SpatialAugmentedTensor):
         masks = self.__get_view__(**kwargs).image
         frame = frame.norm01().cpu().rename(None).permute([1, 2, 0]).detach().contiguous().numpy()
         frame = cv2.resize(frame, (self.shape[-1], self.shape[-2]))
-        frame = 0.4 * frame + 0.6 * masks
+        if masks.shape[-1] > 0:
+            frame = 0.4 * frame + 0.6 * masks
         return View(frame, **kwargs)

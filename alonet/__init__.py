@@ -5,6 +5,7 @@ from . import detr
 from . import transformers
 from . import raft
 
-# from . import deformable_detr
 from . import deformable_detr
 from . import callbacks
+
+from . import panoptic

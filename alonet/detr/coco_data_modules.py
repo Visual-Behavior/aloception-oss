@@ -19,7 +19,6 @@ class CocoDetection2Detr(pl.LightningDataModule):
         train_ann: str = "annotations/instances_train2017.json",
         val_folder: str = "val2017",
         val_ann: str = "annotations/instances_val2017.json",
-        sample: bool = False,
         **kwargs
     ):
         """LightningDataModule to use coco dataset in Detr models
@@ -58,6 +57,7 @@ class CocoDetection2Detr(pl.LightningDataModule):
         Arguments entered by the user (kwargs) will replace those stored in args attribute
         """
         # Update class attributes with args and kwargs inputs
+
         super().__init__()
         alonet.common.pl_helpers.params_update(self, args, kwargs)
 
@@ -71,7 +71,6 @@ class CocoDetection2Detr(pl.LightningDataModule):
             # Split=Split.TRAIN if not self.train_on_val else Split.VAL,
             classes=classes,
             name=name,
-            sample=sample,
         )
         self.val_loader_kwargs = dict(
             img_folder=val_folder,
@@ -79,9 +78,9 @@ class CocoDetection2Detr(pl.LightningDataModule):
             # split=Split.VAL,
             classes=classes,
             name=name,
-            sample=sample,
         )
         self.args = args
+        self.val_check()  # Check val loader and set some previous parameters
 
     @staticmethod
     def add_argparse_args(parent_parser):
@@ -104,17 +103,10 @@ class CocoDetection2Detr(pl.LightningDataModule):
             nargs="+",
             help="If no augmentation (--no_augmentation) is used, --size can be used to resize all the frame.",
         )
-        # parser.add_argument("--classes", type=str, default=None, nargs="+", help="List to classes to be filtered in dataset. (%(default)s by default)")
+        parser.add_argument(
+            "--sample", action="store_true", help="Download a sample for train/val process (Default: %(default)s)"
+        )
         return parent_parser
-
-    @property
-    def CATEGORIES(self):
-        if not hasattr(self, "coco_train"):
-            self.setup()
-        if not hasattr(self, "coco_train"):
-            return None
-        else:
-            return self.coco_train.CATEGORIES if hasattr(self.coco_train, "CATEGORIES") else None
 
     def train_transform(self, frame, same_on_sequence: bool = True, same_on_frames: bool = False):
         if self.no_augmentation:
@@ -158,15 +150,27 @@ class CocoDetection2Detr(pl.LightningDataModule):
 
         return frame.norm_resnet()
 
+    def val_check(self):
+        # Instance a default loader to set attributes
+        self.coco_val = alodataset.CocoDetectionDataset(
+            transform_fn=self.val_transform, sample=self.sample, **self.val_loader_kwargs,
+        )
+        self.sample = self.coco_val.sample or self.sample  # Update sample if user prompt is given
+        self.CATEGORIES = self.coco_val.CATEGORIES if hasattr(self.coco_val, "CATEGORIES") else None
+
     def setup(self, stage: Optional[str] = None) -> None:
         if stage == "fit" or stage is None:
             # Setup train/val loaders
             self.coco_train = alodataset.CocoDetectionDataset(
-                transform_fn=self.train_transform, **self.train_loader_kwargs
+                transform_fn=self.train_transform, sample=self.sample, **self.train_loader_kwargs
             )
-            self.coco_val = alodataset.CocoDetectionDataset(transform_fn=self.val_transform, **self.val_loader_kwargs)
+            self.coco_val = alodataset.CocoDetectionDataset(
+                transform_fn=self.val_transform, sample=self.sample, **self.val_loader_kwargs
+            )
 
     def train_dataloader(self):
+        """Train dataloader"""
+        # Init training loader
         if not hasattr(self, "coco_train"):
             self.setup()
         return self.coco_train.train_loader(batch_size=self.batch_size, num_workers=self.num_workers)

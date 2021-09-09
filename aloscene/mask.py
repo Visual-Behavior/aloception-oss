@@ -29,8 +29,6 @@ class Mask(aloscene.tensors.SpatialAugmentedTensor):
             kwargs["names"] = ("N", "H", "W")
         tensor = super().__new__(cls, x, *args, **kwargs)
         tensor.add_label("labels", labels, align_dim=["N"], mergeable=True)
-        tensor.add_property("mask_size", x.shape)
-        tensor.add_property("is_mask", not isinstance(labels, Labels))
         return tensor
 
     def __init__(self, x, *args, **kwargs):
@@ -115,7 +113,7 @@ class Mask(aloscene.tensors.SpatialAugmentedTensor):
     def get_view(self, frame: Tensor = None, size: tuple = None, labels_set: str = None, **kwargs):
         from aloscene import Frame
 
-        if self.is_mask:
+        if not isinstance(self.labels, aloscene.Labels):
             return super().get_view(size=size, frame=frame, **kwargs)
 
         if frame is not None:
@@ -123,7 +121,7 @@ class Mask(aloscene.tensors.SpatialAugmentedTensor):
                 raise Exception(f"Expect image of shape c,h,w. Found image with shape {frame.shape}")
             assert isinstance(frame, Frame)
         else:
-            size = self.mask_size[1:]
+            size = self.shape[1:]
             frame = torch.zeros(3, *size)
             frame = Frame(frame, names=("C", "H", "W"), normalization="01")
 

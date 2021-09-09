@@ -139,12 +139,13 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         self._append_label("disparity", disparity, name)
 
     def append_segmentation(self, segmentation: Mask, name: str = None):
-        """Attach a mask to the frame.
+        """Attach a segmentation to the frame.
 
         Parameters
         ----------
         segmentation: aloscene.Mask
-            Couple of mask to attached to the Frame
+            Mask with size (N,H,W), where N is the features maps, each one for one object.
+            Each feature map must be a binary mask. For that, is a type of aloscene.Mask
         name: str
             If none, the mask will be attached without name (if possible). Otherwise if no other unnamed
             mask are attached to the frame, the mask will be added to the set of mask.

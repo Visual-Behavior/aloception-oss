@@ -5,6 +5,7 @@ import torch
 
 
 import alonet
+from alonet.raft.misc import assert_and_export_onnx
 from alonet.raft.corr import CorrBlock, AlternateCorrBlock
 from alonet.raft.update import BasicUpdateBlock
 from alonet.raft.extractor import BasicEncoder
@@ -112,6 +113,7 @@ class RAFTBase(nn.Module):
         up_flow = up_flow.permute(0, 1, 4, 2, 5, 3)
         return up_flow.reshape(N, 2, 8 * H, 8 * W)
 
+    @assert_and_export_onnx()
     def forward(self, frame1: Frame, frame2: Frame, iters=12, flow_init=None, only_last=False):
         """Estimate optical flow between pair of frames
 
@@ -134,15 +136,6 @@ class RAFTBase(nn.Module):
         flows : list of torch.Tensor
             output flows
         """
-
-        assert frame1.normalization == "minmax_sym"
-        assert frame2.normalization == "minmax_sym"
-        frame1 = frame1.as_tensor()
-        frame2 = frame2.as_tensor()
-
-        # frame1 = frame1.contiguous()
-        # frame2 = frame2.contiguous()
-
         hdim = self.hidden_dim
         cdim = self.context_dim
 

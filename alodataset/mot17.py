@@ -163,6 +163,9 @@ class Mot17(BaseDataset, SequenceMixin, SplitMixin):
         )
 
     def getitem(self, idx):
+        if self.sample:
+            return BaseDataset.__getitem__(self, idx)
+        
         seq = list(self.items[idx]["seq"])
         sequence_name = self.items[idx]["mot_sequence"]
 
@@ -220,7 +223,6 @@ class Mot17(BaseDataset, SequenceMixin, SplitMixin):
 def main():
     """Main"""
     mot_dataset = Mot17(sample=True)
-
     for frames in mot_dataset.stream_loader():
         frames.names
         frames.get_view(

@@ -59,6 +59,8 @@ class ChairsSDHomDataset(BaseDataset, SplitMixin):
         """
         Return frames corresponding to a sequence
         """
+        if self.sample:
+            return BaseDataset.__getitem__(self, idx)
         sequence_data = self.items[idx]
         return self.get_frames(sequence_data)
 

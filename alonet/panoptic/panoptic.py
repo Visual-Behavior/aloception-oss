@@ -54,8 +54,9 @@ class PanopticHead(nn.Module):
         bbox_mask = self.bbox_attention(out["dec_outputs"][-1], out["enc_outputs"], mask=mask)
         # And then, use MHA ouput as input of FPN-style CNN
         seg_masks = self.mask_head(self.detr.input_proj(src), bbox_mask, [features[i][0] for i in range(3)[::-1]])
+        
         out["pred_masks"] = seg_masks.view(bs, self.detr.num_queries, seg_masks.shape[-2], seg_masks.shape[-1])
-        out["frame_size"] = frame.shape[-2:]
+        out["frame_size"] = frames.shape[-2:]
         return out  # Return the DETR output + pred_masks
 
     @torch.no_grad()

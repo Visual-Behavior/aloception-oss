@@ -164,7 +164,7 @@ class ApMetrics(object):
         """
         if p_mask is not None or t_mask is not None:
             raise Exception("AP from mask not handle yet (TODO)")
-
+    
         assert isinstance(p_bbox, aloscene.BoundingBoxes2D)
         assert isinstance(t_bbox, aloscene.BoundingBoxes2D)
         assert isinstance(p_bbox.labels, aloscene.Labels)

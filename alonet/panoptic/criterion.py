@@ -121,11 +121,11 @@ class PanopticCriterion(nn.Module):
             ],
             dim=0,
         )
-        target_masks = aloscene.Mask(target_masks,)
 
         pred_masks = outputs["pred_masks"][idx]
-        pred_masks = F.interpolate(pred_masks, size=target_masks.shape[-2:], mode="bilinear", align_corners=False)
-        pred_masks = aloscene.Mask(pred_masks, device=pred_masks.device,)
+        pred_masks = F.interpolate(pred_masks[:, None], size=target_masks.shape[-2:], mode="bilinear", align_corners=False)
+        pred_masks = pred_masks[:,0].flatten(1)
+        target_masks = target_masks.flatten(1).view(pred_masks.shape)
 
         # DICE/F-1 loss
         losses["loss_DICE"] = dice_loss(pred_masks, target_masks, num_boxes)

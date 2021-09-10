@@ -1,6 +1,7 @@
 from argparse import ArgumentParser
-from alonet.panoptic import CocoPanoptic2Detr
-from alonet.panoptic import LitPanopticDetr
+from alonet.panoptic import LitPanopticDetr, CocoPanoptic2Detr, PanopticHead
+from alonet.detr import DetrR50Finetune, LitDetr
+from alonet.common import load_training
 
 import alonet
 
@@ -20,12 +21,27 @@ def main():
     args = get_arg_parser().parse_args()  # Parse
 
     # Init the Detr model with the dataset
-    detr = LitPanopticDetr(args)
     coco_loader = CocoPanoptic2Detr(
         args=args, val_stuff_ann="annotations/stuff_val2017.json", train_stuff_ann="annotations/stuff_train2017.json"
     )
+    num_classes = len(coco_loader.labels_names)
+    print(num_classes)
 
-    detr.run_train(data_loader=coco_loader, args=args, project="detr", expe_name="detr_50")
+    lit_detr = load_training(
+        LitDetr, 
+        args=args, 
+        model=DetrR50Finetune(num_classes=num_classes, aux_loss=True), 
+        project_run_id="detr", 
+        run_id="coco_stuff_September-10-2021-10h-32"
+    )
+    
+    lit_panoptic = LitPanopticDetr(args, model = PanopticHead(lit_detr.model))
+    lit_panoptic.run_train(
+        data_loader=coco_loader, 
+        args=args, 
+        project="panoptic", 
+        expe_name="coco_stuff"
+    )
 
 
 if __name__ == "__main__":

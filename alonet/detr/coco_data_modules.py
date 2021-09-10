@@ -157,6 +157,7 @@ class CocoDetection2Detr(pl.LightningDataModule):
         )
         self.sample = self.coco_val.sample or self.sample  # Update sample if user prompt is given
         self.CATEGORIES = self.coco_val.CATEGORIES if hasattr(self.coco_val, "CATEGORIES") else None
+        self.labels_names = self.coco_val.labels_names if hasattr(self.coco_val, "labels_names") else None
 
     def setup(self, stage: Optional[str] = None) -> None:
         if stage == "fit" or stage is None:

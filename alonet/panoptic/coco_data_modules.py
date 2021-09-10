@@ -6,3 +6,4 @@ class CocoPanoptic2Detr(alonet.detr.CocoDetection2Detr):
         super().__init__(**kwargs)
         self.train_loader_kwargs.update(dict(stuff_ann_file=train_stuff_ann, return_masks=True))
         self.val_loader_kwargs.update(dict(stuff_ann_file=val_stuff_ann, return_masks=True))
+        self.val_check()  # Check val loader and set some previous parameters

@@ -13,12 +13,13 @@ class Chairs2RAFT(Data2RAFT):
     def train_dataloader(self):
         split = Split.VAL if self.train_on_val else Split.TRAIN
         dataset = FlyingChairs2Dataset(split=split, transform_fn=self.train_transform, sample=self.sample)
+        self.sample = self.sample or dataset.sample
         sampler = SequentialSampler if self.sequential else RandomSampler
         return dataset.train_loader(batch_size=self.batch_size, num_workers=self.num_workers, sampler=sampler)
 
     def val_dataloader(self):
         dataset = FlyingChairs2Dataset(split=Split.VAL, transform_fn=self.val_transform, sample=self.sample)
-
+        self.sample = self.sample or dataset.sample
         return dataset.train_loader(batch_size=1, num_workers=self.num_workers, sampler=SequentialSampler)
 
 

@@ -82,7 +82,8 @@ class CocoDetectionDataset(BaseDataset, CocoDetectionSample):
         if "sample" not in kwargs:
             kwargs["sample"] = False
 
-        if not kwargs["sample"]:
+        self.sample = kwargs["sample"]
+        if not self.sample:
             assert img_folder is not None, "When sample = False, img_folder must be given."
             assert ann_file is not None, "When sample = False, ann_file must be given."
 
@@ -91,8 +92,8 @@ class CocoDetectionDataset(BaseDataset, CocoDetectionSample):
             img_folder = os.path.join(dataset_dir, img_folder)
             ann_file = os.path.join(dataset_dir, ann_file)
             stuff_ann_file = None if stuff_ann_file is None else os.path.join(dataset_dir, stuff_ann_file)
+            kwargs["sample"] = self.sample
 
-        self.sample = kwargs["sample"]
         super(CocoDetectionDataset, self).__init__(name=name, root=img_folder, annFile=ann_file, **kwargs)
         if self.sample:
             return

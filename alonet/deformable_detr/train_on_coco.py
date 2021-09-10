@@ -15,9 +15,6 @@ def get_arg_parser():
     parser = ArgumentParser(conflict_handler="resolve")
     parser = alonet.common.add_argparse_args(parser)  # Common alonet parser
     parser = CocoDetection2Detr.add_argparse_args(parser)  # Coco detection parser
-    parser.add_argument(
-        "--use_sample", action="store_true", help="Download a sample for train process (Default: %(default)s)"
-    )
     parser = LitDeformableDetr.add_argparse_args(parser)  # LitDeformableDetr training parser
     # parser = pl.Trainer.add_argparse_args(parser) # Pytorch lightning Parser
     return parser

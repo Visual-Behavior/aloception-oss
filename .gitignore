@@ -22,3 +22,4 @@ docsource/build/*
 tensorboard/*
 **/.ipynb_checkpoints
 *_Tutorial*
+workspace.code-workspace

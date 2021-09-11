@@ -90,7 +90,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="getting_started/getting_started.html">Getting started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="getting_started/aloscene.html">Aloscene: Computer vision with ease</a></li>
-<li class="toctree-l1"><a class="reference internal" href="getting_started/alodataset.html">Alodataset: Loading your datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="getting_started/alodataset.html">Alodataset: Loading your vision datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="getting_started/alonet.html">Alonet: Loading &amp; training your models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="getting_started/augmented_tensor.html">About Augmented Tensor</a></li>
 </ul>
@@ -624,6 +624,8 @@
       <li><a href="aloscene/bounding_boxes_2d.html#aloscene.bounding_boxes_2d.BoundingBoxes2D.append_labels">append_labels() (aloscene.bounding_boxes_2d.BoundingBoxes2D method)</a>
 
       <ul>
+        <li><a href="aloscene/mask.html#aloscene.mask.Mask.append_labels">(aloscene.mask.Mask method)</a>
+</li>
         <li><a href="aloscene/oriented_boxes_2d.html#aloscene.oriented_boxes_2d.OrientedBoxes2D.append_labels">(aloscene.oriented_boxes_2d.OrientedBoxes2D method)</a>
 </li>
       </ul></li>
@@ -635,6 +637,8 @@
         <li><a href="aloscene/flow.html#aloscene.flow.Flow.append_occlusion">(aloscene.flow.Flow method)</a>
 </li>
       </ul></li>
+      <li><a href="aloscene/frame.html#aloscene.frame.Frame.append_segmentation">append_segmentation() (aloscene.frame.Frame method)</a>
+</li>
       <li><a href="alodataset/transform.html#alodataset.transforms.ColorJitter.apply">apply() (alodataset.transforms.ColorJitter method)</a>
 
       <ul>
@@ -815,8 +819,6 @@
         <li><a href="alodataset/waymo_dataset.html#alodataset.waymo_dataset.WaymoDataset.CAMERAS">(alodataset.waymo_dataset.WaymoDataset attribute)</a>
 </li>
       </ul></li>
-      <li><a href="alonet/detr_connectors.html#alonet.detr.coco_data_modules.CocoDetection2Detr.CATEGORIES">CATEGORIES (alonet.detr.coco_data_modules.CocoDetection2Detr property)</a>
-</li>
       <li><a href="alodataset/chairssdhom_dataset.html#alodataset.chairssdhom_dataset.ChairsSDHomDataset">ChairsSDHomDataset (class in alodataset.chairssdhom_dataset)</a>
 </li>
       <li><a href="alodataset/waymo_dataset.html#alodataset.waymo_dataset.WaymoDataset.CLASSES">CLASSES (alodataset.waymo_dataset.WaymoDataset attribute)</a>
@@ -1097,10 +1099,10 @@
 </li>
       <li><a href="alodataset/transform.html#alodataset.transforms.RandomResizeWithAspectRatio.get_size_with_aspect_ratio">get_size_with_aspect_ratio() (alodataset.transforms.RandomResizeWithAspectRatio static method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="aloscene/augmented_tensor.html#aloscene.tensors.augmented_tensor.AugmentedTensor.get_slices">get_slices() (aloscene.tensors.augmented_tensor.AugmentedTensor method)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="alonet/detr_training.html#alonet.detr.criterion.DetrCriterion.get_statistical_metrics">get_statistical_metrics() (alonet.detr.criterion.DetrCriterion method)</a>
 </li>
       <li><a href="alonet/deformable_architecture.html#alonet.deformable_detr.deformable_transformer.DeformableTransformer.get_valid_ratio">get_valid_ratio() (alonet.deformable_detr.deformable_transformer.DeformableTransformer method)</a>
@@ -1117,6 +1119,8 @@
         <li><a href="aloscene/camera_calib.html#aloscene.camera_calib.CameraExtrinsic.get_view">(aloscene.camera_calib.CameraExtrinsic method)</a>
 </li>
         <li><a href="aloscene/camera_calib.html#aloscene.camera_calib.CameraIntrinsic.get_view">(aloscene.camera_calib.CameraIntrinsic method)</a>
+</li>
+        <li><a href="aloscene/mask.html#aloscene.mask.Mask.get_view">(aloscene.mask.Mask method)</a>
 </li>
         <li><a href="aloscene/oriented_boxes_2d.html#aloscene.oriented_boxes_2d.OrientedBoxes2D.get_view">(aloscene.oriented_boxes_2d.OrientedBoxes2D method)</a>
 </li>
@@ -1160,6 +1164,8 @@
       <li><a href="aloscene/bounding_boxes_2d.html#aloscene.bounding_boxes_2d.BoundingBoxes2D.GLOBAL_COLOR_SET">GLOBAL_COLOR_SET (aloscene.bounding_boxes_2d.BoundingBoxes2D attribute)</a>
 
       <ul>
+        <li><a href="aloscene/mask.html#aloscene.mask.Mask.GLOBAL_COLOR_SET">(aloscene.mask.Mask attribute)</a>
+</li>
         <li><a href="aloscene/oriented_boxes_2d.html#aloscene.oriented_boxes_2d.OrientedBoxes2D.GLOBAL_COLOR_SET">(aloscene.oriented_boxes_2d.OrientedBoxes2D attribute)</a>
 </li>
       </ul></li>
@@ -1822,12 +1828,14 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="alodataset/base_dataset.html#alodataset.base_dataset.Split.VAL">VAL (alodataset.base_dataset.Split attribute)</a>
 </li>
-      <li><a href="alonet/detr_connectors.html#alonet.detr.coco_data_modules.CocoDetection2Detr.val_dataloader">val_dataloader() (alonet.detr.coco_data_modules.CocoDetection2Detr method)</a>
+      <li><a href="alonet/detr_connectors.html#alonet.detr.coco_data_modules.CocoDetection2Detr.val_check">val_check() (alonet.detr.coco_data_modules.CocoDetection2Detr method)</a>
 </li>
-      <li><a href="alonet/detr_connectors.html#alonet.detr.coco_data_modules.CocoDetection2Detr.val_transform">val_transform() (alonet.detr.coco_data_modules.CocoDetection2Detr method)</a>
+      <li><a href="alonet/detr_connectors.html#alonet.detr.coco_data_modules.CocoDetection2Detr.val_dataloader">val_dataloader() (alonet.detr.coco_data_modules.CocoDetection2Detr method)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="alonet/detr_connectors.html#alonet.detr.coco_data_modules.CocoDetection2Detr.val_transform">val_transform() (alonet.detr.coco_data_modules.CocoDetection2Detr method)</a>
+</li>
       <li><a href="alonet/detr_training.html#alonet.detr.train.LitDetr.validation_step">validation_step() (alonet.detr.train.LitDetr method)</a>
 </li>
       <li><a href="alodataset/base_dataset.html#alodataset.base_dataset.BaseDataset.vb_folder">vb_folder (alodataset.base_dataset.BaseDataset property)</a>

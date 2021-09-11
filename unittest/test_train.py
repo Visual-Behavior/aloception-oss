@@ -18,7 +18,7 @@ detr_args = get_argparse_defaults(detr_get_arg_parser())
 detr_args["weights"] = "detr-r50"
 detr_args["train_on_val"] = True
 detr_args["fast_dev_run"] = True
-detr_args["use_sample"] = True
+detr_args["sample"] = True
 
 
 @mock.patch("argparse.ArgumentParser.parse_args", return_value=argparse.Namespace(**detr_args))
@@ -38,7 +38,7 @@ def_detr_args["weights"] = "deformable-detr-r50"
 def_detr_args["model_name"] = "deformable-detr-r50"
 def_detr_args["train_on_val"] = True
 def_detr_args["fast_dev_run"] = True
-def_detr_args["use_sample"] = True
+def_detr_args["sample"] = True
 
 
 @mock.patch("argparse.ArgumentParser.parse_args", return_value=argparse.Namespace(**def_detr_args))
@@ -54,15 +54,15 @@ raft_args = get_argparse_defaults(raft_get_args_parser())
 raft_args["weights"] = "raft-things"
 raft_args["train_on_val"] = True
 raft_args["fast_dev_run"] = True
-raft_args["use_sample"] = True
+raft_args["sample"] = True
 
 
 @mock.patch("argparse.ArgumentParser.parse_args", return_value=argparse.Namespace(**raft_args))
-def _test_raft(mock_args):
+def test_raft(mock_args):
     raft_train_on_chairs()
 
 
 if __name__ == "__main__":
     test_deformable_detr()
     test_detr()
-    # test_raft()
+    test_raft()

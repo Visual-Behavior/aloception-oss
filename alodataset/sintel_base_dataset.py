@@ -65,6 +65,9 @@ class SintelBaseDataset(BaseDataset, SequenceMixin):
         self.labels = labels if labels is not None else self.LABELS
         self.passes = passes if passes is not None else self.PASSES
         self.sintel_sequences = sintel_sequences if sintel_sequences is not None else self.SINTEL_SEQUENCES
+        if self.sample:
+            return
+
         self._assert_inputs()
 
         self.items = self._get_sequences()
@@ -154,5 +157,7 @@ class SintelBaseDataset(BaseDataset, SequenceMixin):
         return frames
 
     def getitem(self, idx):
+        if self.sample:
+            return BaseDataset.__getitem__(self, idx)
         sequence_data = self.items[idx]
         return self._get_frames(sequence_data)

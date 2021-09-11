@@ -12,14 +12,16 @@ from aloscene import Frame
 import aloscene
 
 DATASETS_DOWNLOAD_PATHS = {
-    "coco": "https://storage.googleapis.com/visualbehavior-sample/coco_sample.pkl",
-    "waymo": "https://storage.googleapis.com/visualbehavior-sample/waymo_sample.pkl",
-    "mot17": "https://storage.googleapis.com/visualbehavior-sample/mot17_sample.pkl",
-    "chairsSDHom": "https://storage.googleapis.com/visualbehavior-sample/chairsSDHom_sample.pkl",
-    "crowdhuman": "https://storage.googleapis.com/visualbehavior-sample/crowdhuman_sample.pkl",
-    "flyingChairs2": "https://storage.googleapis.com/visualbehavior-sample/flyingChairs2_sample.pkl",
-    "flyingThings": "https://storage.googleapis.com/visualbehavior-sample/flyingThings_sample.pkl",
-    "Sintel": "https://storage.googleapis.com/visualbehavior-sample/Sintel_sample.pkl",
+    "coco": "https://storage.googleapis.com/visualbehavior-sample/coco.pkl",
+    "waymo": "https://storage.googleapis.com/visualbehavior-sample/waymo.pkl",
+    "mot17": "https://storage.googleapis.com/visualbehavior-sample/mot17.pkl",
+    "chairsSDHom": "https://storage.googleapis.com/visualbehavior-sample/chairsSDHom.pkl",
+    "crowdhuman": "https://storage.googleapis.com/visualbehavior-sample/crowdhuman.pkl",
+    "FlyingChairs2": "https://storage.googleapis.com/visualbehavior-sample/FlyingChairs2.pkl",
+    "FlyingThings3DSubset": "https://storage.googleapis.com/visualbehavior-sample/FlyingThings3DSubset.pkl",
+    "SintelDisparity": "https://storage.googleapis.com/visualbehavior-sample/SintelDisparity.pkl",
+    "SintelFlow": "https://storage.googleapis.com/visualbehavior-sample/SintelFlow.pkl",
+    "SintelMulti": "https://storage.googleapis.com/visualbehavior-sample/SintelMulti.pkl",
 }
 
 
@@ -131,12 +133,11 @@ class BaseDataset(torch.utils.data.Dataset):
         super(BaseDataset, self).__init__(**kwargs)
         self.name = name
         self.sample = sample
-        if not self.sample:
-            self.items = []
-            self.dataset_dir = self.get_dataset_dir()
+        self.dataset_dir = self.get_dataset_dir()
         if self.sample:
             self.items = self.download_sample()
-            self.dataset_dir = os.path.join(self.vb_folder, "samples")
+        else:
+            self.items = []
         self.transform_fn = transform_fn
         self.ignore_errors = ignore_errors
         self.print_errors = print_errors
@@ -210,6 +211,9 @@ class BaseDataset(torch.utils.data.Dataset):
         """Look for dataset_dir based on the given name. To work properly a alodataset_config.json
         file must be save into /home/USER/.aloception/alodataset_config.json
         """
+        if self.sample:
+            return os.path.join(self.vb_folder, "samples")
+
         streaming_dt_config = os.path.join(self.vb_folder, "alodataset_config.json")
         if not os.path.exists(streaming_dt_config):
             self.set_dataset_dir(None)
@@ -245,19 +249,19 @@ class BaseDataset(torch.utils.data.Dataset):
 
         if dataset_dir is None:
             dataset_dir = _user_prompt(
-                f"{self.name} does not exist in config file."
+                f"{self.name} does not exist in config file. "
                 + "Do you want to download and use a sample?: (Y)es or (N)o: "
             )
-            if dataset_dir.lower() in ["y", "yes"]:
+            if dataset_dir.lower() in ["y", "yes"]:  # Download sample and change root directory
                 self.sample = True
-                return
+                return os.path.join(self.vb_folder, "samples")
             dataset_dir = _user_prompt(f"Please write a new root directory for {self.name} dataset: ")
             dataset_dir = os.path.expanduser(dataset_dir)
 
         # Save the config
         if not os.path.exists(dataset_dir):
             dataset_dir = _user_prompt(
-                f"[WARNING] {dataset_dir} path does not exists for dataset: {self.name}."
+                f"[WARNING] {dataset_dir} path does not exists for dataset: {self.name}. "
                 + "Please write a new directory:"
             )
             dataset_dir = os.path.expanduser(dataset_dir)

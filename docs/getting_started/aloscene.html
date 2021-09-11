@@ -44,7 +44,7 @@
     
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Alodataset: Loading your datasets" href="alodataset.html" />
+    <link rel="next" title="Alodataset: Loading your vision datasets" href="alodataset.html" />
     <link rel="prev" title="Getting started" href="getting_started.html" /> 
 </head>
 
@@ -103,7 +103,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#Playing-with-Frames">Playing with Frames</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="alodataset.html">Alodataset: Loading your datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="alodataset.html">Alodataset: Loading your vision datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="alonet.html">Alonet: Loading &amp; training your models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="augmented_tensor.html">About Augmented Tensor</a></li>
 </ul>
@@ -461,12 +461,12 @@ div.rendered_html tbody tr:hover {
 </style>
 <div class="section" id="Aloscene:-Computer-vision-with-ease">
 <h1>Aloscene: Computer vision with ease<a class="headerlink" href="#Aloscene:-Computer-vision-with-ease" title="Permalink to this headline">¶</a></h1>
-<p>Aloscene extend the use of tensors with Augmented Tensors and Spatial Augmented Tensors. The latter are designed to facilitate the use of computer vision data (such as frames, 2d boxes, 3d boxes, optical flow, disparity, camera parameters…).</p>
+<p>Aloscene extends the use of tensors with Augmented Tensors and Spatial Augmented Tensors. The latter are designed to facilitate the use of computer vision data (such as frames, 2d boxes, 3d boxes, optical flow, disparity, camera parameters…).</p>
 <div class="section" id="Hello-world">
 <h2>Hello world<a class="headerlink" href="#Hello-world" title="Permalink to this headline">¶</a></h2>
 <p>In the following, we simply use the CocoDetectionDataset to display one frame.</p>
 <ul class="simple">
-<li><p>The <code class="docutils literal notranslate"><span class="pre">get_view</span></code> method is specific to <strong>Augmented Tensor</strong>. It make it easy for someone to display all the avaiable data within a <strong>Frame</strong></p></li>
+<li><p>The <code class="docutils literal notranslate"><span class="pre">get_view</span></code> method is specific to <strong>Augmented Tensor</strong>. It makes it easy for someone to display all the avaiable data within a <strong>Frame</strong></p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">get_view</span></code> return a <code class="docutils literal notranslate"><span class="pre">View</span></code> object that can be used to <code class="docutils literal notranslate"><span class="pre">render()</span></code> the frame using matplotlib or opencv.</p></li>
 <li><p>By default, all labels within a frame will get their own view.</p></li>
 </ul>
@@ -492,12 +492,12 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="admonition note">
 <p class="admonition-title fa fa-exclamation-circle"><strong>NOTE</strong></p>
-<p>We’re using the <code class="docutils literal notranslate"><span class="pre">sample</span></code>, therefore, you don’t need to have the CocoDataset installed on your machine. A small sample will be automaticly download for you.</p>
+<p>We’re using the <code class="docutils literal notranslate"><span class="pre">sample</span></code>, therefore, you don’t need to have the CocoDataset installed on your machine. A small sample will be automatically downloaded for you.</p>
 </div>
 </div>
 <div class="section" id="Exploring-Frames">
 <h2>Exploring Frames<a class="headerlink" href="#Exploring-Frames" title="Permalink to this headline">¶</a></h2>
-<p>Compare to simple Tensor, a Frame is a Tensor with additinals properties. For instance, a Frame is a Tensor with a defined normalization (between 0 and 255 in the following example) and attached boxes of shape (2, 4)</p>
+<p>Compared to simple Tensor, a Frame is a Tensor with additional properties. For instance, a Frame is a Tensor with a defined normalization (between 0 and 255 in the following example) and attached boxes of shape (2, 4)</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
@@ -543,7 +543,7 @@ tensor(
 </div>
 <div class="section" id="Normalizing-your-frame">
 <h3>Normalizing your frame<a class="headerlink" href="#Normalizing-your-frame" title="Permalink to this headline">¶</a></h3>
-<p>It is common in computer vision to required your frame to match a specific shape. Therefore, you can at any stage of your data piplene make sure that the frame is in the right format.</p>
+<p>It is common in computer vision to require your frame to match a specific shape. Therefore, you can at any stage of your data pipeline make sure that the frame is in the right format.</p>
 <p>In the following code <code class="docutils literal notranslate"><span class="pre">frame_01</span></code>will be converted with values between 0 and 1 based on the current frame normalization.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
@@ -555,7 +555,7 @@ tensor(
 </pre></div>
 </div>
 </div>
-<p>Here is a quick overview of the other type of nornalization avaiable.</p>
+<p>Here is a quick overview of the other types of normalization available.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[40]:
 </pre></div>
@@ -605,7 +605,7 @@ tensor(
 </div>
 <div class="section" id="Playing-with-dimensions">
 <h3>Playing with dimensions<a class="headerlink" href="#Playing-with-dimensions" title="Permalink to this headline">¶</a></h3>
-<p>Frames and all augmented tensor rely on <code class="docutils literal notranslate"><span class="pre">names</span></code> to keep track of the dimension within the tensor.</p>
+<p>Frames and all augmented tensors rely on <code class="docutils literal notranslate"><span class="pre">names</span></code> to keep track of the dimension within the tensor.</p>
 <p>In the following example we show the names, shape and types of the associated boxes labels.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[64]:
@@ -675,7 +675,7 @@ len(boxes2d) 1
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="n">cropped_frame</span> <span class="o">=</span> <span class="n">frame</span><span class="p">[:,</span><span class="mi">100</span><span class="p">:</span><span class="mi">500</span><span class="p">,</span><span class="mi">200</span><span class="p">:</span><span class="mi">400</span><span class="p">]</span>
+<span></span><span class="n">cropped_frame</span> <span class="o">=</span> <span class="n">frame</span><span class="p">[:,</span><span class="mi">100</span><span class="p">:</span><span class="mi">400</span><span class="p">,</span><span class="mi">200</span><span class="p">:</span><span class="mi">400</span><span class="p">]</span>
 <span class="n">cropped_frame</span><span class="o">.</span><span class="n">get_view</span><span class="p">()</span><span class="o">.</span><span class="n">render</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -705,7 +705,7 @@ len(boxes2d) 1
 <img alt="../_images/getting_started_aloscene_21_0.png" src="../_images/getting_started_aloscene_21_0.png" />
 </div>
 </div>
-<p>Using what we’ve learned so far, we can know combined everything to create a new batch of framre with some augmentation.</p>
+<p>Using what we’ve learned so far, we can know combine everything to create a new batch of frames with some augmentation.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[77]:
 </pre></div>
@@ -748,7 +748,7 @@ len(boxes2d) 1
           </div>
           <footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-        <a href="alodataset.html" class="btn btn-neutral float-right" title="Alodataset: Loading your datasets" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="alodataset.html" class="btn btn-neutral float-right" title="Alodataset: Loading your vision datasets" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
         <a href="getting_started.html" class="btn btn-neutral float-left" title="Getting started" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
     </div>
 

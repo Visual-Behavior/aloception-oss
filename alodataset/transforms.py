@@ -27,6 +27,9 @@ class AloTransform(object):
             Apply the same transformations on each frame.
             If float, between 0 and 1, probability to apply same transformation on each frame
         """
+        # check for typos
+        assert all(kw not in kwargs for kw in ["same_on_frame", "same_on_sequences"])
+
         self.same_on_sequence = same_on_sequence
         self.same_on_frames = same_on_frames
         self.sample_params()

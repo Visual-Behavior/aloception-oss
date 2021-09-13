@@ -20,14 +20,30 @@ class AloTransform(object):
 
         Properties
         ----------
-        same_on_sequence: (bool)
+        same_on_sequence: bool or float
             Apply the same transformation on each element of the sequences
-        same_on_frames: (bool)
+            If float, between 0 and 1, probability to apply same transformation on each element
+        same_on_frames: bool or float
             Apply the same transformations on each frame.
+            If float, between 0 and 1, probability to apply same transformation on each frame
         """
         self.same_on_sequence = same_on_sequence
         self.same_on_frames = same_on_frames
         self.sample_params()
+
+    def _init_same_on(self):
+        def _prob_to_bool(param):
+            if isinstance(param, bool):
+                return param
+            elif isinstance(param, float):
+                if (param < 0) or (param > 1):
+                    raise ValueError("Probability value should be between 0 and 1.")
+                else:
+                    return np.random.rand() < param
+            else:
+                raise TypeError("param should be bool or float")
+
+        return _prob_to_bool(self.same_on_sequence), _prob_to_bool(self.same_on_frames)
 
     def sample_params(self):
         raise Exception("Must be implement by a child class")
@@ -48,8 +64,7 @@ class AloTransform(object):
         seqid2params = {}
         frame_params = None
 
-        same_on_sequence = self.same_on_sequence
-        same_on_frames = self.same_on_frames
+        same_on_sequence, same_on_frames = self._init_same_on()
 
         # Go through each image
         if isinstance(frames, dict):

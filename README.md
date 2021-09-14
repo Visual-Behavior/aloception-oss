@@ -116,63 +116,25 @@ frame.get_view().render()
  
 ## Deformable Detr
 
-### Running inference with deformable detr
+Here is a simple example to get started with **Deformable Detr** and aloception. To learn more about Deformable, you can checkout the <a href="#tutorials">Tutorials<a/> or the <a href="./alonet/deformable_detr">deformable detr README</a>.
 
-```
-python alonet/deformable_detr/deformable_detr_r50.py /path/to/image.jpg
-python alonet/deformable_detr/deformable_detr_r50_refinement.py /path/to/image.jpg
-```
+```python
+# Loading Deformable model
+model = alonet.deformable_detr.DeformableDetrR50(num_classes=91, weights="deformable-detr-r50").eval()
 
-### Training Deformable Detr R50 from scratch
-```
-python alonet/deformable_detr/train_on_coco.py --model_name MODEL_NAME
-```
-With MODEL_NAME either deformable-detr-r50-refinement or deformable-detr-r50 for with/without box refinement.
+# Open, normalize frame and send frame on the device
+frame = aloscene.Frame("/home/thibault/Desktop/yoga.jpg").norm_resnet().to(torch.device("cuda"))
 
-### Running evaluation of Deformable Detr R50
-```
-python alonet/deformable_detr/eval_on_coco.py --model_name MODEL_NAME --weights MODEL_NAME --batch_size 1 [--ap_limit NUMBER_OF_SAMPLES]
-```
-With MODEL_NAME either deformable-detr-r50-refinement or deformable-detr-r50 for with/without box refinement.
+# Run inference
+pred_boxes = model.inference(model([frame]))
 
-Evaluation on 1000 images COCO with box refinement
+# Add and display the predicted boxes
+frame.append_boxes2d(pred_boxes[0], "pred_boxes")
+frame.get_view().render()
 ```
-                 |  all  |  .50  |  .55  |  .60  |  .65  |  .70  |  .75  |  .80  |  .85  |  .90  |  .95  |
--------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+
- box             | 44.93 | 62.24 | 60.26 | 58.00 | 55.76 | 52.51 | 48.07 | 42.99 | 36.13 | 24.28 |  9.02 |
--------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+
-```
-
+  
 ## RAFT
 
-### Running inference with RAFT
-
-Inference can be performed using official pretrained weights:
-```
-python alonet/raft/raft.py --weights=raft-things image1.png img2.png
-```
-or with a custom weight file:
-```
-python alonet/raft/raft.py --weights=path/to/weights.pth image1.png img2.png
-```
-### Running evaluation of RAFT
-RAFT model is evaluated with official weights "raft-things".
-
-The **EPE** score is computed on Sintel training set. This reproduces the results from RAFT paper : table 1 (training data:"C+T", "method:our(2-views), eval:"sintel training clean).
-
-```
-python alonet/raft/eval_on_sintel.py
-```
-
-This results in EPE=1.46, which is similar to 1.43 in the paper (obtained as a median score for models trained with 3 differents seeds).
-
-### Training RAFT from scratch
-To reproduce the first stage of RAFT training on FlyingChairs dataset:
-```
-python alonet/raft/train_on_chairs.py
-```
-
-It is possible to reproduce the full RAFT training or to train on custom dataset by creating the necessary dataset classes and following the same approach as in `train_on_chairs.py`
 
 # Alodataset
 

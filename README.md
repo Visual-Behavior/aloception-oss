@@ -9,27 +9,51 @@
 **Aloception** is a set of packages for computer vision built on top of popular deep learning libraries:
 [pytorch](<https://pytorch.org/>)  and  [pytorch lightnig](https://www.pytorchlightning.ai/).
 
-**Aloscene** extend the use of
-  [tensors](https://pytorch.org/tutorials/beginner/examples_tensor/two_layer_net_tensor.html) with **Augmented Tensors** designed to facilitate the use of computer vision data
-  (such as frames, 2d boxes, 3d boxes, optical flow, disparity, camera parameters...).
 
+**Aloscene** extend the use of
+[tensors](https://pytorch.org/tutorials/beginner/examples_tensor/two_layer_net_tensor.html) with **Augmented Tensors** designed to facilitate the use of computer vision data
+(such as frames, 2d boxes, 3d boxes, optical flow, disparity, camera parameters...).  
+
+
+```python
+frame = alonet.Frame("path/to/frame.jpg")
+frame = frame.to("cuda")
+frame.get_view().render()
+```
 
 **Alodataset** implement ready-to-use datasets for computer vision with the help of **aloscene** and **augmented tensors** to make it easier to transform and display your vision data.
 
+```python
+coco_dataset = CocoDetectionDataset(sample=True)
+for frames coco_dataset.stream_loader():
+    frames.get_view().render()
+```
 
 **Alonet** integrates several promising computer vision architectures. You can use it for research purposes or to finetune and deploy your model using TensorRT. Alonet is mainly built on top  of [ lightnig](https://www.pytorchlightning.ai/) with the help of
   **aloscene** and **alodataset**.
 
+```python
+# Load model
+model = DetrR50(num_classes=91, weights="detr-r50").eval()
+
+# Open and normalized frame
+frame = aloscene.Frame("path/to/image").norm_resnet()
+frames = aloscene.Frame.batch_list([frame])
+
+# Run inference
+pred_boxes = model.inference( model(frames))
+
+# Add and display the predicted boxes
+frame.append_boxes2d(pred_boxes[0], "pred_boxes")
+frame.get_view().render()
+```
 
 
+### Note
+One can use **aloscene** independently than the two other packages to handle computer vision data, or to improve its
+training pipelines with **augmented tensors**.
 
-**NOTE**
-
-    One can use **aloscene** independently than the two other packages to handle computer vision data, or to improve its
-    training pipelines with **augmented tensors**.
-
-
-# Install
+## Install
 
 Aloception's packages are built on top of multiple libraries. Most of them are listed in the **requirements.txt**
 ```
@@ -39,9 +63,17 @@ pip install -r requirements.txt
 Once the others packages are installed, you still need to install pytorch based on your hardware and environment
 configuration. Please, ref to the `pytorch website <https://pytorch.org/>`_  for this install.
 
+## Getting started
+
+<ul>
+  <li><a href="https://visual-behavior.github.io/aloception/getting_started/getting_started.html">Getting started</a></li>
+  <li><a href="https://visual-behavior.github.io/aloception/getting_started/aloscene.html">Aloscene: Computer vision with ease</a></li>
+  <li><a href="https://visual-behavior.github.io/aloception/getting_started/alodataset.html">Alodataset: Loading your vision datasets</a></li>
+  <li><a href="https://visual-behavior.github.io/aloception/getting_started/alonet.html">Alonet: Loading & training your models</a></li>
+  <li><a href="https://visual-behavior.github.io/aloception/getting_started/augmented_tensor.html">About augmented tensors</a></li>
+</ul>
 
 # Alonet
-
 
 ## Models
 

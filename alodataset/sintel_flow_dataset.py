@@ -96,7 +96,8 @@ class SintelFlowDataset(SintelBaseDataset):
 
 if __name__ == "__main__":
     dataset = SintelFlowDataset(sample=True)
-    # show some frames at various indices
-    for idx in [1, 2, 5]:
-        frames = dataset.getitem(idx)["left"]
-        frames.get_view().render()
+
+    for f, frames in enumerate(dataset.train_loader(batch_size=2)):
+        frames = Frame.batch_list(frames)
+        frames["left"].get_view().render()
+        break

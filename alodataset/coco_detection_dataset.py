@@ -37,47 +37,47 @@ class CocoDetectionDataset(BaseDataset, CocoDetectionSample):
         **kwargs,
     ):
         """
-    Attributes
-    ----------
-    CATEGORIES : set
-        List of all unique tags read from the database
-    labels_names : list
-        List of labels according to their corresponding positions
-    prepare : :mod:`BaseDataset <base_dataset>`
+        Attributes
+        ----------
+        CATEGORIES : set
+            List of all unique tags read from the database
+        labels_names : list
+            List of labels according to their corresponding positions
+        prepare : :mod:`BaseDataset <base_dataset>`
 
-    Parameters
-    ----------
-    img_folder : str
-        Path to the image folder relative at `dataset_dir` (stored into the aloception config file)
-    ann_file : str
-        Path to the annotation file relative at `dataset_dir` (stored into the aloception config file)
-    name : str, optional
-        Key of database name in `alodataset_config.json` file, by default *coco*
-    return_masks : bool, optional
-        Include masks labels in the output, by default False
-    classes : list, optional
-        List of classes to be filtered in the annotation reading process, by default None
-    stuff_ann_file: str, optional
-        Additional annotations with new classes, by default None
-    **kwargs : dict
-        :mod:`BaseDataset <base_dataset>` optional parameters
+        Parameters
+        ----------
+        img_folder : str
+            Path to the image folder relative at `dataset_dir` (stored into the aloception config file)
+        ann_file : str
+            Path to the annotation file relative at `dataset_dir` (stored into the aloception config file)
+        name : str, optional
+            Key of database name in `alodataset_config.json` file, by default *coco*
+        return_masks : bool, optional
+            Include masks labels in the output, by default False
+        classes : list, optional
+            List of classes to be filtered in the annotation reading process, by default None
+        stuff_ann_file: str, optional
+            Additional annotations with new classes, by default None
+        **kwargs : dict
+            :mod:`BaseDataset <base_dataset>` optional parameters
 
-    Raises
-    ------
-    Exception
-        If a classes list is decided, each label must be inside of :attr:`CATEGORIES` list attribute
+        Raises
+        ------
+        Exception
+            If a classes list is decided, each label must be inside of :attr:`CATEGORIES` list attribute
 
-    Examples
-    --------
-        >>> coco_ds = CocoDetectionDataset(
-        ... img_folder = "val2017",
-        ... ann_file = "annotations/instances_val2017.json",
-        ... mode = "validation"
-        )
-        >>> frames = next(iter(coco_ds.train_loader()))
-        >>> frames = frames[0].batch_list(frames)
-        >>> frames.get_view(frames.boxes2d,).render()
-    """
+        Examples
+        --------
+            >>> coco_ds = CocoDetectionDataset(
+            ... img_folder = "val2017",
+            ... ann_file = "annotations/instances_val2017.json",
+            ... mode = "validation"
+            )
+            >>> frames = next(iter(coco_ds.train_loader()))
+            >>> frames = frames[0].batch_list(frames)
+            >>> frames.get_view(frames.boxes2d,).render()
+        """
 
         if "sample" not in kwargs:
             kwargs["sample"] = False
@@ -140,7 +140,7 @@ class CocoDetectionDataset(BaseDataset, CocoDetectionSample):
         self.items = self.ids
 
     def getitem(self, idx):
-        """ Get the :mod:`Frame <aloscene.frame>` corresponds to *idx* index
+        """Get the :mod:`Frame <aloscene.frame>` corresponds to *idx* index
 
         Parameters
         ----------
@@ -298,14 +298,7 @@ def show_random_frame(coco_loader):
 
 def main():
     """Main"""
-    # coco_dataset = CocoDetectionDataset(
-    #     img_folder="val2017",
-    #     stuff_ann_file="annotations/stuff_val2017.json",
-    #     ann_file="annotations/instances_val2017.json",
-    #     return_masks=True,
-    # )
     coco_dataset = CocoDetectionDataset(sample=True)
-
     for f, frames in enumerate(coco_dataset.train_loader(batch_size=2)):
         frames = Frame.batch_list(frames)
         frames.get_view().render()

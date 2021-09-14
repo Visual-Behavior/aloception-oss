@@ -25,7 +25,6 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         boxes2d: Union[dict, BoundingBoxes2D] = None,
         boxes3d: Union[dict, BoundingBoxes3D] = None,
         flow: Flow = None,
-        mask: Mask = None,
         segmentation: Mask = None,
         disparity: Disparity = None,
         normalization="255",
@@ -45,7 +44,6 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         tensor.add_label("boxes2d", boxes2d, align_dim=["B", "T"], mergeable=False)
         tensor.add_label("boxes3d", boxes3d, align_dim=["B", "T"], mergeable=False)
         tensor.add_label("flow", flow, align_dim=["B", "T"], mergeable=False)
-        tensor.add_label("mask", mask, align_dim=["B", "T"], mergeable=True)
         tensor.add_label("disparity", disparity, align_dim=["B", "T"], mergeable=True)
         tensor.add_label("segmentation", segmentation, align_dim=["B", "T"], mergeable=False)
 
@@ -98,19 +96,6 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
             boxes are attached to the frame, the boxes will be added to the set of boxes.
         """
         self._append_label("boxes3d", boxes_3d, name)
-
-    def append_mask(self, mask: Mask, name: str = None):
-        """Attach a mask to the frame.
-
-        Parameters
-        ----------
-        mask: aloscene.Mask
-            Mask to attached to the Frame
-        name: str
-            If none, the mask will be attached without name (if possible). Otherwise if no other unnamed
-            mask are attached to the frame, the mask will be added to the set of mask.
-        """
-        self._append_label("mask", mask, name)
 
     def append_flow(self, flow, name=None):
         """Attach a flow to the frame.

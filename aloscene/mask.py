@@ -95,7 +95,56 @@ class Mask(aloscene.tensors.SpatialAugmentedTensor):
             )
         return View(frame, title=title)
 
+    def masks2panoptic(self):
+        """Create a panoptic view of the frame, where each pixel represent one class
+
+        Returns
+        -------
+        np.array
+            Array of (H,W) dimensions, where each value represent one class
+        """
+        """"""
+        assert self.names[0] != "T" and self.names[1] != "B"
+        frame = self.cpu().rename(None).permute([1, 2, 0]).detach().contiguous().numpy()
+
+        # Try to retrieve the associated label ID (if any)
+        labels = self.labels if isinstance(self.labels, aloscene.Labels) else [None] * len(self)
+        if isinstance(self.labels, aloscene.Labels) and len(self) > 0:
+            assert self.labels.encoding == "id"
+
+            frame = np.concatenate([np.zeros_like(frame[..., [0]]), frame], axis=-1)  # Add background class with ID=-1
+            frame = np.argmax(frame, axis=-1).astype("int") - 1  # Get one mask by ID
+
+            assert len(labels) == len(self)  # Required to plot labels
+            for i, label in enumerate(labels):  # Add ID in text and use same color by object ID
+                if label is not None:
+                    # Change ID if labels are defined
+                    label = int(label)
+                    frame[frame == i] = label
+        return frame
+
     def get_view(self, frame: Tensor = None, size: tuple = None, labels_set: str = None, **kwargs):
+        """Get view of segmentation mask and used it in a input Frame
+
+        Parameters
+        ----------
+        frame : Tensor, optional
+            Frame where the segmentation mask will be displayed, by default None
+        size : tuple, optional
+            Size of a desired masks, by default not-resize
+        labels_set : str, optional
+            TODO set of labels to show in segmentation, by default all
+
+        Returns
+        -------
+        Renderer.View
+            Frame view, ready to render
+
+        Raises
+        ------
+        Exception
+            Input frame must be a aloscene.Frame object
+        """
         from aloscene import Frame
 
         if not isinstance(self.labels, aloscene.Labels):

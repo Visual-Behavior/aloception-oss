@@ -105,4 +105,5 @@ class PanopticHungarianMatcher(nn.Module):
 
 
 def build_matcher(args):
+    """Matcher by default"""
     return PanopticHungarianMatcher()

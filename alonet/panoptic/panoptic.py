@@ -1,4 +1,5 @@
 # Inspired by the official DETR repository and adapted for aloception
+# https://github.com/facebookresearch/detr/blob/eb9f7e03ed8e2ed2cd55528989fe7df890bc3fc0/models/detr.py
 """
 Panoptic module to predict object segmentation.
 """
@@ -9,22 +10,38 @@ from torch import nn
 from alonet.detr.detr_r50 import DetrR50
 from alonet.panoptic.nn import FPNstyleCNN
 from alonet.panoptic.nn import MHAttentionMap
+from alonet.detr.misc import assert_and_export_onnx
 
 import aloscene
+import alonet
 
 
 class PanopticHead(nn.Module):
+    """Head Pytorch module to predict segmentation masks from previous boxes detection task.
+
+    Parameters
+    ----------
+    DETR_module : alonet.detr.Detr
+        Object detection module based on DETR architecture
+    aux_loss: bool, optional
+        Return aux outputs in forward step (if required), by default use DETR_module.aux_loss attribute value
+    device : torch.device, optional
+        Configure module in CPU or GPU, by default torch.device("cpu")
+    """
+
+    INPUT_MEAN_STD = alonet.detr.detr.INPUT_MEAN_STD
+
     def __init__(
-        self, DETR_module, device: torch.device = torch.device("cpu"),
+        self, DETR_module: alonet.detr.Detr, aux_loss: bool = None, device: torch.device = torch.device("cpu"),
     ):
         super().__init__()
         self.detr = DETR_module
-        self.INPUT_MEAN_STD = DETR_module.INPUT_MEAN_STD
 
         # Get complement outputs in forward
         self.detr.return_dec_outputs = True
         self.detr.return_enc_outputs = True
         self.detr.return_bb_outputs = True
+        self.detr.aux_loss = aux_loss or self.detr.aux_loss
 
         # Freeze DETR parameters to not train them
         for p in self.parameters():
@@ -40,7 +57,33 @@ class PanopticHead(nn.Module):
 
         self.device = device
 
+    @assert_and_export_onnx(check_mean_std=True, input_mean_std=INPUT_MEAN_STD)
     def forward(self, frames: aloscene.frame, **kwargs):
+        """PanopticHead forward, that joint to the previous boxes predictions the new masks feature.
+
+        Parameters
+        ----------
+        frames : aloscene.frame
+            Input frame to network
+
+        Returns
+        -------
+        Dict
+            It outputs a dict with the following elements:
+                - "pred_logits": The classification logits (including no-object) for all queries.
+                                Shape = [batch_size x num_queries x (num_classes + 1)]
+                - "pred_boxes": The normalized boxes coordinates for all queries, represented as
+                                (center_x, center_y, height, width). These values are normalized in [0, 1],
+                                relative to the size of each individual image (disregarding possible padding).
+                                See PostProcess for information on how to retrieve the unnormalized bounding box.
+                - "pred_masks": Binary masks, each one to assign to predicted boxes.
+                                Shape = [batch_size x num_queries x H // 4 x W // 4]
+                - "bb_outpus": Backbone outputs, requered in this forward
+                - "enc_outpus": Transformer encoder outputs, requered on this forward
+                - "dec_outpus": Transformer decoder outputs, requered on this forward
+                - "aux_outputs": Optional, only returned when auxilary losses are activated. It is a list of
+                                dictionnaries containing the two above keys for each decoder layer.
+        """
         # DETR model forward to obtain box embeddings
         out = self.detr(frames, **kwargs)
         features = out["bb_outputs"]
@@ -54,7 +97,7 @@ class PanopticHead(nn.Module):
         bbox_mask = self.bbox_attention(out["dec_outputs"][-1], out["enc_outputs"], mask=mask)
         # And then, use MHA ouput as input of FPN-style CNN
         seg_masks = self.mask_head(self.detr.input_proj(src), bbox_mask, [features[i][0] for i in range(3)[::-1]])
-        
+
         out["pred_masks"] = seg_masks.view(bs, self.detr.num_queries, seg_masks.shape[-2], seg_masks.shape[-1])
         out["frame_size"] = frames.shape[-2:]
         return out  # Return the DETR output + pred_masks

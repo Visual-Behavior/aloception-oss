@@ -1,6 +1,7 @@
-# Inspired by the official DETR repository and adapted for aloception
+# Taken from
+# https://github.com/facebookresearch/detr/blob/eb9f7e03ed8e2ed2cd55528989fe7df890bc3fc0/models/segmentation.py
 """
-Panoptic module to predict object segmentation.
+FPN Style used in PanopticHead module.
 """
 from typing import List
 import torch
@@ -18,7 +19,7 @@ class FPNstyleCNN(nn.Module):
     Upsampling is done using a FPN approach
     """
 
-    def __init__(self, dim, fpn_dims, context_dim):
+    def __init__(self, dim: int, fpn_dims: List[int], context_dim: int):
         super().__init__()
 
         inter_dims = [dim, context_dim // 2, context_dim // 4, context_dim // 8, context_dim // 16, context_dim // 64]
@@ -45,7 +46,7 @@ class FPNstyleCNN(nn.Module):
                 nn.init.kaiming_uniform_(m.weight, a=1)
                 nn.init.constant_(m.bias, 0)
 
-    def forward(self, x: Tensor, bbox_mask: Tensor, fpns: List[Tensor]):
+    def forward(self, x: Tensor, bbox_mask: Tensor, fpns: List[Tensor]) -> torch.Tensor:
         x = torch.cat([_expand(x, bbox_mask.shape[1]), bbox_mask.flatten(0, 1)], 1)
 
         x = self.lay1(x)

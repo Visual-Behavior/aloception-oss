@@ -2,8 +2,31 @@ import alonet
 
 
 class LitPanopticDetr(alonet.detr.LitDetr):
+    """LightningModule to train Detr models
+
+    Parameters
+    ----------
+    args : Namespace, optional
+        Attributes stored in specific Namespace, by default None
+    weights : str, optional
+        Weights name to load, by default None
+    gradient_clip_val : float, optional
+        pytorch_lightning.trainer.trainer parameter. 0 means don’t clip, by default 0.1
+    accumulate_grad_batches : int, optional
+        Accumulates grads every k batches or as set up in the dict, by default 4
+    model_name : str, optional
+        Name use to define the model, by default "panoptic-detr-r50"
+    model : torch.nn, optional
+        Custom model to train
+
+    Notes
+    -----
+    Arguments entered by the user (kwargs) will replace those stored in args attribute
+    """
+
     @staticmethod
     def add_argparse_args(parent_parser, parser=None):
+        """Add arguments to parent parser with default values"""
         parser = parent_parser.add_argument_group("LitPanoptic") if parser is None else parser
         parser.add_argument(
             "--weights",
@@ -25,6 +48,7 @@ class LitPanopticDetr(alonet.detr.LitDetr):
         return parent_parser
 
     def build_model(self, num_classes=184, aux_loss=True, weights=None):
+        """Build model with default parameters"""
         if self.model_name == "panoptic-detr-r50":
             detr_model = alonet.detr.DetrR50Finetune(num_classes=num_classes, aux_loss=aux_loss, weights="detr-r50")
         elif self.model_name == "panoptic-deformable-detr-r50":
@@ -39,11 +63,13 @@ class LitPanopticDetr(alonet.detr.LitDetr):
         return alonet.panoptic.PanopticHead(detr_model)
 
     def build_matcher(self):
+        """Build default matcher"""
         return alonet.panoptic.PanopticHungarianMatcher()
 
     def build_criterion(
         self, matcher=None, loss_dice_weight=1, loss_focal_weight=1, losses=["masks"], aux_loss_stage=6,
     ):
+        """Build default criterion"""
         return alonet.panoptic.PanopticCriterion(
             matcher=matcher or self.matcher,
             loss_dice_weight=loss_dice_weight,
@@ -53,6 +79,7 @@ class LitPanopticDetr(alonet.detr.LitDetr):
         )
 
     def callbacks(self, data_loader):
+        """Default callbacks"""
         metrics_callback = alonet.callbacks.MetricsCallback()
         # obj_detection_callback = alonet.detr.DetrObjectDetectorCallback(
         #     val_frames=next(iter(data_loader.val_dataloader()))

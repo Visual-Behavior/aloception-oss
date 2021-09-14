@@ -67,11 +67,24 @@ class LitPanopticDetr(alonet.detr.LitDetr):
         return alonet.panoptic.PanopticHungarianMatcher()
 
     def build_criterion(
-        self, matcher=None, loss_dice_weight=1, loss_focal_weight=1, losses=["masks"], aux_loss_stage=6,
+        self,
+        matcher=None,
+        loss_dice_weight=2,
+        loss_focal_weight=2,
+        loss_ce_weight=1,
+        loss_boxes_weight=5,
+        loss_giou_weight=2,
+        eos_coef=0.1,
+        losses=["masks", "boxes", "labels"],
+        aux_loss_stage=6,
     ):
         """Build default criterion"""
         return alonet.panoptic.PanopticCriterion(
             matcher=matcher or self.matcher,
+            loss_ce_weight=loss_ce_weight,
+            loss_boxes_weight=loss_boxes_weight,
+            loss_giou_weight=loss_giou_weight,
+            eos_coef=eos_coef,
             loss_dice_weight=loss_dice_weight,
             loss_focal_weight=loss_focal_weight,
             aux_loss_stage=aux_loss_stage,

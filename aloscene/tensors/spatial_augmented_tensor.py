@@ -13,11 +13,20 @@ from aloscene.utils.data_utils import LDtoDL
 
 class SpatialAugmentedTensor(AugmentedTensor):
     @staticmethod
-    def __new__(cls, x, *args, cam_intrinsic: CameraIntrinsic = None, cam_extrinsic: CameraExtrinsic = None, **kwargs):
+    def __new__(
+        cls,
+        x,
+        *args,
+        cam_intrinsic: CameraIntrinsic = None,
+        cam_extrinsic: CameraExtrinsic = None,
+        mask=None,
+        **kwargs,
+    ):
         tensor = super().__new__(cls, x, *args, **kwargs)
         # Add camera parameters as labels
         tensor.add_label("cam_intrinsic", cam_intrinsic, align_dim=["B", "T"], mergeable=True)
         tensor.add_label("cam_extrinsic", cam_extrinsic, align_dim=["B", "T"], mergeable=True)
+        tensor.add_label("mask", mask, align_dim=["B", "T"], mergeable=True)
         return tensor
 
     def __init__(self, x, *args, **kwargs):
@@ -34,6 +43,19 @@ class SpatialAugmentedTensor(AugmentedTensor):
     @property
     def H(self):
         return self.shape[self.names.index("H")]
+
+    def append_mask(self, mask, name: str = None):
+        """Attach a mask to the frame.
+
+        Parameters
+        ----------
+        mask: aloscene.Mask
+            Mask to attached to the Frame
+        name: str
+            If none, the mask will be attached without name (if possible). Otherwise if no other unnamed
+            mask are attached to the frame, the mask will be added to the set of mask.
+        """
+        self._append_label("mask", mask, name)
 
     def append_cam_intrinsic(self, cam_intrinsic: CameraIntrinsic):
         self._append_label("cam_intrinsic", cam_intrinsic)
@@ -218,15 +240,17 @@ class SpatialAugmentedTensor(AugmentedTensor):
 
         Parameters
         ----------
-        sa_tensors: list
-            List of any aloscene.tensors.SpatialAugmentedTensor (or list of dicts or SpatialAugmentedTensor)
+        sa_tensors: list or dict
+            List of any aloscene.tensors.SpatialAugmentedTensor. If dict is given, this method will be applied on each
+            list of spatial augmented tensors within the list
         pad_boxes: bool
             By default, do not rescale the boxes attached to the sptial augmented Tensor (see explanation in boxes2d.pad)
 
         Returns
         -----------
-        batch_frame: a child of aloscene.tensors.SpatialAugmentedTensor (or dict of SpatialAugmentedTensor)
-            Multiple sa_tensor with mask label
+        aloscene.tensors.SpatialAugmentedTensor
+            A child of aloscene.tensors.SpatialAugmentedTensor (or dict of SpatialAugmentedTensor)
+            with `mask` label to keep track of the padded areas.
         """
         assert len(sa_tensors) >= 1 and isinstance(sa_tensors, list)
         frame0 = sa_tensors[0]
@@ -240,28 +264,33 @@ class SpatialAugmentedTensor(AugmentedTensor):
         max_h, max_w = 0, 0
         dtype = sa_tensors[0].dtype
         device = sa_tensors[0].device
-        normalization = sa_tensors[0].normalization
-        mean_std = sa_tensors[0].mean_std
-        instance = type(sa_tensors[0])
+
+        if (
+            "N" in sa_tensors[0].names
+            or "C" not in sa_tensors[0].names
+            or "H" not in sa_tensors[0].names
+            or "W" not in sa_tensors[0].names
+        ):
+            raise Exception(
+                "{} (with names: {}) as it is, does not seem to be mergeable using batch_list.".format(
+                    type(sa_tensors[0]), sa_tensors[0].names
+                )
+            )
 
         # Retrieve the target size
         for i, frame in enumerate(sa_tensors):
-            max_h, max_w = max(frame.H, max_h), max(frame.W, max_w)
+            if frame is not None:
+                max_h, max_w = max(frame.H, max_h), max(frame.W, max_w)
 
         saved_frame_labels = {}
         n_sa_tensors = []
-        for i, frame in enumerate(sa_tensors):
+        for i, n_frame in enumerate(sa_tensors):
+            if n_frame is None:
+                continue
             # Add the batch dimension and drop the labels
-            n_sa_tensors.append(frame.batch())
-
+            n_sa_tensors.append(n_frame.batch())
+            frame = n_frame
             labels = n_sa_tensors[i].get_labels()
-            # Pad labels
-            labels = AugmentedTensor.apply_on_label(
-                labels,
-                lambda l: l.pad(
-                    (0, max_h / frame.H - 1), (0, max_w / frame.W - 1), frame_size=frame.HW, pad_boxes=pad_boxes
-                ),
-            )
 
             # Merge labels on the first dim (TODO, move on an appropriate method)
             # The following can be merge into an other method in the augmented_tensor class that do roughly the same thing
@@ -303,36 +332,40 @@ class SpatialAugmentedTensor(AugmentedTensor):
         batch_size = len(n_sa_tensors)
         # Retrieve the new shapes and dim names
         n_tensor_shape, n_mask_shape = list(n_sa_tensors[0].shape), list(n_sa_tensors[0].shape)
+        # New target frame size
         n_tensor_shape[0], n_mask_shape[0] = batch_size, batch_size
         n_tensor_shape[n_sa_tensors[0].names.index("H")] = max_h
         n_tensor_shape[n_sa_tensors[0].names.index("W")] = max_w
+        # New target mask shape
         n_mask_shape[n_sa_tensors[0].names.index("H")] = max_h
         n_mask_shape[n_sa_tensors[0].names.index("W")] = max_w
         n_mask_shape[n_sa_tensors[0].names.index("C")] = 1
         n_names = n_sa_tensors[0].names
 
+        n_padded_list = []
+        for spatial_tensor in n_sa_tensors:
+            h_pad = (0, max_h - spatial_tensor.H)
+            w_pad = (0, max_w - spatial_tensor.W)
+            padded_spatial_tensor = spatial_tensor.pad(h_pad, w_pad)
+            n_padded_list.append(padded_spatial_tensor)
+
+        n_augmented_tensors = torch.cat(n_padded_list, dim=0)
+
         # Set the new mask and tensor buffer filled up with zeros and ones
         # Also, for normalized frames, the zero value is actually different based on the mean/std
         n_tensor = torch.zeros(tuple(n_tensor_shape), dtype=dtype, device=device)
-        if mean_std is not None:
-            mean_tensor, std_tensor = instance._get_mean_std_tensor(
-                tuple(n_mask_shape), n_names, mean_std, device=device
-            )
-            n_tensor = n_tensor - mean_tensor
-            n_tensor = n_tensor / std_tensor
-        n_mask = torch.ones(tuple(n_mask_shape), dtype=torch.float, device=device)
 
+        # Create the batch list mask
+        n_mask = torch.ones(tuple(n_mask_shape), dtype=torch.float, device=device)
         for b, frame in enumerate(n_sa_tensors):
             n_slice = frame.get_slices({"B": b, "H": slice(None, frame.H), "W": slice(None, frame.W)})
             n_tensor[n_slice].copy_(frame[0])
             n_mask[n_slice] = 0
 
-        n_frame = instance(n_tensor, names=n_names, normalization=normalization, device=device, mean_std=mean_std)
-        n_frame.append_mask(aloscene.Mask(n_mask, names=n_names))
-        # Put back the merged dropped labels
-        n_frame.set_labels(saved_frame_labels)
+        # n_frame = instance(n_tensor, names=n_names, normalization=normalization, device=device, mean_std=mean_std)
+        n_augmented_tensors.append_mask(aloscene.Mask(n_mask, names=n_names))
 
-        return n_frame
+        return n_augmented_tensors
 
     def _relative_to_absolute_hs_ws(self, hs=None, ws=None, assert_integer=True):
         """
@@ -487,11 +520,10 @@ class SpatialAugmentedTensor(AugmentedTensor):
         -------
         padded
         """
-
-        pad_top = int(offset_y[0] * self.H)
-        pad_bottom = int(offset_y[1] * self.H)
-        pad_left = int(offset_x[0] * self.W)
-        pad_right = int(offset_x[1] * self.W)
+        pad_top = int(round(offset_y[0] * self.H))
+        pad_bottom = int(round(offset_y[1] * self.H))
+        pad_left = int(round(offset_x[0] * self.W))
+        pad_right = int(round(offset_x[1] * self.W))
 
         padding = [pad_left, pad_top, pad_right, pad_bottom]
         tensor_padded = F.pad(self.rename(None), padding, padding_mode="constant", fill=value).reset_names()

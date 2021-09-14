@@ -28,7 +28,7 @@ class Mask(aloscene.tensors.SpatialAugmentedTensor):
             x = load_mask(x)
             kwargs["names"] = ("N", "H", "W")
         tensor = super().__new__(cls, x, *args, **kwargs)
-        tensor.add_label("labels", labels, align_dim=["N"], mergeable=True)
+        tensor.add_label("labels", labels, align_dim=["N"], mergeable=False)
         return tensor
 
     def __init__(self, x, *args, **kwargs):

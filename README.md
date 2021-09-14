@@ -155,6 +155,8 @@ flow[0].get_view().render()
 
 # Alodataset
 
+Here is a list of all the datasets you can use on Aloception. If you're dataset is not in the list but is important for computer vision. Please let us know using the issues or feel free to contribute.
+  
 
 ## Datasets
 
@@ -164,9 +166,11 @@ flow[0].get_view().render()
 | CrowdHuman  | alodataset.CrowdHumanDataset   | `python alodataset/crowd_human_dataset.py `
 | Waymo  | alodataset.WaymoDataset   | `python alodataset/waymo_dataset.py`
 | ChairsSDHom | alodataset.ChairsSDHomDataset | `python alodataset/chairssdhom_dataset.py`
-| FlyingThings3DSubset | alodataset.FlyingThings3DSubsetDataset | `python alodataset/flyingthings_3D_subset_dataset.py`
+| FlyingThings3DSubset | alodataset.FlyingThings3DSubsetDataset | `python alodataset/flyingthings3D_subset_dataset.py`
 | FlyingChairs2 | alodataset.FlyingChairs2Dataset | `python alodataset/flying_chairs2_dataset.py`
-| Sintel | alodataset.SintelDataset | `python alodataset/sintel_dataset.py`
+| SintelDisparityDataset | alodataset.SintelDisparityDataset | `python alodataset/sintel_disparity_dataset.py`
+| SintelFlowDataset | alodataset.SintelFlowDataset | `python alodataset/sintel_flow_dataset.py`
+| MOT17 | alodataset.Mot17 | `python alodataset/mot17.py`
 
 
 

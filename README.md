@@ -16,17 +16,17 @@
 
 
 ```python
-frame = alonet.Frame("path/to/frame.jpg")
-frame = frame.to("cuda")
+frame = aloscene.Frame("/path/to/image.jpg")
+frame = frame.to("cpu")
 frame.get_view().render()
 ```
 
 **Alodataset** implement ready-to-use datasets for computer vision with the help of **aloscene** and **augmented tensors** to make it easier to transform and display your vision data.
 
 ```python
-coco_dataset = CocoDetectionDataset(sample=True)
-for frames coco_dataset.stream_loader():
-    frames.get_view().render()
+coco_dataset = alodataset.CocoDetectionDataset(sample=True)
+for frame in coco_dataset.stream_loader():
+    frame.get_view().render()
 ```
 
 **Alonet** integrates several promising computer vision architectures. You can use it for research purposes or to finetune and deploy your model using TensorRT. Alonet is mainly built on top  of [ lightnig](https://www.pytorchlightning.ai/) with the help of
@@ -34,14 +34,13 @@ for frames coco_dataset.stream_loader():
 
 ```python
 # Load model
-model = DetrR50(num_classes=91, weights="detr-r50").eval()
+model = alonet.detr.DetrR50(num_classes=91, weights="detr-r50").eval()
 
 # Open and normalized frame
-frame = aloscene.Frame("path/to/image").norm_resnet()
-frames = aloscene.Frame.batch_list([frame])
+frame = aloscene.Frame("/path/to/image.jpg").norm_resnet()
 
 # Run inference
-pred_boxes = model.inference( model(frames))
+pred_boxes = model.inference(model([frame]))
 
 # Add and display the predicted boxes
 frame.append_boxes2d(pred_boxes[0], "pred_boxes")
@@ -71,6 +70,18 @@ configuration. Please, ref to the `pytorch website <https://pytorch.org/>`_  for
   <li><a href="https://visual-behavior.github.io/aloception/getting_started/alodataset.html">Alodataset: Loading your vision datasets</a></li>
   <li><a href="https://visual-behavior.github.io/aloception/getting_started/alonet.html">Alonet: Loading & training your models</a></li>
   <li><a href="https://visual-behavior.github.io/aloception/getting_started/augmented_tensor.html">About augmented tensors</a></li>
+</ul>
+
+
+## Tutorials
+
+<ul>
+  <li><a href="https://visual-behavior.github.io/aloception/tutorials/data_setup.html">How to setup your data?</a></li>
+  <li><a href="https://visual-behavior.github.io/aloception/tutorials/training_detr.html">Training Detr</a></li>
+  <li><a href="https://visual-behavior.github.io/aloception/tutorials/finetuning_detr.html">Finetuning DETR</a></li>
+  <li><a href="https://visual-behavior.github.io/aloception/tutorials/training_deformable_detr.html">Training Deformable DETR</a></li>
+  <li><a href="https://visual-behavior.github.io/aloception/tutorials/finetuning_deformable_detr.html">Finetuning Deformanble DETR</a></li>
+  <li><a href="https://visual-behavior.github.io/aloception/tutorials/tensort_inference.html">Exporting DETR / Deformable-DETR to TensorRT</a></li>
 </ul>
 
 # Alonet

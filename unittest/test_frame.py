@@ -1,3 +1,4 @@
+from aloscene.labels import Labels
 from aloscene.bounding_boxes_2d import BoundingBoxes2D
 
 # from aloscene.renderer import View
@@ -523,7 +524,33 @@ def test_device_propagation():
     pass
 
 
+def test_frame_label():
+    frame = aloscene.Frame(np.random.uniform(0, 1, (3, 600, 600)), names=("C", "H", "W"))
+
+    label = aloscene.Labels([1], encoding="id")
+    frame.append_labels(label)
+
+    assert frame.labels == 1
+    frame = frame.batch()
+    assert len(frame.labels) == 1
+    frame = frame.temporal()
+    assert len(frame.labels) == 1 and len(frame.labels[0]) == 1
+    frame1 = frame.clone()
+    frame2 = frame.clone()
+    frames_batch = torch.cat([frame1, frame2], dim=1)
+    assert len(frames_batch.labels) == 1 and len(frames_batch.labels[0]) == 2
+    frames_temporal = torch.cat([frame1, frame2], dim=0)
+    assert len(frames_temporal.labels) == 2 and len(frames_temporal.labels[0]) == 1
+    n_frame = frames_batch[:, 0]
+    assert len(n_frame.labels) == 1 and len(n_frame.labels[0]) == 1
+    n_frame = frames_temporal[0]
+    assert len(n_frame.labels) == 1 and len(n_frame.labels[0]) == 1
+    frame = n_frame[0]
+    assert len(frame.labels) == 1 and len(frame.labels.shape) == 1
+
+
 if __name__ == "__main__":
+    test_frame_label()
     test_frame_from_dt()
     test_frame_01()
     test_frame_255()

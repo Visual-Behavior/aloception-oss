@@ -7,7 +7,7 @@ from typing import TypeVar, Union
 import aloscene
 from aloscene.renderer import View
 from aloscene.disparity import Disparity
-from aloscene import BoundingBoxes2D, BoundingBoxes3D, Flow, Mask
+from aloscene import BoundingBoxes2D, BoundingBoxes3D, Flow, Mask, Labels
 
 # from aloscene.camera_calib import CameraExtrinsic, CameraIntrinsic
 from aloscene.io.image import load_image
@@ -24,6 +24,7 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         x,
         boxes2d: Union[dict, BoundingBoxes2D] = None,
         boxes3d: Union[dict, BoundingBoxes3D] = None,
+        labels: Union[dict, Labels] = None,
         flow: Flow = None,
         segmentation: Mask = None,
         disparity: Disparity = None,
@@ -46,6 +47,7 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         tensor.add_label("flow", flow, align_dim=["B", "T"], mergeable=False)
         tensor.add_label("disparity", disparity, align_dim=["B", "T"], mergeable=True)
         tensor.add_label("segmentation", segmentation, align_dim=["B", "T"], mergeable=False)
+        tensor.add_label("labels", labels, align_dim=["B", "T"], mergeable=True)
 
         # Add other tensor property
         tensor.add_property("normalization", normalization)
@@ -70,6 +72,20 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         The attached labels will not be saved.
         """
         torchvision.utils.save_image(self.cpu().norm01().as_tensor(), tgt_path)
+
+    def append_labels(self, labels: Labels, name: str = None):
+        """Attach a set of labels to the frame. This can be usefull for classification
+        or multi label classification. The rank of the label must be >= 1
+
+        Parameters
+        ----------
+        labels: aloscene.Labels
+            Set of labels to attached to the frame
+        name: str
+            If none, the label will be attached without name (if possible). Otherwise if no other unnamed
+            labels are attached to the frame, the labels will be added to the set of labels.
+        """
+        self._append_label("labels", labels, name)
 
     def append_boxes2d(self, boxes: BoundingBoxes2D, name: str = None):
         """Attach a set of boxes to the frame.

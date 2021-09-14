@@ -346,7 +346,7 @@ class SpatialAugmentedTensor(AugmentedTensor):
         for spatial_tensor in n_sa_tensors:
             h_pad = (0, max_h - spatial_tensor.H)
             w_pad = (0, max_w - spatial_tensor.W)
-            padded_spatial_tensor = spatial_tensor.pad(h_pad, w_pad)
+            padded_spatial_tensor = spatial_tensor.pad(h_pad, w_pad, pad_boxes=pad_boxes)
             n_padded_list.append(padded_spatial_tensor)
 
         n_augmented_tensors = torch.cat(n_padded_list, dim=0)

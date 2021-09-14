@@ -93,11 +93,12 @@ class LitPanopticDetr(alonet.detr.LitDetr):
 
     def callbacks(self, data_loader):
         """Default callbacks"""
+        obj_detection_callback = alonet.panoptic.PanopticObjectDetectorCallback(
+            val_frames=next(iter(data_loader.val_dataloader()))
+        )
         metrics_callback = alonet.callbacks.MetricsCallback()
-        # obj_detection_callback = alonet.detr.DetrObjectDetectorCallback(
-        #     val_frames=next(iter(data_loader.val_dataloader()))
-        # )
-        return [metrics_callback]
+        ap_metrics_callback = alonet.callbacks.ApMetricsCallback()
+        return [obj_detection_callback, metrics_callback, ap_metrics_callback]
 
     def run_train(self, data_loader, args, project="panoptic-detr", expe_name=None, callbacks: list = None):
         expe_name = expe_name or self.model_name

@@ -114,7 +114,10 @@ class PanopticHead(nn.Module):
 
         Returns
         -------
-        boxes: aloscene.Mask
+        aloscene.BoundingBoxes2D
+            Boxes from DETR model
+        aloscene.Maks
+            Binary mask of PanopticHead
         """
 
         # Get probs to labels select from detr model
@@ -141,7 +144,7 @@ class PanopticHead(nn.Module):
             masks = aloscene.Mask(masks, names=("N", "H", "W"), labels=labels)
             preds_masks.append(masks)
 
-        return preds_masks
+        return self.detr.inference(forward_out), preds_masks
 
 
 if __name__ == "__main__":

@@ -165,3 +165,22 @@ class Mask(aloscene.tensors.SpatialAugmentedTensor):
         if masks.shape[-1] > 0:
             frame = 0.4 * frame + 0.6 * masks
         return View(frame, **kwargs)
+
+    def iou_with(self, mask2) -> torch.Tensor:
+        """ IoU calculation between mask2 and itself
+
+        Parameters
+        ----------
+        mask2 : aloscene.Mask
+            Masks with size (M,H,W)
+
+        Returns
+        -------
+        torch.Tensor
+            IoU matrix of size (N,M)
+        """
+        mask1 = self.rename(None).view(len(self), -1)  # (N, WxH)
+        mask2 = mask2.rename(None).view(len(mask2), -1)  # (M, WxH)
+        intersection = mask1.matmul(mask2.transpose(0, 1))  # (N, M)
+        union = torch.stack([mask1] * len(mask2), dim=1) + mask2  # (N, M, WxH)
+        return intersection / union.sum(-1)  # (N, M)

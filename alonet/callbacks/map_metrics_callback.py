@@ -49,13 +49,24 @@ class ApMetricsCallback(pl.Callback):
         dataloader_idx: int
             Dataloader batch ID.
         """
+
+        is_pre_mask = False
         if isinstance(outputs["m_outputs"], list):
             is_temporal = True
             b_pred_boxes = pl_module.inference(outputs["m_outputs"])
+            if isinstance(b_pred_boxes, tuple):
+                is_pre_mask = True
+                b_pred_masks = b_pred_boxes[1]
+                b_pred_boxes = b_pred_boxes[0]
         else:
             b_pred_boxes = [pl_module.inference(outputs["m_outputs"])]
+            if isinstance(b_pred_boxes[0], tuple):
+                is_pre_mask = True
+                b_pred_masks = [b_pred_boxes[0][1]]
+                b_pred_boxes = [b_pred_boxes[0][0]]
             is_temporal = False
 
+        gt_masks, pred_masks = None, None
         for b, t_pred_boxes in enumerate(b_pred_boxes):
 
             # Retrieve the matching GT boxes at the same time step
@@ -68,7 +79,10 @@ class ApMetricsCallback(pl.Callback):
             for t, (gt_boxes, pred_boxes) in enumerate(zip(t_gt_boxes, t_pred_boxes)):
                 if t + 1 > len(self.ap_metrics):
                     self.ap_metrics.append(alonet.metrics.ApMetrics())
-                self.add_sample(self.ap_metrics[t], pred_boxes, gt_boxes)
+                if is_pre_mask:
+                    gt_masks = batch[b][t].segmentation
+                    pred_masks = b_pred_masks[b][t]
+                self.add_sample(self.ap_metrics[t], pred_boxes, gt_boxes, pred_masks, gt_masks)
 
     @rank_zero_only
     def add_sample(
@@ -76,6 +90,8 @@ class ApMetricsCallback(pl.Callback):
         ap_metrics: alonet.metrics.ApMetrics,
         pred_boxes: aloscene.BoundingBoxes2D,
         gt_boxes: aloscene.BoundingBoxes2D,
+        pred_masks: aloscene.Mask = None,
+        gt_masks: aloscene.Mask = None,
     ):
         """Add a smple to some `alonet.metrics.ApMetrics()` class. One might want to inhert this method
         to edit the `pred_boxes` and `gt_boxes` boxes before to add them to the ApMetrics class.
@@ -88,8 +104,12 @@ class ApMetricsCallback(pl.Callback):
             Predicted boxes2D.
         gt_boxes: aloscene.BoundingBoxes2D
             GT boxes2d.
+        pred_masks: aloscene.Mask
+            Predicted Masks for segmentation task
+        gt_masks: aloscene.Mask
+            GT masks in segmentation task.
         """
-        ap_metrics.add_sample(pred_boxes, gt_boxes)
+        ap_metrics.add_sample(pred_boxes, gt_boxes, pred_masks, gt_masks)
 
     @rank_zero_only
     def on_validation_end(self, trainer, pl_module):

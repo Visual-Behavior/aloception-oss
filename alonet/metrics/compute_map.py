@@ -148,7 +148,13 @@ class ApMetrics(object):
                 "mask": [[APDataObject() for _ in [cl for cl in class_names]] for _ in self.objects_sizes],
             }
 
-    def add_sample(self, p_bbox: aloscene.BoundingBoxes2D, t_bbox: aloscene.BoundingBoxes2D, p_mask=None, t_mask=None):
+    def add_sample(
+        self,
+        p_bbox: aloscene.BoundingBoxes2D,
+        t_bbox: aloscene.BoundingBoxes2D,
+        p_mask: aloscene.Mask = None,
+        t_mask: aloscene.Mask = None,
+    ):
         """Add sample to compute the AP.
 
         Parameters
@@ -157,19 +163,18 @@ class ApMetrics(object):
             predicted boxes
         t_bbox: `aloscene.BoundingBoxes2D`
             Target boxes with `aloscene.labels` with the `labels_names` property set.
-        p_mask: any
-            p_mask & t_mask are not handle yet (TODO)
-        t_mask: any
-            p_mask & t_mask are not handle yet (TODO)
+        p_mask: `aloscene.Mask`
+            Apply APmask metric
+        t_mask: `aloscene.Mask`
+            Apply APmask metric
         """
-        if p_mask is not None or t_mask is not None:
-            raise Exception("AP from mask not handle yet (TODO)")
-    
         assert isinstance(p_bbox, aloscene.BoundingBoxes2D)
         assert isinstance(t_bbox, aloscene.BoundingBoxes2D)
         assert isinstance(p_bbox.labels, aloscene.Labels)
         assert isinstance(t_bbox.labels, aloscene.Labels)
         assert isinstance(p_bbox.labels.scores, torch.Tensor)
+        assert isinstance(p_mask, (type(None), aloscene.Mask))
+        assert isinstance(t_mask, (type(None), aloscene.Mask))
 
         p_bbox = p_bbox.to(torch.device("cpu"))
         p_labels = p_bbox.labels
@@ -201,7 +206,7 @@ class ApMetrics(object):
         p_bbox_area = list(np.array(p_bbox.rel_area()))
 
         if masks is not None and t_mask is None is not None:
-            raise Exception("Mask IOU TODO")
+            mask_iou_cache = np.array(p_mask.iou_with(t_mask))
         else:
             mask_iou_cache = np.zeros((p_bbox.shape[0], t_bbox.shape[0]))
 

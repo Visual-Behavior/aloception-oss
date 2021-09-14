@@ -135,6 +135,23 @@ frame.get_view().render()
   
 ## RAFT
 
+Here is a simple example to get started with **RAFT** and aloception. To learn more about RAFT, you can checkout the <a href="./alonet/raft">raft README</a>.
+  
+```python
+# Use the left frame from the  Sintel Flow dataset and normalize the frame for the RAFT Model
+frame = alodataset.SintelFlowDataset(sample=True).getitem(0)["left"].norm_minmax_sym()
+
+# Load the model using the sintel weights
+raft = alonet.raft.RAFT(weights="raft-sintel")
+
+# Compute optical flow
+padder = alonet.raft.utils.Padder()
+flow = raft.inference(raft(padder.pad(frame[0:1]), padder.pad(frame[1:2])))
+
+# Render the flow along with the first frame
+flow[0].get_view().render()
+```
+  
 
 # Alodataset
 

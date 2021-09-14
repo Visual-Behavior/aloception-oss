@@ -1,6 +1,6 @@
 # Detr
 
-Here is a simple example to get started with **Detr** and aloception. To learn more about Detr, you can checkout the <a href="#tutorials">Tutorials<a/> or
+Here is a simple example to get started with **Detr** and aloception. To learn more about Detr, you can checkout the <a href="https://visual-behavior.github.io/aloception/tutorials/training_detr.html">Detr Tutorials<a/> or
 the scripts described bellow.
 
 ```python

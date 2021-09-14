@@ -11,20 +11,39 @@ cd alonet/deformable_detr/ops
 python test.py # should yield True
 ```
 
-### Running inference with deformable detr
+## Getting started
+
+Here is a simple example to get started with **Deformable Detr** and aloception. To learn more about Deformable, you can checkout the <a href="https://visual-behavior.github.io/aloception/tutorials/training_deformable_detr.html">Deformable Tutorials<a/>.
+
+```python
+# Loading Deformable model
+model = alonet.deformable_detr.DeformableDetrR50(num_classes=91, weights="deformable-detr-r50").eval()
+
+# Open, normalize frame and send frame on the device
+frame = aloscene.Frame("/home/thibault/Desktop/yoga.jpg").norm_resnet().to(torch.device("cuda"))
+
+# Run inference
+pred_boxes = model.inference(model([frame]))
+
+# Add and display the predicted boxes
+frame.append_boxes2d(pred_boxes[0], "pred_boxes")
+frame.get_view().render()
+```
+
+## Running inference with deformable detr
 
 ```
 python alonet/deformable_detr/deformable_detr_r50.py /path/to/image.jpg
 python alonet/deformable_detr/deformable_detr_r50_refinement.py /path/to/image.jpg
 ```
 
-### Training Deformable Detr R50 from scratch
+## Training Deformable Detr R50 from scratch
 ```
 python alonet/deformable_detr/train_on_coco.py --model_name MODEL_NAME
 ```
 With MODEL_NAME either deformable-detr-r50-refinement or deformable-detr-r50 for with/without box refinement.
 
-### Running evaluation of Deformable Detr R50
+## Running evaluation of Deformable Detr R50
 ```
 python alonet/deformable_detr/eval_on_coco.py --model_name MODEL_NAME --weights MODEL_NAME --batch_size 1 [--ap_limit NUMBER_OF_SAMPLES]
 ```

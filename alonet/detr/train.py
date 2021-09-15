@@ -244,7 +244,7 @@ class LitDetr(pl.LightningModule):
 
         return [obj_detection_callback, metrics_callback, ap_metrics_callback]
 
-    def run_train(self, data_loader, args, project="detr", expe_name="detr_50", callbacks: list = None):
+    def run_train(self, data_loader, args=None, project="detr", expe_name="detr_50", callbacks: list = None):
         """Train the model using pytorch lightning"""
         # Set the default callbacks if not provide.
         callbacks = callbacks if callbacks is not None else self.callbacks(data_loader)

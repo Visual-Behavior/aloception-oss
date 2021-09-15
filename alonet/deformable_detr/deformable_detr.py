@@ -247,11 +247,17 @@ class DeformableDETR(nn.Module):
 
         outputs_coords = []
 
+        # print(init_reference)
+        # print(inter_references[0])
+
         for lvl in range(hs.shape[0]):
+
             if lvl == 0:
                 reference = init_reference
+                # print("lvl", lvl, reference.shape)
             else:
                 reference = inter_references[lvl - 1]
+                # print("lvl", reference.shape)
 
             reference = inverse_sigmoid(reference)
             tmp = self.bbox_embed[lvl](hs[lvl])
@@ -260,6 +266,7 @@ class DeformableDETR(nn.Module):
                 tmp += reference
             else:
                 assert reference.shape[-1] == 2  # None refinment
+                # print(tmp.shape, reference.shape)
                 tmp[..., :2] += reference
 
             outputs_coord = tmp.sigmoid()  # get normalized value ranging from 0 to 1
@@ -310,6 +317,42 @@ class DeformableDETR(nn.Module):
         # as a dict having both a Tensor and a list.
         return [{"pred_logits": a, "pred_boxes": b, **kwargs} for a, b in zip(outputs_class[:-1], outputs_coord[:-1])]
 
+    def get_outs_labels(
+        self,
+        m_outputs: dict = None,
+        activation_fn: str = None,
+    ) -> List[torch.Tensor]:
+        """Given the model outs_scores and the model outs_labels,
+        return the labels and the associated scores.
+
+        Parameters
+        ----------
+        m_outputs : dict, optional
+            Dict of forward outputs, by default None
+        threshold : float, optional
+            Score threshold if sigmoid activation is used. By default 0.2
+        activation_fn : str, optional
+            Either "sigmoid" or "softmax". By default None.
+            If "sigmoid" is used, filter is based on score threshold.
+            If "softmax" is used, filter is based on non-background classes.
+
+        Returns
+        -------
+        Tuple
+            (torch.Tensor, torch.Tensor) being the predicted labels and scores
+        """
+        activation_fn = activation_fn or self.activation_fn
+        assert (m_outputs) is not None
+        if "activation_fn" not in m_outputs:
+            raise Exception("'activation_fn' must be declared in forward output.")
+        activation_fn = m_outputs["activation_fn"]
+        if activation_fn == "softmax":
+            outs_probs = F.softmax(m_outputs["pred_logits"], -1)
+        else:
+            outs_probs = m_outputs["pred_logits"].sigmoid()
+        outs_scores, outs_labels = outs_probs.max(-1)
+        return outs_labels, outs_scores
+
     def get_outs_filter(
         self,
         outs_scores: torch.Tensor = None,
@@ -347,15 +390,7 @@ class DeformableDETR(nn.Module):
         activation_fn = activation_fn or self.activation_fn
 
         if outs_scores is None or outs_labels is None:
-            assert (m_outputs) is not None
-            if "activation_fn" not in m_outputs:
-                raise Exception("'activation_fn' must be declared in forward output.")
-            activation_fn = m_outputs["activation_fn"]
-            if activation_fn == "softmax":
-                outs_probs = F.softmax(m_outputs["pred_logits"], -1)
-            else:
-                outs_probs = m_outputs["pred_logits"].sigmoid()
-            outs_scores, outs_labels = outs_probs.max(-1)
+            outs_labels, outs_scores = self.get_outs_labels(m_outputs, activation_fn=activation_fn)
 
         filters = []
         for scores, labels in zip(outs_scores, outs_labels):
@@ -366,7 +401,7 @@ class DeformableDETR(nn.Module):
         return filters
 
     @torch.no_grad()
-    def inference(self, forward_out: dict, threshold=0.2, **kwargs):
+    def inference(self, forward_out: dict, threshold=0.2, filters=None, **kwargs):
         """Get model outptus as returned by the the forward method"""
         outs_logits, outs_boxes = forward_out["pred_logits"], forward_out["pred_boxes"]
 
@@ -380,13 +415,14 @@ class DeformableDETR(nn.Module):
             outs_probs = outs_logits.sigmoid()
         outs_scores, outs_labels = outs_probs.max(-1)
 
-        filters = self.get_outs_filter(
-            outs_scores=outs_scores,
-            outs_labels=outs_labels,
-            threshold=threshold,
-            activation_fn=activation_fn,
-            **kwargs,
-        )
+        if filters is None:
+            filters = self.get_outs_filter(
+                outs_scores=outs_scores,
+                outs_labels=outs_labels,
+                threshold=threshold,
+                activation_fn=activation_fn,
+                **kwargs,
+            )
 
         preds_boxes = []
         for scores, labels, boxes, b_filter in zip(outs_scores, outs_labels, outs_boxes, filters):

@@ -273,9 +273,12 @@ class DeformableTransformer(nn.Module):
             **kwargs,
         )
 
+        # print("init_reference_out", init_reference_out)
+        # print(' dec_outputs["init_reference_out"]', dec_outputs["init_reference_out"])
+
         dec_outputs
         transformer_outputs.update(dec_outputs)
-        transformer_outputs["init_reference_out"] = init_reference_out
+        # transformer_outputs["init_reference_out"] = init_reference_out  # dec_outputs["init_reference_out"]
 
         if self.two_stage:
             transformer_outputs["enc_outputs_class"] = enc_outputs_class
@@ -587,12 +590,14 @@ class DeformableTransformerDecoder(nn.Module):
         decoder_outputs = {} if decoder_outputs is None else decoder_outputs
 
         tgt = tgt.transpose(0, 1)
-        tgt, query_pos, tgt_key_padding_mask = self.pre_process_tgt(
-            tgt, query_pos, tgt_key_padding_mask=tgt_key_padding_mask, **kwargs
+        query_pos = query_pos.transpose(0, 1)
+        tgt, query_pos, tgt_key_padding_mask, reference_points = self.pre_process_tgt(
+            tgt, query_pos, tgt_key_padding_mask=tgt_key_padding_mask, reference_points=reference_points, **kwargs
         )
         tgt = tgt.transpose(1, 0)
+        query_pos = query_pos.transpose(1, 0)
 
-        output, reference_points = self.decoder_forward(
+        output, inter_reference_points = self.decoder_forward(
             tgt=tgt,
             reference_points=reference_points,
             src=src,
@@ -605,7 +610,8 @@ class DeformableTransformerDecoder(nn.Module):
             **kwargs,
         )
 
-        decoder_outputs.update({"hs": output, "inter_references_out": reference_points})
+        decoder_outputs["init_reference_out"] = reference_points
+        decoder_outputs.update({"hs": output, "inter_references_out": inter_reference_points})
 
         return decoder_outputs
 

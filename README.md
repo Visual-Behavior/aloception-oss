@@ -49,7 +49,7 @@ coco_loader = alonet.detr.CocoDetection2Detr()
 detr.run_train(data_loader=coco_loader, project="detr", expe_name="test_experiment")
 ```
 
-**Infernece**
+**Inference**
 
 ```python
 # Load model

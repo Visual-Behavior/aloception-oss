@@ -93,7 +93,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../getting_started/getting_started.html">Getting started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../getting_started/aloscene.html">Aloscene: Computer vision with ease</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../getting_started/alodataset.html">Alodataset: Loading your vision datasets</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../getting_started/alonet.html">Alonet: Loading &amp; training your models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/alonet.html">Alonet : Training your models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../getting_started/augmented_tensor.html">About Augmented Tensor</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Turorials</span></p>
@@ -104,7 +104,6 @@
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/training_deformable_detr.html">Training Deformable DETR</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/finetuning_deformable_detr.html">Finetuning Deformanble DETR</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/tensort_inference.html">Exporting DETR / Deformable-DETR to TensorRT</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../tutorials/training_raft.html">Training RAFT</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Aloception API</span></p>
 <ul class="current">
@@ -223,7 +222,7 @@
 <span id="spatial-augmented-tensor"></span><h1>Spatial Augmented Tensor<a class="headerlink" href="#module-aloscene.tensors.spatial_augmented_tensor" title="Permalink to this headline">¶</a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="aloscene.tensors.spatial_augmented_tensor.SpatialAugmentedTensor">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">aloscene.tensors.spatial_augmented_tensor.</span></span><span class="sig-name descname"><span class="pre">SpatialAugmentedTensor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cam_intrinsic</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="camera_calib.html#aloscene.camera_calib.CameraIntrinsic" title="aloscene.camera_calib.CameraIntrinsic"><span class="pre">aloscene.camera_calib.CameraIntrinsic</span></a><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cam_extrinsic</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="camera_calib.html#aloscene.camera_calib.CameraExtrinsic" title="aloscene.camera_calib.CameraExtrinsic"><span class="pre">aloscene.camera_calib.CameraExtrinsic</span></a><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aloscene.tensors.spatial_augmented_tensor.SpatialAugmentedTensor" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">aloscene.tensors.spatial_augmented_tensor.</span></span><span class="sig-name descname"><span class="pre">SpatialAugmentedTensor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cam_intrinsic</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="camera_calib.html#aloscene.camera_calib.CameraIntrinsic" title="aloscene.camera_calib.CameraIntrinsic"><span class="pre">aloscene.camera_calib.CameraIntrinsic</span></a><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cam_extrinsic</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="camera_calib.html#aloscene.camera_calib.CameraExtrinsic" title="aloscene.camera_calib.CameraExtrinsic"><span class="pre">aloscene.camera_calib.CameraExtrinsic</span></a><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aloscene.tensors.spatial_augmented_tensor.SpatialAugmentedTensor" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="augmented_tensor.html#aloscene.tensors.augmented_tensor.AugmentedTensor" title="aloscene.tensors.augmented_tensor.AugmentedTensor"><code class="xref py py-class docutils literal notranslate"><span class="pre">aloscene.tensors.augmented_tensor.AugmentedTensor</span></code></a></p>
 <dl class="py property">
 <dt class="sig sig-object py" id="aloscene.tensors.spatial_augmented_tensor.SpatialAugmentedTensor.H">
@@ -251,6 +250,23 @@
 <dd></dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="aloscene.tensors.spatial_augmented_tensor.SpatialAugmentedTensor.append_mask">
+<span class="sig-name descname"><span class="pre">append_mask</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mask</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aloscene.tensors.spatial_augmented_tensor.SpatialAugmentedTensor.append_mask" title="Permalink to this definition">¶</a></dt>
+<dd><p>Attach a mask to the frame.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>mask: aloscene.Mask</strong></dt><dd><p>Mask to attached to the Frame</p>
+</dd>
+<dt><strong>name: str</strong></dt><dd><p>If none, the mask will be attached without name (if possible). Otherwise if no other unnamed
+mask are attached to the frame, the mask will be added to the set of mask.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="aloscene.tensors.spatial_augmented_tensor.SpatialAugmentedTensor.batch">
 <span class="sig-name descname"><span class="pre">batch</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aloscene.tensors.spatial_augmented_tensor.SpatialAugmentedTensor.batch" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add a batch dimension on the tensor</p>
@@ -274,7 +290,8 @@ and add to each frame a mask with 1. on the padded area.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>sa_tensors: list</strong></dt><dd><p>List of any aloscene.tensors.SpatialAugmentedTensor (or list of dicts or SpatialAugmentedTensor)</p>
+<dt><strong>sa_tensors: list or dict</strong></dt><dd><p>List of any aloscene.tensors.SpatialAugmentedTensor. If dict is given, this method will be applied on each
+list of spatial augmented tensors within the list</p>
 </dd>
 <dt><strong>pad_boxes: bool</strong></dt><dd><p>By default, do not rescale the boxes attached to the sptial augmented Tensor (see explanation in boxes2d.pad)</p>
 </dd>
@@ -282,7 +299,8 @@ and add to each frame a mask with 1. on the padded area.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>batch_frame: a child of aloscene.tensors.SpatialAugmentedTensor (or dict of SpatialAugmentedTensor)</dt><dd><p>Multiple sa_tensor with mask label</p>
+<dt>aloscene.tensors.SpatialAugmentedTensor</dt><dd><p>A child of aloscene.tensors.SpatialAugmentedTensor (or dict of SpatialAugmentedTensor)
+with <cite>mask</cite> label to keep track of the padded areas.</p>
 </dd>
 </dl>
 </dd>

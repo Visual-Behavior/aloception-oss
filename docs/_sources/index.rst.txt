@@ -23,7 +23,6 @@ Aloception's documentation
    tutorials/training_deformable_detr
    tutorials/finetuning_deformable_detr
    tutorials/tensort_inference
-   tutorials/training_raft
 
 
 .. toctree::

@@ -93,7 +93,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../getting_started/getting_started.html">Getting started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../getting_started/aloscene.html">Aloscene: Computer vision with ease</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../getting_started/alodataset.html">Alodataset: Loading your vision datasets</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../getting_started/alonet.html">Alonet: Loading &amp; training your models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/alonet.html">Alonet : Training your models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../getting_started/augmented_tensor.html">About Augmented Tensor</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Turorials</span></p>
@@ -104,7 +104,6 @@
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/training_deformable_detr.html">Training Deformable DETR</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/finetuning_deformable_detr.html">Finetuning Deformanble DETR</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/tensort_inference.html">Exporting DETR / Deformable-DETR to TensorRT</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../tutorials/training_raft.html">Training RAFT</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Aloception API</span></p>
 <ul class="current">
@@ -361,9 +360,11 @@ the dimensions that are not keys of the dict have a default value of slice(None)
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>offset_y: tuple</strong></dt><dd><p>(percentage top_offset, percentage bottom_offset) Percentage based on the previous size</p>
+<dt><strong>offset_y: tuple of float or tuple of int</strong></dt><dd><p>(percentage top_offset, percentage bottom_offset) Percentage based on the previous size If tuple of int
+the absolute value will be converted to float (percentahe) before to be applied.</p>
 </dd>
-<dt><strong>offset_x: tuple</strong></dt><dd><p>(percentage left_offset, percentage right_offset) Percentage based on the previous size</p>
+<dt><strong>offset_x: tuple of float or tuple of int</strong></dt><dd><p>(percentage left_offset, percentage right_offset) Percentage based on the previous size. If tuple of int
+the absolute value will be converted to float (percentage) before to be applied.</p>
 </dd>
 </dl>
 </dd>

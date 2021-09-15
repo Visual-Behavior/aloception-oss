@@ -4,14 +4,13 @@
 
 <a href="https://visual-behavior.github.io/aloception/">Documenation</a>
 
-# About Aloception
+# Aloception
 
-## Aloception
 **Aloception** is a set of packages for computer vision built on top of popular deep learning libraries:
 [pytorch](<https://pytorch.org/>)  and  [pytorch lightnig](https://www.pytorchlightning.ai/).
 
 
-## Aloscene
+### Aloscene
 
 **Aloscene** extend the use of
 [tensors](https://pytorch.org/tutorials/beginner/examples_tensor/two_layer_net_tensor.html) with **Augmented Tensors** designed to facilitate the use of computer vision data
@@ -24,7 +23,7 @@ frame = frame.to("cpu")
 frame.get_view().render()
 ```
 
-## Alodataset
+### Alodataset
 
 **Alodataset** implement ready-to-use datasets for computer vision with the help of **aloscene** and **augmented tensors** to make it easier to transform and display your vision data.
 
@@ -34,12 +33,12 @@ for frame in coco_dataset.stream_loader():
     frame.get_view().render()
 ```
 
-## Alonet
+### Alonet
 
 **Alonet** integrates several promising computer vision architectures. You can use it for research purposes or to finetune and deploy your model using TensorRT. Alonet is mainly built on top  of [ lightnig](https://www.pytorchlightning.ai/) with the help of
   **aloscene** and **alodataset**.
 
-### **Training**
+**Training**
 
 ```python
 # Init the training pipeline
@@ -50,7 +49,7 @@ coco_loader = alonet.detr.CocoDetection2Detr()
 detr.run_train(data_loader=coco_loader, project="detr", expe_name="test_experiment")
 ```
 
-### **Infernece**
+**Infernece**
 
 ```python
 # Load model

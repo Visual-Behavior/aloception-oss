@@ -2,17 +2,20 @@
   <img src="images/aloception.png" style="text-align:center; width: 50%;" alt="Logo aloception" />
 </p>
 
-<a href="https://visual-behavior.github.io/aloception/">Documenation</a> 
+<a href="https://visual-behavior.github.io/aloception/">Documenation</a>
 
 # About Aloception
 
+## Aloception
 **Aloception** is a set of packages for computer vision built on top of popular deep learning libraries:
 [pytorch](<https://pytorch.org/>)  and  [pytorch lightnig](https://www.pytorchlightning.ai/).
 
 
+## Aloscene
+
 **Aloscene** extend the use of
 [tensors](https://pytorch.org/tutorials/beginner/examples_tensor/two_layer_net_tensor.html) with **Augmented Tensors** designed to facilitate the use of computer vision data
-(such as frames, 2d boxes, 3d boxes, optical flow, disparity, camera parameters...).  
+(such as frames, 2d boxes, 3d boxes, optical flow, disparity, camera parameters...).
 
 
 ```python
@@ -20,6 +23,8 @@ frame = aloscene.Frame("/path/to/image.jpg")
 frame = frame.to("cpu")
 frame.get_view().render()
 ```
+
+## Alodataset
 
 **Alodataset** implement ready-to-use datasets for computer vision with the help of **aloscene** and **augmented tensors** to make it easier to transform and display your vision data.
 
@@ -29,8 +34,23 @@ for frame in coco_dataset.stream_loader():
     frame.get_view().render()
 ```
 
+## Alonet
+
 **Alonet** integrates several promising computer vision architectures. You can use it for research purposes or to finetune and deploy your model using TensorRT. Alonet is mainly built on top  of [ lightnig](https://www.pytorchlightning.ai/) with the help of
   **aloscene** and **alodataset**.
+
+### **Training**
+
+```python
+# Init the training pipeline
+detr = alonet.detr.LitDetr()
+# Init the data module
+coco_loader = alonet.detr.CocoDetection2Detr()
+# Run the training using the two components
+detr.run_train(data_loader=coco_loader, project="detr", expe_name="test_experiment")
+```
+
+### **Infernece**
 
 ```python
 # Load model
@@ -113,7 +133,7 @@ pred_boxes = model.inference(model([frame]))
 frame.append_boxes2d(pred_boxes[0], "pred_boxes")
 frame.get_view().render()
 ```
- 
+
 ## Deformable Detr
 
 Here is a simple example to get started with **Deformable Detr** and aloception. To learn more about Deformable, you can checkout the <a href="#tutorials">Tutorials<a/> or the <a href="./alonet/deformable_detr">deformable detr README</a>.
@@ -132,11 +152,11 @@ pred_boxes = model.inference(model([frame]))
 frame.append_boxes2d(pred_boxes[0], "pred_boxes")
 frame.get_view().render()
 ```
-  
+
 ## RAFT
 
 Here is a simple example to get started with **RAFT** and aloception. To learn more about RAFT, you can checkout the <a href="./alonet/raft">raft README</a>.
-  
+
 ```python
 # Use the left frame from the  Sintel Flow dataset and normalize the frame for the RAFT Model
 frame = alodataset.SintelFlowDataset(sample=True).getitem(0)["left"].norm_minmax_sym()
@@ -151,12 +171,12 @@ flow = raft.inference(raft(padder.pad(frame[0:1]), padder.pad(frame[1:2])))
 # Render the flow along with the first frame
 flow[0].get_view().render()
 ```
-  
+
 
 # Alodataset
 
 Here is a list of all the datasets you can use on Aloception. If you're dataset is not in the list but is important for computer vision. Please let us know using the issues or feel free to contribute.
-  
+
 
 ## Datasets
 
@@ -192,4 +212,3 @@ This work is licensed under a
 [cc-by-nc-sa]: http://creativecommons.org/licenses/by-nc-sa/4.0/
 [cc-by-nc-sa-image]: https://licensebuttons.net/l/by-nc-sa/4.0/88x31.png
 [cc-by-nc-sa-shield]: https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg
-

@@ -113,9 +113,20 @@ def get_expe_infos(project, expe_name, args=None):
 
 
 def run_pl_training(
-    lit_model, data_loader, callbacks: list, args, project: str = None, expe_name: str = None, **pl_trainer
+    lit_model, data_loader, callbacks: list, args=None, project: str = None, expe_name: str = None, **pl_trainer
 ):
     """Helper to run training with pytorch lightning while handling project ID and names"""
+
+    if args is None:
+        args = Namespace()
+        args.run_id = None
+        args.project_run_id = None
+        args.no_suffix = False
+        args.log = None
+        args.logger = "wandb"
+        args.save = False
+        args.cpu = False
+
     # Set the experiment name ID
     project_dir, expe_dir, expe_name = get_expe_infos(project, expe_name, args)
     resume_from_checkpoint = None
@@ -160,7 +171,7 @@ def run_pl_training(
         callbacks=callbacks,
         resume_from_checkpoint=resume_from_checkpoint,
         accelerator=None if torch.cuda.device_count() <= 1 else "ddp",
-        **pl_trainer
+        **pl_trainer,
     )
 
     # Runing training

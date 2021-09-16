@@ -859,17 +859,22 @@ class AugmentedTensor(torch.Tensor):
 
         Parameters
         ----------
-        offset_y: tuple
-            (percentage top_offset, percentage bottom_offset) Percentage based on the previous size
-        offset_x: tuple
-            (percentage left_offset, percentage right_offset) Percentage based on the previous size
-
+        offset_y: tuple of float or tuple of int
+            (percentage top_offset, percentage bottom_offset) Percentage based on the previous size If tuple of int
+            the absolute value will be converted to float (percentahe) before to be applied.
+        offset_x: tuple of float or tuple of int
+            (percentage left_offset, percentage right_offset) Percentage based on the previous size. If tuple of int
+            the absolute value will be converted to float (percentage) before to be applied.
 
         Returns
         -------
         croped : aloscene AugmentedTensor
             croped tensor
         """
+        if isinstance(offset_y[0], int) and isinstance(offset_y[1], int):
+            offset_y = (offset_y[0] / self.H, offset_y[1] / self.H)
+        if isinstance(offset_x[0], int) and isinstance(offset_x[1], int):
+            offset_x = (offset_x[0] / self.W, offset_x[1] / self.W)
 
         padded = self._pad(offset_y, offset_x, **kwargs)
         padded.recursive_apply_on_labels_(lambda label: self._pad_label(label, offset_y, offset_x, **kwargs))

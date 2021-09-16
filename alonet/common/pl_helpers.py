@@ -71,7 +71,7 @@ def add_argparse_args(parent_parser, add_pl_args=True, mode="training"):
     parser.add_argument("--project_run_id", type=str, help="Project related with the run ID to load")
     parser.add_argument("--expe_name", type=str, default=None, help="expe_name to be logged in wandb")
     parser.add_argument("--no_suffix", action="store_true", help="do not add date suffix to expe_name")
-    parser.add_argument("--nostrict", action="store_false", help="load from checkpoint to run a model with different weights (default True)")
+    parser.add_argument("--nostrict", action="store_true", help="load from checkpoint to run a model with different weights (default False)")
 
     return parent_parser
 
@@ -84,12 +84,13 @@ def load_training(
     project_run_id = args.project_run_id if project_run_id is None else project_run_id
 
     if run_id is not None and project_run_id is not None:
+        strict = not args.nostrict
         run_id_project_dir = os.path.join(vb_folder(), f"project_{project_run_id}")
         ckpt_path = os.path.join(run_id_project_dir, run_id, "last.ckpt")
         if not os.path.exists(ckpt_path):
             raise Exception(f"Impossible to load the ckpt at the following destination:{ckpt_path}")
         print(f"Loading ckpt from {run_id} at {ckpt_path}")
-        lit_model = lit_model_class.load_from_checkpoint(ckpt_path, args=args, **kwargs)
+        lit_model = lit_model_class.load_from_checkpoint(ckpt_path, strict=strict, args=args, **kwargs)
     elif no_exception and getattr(args, "weights", None) is not None:
         lit_model = lit_model_class(args=args, **kwargs)
     else:
@@ -122,6 +123,7 @@ def run_pl_training(
     resume_from_checkpoint = None
 
     if args.run_id is not None:
+        strict = not args.strict
         run_id_project_dir = (
             project_dir if args.project_run_id is None else os.path.join(vb_folder(), f"project_{args.project_run_id}")
         )
@@ -131,7 +133,7 @@ def run_pl_training(
         if not args.resume:
             kwargs_config = getattr(lit_model, "_init_kwargs_config", {})
             print(f"Loading ckpt from {args.run_id} at {ckpt_path}")
-            lit_model = type(lit_model).load_from_checkpoint(ckpt_path, args=args, **kwargs_config)
+            lit_model = type(lit_model).load_from_checkpoint(ckpt_path, strict=strict, args=args, **kwargs_config)
         else:
             expe_name = args.run_id
             resume_from_checkpoint = ckpt_path

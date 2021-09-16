@@ -71,7 +71,7 @@ def add_argparse_args(parent_parser, add_pl_args=True, mode="training"):
     parser.add_argument("--project_run_id", type=str, help="Project related with the run ID to load")
     parser.add_argument("--expe_name", type=str, default=None, help="expe_name to be logged in wandb")
     parser.add_argument("--no_suffix", action="store_true", help="do not add date suffix to expe_name")
-    parser.add_argument("--nostrict", action="store_true", help="load from checkpoint to run a model with different weights (default False)")
+    parser.add_argument("--nostrict", action="store_true", help="load from checkpoint to run a model with different weights names (default False)")
 
     return parent_parser
 
@@ -123,7 +123,7 @@ def run_pl_training(
     resume_from_checkpoint = None
 
     if args.run_id is not None:
-        strict = not args.strict
+        strict = not args.nostrict
         run_id_project_dir = (
             project_dir if args.project_run_id is None else os.path.join(vb_folder(), f"project_{args.project_run_id}")
         )

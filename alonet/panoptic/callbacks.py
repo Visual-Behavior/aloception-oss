@@ -5,9 +5,7 @@ from pytorch_lightning.utilities import rank_zero_only
 
 
 class PanopticObjectDetectorCallback(ObjectDetectorCallback):
-    """Detr Callback for object detection training that use
-    alonet.Frames as GT.
-    """
+    """Panoptic Detr Callback for object detection training that use alonet.Frames as GT."""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -17,8 +15,8 @@ class PanopticObjectDetectorCallback(ObjectDetectorCallback):
         """ """
         if trainer.logger is None:
             return
-        if trainer.fit_loop.should_accumulate() or (trainer.global_step + 1) % (trainer.log_every_n_steps * 10) != 0:
-            return
+        # if trainer.fit_loop.should_accumulate() or (trainer.global_step + 1) % (trainer.log_every_n_steps * 10) != 0:
+        #     return
 
         assert isinstance(outputs, dict)
         assert "m_outputs" in outputs
@@ -28,11 +26,13 @@ class PanopticObjectDetectorCallback(ObjectDetectorCallback):
         else:
             frames = batch
 
-        pred_boxes, _ = pl_module.inference(outputs["m_outputs"])
+        pred_boxes, pred_masks = pl_module.inference(outputs["m_outputs"])
         self.log_boxes_2d(frames=frames, preds_boxes=pred_boxes, trainer=trainer, name="train/frame_obj_detector")
+        self.log_masks(frames=frames, pred_masks=pred_masks, trainer=trainer, name="train/frame_seg_detector")
 
     @rank_zero_only
     def on_validation_epoch_end(self, trainer, pl_module):
+        """ """
         if trainer.logger is None:
             return
 
@@ -40,7 +40,8 @@ class PanopticObjectDetectorCallback(ObjectDetectorCallback):
         if self.val_frames.device != pl_module.device:
             self.val_frames = self.val_frames.to(pl_module.device)
 
-        pred_boxes, _ = pl_module.inference(pl_module(self.val_frames))
+        pred_boxes, pred_masks = pl_module.inference(pl_module(self.val_frames))
         self.log_boxes_2d(
             frames=self.val_frames, preds_boxes=pred_boxes, trainer=trainer, name="val/frame_obj_detector"
         )
+        self.log_masks(frames=self.val_frames, pred_masks=pred_masks, trainer=trainer, name="val/frame_seg_detector")

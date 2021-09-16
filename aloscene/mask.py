@@ -179,8 +179,16 @@ class Mask(aloscene.tensors.SpatialAugmentedTensor):
         torch.Tensor
             IoU matrix of size (N,M)
         """
-        mask1 = self.rename(None).view(len(self), -1)  # (N, WxH)
-        mask2 = mask2.rename(None).view(len(mask2), -1)  # (M, WxH)
+        if len(self) == 0 and len(mask2) == 0:
+            return torch.rand(0, 0)
+        elif len(self) == 0:
+            return torch.rand(0, len(mask2))
+        elif len(mask2) == 0:
+            return torch.rand(len(self), 0)
+        mask1 = self.flatten(["H", "W"], "features").rename(None)  # (N, f=WxH)
+        mask2 = mask2.flatten(["H", "W"], "features").rename(None)  # (M, f=WxH)
         intersection = mask1.matmul(mask2.transpose(0, 1))  # (N, M)
-        union = torch.stack([mask1] * len(mask2), dim=1) + mask2  # (N, M, WxH)
-        return intersection / union.sum(-1)  # (N, M)
+        mask1, mask2 = mask1.sum(-1, keepdim=True), mask2.sum(-1, keepdim=True)
+        union = mask1.repeat(1, len(mask2)) + mask2.transpose(0, 1)  # (N, M)
+        union[union == 0] = 0.001  # Avoid divide by 0
+        return intersection / (union - intersection)

@@ -3,6 +3,8 @@
 """
 Panoptic module to predict object segmentation.
 """
+import os
+
 import torch
 import torch.nn.functional as F
 from torch import nn
@@ -32,7 +34,11 @@ class PanopticHead(nn.Module):
     INPUT_MEAN_STD = alonet.detr.detr.INPUT_MEAN_STD
 
     def __init__(
-        self, DETR_module: alonet.detr.Detr, aux_loss: bool = None, device: torch.device = torch.device("cpu"),
+        self,
+        DETR_module: alonet.detr.Detr,
+        aux_loss: bool = None,
+        device: torch.device = torch.device("cpu"),
+        weights: str = None,
     ):
         super().__init__()
         self.detr = DETR_module
@@ -56,6 +62,11 @@ class PanopticHead(nn.Module):
             self.to(device)
 
         self.device = device
+
+        # Load weights
+        if weights is not None:
+            weights = os.path.join(alonet.common.weights.vb_fodler(), "weights", weights, weights + ".pth")
+            alonet.common.load_weights(self, weights, device, strict_load_weights=True)
 
     @assert_and_export_onnx(check_mean_std=True, input_mean_std=INPUT_MEAN_STD)
     def forward(self, frames: aloscene.frame, **kwargs):

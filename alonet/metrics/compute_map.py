@@ -1,15 +1,6 @@
-from scipy.special import softmax
-import matplotlib.pyplot as plt
-from itertools import product
+# import matplotlib.pyplot as plt
 import numpy as np
-import argparse
-import random
-import json
-import time
-import cv2
-import os
 import torch
-
 
 from collections import OrderedDict
 import aloscene
@@ -74,7 +65,8 @@ class APDataObject:
             if precisions[i] > precisions[i - 1]:
                 precisions[i - 1] = precisions[i]
 
-        # Compute the integral of precision(recall) d_recall from recall=0->1 using fixed-length riemann summation with 101 bars.
+        # Compute the integral of precision(recall) d_recall from recall=0->1 using fixed-length riemann summation
+        # with 101 bars.
         y_range = [0] * 101  # idx 0 is recall == 0.0 and idx 100 is recall == 1.00
         x_range = np.array([x / 100 for x in range(101)])
         recalls = np.array(recalls)
@@ -181,6 +173,8 @@ class ApMetrics(object):
         p_scores = p_bbox.labels.scores
         t_bbox = t_bbox.to(torch.device("cpu"))
         gt_classes = t_bbox.labels
+        p_mask = None if p_mask is None else p_mask.to(torch.device("cpu"))
+        t_mask = None if t_mask is None else t_mask.to(torch.device("cpu"))
 
         if self.class_names is None:
             self.init_data_objects(gt_classes.labels_names)
@@ -194,8 +188,6 @@ class ApMetrics(object):
         box_scores = scores
         mask_scores = scores
 
-        masks = p_mask
-
         num_pred = len(classes)
         num_gt = len(gt_classes)
 
@@ -205,7 +197,7 @@ class ApMetrics(object):
         t_bbox_area = list(np.array(t_bbox.rel_area()))
         p_bbox_area = list(np.array(p_bbox.rel_area()))
 
-        if masks is not None and t_mask is None is not None:
+        if p_mask is not None and t_mask is not None:
             mask_iou_cache = np.array(p_mask.iou_with(t_mask))
         else:
             mask_iou_cache = np.zeros((p_bbox.shape[0], t_bbox.shape[0]))
@@ -407,7 +399,11 @@ class ApMetrics(object):
         # Precision/Confidence curve
         plt.plot(cross_clas_ap50_metrics["confidences"], cross_clas_ap50_metrics["precisions"], label="all")
         for _class in per_class_ap50_metrics:
-            plt.plot(per_class_ap50_metrics[_class]["confidences"], per_class_ap50_metrics[_class]["precisions"], label=_class)
+            plt.plot(
+                per_class_ap50_metrics[_class]["confidences"],
+                per_class_ap50_metrics[_class]["precisions"],
+                label=_class,
+            )
         plt.xlabel("Confidence")
         plt.ylabel("Precision")
         plt.legend()
@@ -418,7 +414,9 @@ class ApMetrics(object):
         # Recall/Confidence curve
         plt.plot(cross_clas_ap50_metrics["confidences"], cross_clas_ap50_metrics["recalls"], label="all")
         for _class in per_class_ap50_metrics:
-            plt.plot(per_class_ap50_metrics[_class]["confidences"], per_class_ap50_metrics[_class]["recalls"], label=_class)
+            plt.plot(
+                per_class_ap50_metrics[_class]["confidences"], per_class_ap50_metrics[_class]["recalls"], label=_class
+            )
         plt.xlabel("Confidence")
         plt.ylabel("Recall")
         plt.legend()
@@ -429,7 +427,9 @@ class ApMetrics(object):
         # Roc curve: Recall vs Confidence curve
         plt.plot(cross_clas_ap50_metrics["recalls"], cross_clas_ap50_metrics["precisions"], label="all")
         for _class in per_class_ap50_metrics:
-            plt.plot(per_class_ap50_metrics[_class]["recalls"], per_class_ap50_metrics[_class]["precisions"], label=_class)
+            plt.plot(
+                per_class_ap50_metrics[_class]["recalls"], per_class_ap50_metrics[_class]["precisions"], label=_class
+            )
         plt.xlabel("Recall")
         plt.ylabel("Confidence")
         plt.legend()

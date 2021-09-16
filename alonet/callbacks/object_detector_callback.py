@@ -122,6 +122,51 @@ class ObjectDetectorCallback(pl.Callback):
         log_image(trainer, name + "_pred", pred_images)
         return
 
+    def log_masks(self, frames: list, pred_masks: list, trainer: pl.trainer.trainer.Trainer, name: str):
+        """Given a frames and predicted masks in segmentation tasks, this method will log the images into wandb
+
+        Parameters
+        ----------
+        frames: list of aloscene.Frame
+            Frame with GT masks attached
+        preds_masks: list of aloscene.Mask
+            A set of predicted segmentation masks
+        trainer: pl.trainer.trainer.Trainer
+            Lightning trainer
+        """
+        images = []
+        for b, p_mask in enumerate(pred_masks):
+
+            # Retrive label names
+            labels_names = frames.segmentation[b].labels.labels_names
+            if labels_names is not None:
+                labels_names = {i: name for i, name in enumerate(labels_names)}
+
+            target_masks = frames.segmentation[b]
+
+            frame = frames[b].detach().norm255().cpu().type(torch.uint8).rename(None)
+            frame = frame.permute([1, 2, 0]).contiguous().numpy()
+
+            # Get panoptic view
+            target_masks = target_masks.masks2panoptic()
+            p_mask = p_mask.masks2panoptic()
+            target_masks[target_masks == -1] = 0  # N/A
+            p_mask[p_mask == -1] = 0  # N/A
+            target_masks = target_masks.astype(np.uint8)
+            p_mask = p_mask.astype(np.uint8)
+
+            images.append(
+                {
+                    "image": frame,
+                    "masks": [
+                        {"name": "predictions", "class_labels": labels_names, "masks": p_mask},
+                        {"name": "ground_truth", "class_labels": labels_names, "masks": target_masks},
+                    ],
+                }
+            )
+
+        log_image(trainer, name, images)
+
     def on_train_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx):
         """ """
         if trainer.logger is None:

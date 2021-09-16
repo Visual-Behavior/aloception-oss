@@ -1,13 +1,11 @@
-import torch
 import pytorch_lightning as pl
-from typing import *
 import aloscene
 import alonet
-import wandb
 import matplotlib.pyplot as plt
-import matplotlib
 from pytorch_lightning.utilities import rank_zero_only
 from alonet.common.logger import log_figure, log_scalar
+
+# import wandb
 
 
 class ApMetricsCallback(pl.Callback):
@@ -28,11 +26,12 @@ class ApMetricsCallback(pl.Callback):
         """Method call after each validation batch. This class is a pytorch lightning callback, therefore
         this method will by automaticly call by pl.
 
-        This method will call the `infernece` method of the module's model and will expect to receive the predicted boxes2D. Theses
-        Boxes will be aggregate to compute the AP metrics in the `on_validation_end` method. The infernece method will be call using
-        the `m_outputs` key from the outputs dict. If `m_outputs` is a list, then the list will be consider as an temporal list. Therefore,
-        this callback will aggregate the predicted boxes for each element of the sequence and will log the final results with the
-        timestep prefix val/t/ instead of simply /val/
+        This method will call the `infernece` method of the module's model and will expect to receive the
+        predicted boxes2D. Theses boxes will be aggregate to compute the AP metrics in the `on_validation_end` method.
+        The infernece method will be call using the `m_outputs` key from the outputs dict. If `m_outputs` is a list,
+        then the list will be consider as an temporal list. Therefore, this callback will aggregate the predicted boxes
+        for each element of the sequence and will log the final results with the timestep prefix val/t/ instead of
+        simply /val/
 
         Parameters
         ----------
@@ -80,9 +79,14 @@ class ApMetricsCallback(pl.Callback):
                 if t + 1 > len(self.ap_metrics):
                     self.ap_metrics.append(alonet.metrics.ApMetrics())
                 if is_pre_mask:
-                    gt_masks = batch[b][t].segmentation
+                    if is_temporal:
+                        gt_masks = batch[b][t].segmentation
+                    else:
+                        gt_masks = batch[b].segmentation
                     pred_masks = b_pred_masks[b][t]
-                self.add_sample(self.ap_metrics[t], pred_boxes, gt_boxes, pred_masks, gt_masks)
+                    self.add_sample(self.ap_metrics[t], pred_boxes, gt_boxes, pred_masks, gt_masks)
+                else:
+                    self.add_sample(self.ap_metrics[t], pred_boxes, gt_boxes)
 
     @rank_zero_only
     def add_sample(
@@ -133,7 +137,7 @@ class ApMetricsCallback(pl.Callback):
         for t, ap_metrics in enumerate(self.ap_metrics):
 
             prefix = f"val/{t}/" if len(self.ap_metrics) > 1 else "val/"
-            step = trainer.global_step
+            # step = trainer.global_step
 
             (
                 all_maps,
@@ -173,62 +177,85 @@ class ApMetricsCallback(pl.Callback):
 
             """
             cls_data = []
-            cls_data.append(["box"] + [round(all_maps["box"][t], 2) for t in  all_maps["box"]])
-            cls_data.append(["mask"] + [round(all_maps["mask"][t], 2) for t in  all_maps["mask"]])
-            cls_data.append(["precision"] + [round(all_maps["precision"][t], 2) for t in  all_maps["precision"]])
-            cls_data.append(["recall"] + [round(all_maps["recall"][t], 2) for t in  all_maps["recall"]])
-            cls_table = wandb.Table(data=cls_data, columns=["Type"] + [str(threshold) for threshold in all_maps["box"]])
-            trainer.logger.experiment.log({f"{prefix}table_map_scores": cls_table, "trainer/global_step": trainer.global_step})
-
+            cls_data.append(["box"] + [round(all_maps["box"][t], 2) for t in all_maps["box"]])
+            cls_data.append(["mask"] + [round(all_maps["mask"][t], 2) for t in all_maps["mask"]])
+            cls_data.append(["precision"] + [round(all_maps["precision"][t], 2) for t in all_maps["precision"]])
+            cls_data.append(["recall"] + [round(all_maps["recall"][t], 2) for t in all_maps["recall"]])
+            cls_table = wandb.Table(
+                data=cls_data, columns=["Type"] + [str(threshold) for threshold in all_maps["box"]]
+            )
+            trainer.logger.experiment.log(
+                {f"{prefix}table_map_scores": cls_table, "trainer/global_step": trainer.global_step}
+            )
 
             cls_data = []
-            cls_data.append(["box"] + [round(all_maps_per_size["box"][t], 2) for t in  all_maps_per_size["box"]])
-            cls_data.append(["mask"] + [round(all_maps_per_size["mask"][t], 2) for t in  all_maps_per_size["mask"]])
-            cls_data.append(["precision"] + [round(all_maps_per_size["precision"][t], 2) for t in  all_maps_per_size["precision"]])
-            cls_data.append(["recall"] + [round(all_maps_per_size["recall"][t], 2) for t in  all_maps_per_size["recall"]])
-            cls_data.append(["box_ct"] + [round(all_maps_per_size["box_ct"][t], 2) for t in  all_maps_per_size["box_ct"]])
-            cls_table = wandb.Table(data=cls_data, columns=["Type"] + [str(threshold) for threshold in all_maps_per_size["box"]])
-            trainer.logger.experiment.log({f"{prefix}table_persize_scores": cls_table, "trainer/global_step": trainer.global_step})
-
+            cls_data.append(["box"] + [round(all_maps_per_size["box"][t], 2) for t in all_maps_per_size["box"]])
+            cls_data.append(["mask"] + [round(all_maps_per_size["mask"][t], 2) for t in all_maps_per_size["mask"]])
+            cls_data.append(
+                ["precision"] + [round(all_maps_per_size["precision"][t], 2) for t in all_maps_per_size["precision"]]
+            )
+            cls_data.append(
+                ["recall"] + [round(all_maps_per_size["recall"][t], 2) for t in all_maps_per_size["recall"]]
+            )
+            cls_data.append(
+                ["box_ct"] + [round(all_maps_per_size["box_ct"][t], 2) for t in all_maps_per_size["box_ct"]]
+            )
+            cls_table = wandb.Table(
+                data=cls_data, columns=["Type"] + [str(threshold) for threshold in all_maps_per_size["box"]]
+            )
+            trainer.logger.experiment.log(
+                {f"{prefix}table_persize_scores": cls_table, "trainer/global_step": trainer.global_step}
+            )
 
             # Per class bbox map50
             data = []
             for _cls in per_class_all_maps:
                 data.append([_cls, round(per_class_all_maps[_cls]["box"][50], 2)])
-            table = wandb.Table(data=data, columns = ["cls_name", "bbox_map50"])
-            trainer.logger.experiment.log({f"{prefix}bar_perclass_bbox_map50" : table, "trainer/global_step": trainer.global_step})
-
+            table = wandb.Table(data=data, columns=["cls_name", "bbox_map50"])
+            trainer.logger.experiment.log(
+                {f"{prefix}bar_perclass_bbox_map50": table, "trainer/global_step": trainer.global_step}
+            )
 
             data = []
             for _cls in per_class_all_maps:
                 data.append([_cls, round(per_class_all_maps[_cls]["precision"][50], 2)])
-            table = wandb.Table(data=data, columns = ["cls_name", "precision_map50"])
-            trainer.logger.experiment.log({f"{prefix}bar_perclass_precision_map50" : table, "trainer/global_step": trainer.global_step})
+            table = wandb.Table(data=data, columns=["cls_name", "precision_map50"])
+            trainer.logger.experiment.log(
+                {f"{prefix}bar_perclass_precision_map50": table, "trainer/global_step": trainer.global_step}
+            )
 
             data = []
             for _cls in per_class_all_maps:
                 data.append([_cls, round(per_class_all_maps[_cls]["recall"][50], 2)])
-            table = wandb.Table(data=data, columns = ["cls_name", "recall_map50"])
-            trainer.logger.experiment.log({f"{prefix}bar_perclass_recall_map50" : table, "trainer/global_step": trainer.global_step})
+            table = wandb.Table(data=data, columns=["cls_name", "recall_map50"])
+            trainer.logger.experiment.log(
+                {f"{prefix}bar_perclass_recall_map50": table, "trainer/global_step": trainer.global_step}
+            )
 
             # Per class bbox map70
             data = []
             for _cls in per_class_all_maps:
                 data.append([_cls, round(per_class_all_maps[_cls]["box"][70], 2)])
-            table = wandb.Table(data=data, columns = ["cls_name", "bbox_map70"])
-            trainer.logger.experiment.log({f"{prefix}bar_perclass_bbox_map70" : table, "trainer/global_step": trainer.global_step})
+            table = wandb.Table(data=data, columns=["cls_name", "bbox_map70"])
+            trainer.logger.experiment.log(
+                {f"{prefix}bar_perclass_bbox_map70": table, "trainer/global_step": trainer.global_step}
+            )
 
             data = []
             for _cls in per_class_all_maps:
                 data.append([_cls, round(per_class_all_maps[_cls]["precision"][70], 2)])
-            table = wandb.Table(data=data, columns = ["cls_name", "precision_map70"])
-            trainer.logger.experiment.log({f"{prefix}bar_perclass_precision_map70" : table, "trainer/global_step": trainer.global_step})
+            table = wandb.Table(data=data, columns=["cls_name", "precision_map70"])
+            trainer.logger.experiment.log(
+                {f"{prefix}bar_perclass_precision_map70": table, "trainer/global_step": trainer.global_step}
+            )
 
             data = []
             for _cls in per_class_all_maps:
                 data.append([_cls, round(per_class_all_maps[_cls]["recall"][70], 2)])
-            table = wandb.Table(data=data, columns = ["cls_name", "recall_map70"])
-            trainer.logger.experiment.log({f"{prefix}bar_perclass_recall_map70" : table, "trainer/global_step": trainer.global_step})
+            table = wandb.Table(data=data, columns=["cls_name", "recall_map70"])
+            trainer.logger.experiment.log(
+                {f"{prefix}bar_perclass_recall_map70": table, "trainer/global_step": trainer.global_step}
+            )
             """
 
             log_scalar(trainer, f"{prefix}map50_bbox", all_maps["box"][50])

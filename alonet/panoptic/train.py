@@ -15,7 +15,7 @@ class LitPanopticDetr(alonet.detr.LitDetr):
     accumulate_grad_batches : int, optional
         Accumulates grads every k batches or as set up in the dict, by default 4
     model_name : str, optional
-        Name use to define the model, by default "panoptic-detr-r50"
+        Name use to define the model, by default "detr-r50-panoptic"
     model : torch.nn, optional
         Custom model to train
 
@@ -29,10 +29,7 @@ class LitPanopticDetr(alonet.detr.LitDetr):
         """Add arguments to parent parser with default values"""
         parser = parent_parser.add_argument_group("LitPanoptic") if parser is None else parser
         parser.add_argument(
-            "--weights",
-            type=str,
-            default=None,
-            help="One of (panoptic-detr-r50, panoptic-deformable-detr-r50). Default: None",
+            "--weights", type=str, default=None, help="One of (detr-r50-panoptic). Default: None",
         )
         parser.add_argument("--gradient_clip_val", type=float, default=0.1, help="Gradient clipping norm (default 0.1")
         parser.add_argument(
@@ -41,18 +38,18 @@ class LitPanopticDetr(alonet.detr.LitDetr):
         parser.add_argument(
             "--model_name",
             type=str,
-            default="panoptic-detr-r50",
-            help="Model name to use. One of ['panoptic-detr-r50', 'panoptic-deformable-detr-r50']"
+            default="detr-r50-panoptic",
+            help="Model name to use. One of {'detr-r50-panoptic', 'deformable-detr-r50-panoptic'}"
             + " (default panoptic-detr)",
         )
         return parent_parser
 
-    def build_model(self, num_classes=184, aux_loss=True, weights=None):
+    def build_model(self, num_classes=250, aux_loss=True, weights=None):
         """Build model with default parameters"""
-        if self.model_name == "panoptic-detr-r50":
+        if self.model_name == "detr-r50-panoptic":
             detr_model = alonet.detr.DetrR50Finetune(num_classes=num_classes, aux_loss=aux_loss, weights="detr-r50")
-        elif self.model_name == "panoptic-deformable-detr-r50":
-            detr_model = alonet.deformable_detr.DeformableDetrR50RefinementFinetune(
+        elif self.model_name == "deformable-detr-r50-panoptic":
+            detr_model = alonet.deformable_detr.DeformableDetrR50Refinement(
                 num_classes=num_classes,
                 aux_loss=aux_loss,
                 weights="deformable-detr-r50-refinement",
@@ -60,11 +57,7 @@ class LitPanopticDetr(alonet.detr.LitDetr):
             )
         else:
             raise Exception(f"Unsupported base model {self.model_name}")
-        return alonet.panoptic.PanopticHead(detr_model)
-
-    def build_matcher(self):
-        """Build default matcher"""
-        return alonet.panoptic.PanopticHungarianMatcher()
+        return alonet.panoptic.PanopticHead(detr_model, weights=weights or self.weights)
 
     def build_criterion(
         self,

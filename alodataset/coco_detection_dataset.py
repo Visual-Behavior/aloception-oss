@@ -106,10 +106,9 @@ class CocoDetectionDataset(BaseDataset, CocoDetectionSample):
 
         # Setup the class names
         nb_category = max(cat["id"] for cat in cats)
+        if stuff_ann_file is not None and name == "coco":
+            nb_category = 250  # From original repo https://github.com/facebookresearch/detr/blob/main/models/detr.py
         self.CATEGORIES = set([cat["name"] for cat in cats])
-        # aux = set([x.split("-")[0] for x in self.CATEGORIES])
-        # print(aux, len(aux))
-        # print(set([cat["supercategory"] for cat in cats]), len(set([cat["supercategory"] for cat in cats])))
         labels_names = ["N/A"] * (nb_category + 1)
         for cat in cats:
             labels_names[cat["id"]] = cat["name"]
@@ -298,6 +297,12 @@ def show_random_frame(coco_loader):
 
 def main():
     """Main"""
+    coco_dataset = CocoDetectionDataset(
+        ann_file="annotations/instances_val2017.json",
+        img_folder="val2017",
+        stuff_ann_file="annotations/stuff_val2017.json",
+        return_masks=True,
+    )
     coco_dataset = CocoDetectionDataset(sample=True)
     for f, frames in enumerate(coco_dataset.train_loader(batch_size=2)):
         frames = Frame.batch_list(frames)

@@ -155,15 +155,13 @@ class ObjectDetectorCallback(pl.Callback):
             target_masks = target_masks.astype(np.uint8)
             p_mask = p_mask.astype(np.uint8)
 
-            images.append(
-                {
-                    "image": frame,
-                    "masks": [
-                        {"name": "predictions", "class_labels": labels_names, "masks": p_mask},
-                        {"name": "ground_truth", "class_labels": labels_names, "masks": target_masks},
-                    ],
-                }
-            )
+            # Add masks to frame
+            masks = []
+            if target_masks.size != 0:
+                masks.append({"name": "ground_truth", "class_labels": labels_names, "masks": target_masks})
+            if p_mask.size != 0:
+                masks.append({"name": "predictions", "class_labels": labels_names, "masks": p_mask})
+            images.append({"image": frame, "masks": masks if len(masks) > 0 else None})
 
         log_image(trainer, name, images)
 

@@ -71,6 +71,7 @@ def add_argparse_args(parent_parser, add_pl_args=True, mode="training"):
     parser.add_argument("--project_run_id", type=str, help="Project related with the run ID to load")
     parser.add_argument("--expe_name", type=str, default=None, help="expe_name to be logged in wandb")
     parser.add_argument("--no_suffix", action="store_true", help="do not add date suffix to expe_name")
+    parser.add_argument("--strict", action="store_false", help="load from checkpoint to run a model with different weights (default True)")
 
     return parent_parser
 

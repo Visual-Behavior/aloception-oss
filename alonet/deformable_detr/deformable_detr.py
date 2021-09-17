@@ -170,7 +170,6 @@ class DeformableDETR(nn.Module):
 
         if weights is not None and weights in ["deformable-detr-r50", "deformable-detr-r50-refinement"]:
             alonet.common.load_weights(self, weights, device, strict_load_weights=strict_load_weights)
-            alonet.common.load_weights(self, weights, device, strict_load_weights=strict_load_weights)
             print(f"Loaded: {weights}")
 
     @assert_and_export_onnx(check_mean_std=True, input_mean_std=INPUT_MEAN_STD)
@@ -358,7 +357,7 @@ class DeformableDETR(nn.Module):
         outs_scores: torch.Tensor = None,
         outs_labels: torch.Tensor = None,
         m_outputs: dict = None,
-        threshold=0.2,
+        threshold=None,
         activation_fn: str = None,
     ) -> List[torch.Tensor]:
         """Given the model outs_scores and the model outs_labels,
@@ -376,7 +375,9 @@ class DeformableDETR(nn.Module):
         m_outputs : dict, optional
             Dict of forward outputs, by default None
         threshold : float, optional
-            Score threshold if sigmoid activation is used. By default 0.2
+            Score threshold to use. if None and sigmoid is used, 0.2 will be used as default value.
+        softmax_threshold: float, optinal
+            Score threshold if softmax activation is used. None by default.
         activation_fn : str, optional
             Either "sigmoid" or "softmax". By default None.
             If "sigmoid" is used, filter is based on score threshold.
@@ -395,9 +396,14 @@ class DeformableDETR(nn.Module):
         filters = []
         for scores, labels in zip(outs_scores, outs_labels):
             if activation_fn == "softmax":
-                filters.append(labels != self.background_class)
+                softmax_threshold = threshold
+                if softmax_threshold is None:
+                    filters.append(labels != self.background_class)
+                else:
+                    filters.append((labels != self.background_class) & (scores > softmax_threshold))
             else:
-                filters.append(scores > threshold)
+                sigmoid_threshold = 0.2 if threshold is None else threshold
+                filters.append(scores > sigmoid_threshold)
         return filters
 
     @torch.no_grad()
@@ -493,24 +499,11 @@ class DeformableDETR(nn.Module):
 
     def build_decoder(
         self,
-        hidden_dim: int = 256,
-        dropout: float = 0.1,
-        nheads: int = 8,
-        dim_feedforward: int = 1024,
         dec_layers: int = 6,
-        num_feature_levels: int = 4,
-        dec_n_points: int = 4,
         return_intermediate_dec=True,
     ):
 
-        decoder_layer = self.build_decoder_layer(
-            hidden_dim=hidden_dim,
-            dropout=dropout,
-            nheads=nheads,
-            dim_feedforward=dim_feedforward,
-            num_feature_levels=num_feature_levels,
-            dec_n_points=dec_n_points,
-        )
+        decoder_layer = self.build_decoder_layer()
 
         return DeformableTransformerDecoder(decoder_layer, dec_layers, return_intermediate_dec)
 
@@ -528,16 +521,7 @@ class DeformableDETR(nn.Module):
         return_intermediate_dec=True,
     ):
 
-        decoder = self.build_decoder(
-            hidden_dim=hidden_dim,
-            dropout=dropout,
-            nheads=nheads,
-            dim_feedforward=dim_feedforward,
-            dec_layers=dec_layers,
-            num_feature_levels=num_feature_levels,
-            dec_n_points=dec_n_points,
-            return_intermediate_dec=return_intermediate_dec,
-        )
+        decoder = self.build_decoder()
 
         return DeformableTransformer(
             decoder=decoder,

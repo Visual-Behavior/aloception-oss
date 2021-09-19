@@ -1,4 +1,4 @@
-Here is the spatial augmented tensor page
+
 
 Spatial Augmented Tensor
 --------------------------------------------------

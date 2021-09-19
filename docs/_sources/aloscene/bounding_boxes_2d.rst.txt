@@ -1,4 +1,3 @@
-Helo, here is the page 
 
 BoundingBoxes2D
 ---------------------

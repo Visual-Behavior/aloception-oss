@@ -1,4 +1,4 @@
-Here is the augmented tensor page
+
 
 Augmented Tensor
 -----------------------------------------

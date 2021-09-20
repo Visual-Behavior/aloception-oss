@@ -13,7 +13,8 @@ class PanopticObjectDetectorCallback(ObjectDetectorCallback):
         if trainer.logger is None:
             return
         if trainer.fit_loop.should_accumulate() or (trainer.global_step + 1) % (trainer.log_every_n_steps * 10) != 0:
-            if trainer.global_step % trainer.limit_train_batches != 0:
+            # Draw boxes & masks for last batch
+            if (trainer.fit_loop.total_batch_idx + 1) % trainer.num_training_batches != 0:
                 return
 
         assert isinstance(outputs, dict)

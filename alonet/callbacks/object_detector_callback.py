@@ -136,7 +136,15 @@ class ObjectDetectorCallback(pl.Callback):
         """
         images = []
         for b, p_mask in enumerate(pred_masks):
+            # 1. Get view of segmentation: More efficient but does not allow filtering classes in wandb
+            # frame = frames[b]
+            # frame_view = frame.get_view([
+            #     frame.segmentation.get_view(frame, title="Ground truth segmentation"),
+            #     p_mask.get_view(frame, title="Prediction segmentation"),
+            # ])
+            # images.append({"image": wandb.Image((frame_view.image * 255).astype(np.uint8))})
 
+            # 2. Send masks to wandb (expend more time process)
             # Retrive label names
             labels_names = frames.segmentation[b].labels.labels_names
             if labels_names is not None:

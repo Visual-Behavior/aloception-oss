@@ -246,17 +246,12 @@ class DeformableDETR(nn.Module):
 
         outputs_coords = []
 
-        # print(init_reference)
-        # print(inter_references[0])
-
         for lvl in range(hs.shape[0]):
 
             if lvl == 0:
                 reference = init_reference
-                # print("lvl", lvl, reference.shape)
             else:
                 reference = inter_references[lvl - 1]
-                # print("lvl", reference.shape)
 
             reference = inverse_sigmoid(reference)
             tmp = self.bbox_embed[lvl](hs[lvl])
@@ -265,7 +260,6 @@ class DeformableDETR(nn.Module):
                 tmp += reference
             else:
                 assert reference.shape[-1] == 2  # None refinment
-                # print(tmp.shape, reference.shape)
                 tmp[..., :2] += reference
 
             outputs_coord = tmp.sigmoid()  # get normalized value ranging from 0 to 1

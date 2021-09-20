@@ -9,9 +9,9 @@ from alonet.common.logger import log_figure, log_scalar
 
 
 class ApMetricsCallback(pl.Callback):
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         self.ap_metrics = []
-        super().__init__()
+        super().__init__(*args, **kwargs)
 
     @rank_zero_only
     def on_validation_batch_end(
@@ -48,6 +48,8 @@ class ApMetricsCallback(pl.Callback):
         dataloader_idx: int
             Dataloader batch ID.
         """
+        if isinstance(batch, list):  # Resize frames for mask procedure
+            batch = batch[0].batch_list(batch)
 
         is_pre_mask = False
         if isinstance(outputs["m_outputs"], list):

@@ -73,6 +73,8 @@ class Mask(aloscene.tensors.SpatialAugmentedTensor):
                     feat = self[i].cpu().detach().contiguous().numpy()  # Get i_mask
                     mass_y, mass_x = np.where(feat > 0.5)
                     x, y = np.average(mass_x), np.average(mass_y)
+                    x = 0 if np.isnan(x) else x
+                    y = 0 if np.isnan(y) else y
                     color = self.GLOBAL_COLOR_SET[(label + 1) % len(self.GLOBAL_COLOR_SET)]
                     color = (0, 0, 0)
                     text = str(label) if labels.labels_names is None else labels.labels_names[label]

@@ -3,6 +3,7 @@
 """ Modules to compute the matching cost and solve the corresponding LSAP.
 """
 
+from numpy import absolute
 import torch
 from scipy.optimize import linear_sum_assignment
 from torch import nn
@@ -10,6 +11,7 @@ from torch import nn
 # from util.box_ops import box_cxcywh_to_xyxy, generalized_box_iou
 
 import aloscene
+import alonet
 
 
 class PanopticHungarianMatcher(nn.Module):
@@ -104,6 +106,28 @@ class PanopticHungarianMatcher(nn.Module):
         return self.hungarian(batch_cost_matrix, **kwargs)
 
 
-def build_matcher(args):
+def build_matcher():
     """Matcher by default"""
     return PanopticHungarianMatcher()
+
+
+if __name__ == "__main__":
+    model = alonet.panoptic.PanopticHead(alonet.detr.DetrR50())
+    matcher = build_matcher()
+
+    labels = aloscene.Labels(torch.tensor([0, 1, 1, 1, 0]), names=("N"), encoding="id")
+    masks = aloscene.Mask((torch.rand(len(labels), 300, 300) > 0.5), names=("N", "H", "W"), labels=labels)
+    frame1 = aloscene.Frame(
+        torch.rand(3, 300, 300), normalization="01", names=("C", "H", "W"), segmentation=masks
+    ).norm_resnet()
+
+    labels = aloscene.Labels(torch.tensor([0, 1]), names=("N"), encoding="id")
+    masks = aloscene.Mask((torch.rand(len(labels), 300, 300) > 0.5), names=("N", "H", "W"), labels=labels)
+    frame2 = aloscene.Frame(
+        torch.rand(3, 300, 300), normalization="01", names=("C", "H", "W"), segmentation=masks
+    ).norm_resnet()
+
+    frame = aloscene.Frame.batch_list([frame1, frame2])
+    m_outputs = model(frame)
+    indices = matcher(m_outputs, frame)
+    print(indices)

@@ -7,9 +7,6 @@ from pytorch_lightning.utilities import rank_zero_only
 class PanopticObjectDetectorCallback(ObjectDetectorCallback):
     """Panoptic Detr Callback for object detection training that use alonet.Frames as GT."""
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
     @rank_zero_only
     def on_train_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx):
         """ """

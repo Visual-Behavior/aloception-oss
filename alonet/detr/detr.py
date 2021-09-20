@@ -199,6 +199,7 @@ class Detr(nn.Module):
         m_outputs: dict = None,
         background_class=None,
         threshold: float = None,
+        **kwargs,
     ):
         """Given the model outs_scores and the model outs_labels whit method return
         a list of filter for each output. If `out_scores` and `outs_labels` are not provided,
@@ -224,14 +225,14 @@ class Detr(nn.Module):
         filters = []
         for scores, labels in zip(outs_scores, outs_labels):
             if threshold is None:
-                filters.append(labels != self.background_class)
+                filters.append(labels != background_class)
             else:
-                filters.append((labels != self.background_class) & (scores > threshold))
+                filters.append((labels != background_class) & (scores > threshold))
 
         return filters
 
     @torch.no_grad()
-    def inference(self, forward_out: dict, filters=None, background_class=None):
+    def inference(self, forward_out: dict, filters=None, background_class=None, threshold=None):
         """Given the model forward outputs, this method
         will retrun an aloscene.BoundingBoxes2D tensor.
 
@@ -253,7 +254,10 @@ class Detr(nn.Module):
 
         if filters is None:
             filters = self.get_outs_filter(
-                outs_scores=outs_scores, outs_labels=outs_labels, background_class=background_class
+                outs_scores=outs_scores,
+                outs_labels=outs_labels,
+                background_class=background_class,
+                threshold=threshold,
             )
 
         preds_boxes = []

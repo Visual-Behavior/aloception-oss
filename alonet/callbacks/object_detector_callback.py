@@ -150,8 +150,8 @@ class ObjectDetectorCallback(pl.Callback):
             # Get panoptic view
             target_masks = target_masks.masks2panoptic()
             p_mask = p_mask.masks2panoptic()
-            target_masks[target_masks == -1] = 0  # N/A
-            p_mask[p_mask == -1] = 0  # N/A
+            target_masks[target_masks == -1] = len(labels_names)  # Background N/A
+            p_mask[p_mask == -1] = len(labels_names)  # Background N/A
             target_masks = target_masks.astype(np.uint8)
             p_mask = p_mask.astype(np.uint8)
 

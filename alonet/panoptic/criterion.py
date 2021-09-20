@@ -133,7 +133,6 @@ class PanopticCriterion(alonet.detr.DetrCriterion):
         if num_boxes == 0:
             return {}
 
-        idx = self._get_src_permutation_idx(indices)
         target_masks = torch.cat(
             [
                 # Select masks per batch following the `target_indices` from the Hungarian matching
@@ -143,7 +142,8 @@ class PanopticCriterion(alonet.detr.DetrCriterion):
             dim=0,
         )
 
-        pred_masks = outputs["pred_masks"][idx]
+        # Masks filtered in forward. Remove pad
+        pred_masks = torch.cat([masks[: len(idx)] for (_, idx), masks in zip(indices, outputs["pred_masks"])], dim=0)
         pred_masks = F.interpolate(
             pred_masks[:, None], size=target_masks.shape[-2:], mode="bilinear", align_corners=False
         )

@@ -1,4 +1,6 @@
+from alonet.panoptic.utils import get_mask_queries
 import alonet
+import aloscene
 
 
 class LitPanopticDetr(alonet.detr.LitDetr):
@@ -43,6 +45,73 @@ class LitPanopticDetr(alonet.detr.LitDetr):
             + " (default panoptic-detr)",
         )
         return parent_parser
+
+    def training_step(self, frames, batch_idx):
+        """Train the model for one step
+
+        Parameters
+        ----------
+        frames: list | aloscene.Frame
+            List of aloscene.Frame without batch dimension or a Frame with the batch dimension
+        batch_idx: int
+            Batch id given by Lightning
+
+        Returns
+        -------
+        outptus: dict
+            dict with the `loss` to optimize and the `metrics` to log.
+        """
+        # Batch list of frame if needed
+        if isinstance(frames, list):
+            frames = aloscene.Frame.batch_list(frames)
+
+        # Assert inputs content
+        self.assert_input(frames)
+        get_filter_fn = lambda *args, **kwargs: get_mask_queries(
+            *args, model=self.model.detr, matcher=self.matcher, **kwargs
+        )
+        m_outputs = self.model(frames, get_filter_fn=get_filter_fn)
+
+        total_loss, losses = self.criterion(m_outputs, frames, compute_statistical_metrics=batch_idx < 100)
+
+        outputs = {"loss": total_loss}
+        outputs.update({"metrics": losses})
+        outputs.update({"m_outputs": m_outputs})
+        return outputs
+
+    def validation_step(self, frames, batch_idx):
+        """Run one step of validation
+
+        Parameters
+        ----------
+        frames: list | aloscene.Frame
+            List of aloscene.Frame without batch dimension or a Frame with the batch dimension
+        batch_idx: int
+            Batch id given by Lightning
+
+        Returns
+        -------
+        outptus: dict
+            dict with the `val_loss` and the metrics to log
+        """
+        # Batch list of frame if needed
+        if isinstance(frames, list):
+            frames = aloscene.Frame.batch_list(frames)
+
+        # Assert inputs content
+        self.assert_input(frames)
+
+        get_filter_fn = lambda *args, **kwargs: get_mask_queries(
+            *args, model=self.model.detr, matcher=self.matcher, **kwargs
+        )
+        m_outputs = self.model(frames, get_filter_fn=get_filter_fn)
+        total_loss, losses = self.criterion(m_outputs, frames, compute_statistical_metrics=batch_idx < 100)
+
+        self.log("val_loss", total_loss)
+        outputs = {"val_loss": total_loss}
+        outputs.update({"metrics": losses})
+        outputs.update({"m_outputs": m_outputs})
+        return outputs
 
     def build_model(self, num_classes=250, aux_loss=True, weights=None):
         """Build model with default parameters"""

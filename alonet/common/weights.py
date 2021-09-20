@@ -15,6 +15,9 @@ WEIGHT_NAME_TO_FILES = {
     "raft-sintel": ["https://storage.googleapis.com/visualbehavior-publicweights/raft-sintel/raft-sintel.pth"],
     "raft-small": ["https://storage.googleapis.com/visualbehavior-publicweights/raft-small/raft-small.pth"],
     "raft-kitti": ["https://storage.googleapis.com/visualbehavior-publicweights/raft-kitti/raft-kitti.pth"],
+    "trackformer-deformable-mot": [
+        "https://storage.googleapis.com/visualbehavior-publicweights/trackformer-deformable-mot/trackformer-deformable-mot.pth"
+    ],
 }
 
 

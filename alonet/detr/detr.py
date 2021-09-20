@@ -328,20 +328,10 @@ class Detr(nn.Module):
     def build_decoder(
         self,
         hidden_dim: int = 256,
-        dropout: float = 0.1,
-        nheads: int = 8,
-        dim_feedforward: int = 2048,
-        normalize_before: bool = False,
         num_decoder_layers: int = 6,
     ):
 
-        decoder_layer = self.build_decoder_layer(
-            hidden_dim=hidden_dim,
-            dropout=dropout,
-            nheads=nheads,
-            dim_feedforward=dim_feedforward,
-            normalize_before=normalize_before,
-        )
+        decoder_layer = self.build_decoder_layer()
 
         return alonet.detr.transformer.TransformerDecoder(
             decoder_layer, num_decoder_layers, nn.LayerNorm(hidden_dim), return_intermediate=True
@@ -358,13 +348,7 @@ class Detr(nn.Module):
         normalize_before: bool = False,
     ):
 
-        decoder = self.build_decoder(
-            hidden_dim=hidden_dim,
-            dropout=dropout,
-            nheads=nheads,
-            dim_feedforward=dim_feedforward,
-            num_decoder_layers=num_decoder_layers,
-        )
+        decoder = self.build_decoder()
 
         return Transformer(
             d_model=hidden_dim,

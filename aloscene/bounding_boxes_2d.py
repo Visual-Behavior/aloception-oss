@@ -11,6 +11,7 @@ import aloscene
 from aloscene.renderer import View
 from aloscene.labels import Labels
 import torchvision
+from torchvision.ops.boxes import nms
 
 
 class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
@@ -572,6 +573,25 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
             Giou between each boxes
         """
         return self.giou(self, boxes2)
+
+    def nms(self, scores: torch.Tensor, iou_threshold: float = 0.5):
+        """Perform NMS on the set of boxes. To be performed, the boxes one must passed
+        a `scores` tensor.
+
+        Parameters
+        ----------
+        scores: torch.Tensor
+            Scores of each boxes to perform the NMS computation.
+        iou_threshold: float
+            NMS iou threshold
+
+        Returns
+        -------
+            int64 tensor with the indices of the elements that have been kept by NMS, sorted in decreasing order of scores
+        """
+        nms_boxes = self.xyxy()
+
+        return nms(nms_boxes.as_tensor(), scores, iou_threshold)
 
     def _hflip(self, **kwargs):
         """Flip boxes horizontally"""

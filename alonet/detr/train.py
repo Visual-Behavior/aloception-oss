@@ -47,6 +47,7 @@ class LitDetr(pl.LightningModule):
         super().__init__()
         # Update class attributes with args and kwargs inputs
         alonet.common.pl_helpers.params_update(self, args, kwargs)
+        self._init_kwargs_config.update({"model": model})
 
         # Load model
         if model is not None:

@@ -7,5 +7,6 @@ from .bounding_boxes_3d import BoundingBoxes3D
 from .oriented_boxes_2d import OrientedBoxes2D
 from .mask import Mask
 from .flow import Flow
+from .points_2d import Points2D
 from .frame import Frame
 from .disparity import Disparity

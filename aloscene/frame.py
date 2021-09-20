@@ -7,7 +7,7 @@ from typing import TypeVar, Union
 import aloscene
 from aloscene.renderer import View
 from aloscene.disparity import Disparity
-from aloscene import BoundingBoxes2D, BoundingBoxes3D, Flow, Mask, Labels
+from aloscene import BoundingBoxes2D, BoundingBoxes3D, Flow, Mask, Labels, Points2D
 
 # from aloscene.camera_calib import CameraExtrinsic, CameraIntrinsic
 from aloscene.io.image import load_image
@@ -25,6 +25,7 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         boxes2d: Union[dict, BoundingBoxes2D] = None,
         boxes3d: Union[dict, BoundingBoxes3D] = None,
         labels: Union[dict, Labels] = None,
+        points2d: Union[dict, Points2D] = None,
         flow: Flow = None,
         segmentation: Mask = None,
         disparity: Disparity = None,
@@ -42,6 +43,7 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         tensor = super().__new__(cls, x, *args, **kwargs)
 
         # Add label
+        tensor.add_label("points2d", points2d, align_dim=["B", "T"], mergeable=False)
         tensor.add_label("boxes2d", boxes2d, align_dim=["B", "T"], mergeable=False)
         tensor.add_label("boxes3d", boxes3d, align_dim=["B", "T"], mergeable=False)
         tensor.add_label("flow", flow, align_dim=["B", "T"], mergeable=False)
@@ -99,6 +101,19 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
             boxes are attached to the frame, the boxes will be added to the set of boxes.
         """
         self._append_label("boxes2d", boxes, name)
+
+    def append_points2d(self, points: Points2D, name: str = None):
+        """Attach a set of points to the frame.
+
+        Parameters
+        ----------
+        boxes: Points2D
+            Points to attached to the Frame
+        name: str
+            If none, the points will be attached without name (if possible). Otherwise if no other unnamed
+            points are attached to the frame, the points will be added to the set of points.
+        """
+        self._append_label("points2d", points, name)
 
     def append_boxes3d(self, boxes_3d: BoundingBoxes3D, name: str = None):
         """Attach boxes 3d to this image

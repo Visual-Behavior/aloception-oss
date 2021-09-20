@@ -68,6 +68,9 @@ def add_argparse_args(parent_parser, add_pl_args=True, mode="training"):
     )
     parser.add_argument("--cpu", action="store_true", help="Use the CPU instead of scaling on the vaiable GPUs")
     parser.add_argument("--run_id", type=str, help="Load the weights from this saved experiment")
+    parser.add_argument(
+        "--no_run_id", action="store_true", help="Skip loading form run_id when an experiment is restored."
+    )
     parser.add_argument("--project_run_id", type=str, help="Project related with the run ID to load")
     parser.add_argument("--expe_name", type=str, default=None, help="expe_name to be logged in wandb")
     parser.add_argument("--no_suffix", action="store_true", help="do not add date suffix to expe_name")
@@ -77,11 +80,18 @@ def add_argparse_args(parent_parser, add_pl_args=True, mode="training"):
 
 
 def load_training(
-    lit_model_class, args=None, run_id: str = None, project_run_id: str = None, no_exception=False, **kwargs
+    lit_model_class,
+    args=None,
+    no_run_id: bool = None,
+    run_id: str = None,
+    project_run_id: str = None,
+    no_exception=False,
+    **kwargs,
 ):
     """Load training"""
     run_id = args.run_id if run_id is None else run_id
     project_run_id = args.project_run_id if project_run_id is None else project_run_id
+    no_run_id = args.no_run_id if no_run_id is None else no_run_id
 
     if run_id is not None and project_run_id is not None:
         strict = not args.nostrict
@@ -93,9 +103,11 @@ def load_training(
         lit_model = lit_model_class.load_from_checkpoint(ckpt_path, strict=strict, args=args, **kwargs)
     elif no_exception and getattr(args, "weights", None) is not None:
         lit_model = lit_model_class(args=args, **kwargs)
+    elif no_run_id:
+        lit_model = lit_model_class(args=args, **kwargs)
     else:
         raise Exception(
-            "--run_id and --project_run_id must be given (ass script args or to the method) to load the experiment."
+            "--run_id (optionally --project_run_id) must be given to load the experiment. (--no_run_id to skip this warning) "
         )
 
     return lit_model

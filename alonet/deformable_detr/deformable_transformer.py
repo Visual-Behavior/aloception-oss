@@ -507,9 +507,9 @@ class DeformableTransformerDecoder(nn.Module):
         self.bbox_embed = None
         self.class_embed = None
 
-    def pre_process_tgt(self, tgt, query_pos, tgt_key_padding_mask, **kwargs):
+    def pre_process_tgt(self, tgt, query_pos, tgt_key_padding_mask, reference_points, **kwargs):
         """Pre process decoder inputs"""
-        return tgt, query_pos, tgt_key_padding_mask
+        return tgt, query_pos, tgt_key_padding_mask, reference_points
 
     def decoder_forward(
         self,

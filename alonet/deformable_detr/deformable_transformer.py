@@ -249,7 +249,6 @@ class DeformableTransformer(nn.Module):
             topk_coords_unact = torch.gather(enc_outputs_coord_unact, 1, topk_proposals.unsqueeze(-1).repeat(1, 1, 4))
             topk_coords_unact = topk_coords_unact.detach()
             reference_points = topk_coords_unact.sigmoid()
-            init_reference_out = reference_points
             pos_trans_out = self.pos_trans_norm(self.pos_trans(self.get_proposal_pos_embed(topk_coords_unact)))
             query_embed, tgt = torch.split(pos_trans_out, c, dim=2)
         else:
@@ -257,10 +256,8 @@ class DeformableTransformer(nn.Module):
             query_embed = query_embed.unsqueeze(0).expand(bs, -1, -1)
             tgt = tgt.unsqueeze(0).expand(bs, -1, -1)
             reference_points = self.reference_points(query_embed).sigmoid()
-            init_reference_out = reference_points
 
         # decoder
-        # tgt, reference_points, src, src_spatial_shapes, src_level_start_index, src_valid_ratios,
         dec_outputs = self.decoder(
             tgt,
             reference_points,
@@ -273,12 +270,8 @@ class DeformableTransformer(nn.Module):
             **kwargs,
         )
 
-        # print("init_reference_out", init_reference_out)
-        # print(' dec_outputs["init_reference_out"]', dec_outputs["init_reference_out"])
-
         dec_outputs
         transformer_outputs.update(dec_outputs)
-        # transformer_outputs["init_reference_out"] = init_reference_out  # dec_outputs["init_reference_out"]
 
         if self.two_stage:
             transformer_outputs["enc_outputs_class"] = enc_outputs_class

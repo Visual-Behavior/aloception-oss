@@ -7,6 +7,52 @@ from abc import ABC, abstractmethod
 import numpy as np
 
 
+def adapt_text_size_to_frame(size, frame_size):
+    base_size_h = size * frame_size[1] / 1000
+    base_size_w = size * frame_size[0] / 1000
+    return base_size_h, base_size_w
+
+
+def put_adapative_cv2_text(frame: np.array, frame_size: tuple, text: str, pos_x: float, pos_y: float):
+    """Put Text on the given frame with adaptive size.
+
+    Parameters
+    ----------
+    frame: np.array
+        Frame to put the text on
+    frame_size: np.array
+        Frame size (height, width)
+    text: str
+        Text do display
+    pos_x: int
+    pos_y: int
+    """
+    size_h, size_w = adapt_text_size_to_frame(1.0, frame_size)
+    c_size_h = int(size_w * 20)
+    w_size_w = int(size_w * 20)
+
+    pos_x = int(pos_x)
+    pos_y = int(pos_y)
+    cv2.rectangle(
+        frame,
+        (pos_x - 3, pos_y - c_size_h - c_size_h),
+        (pos_x + (w_size_w * (len(text) + 1)), pos_y + c_size_h),
+        (1, 1, 1),
+        -1,
+    )
+
+    cv2.putText(
+        frame,
+        text,
+        (int(pos_x), int(pos_y)),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        (size_h + size_w) / 2,
+        (0, 0, 0),
+        1,
+        cv2.LINE_AA,
+    )
+
+
 class View(object):
 
     CV = "cv"

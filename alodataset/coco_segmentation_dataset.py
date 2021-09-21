@@ -18,6 +18,41 @@ from aloscene import Frame, BoundingBoxes2D, Mask, Labels
 
 
 class CocoSegementationDataset(BaseDataset, SplitMixin):
+    """Dataset uses in objects detection tasks. Import panoptic annotations from
+    `2017 Panoptic Train/Val annotations <https://cocodataset.org/#download>`_ . Three elements are required:
+    `image_folder`, `annotation_folder` and `annotation_file`. See
+    `COCO 2018 Panoptic Segmentation Task <https://cocodataset.org/#panoptic-2018>`_ for more information.
+
+    Attributes
+    ----------
+    SPLIT_FOLDERS: dict
+        Contains the image folders for train/val/test
+    SPLIT_ANN_FOLDERS:
+        Contains the annotation folders for train/val/test
+    SPLIT_ANN_FILES:
+        Contains the annotation files for train/val/test
+    labels_names : list
+        List of labels according to their corresponding positions
+
+    Parameters
+    ----------
+    name : str, optional
+        Key of database name in `alodataset_config.json` file, by default *coco*
+    split : alodataset.Split item, optional
+        Define image folder and annotation file/folder to use, by default Split.TRAIN
+    return_masks : bool, optional
+        Include masks labels in the output, by default False
+    classes : list, optional
+        List of classes to be filtered in the annotation reading process, by default None
+    **kwargs : dict
+        :mod:`BaseDataset <base_dataset>` optional parameters
+
+    Raises
+    ------
+    Exception
+        :attr:`classes` attribute is not support when :attr:`label_names` does not exist in annotations file. Also,
+        each element in :attr:`classes` attribute must be one of :attr:`label_names`.
+    """
 
     SPLIT_FOLDERS = {Split.VAL: "val2017", Split.TRAIN: "train2017"}
     SPLIT_ANN_FOLDERS = {Split.VAL: "annotations/panoptic_val2017", Split.TRAIN: "annotations/panoptic_train2017"}
@@ -99,14 +134,43 @@ class CocoSegementationDataset(BaseDataset, SplitMixin):
         return items
 
     def get_split_ann_folder(self):
+        """Get annotation folder according to :attr:`split`.
+
+        Returns
+        -------
+        str
+            annotation folder
+        """
         assert self.split in self.SPLIT_ANN_FOLDERS
         return self.SPLIT_ANN_FOLDERS[self.split]
 
     def get_split_ann_file(self):
+        """Get annotation file according to :attr:`split`.
+
+        Returns
+        -------
+        str
+            annotation file
+        """
         assert self.split in self.SPLIT_ANN_FILES
         return self.SPLIT_ANN_FILES[self.split]
 
-    def __getitem__(self, idx):
+    def getitem(self, idx):
+        """Get the :mod:`Frame <aloscene.frame>` corresponds to *idx* index
+
+        Parameters
+        ----------
+        idx : int
+            Index of the frame to be returned
+
+        Returns
+        -------
+        :mod:`Frame <aloscene.frame>`
+            Frame with their corresponding boxes and masks attributes
+        """
+        if self.sample:
+            return BaseDataset.__getitem__(self, idx)
+
         # Get elements
         img_path, ann_path, ann_info = self.items[idx]
 
@@ -133,7 +197,6 @@ class CocoSegementationDataset(BaseDataset, SplitMixin):
         frame = Frame(img_path)
 
         labels_2d = Labels(labels.to(torch.float32), labels_names=self.label_names, names=("N"), encoding="id")
-        masks_2d = Mask(masks, names=("N", "H", "W"), labels=labels_2d)
         boxes_2d = BoundingBoxes2D(
             masks_to_boxes(masks),
             boxes_format="xyxy",
@@ -142,9 +205,11 @@ class CocoSegementationDataset(BaseDataset, SplitMixin):
             names=("N", None),
             labels=labels_2d,
         )
-
         frame.append_boxes2d(boxes_2d)
-        frame.append_segmentation(masks_2d)
+
+        if self.return_masks:
+            masks_2d = Mask(masks, names=("N", "H", "W"), labels=labels_2d)
+            frame.append_segmentation(masks_2d)
         return frame
 
 

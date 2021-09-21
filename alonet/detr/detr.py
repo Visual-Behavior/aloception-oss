@@ -83,7 +83,7 @@ class Detr(nn.Module):
         if device is not None:
             self.to(device)
 
-        if weights is not None and weights == "detr-r50":
+        if weights is not None and (weights == "detr-r50" or ".pth" in weights):
             alonet.common.load_weights(self, "detr-r50", device, strict_load_weights=strict_load_weights)
 
         self.device = device
@@ -306,9 +306,7 @@ class Detr(nn.Module):
         )
 
     def build_decoder(
-        self,
-        hidden_dim: int = 256,
-        num_decoder_layers: int = 6,
+        self, hidden_dim: int = 256, num_decoder_layers: int = 6,
     ):
 
         decoder_layer = self.build_decoder_layer()

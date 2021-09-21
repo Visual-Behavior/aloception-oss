@@ -51,6 +51,7 @@ def load_weights(model, weights, device, strict_load_weights=True):
         if "model" in checkpoint:
             checkpoint = checkpoint["model"]
         model.load_state_dict(checkpoint)
+        print(f"Weights loaded from {weights}")
 
     elif weights in WEIGHT_NAME_TO_FILES:
         weights_dir = os.path.join(weights_dir, weights)

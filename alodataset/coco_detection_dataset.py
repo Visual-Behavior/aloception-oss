@@ -107,7 +107,7 @@ class CocoDetectionDataset(BaseDataset, CocoDetectionSample):
         # Setup the class names
         nb_category = max(cat["id"] for cat in cats)
         if stuff_ann_file is not None and name == "coco":
-            nb_category = 250  # From original repo https://github.com/facebookresearch/detr/blob/main/models/detr.py
+            nb_category = 249  # From original repo https://github.com/facebookresearch/detr/blob/main/models/detr.py
         self.CATEGORIES = set([cat["name"] for cat in cats])
         labels_names = ["N/A"] * (nb_category + 1)
         for cat in cats:

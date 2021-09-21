@@ -51,9 +51,9 @@ class Labels(aloscene.tensors.AugmentedTensor):
 
         tensor = super().__new__(cls, x, *args, names=names, **kwargs)
 
-        if tensor.shape[0] == 0 and encoding == "id":
+        if len(tensor.shape) == 0 and encoding == "id":
             raise Exception("aloscene.Labels must be at least 1 dimensional (N,) with encoding=id.")
-        elif tensor.shape[0] == 1 and encoding == "one_hot":
+        elif len(tensor.shape) == 1 and encoding == "one_hot":
             raise Exception("aloscene.Labels must be at least 2 dimensional (N,) with encoding=`one_hot`")
 
         # Encoding

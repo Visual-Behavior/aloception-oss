@@ -7,7 +7,7 @@
 # Aloception
 
 **Aloception** is a set of packages for computer vision built on top of popular deep learning libraries:
-[pytorch](<https://pytorch.org/>)  and  [pytorch lightnig](https://www.pytorchlightning.ai/).
+[pytorch](<https://pytorch.org/>)  and  [pytorch lightning](https://www.pytorchlightning.ai/).
 
 
 ### Aloscene
@@ -35,7 +35,7 @@ for frame in coco_dataset.stream_loader():
 
 ### Alonet
 
-**Alonet** integrates several promising computer vision architectures. You can use it for research purposes or to finetune and deploy your model using TensorRT. Alonet is mainly built on top  of [ lightnig](https://www.pytorchlightning.ai/) with the help of
+**Alonet** integrates several promising computer vision architectures. You can use it for research purposes or to finetune and deploy your model using TensorRT. Alonet is mainly built on top  of [lightning](https://www.pytorchlightning.ai/) with the help of
   **aloscene** and **alodataset**.
 
 **Training**

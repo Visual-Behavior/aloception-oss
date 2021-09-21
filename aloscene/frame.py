@@ -16,7 +16,56 @@ Frame = TypeVar("Frame")
 
 
 class Frame(aloscene.tensors.SpatialAugmentedTensor):
-    """Frame (Image) with associated labels and parameters"""
+    """Augmented Frame tensor. The `Frame` cam be created using the path to an image. Othwewise, if the frame
+    is created from a existing tensor or numpy array, the frame dimensions are expected to be ("C", "H", "W").
+    If this is not the case, the `names` must be passed to the tensor. Checkout the example for more information.
+
+    Notes
+    -----
+    Note on dimension:
+
+    - C refet to the channel dimension
+    - N refer to a dimension with a dynamic number of element.
+    - H refer to the height of a `SpatialAugmentedTensor`
+    - W refer to the width of a `SpatialAugmentedTensor`
+    - B refer to the batch dimension
+    - T refer to the temporal dimension
+
+    Parameters
+    ----------
+    boxes2d: dict | aloscene.BoundingBoxes2D
+        Dict of boxes2d or an instance of aloscene.BoundingBoxes2D
+    boxes3d: dict | aloscene.BoundingBoxes3D
+        Dict of boxes3d or an instance of aloscene.BoundingBoxes3D
+    labels: dict | aloscene.Labels
+        Dict of labels or an instance of aloscene.Labels
+    flow: dict | aloscene.Flow
+        Dict of flow or an  instance of aloscene.Flow
+    segmentation: dict | aloscene.Mask
+        Dict of segmentation (aloscene.Mask) or an  instance of aloscene.Mask
+    segmentation: dict | aloscene.Disparity
+        Dict of Disparity  or an  instance of aloscene.Disparity
+
+    normalization: str
+        One of ["255", "01", "minmax_sym"]
+    mean_std: tuple
+        Tuple with the mean and std of the tensor. (mean, std). Example: ((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)))
+
+
+    Examples
+    --------
+    >>> # Creating a frame from a given path
+    >>> frane = aloscene.Frame("path/to/frame.jpg")
+    >>> frame.get_view().render()
+    >>>
+    >>> # Creating a frame from a numpy array or tensor
+    >>> data = np.zeros((3, 256, 512))
+    >>> frame = aloscene.Frame(data, normalization="01")
+    >>>
+    >>> # Creating a frame from a numpy array or tensor
+    >>> data = np.zeros((1, 3, 256, 512))
+    >>> frame = aloscene.Frame(data, normalization="01", names=("B", "C", "H", "W"))
+    """
 
     @staticmethod
     def __new__(
@@ -25,21 +74,22 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         boxes2d: Union[dict, BoundingBoxes2D] = None,
         boxes3d: Union[dict, BoundingBoxes3D] = None,
         labels: Union[dict, Labels] = None,
-        flow: Flow = None,
-        segmentation: Mask = None,
-        disparity: Disparity = None,
+        flow: Union[dict, Flow] = None,
+        segmentation: Union[dict, Mask] = None,
+        disparity: Union[dict, Disparity] = None,
         normalization="255",
         mean_std=None,
+        names=("C", "H", "W"),
         *args,
         **kwargs,
     ):
-        """Frame (Image) with associated labels and parameters"""
         if isinstance(x, str):
             # Load frame from path
             x = load_image(x)
             normalization = "255"
-            kwargs["names"] = ("C", "H", "W")
-        tensor = super().__new__(cls, x, *args, **kwargs)
+            names = ("C", "H", "W")
+
+        tensor = super().__new__(cls, x, *args, names=names, **kwargs)
 
         # Add label
         tensor.add_label("boxes2d", boxes2d, align_dim=["B", "T"], mergeable=False)
@@ -88,20 +138,32 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         self._append_label("labels", labels, name)
 
     def append_boxes2d(self, boxes: BoundingBoxes2D, name: str = None):
-        """Attach a set of boxes to the frame.
+        """Attach a set of BoundingBoxes2D to the frame.
 
         Parameters
         ----------
-        boxes: BoundingBoxes2D
+        boxes: aloscene.BoundingBoxes2D
             Boxes to attached to the Frame
         name: str
             If none, the boxes will be attached without name (if possible). Otherwise if no other unnamed
             boxes are attached to the frame, the boxes will be added to the set of boxes.
+
+        Examples
+        --------
+        >>> # Adding one set of unnamed boxes
+        >>> frane = aloscene.Frame("path/to/frame.jpg")
+        >>> boxes2d = aloscene.BoundingBoxes2D([[0.5, 0.5, 0.5, 0.5]], boxes_format="xcyc", absolute=False)
+        >>> frame.append_boxes2d(boxes2d)
+        >>>
+        >>> # Adding one set of named boxes
+        >>> frane = aloscene.Frame("path/to/frame.jpg")
+        >>> boxes2d = aloscene.BoundingBoxes2D([[0.5, 0.5, 0.5, 0.5]], boxes_format="xcyc", absolute=False)
+        >>> frame.append_boxes2d(boxes2d, "boxes_set")
         """
         self._append_label("boxes2d", boxes, name)
 
     def append_boxes3d(self, boxes_3d: BoundingBoxes3D, name: str = None):
-        """Attach boxes 3d to this image
+        """Attach BoundingBoxes3D to the frame
 
         Parameters
         ----------

@@ -39,7 +39,7 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
         if boxes_format not in BoundingBoxes2D.FORMATS:
             raise Exception(
                 "BoundingBoxes2D:Format `{}` not supported. Cound be one of {}".format(
-                    tensor.boxes_format, BoundingBoxes2D.FORMATS
+                    boxes_format, BoundingBoxes2D.FORMATS
                 )
             )
         tensor.add_property("boxes_format", boxes_format)

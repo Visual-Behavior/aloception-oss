@@ -28,12 +28,12 @@ class DeformableDetrR50Finetune(DeformableDetrR50):
         That means increases in one the :attr:`num_classes` automatically.
     """
 
-    def __init__(self, num_classes: int, *args, activation_fn: str = "sigmoid", **kwargs):
+    def __init__(self, num_classes: int, activation_fn: str = "sigmoid", **kwargs):
         """Init method"""
         if activation_fn not in ["sigmoid", "softmax"]:
             raise Exception(f"activation_fn = {activation_fn} must be one of this two values: 'sigmoid' or 'softmax'.")
 
-        super().__init__(*args, **kwargs)
+        super().__init__(**kwargs)
 
         self.activation_fn = activation_fn
         self.background_class = num_classes if self.activation_fn == "softmax" else None
@@ -72,13 +72,12 @@ class DeformableDetrR50RefinementFinetune(DeformableDetrR50Refinement):
         That means increases in one the :attr:`num_classes` automatically.
     """
 
-    def __init__(self, num_classes: int, *args, activation_fn: str = "sigmoid", **kwargs):
+    def __init__(self, num_classes: int, activation_fn: str = "sigmoid", **kwargs):
         """Init method"""
-
         if activation_fn not in ["sigmoid", "softmax"]:
             raise Exception(f"activation_fn = {activation_fn} must be one of this two values: 'sigmoid' or 'softmax'.")
 
-        super().__init__(*args, **kwargs)
+        super().__init__(**kwargs)
 
         self.activation_fn = activation_fn
         self.background_class = num_classes if self.activation_fn == "softmax" else None

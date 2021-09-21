@@ -15,6 +15,7 @@ from aloscene.renderer import View
 from aloscene.labels import Labels
 import torchvision
 from torchvision.ops.boxes import nms
+from aloscene.renderer import View, put_adapative_cv2_text, adapt_text_size_to_frame
 
 
 class Points2D(aloscene.tensors.AugmentedTensor):
@@ -151,6 +152,7 @@ class Points2D(aloscene.tensors.AugmentedTensor):
             tensor.rel_pos()
             tensor = tensor.mul(mul_tensor)
             tensor.frame_size = frame_size
+            tensor.absolute = True
 
         elif tensor.absolute and frame_size == tensor.frame_size:
             return tensor
@@ -163,6 +165,7 @@ class Points2D(aloscene.tensors.AugmentedTensor):
 
             tensor = tensor.mul(mul_tensor)
             tensor.frame_size = frame_size
+            tensor.absolute = True
 
             return tensor
 
@@ -179,6 +182,7 @@ class Points2D(aloscene.tensors.AugmentedTensor):
             else:
                 div_tensor = torch.tensor([[self.frame_size[0], self.frame_size[1]]], device=self.device)
             tensor = tensor.div(div_tensor)
+            tensor.absolute = False
             return tensor
         else:
             return tensor
@@ -224,9 +228,8 @@ class Points2D(aloscene.tensors.AugmentedTensor):
         else:
             points_abs = self.xy().abs_pos(frame.HW)
 
-        print("points_abs", points_abs)
-
         # Get an imave with values between 0 and 1
+        frame_size = (frame.H, frame.W)
         frame = frame.norm01().cpu().rename(None).permute([1, 2, 0]).detach().contiguous().numpy()
         # Draw bouding boxes
 
@@ -246,48 +249,49 @@ class Points2D(aloscene.tensors.AugmentedTensor):
             labels = points_abs.labels[labels_set]
             assert labels.encoding == "id"
 
+        size, _ = adapt_text_size_to_frame(1.0, frame_size)
         for box, label in zip(points_abs, labels):
             box = box.round()
             x1, y1 = box.as_tensor()
             color = (0, 1, 0)
             if label is not None:
                 color = self.GLOBAL_COLOR_SET[int(label) % len(self.GLOBAL_COLOR_SET)]
-                cv2.putText(
+
+                put_adapative_cv2_text(
                     frame,
+                    frame_size,
                     str(int(label)),
-                    (int(x1) + 20, int(y1) + 20),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    0.5,
-                    color,
-                    1,
-                    cv2.LINE_AA,
+                    pos_x=int(x1) + 10,
+                    pos_y=int(y1) + 10,
+                    color=color,
+                    square_background=False,
                 )
-            cv2.circle(frame, (int(x1), int(y1)), 2, color, 3)
+
+            cv2.circle(frame, (int(x1), int(y1)), int(size * 5), color, 2)
         # Return the view to display
         return View(frame, **kwargs)
 
     def _hflip(self, **kwargs):
         """Flip points horizontally"""
         points = self.clone()
-        raise Exception("TODO")
 
         absolute = points.absolute
         frame_size = points.frame_size
         points_format = points.points_format
 
         # Transform to relative position, set format
-        points = points.rel_pos().xcyc()
+        points = points.rel_pos().xy()
 
         # Flip horizontally
-        points = torch.tensor([1.0, 0.0, 0, 0]) - points
-        points.mul_(torch.tensor([1.0, -1.0, -1.0, -1.0]))
+        points = torch.tensor([1.0, 0.0]) - points
+        points.mul_(torch.tensor([1.0, -1.0]))
 
         # Put back the instance into the same state as before
         if absolute:
             points = points.abs_pos(frame_size)
         points = points.get_with_format(points_format)
 
-        return self.points_hflip(self.clone())
+        return points
 
     def _resize(self, size, **kwargs):
         """Resize Point2d, but not their labels
@@ -302,7 +306,6 @@ class Points2D(aloscene.tensors.AugmentedTensor):
         points : aloscene.Point2d
             resized points
         """
-        raise Exception("TODO")
         points = self.clone()
         # no modification needed for relative coordinates
         if not points.absolute:
@@ -326,40 +329,35 @@ class Points2D(aloscene.tensors.AugmentedTensor):
         cropped_boxes2d sa_tensor: aloscene.Point2d
             cropped_boxes2d Point2d
         """
-        raise Exception("TODO")
         absolute = self.absolute
         frame_size = self.frame_size
         points_format = self.points_format
 
         # Get a new set of bbox
-        n_boxes = self.abs_pos((100, 100)).xyxy()
+        n_points = self.abs_pos((100, 100)).xy()
 
         # Retrieve crop coordinates
         h = (H_crop[1] - H_crop[0]) * 100
         w = (W_crop[1] - W_crop[0]) * 100
+        max_size = torch.as_tensor([w, h], dtype=torch.float32)
         x, y = W_crop[0] * 100, H_crop[0] * 100
 
         # Crop boxes
-        max_size = torch.as_tensor([w, h, w, h], dtype=torch.float32)
-        cropped_boxes = n_boxes - torch.as_tensor([x, y, x, y])
+        cropped_points = n_points - torch.as_tensor([x, y])
 
-        cropped_boxes = torch.min(cropped_boxes.rename(None), max_size).reset_names()
-        cropped_boxes = cropped_boxes.clamp(min=0)
+        cropped_points_filter = (cropped_points >= 0).as_tensor() & (cropped_points < max_size).as_tensor()
+        cropped_points_filter = cropped_points_filter[:, 0] & cropped_points_filter[:, 1]
+        cropped_points = cropped_points[cropped_points_filter]
 
-        # Filter to keep only boxes with area > 0
-        area = cropped_boxes.area()
-        cropped_boxes = cropped_boxes[area > 0]
-
-        cropped_boxes.frame_size = (h, w)
-        cropped_boxes = cropped_boxes.rel_pos()
+        cropped_points.frame_size = (h, w)
+        cropped_points = cropped_points.rel_pos()
 
         # Put back the instance into the same state as before
         if absolute:
-            cropped_boxes = cropped_boxes.abs_pos(frame_size)
+            cropped_points = cropped_points.abs_pos(frame_size)
+        cropped_points = cropped_points.get_with_format(points_format)
 
-        cropped_boxes = cropped_boxes.get_with_format(points_format)
-
-        return cropped_boxes
+        return cropped_points
 
     def fit_to_padded_size(self):
         """If the set of Boxes did not get padded by the pad operation,
@@ -370,7 +368,6 @@ class Points2D(aloscene.tensors.AugmentedTensor):
         padded_boxes2d sa_tensor: aloscene.Point2d
             padded_boxes2d Point2d
         """
-        raise Exception("TODO")
         if self.padded_size is None:
             raise Exception("Trying to fit to padded size without any previous stored padded_size.")
 
@@ -383,16 +380,19 @@ class Points2D(aloscene.tensors.AugmentedTensor):
         offset_y = (0, self.padded_size[0] / frame_size[0])
 
         if not self.absolute:
-            boxes = self.abs_pos((100, 100))
-            boxes.frame_size = (100 * offset_y[1], 100 * offset_x[1])
-            boxes = boxes.rel_pos()
+            points = self.abs_pos((100, 100))
+            points.frame_size = (100 * offset_y[1], 100 * offset_x[1])
+            points = points.rel_pos()
         else:
-            boxes = self.clone()
-            boxes.frame_size = (round(boxes.frame_size[0] * (offset_y[1])), round(boxes.frame_size[1] * (offset_x[1])))
+            points = self.clone()
+            points.frame_size = (
+                round(points.frame_size[0] * (offset_y[1])),
+                round(points.frame_size[1] * (offset_x[1])),
+            )
 
-        boxes.padded_size = None
+        points.padded_size = None
 
-        return boxes
+        return points
 
     def _pad(self, offset_y: tuple, offset_x: tuple, pad_boxes: bool = False, **kwargs):
         """Pad the set of boxes based on the given offset
@@ -414,77 +414,41 @@ class Points2D(aloscene.tensors.AugmentedTensor):
         boxes2d: aloscene.Point2d
             padded_boxes2d Point2d or unchange Point2d (if pad_boxes is False)
         """
-        raise Exception("TODO")
-
+        # TODO: pad_boxes. Must find a more generic approached for this
         assert offset_y[0] == 0 and offset_x[0] == 0, "Not handle yet"
 
         if not pad_boxes:
 
-            n_boxes = self.clone()
+            n_points = self.clone()
 
-            if n_boxes.padded_size is not None:
-                pr_frame_size = n_boxes.padded_size
-            elif n_boxes.padded_size is None and n_boxes.absolute:
+            if n_points.padded_size is not None:
+                pr_frame_size = n_points.padded_size
+            elif n_points.padded_size is None and n_points.absolute:
                 pr_frame_size = self.frame_size
             else:
                 pr_frame_size = (100, 100)
 
-            n_boxes.padded_size = (pr_frame_size[0] * (1.0 + offset_y[1]), pr_frame_size[1] * (1.0 + offset_x[1]))
-            return n_boxes
+            n_points.padded_size = (pr_frame_size[0] * (1.0 + offset_y[1]), pr_frame_size[1] * (1.0 + offset_x[1]))
+            return n_points
 
         if self.padded_size is not None:
-            raise Exception("Padding with pad_boxes True while padded_size is None is not supported Yet.")
+            raise Exception("Padding with pad_boxes True while padded_size is not None is not supported Yet.")
 
         if not self.absolute:
-            boxes = self.abs_pos((100, 100))
-            boxes.frame_size = (100 * (1.0 + offset_y[1]), 100 * (1.0 + offset_x[1]))
-            boxes = boxes.rel_pos()
+            points = self.abs_pos((100, 100))
+            points.frame_size = (100 * (1.0 + offset_y[1]), 100 * (1.0 + offset_x[1]))
+            points = points.rel_pos()
         else:
-            boxes = self.clone()
-            boxes.frame_size = (boxes.frame_size[0] * (offset_y[1] + 1.0), boxes.frame_size[1] * (offset_x[1] + 1.0))
+            points = self.clone()
+            points.frame_size = (
+                points.frame_size[0] * (offset_y[1] + 1.0),
+                points.frame_size[1] * (offset_x[1] + 1.0),
+            )
 
-        return boxes
+        return points
 
     def _spatial_shift(self, shift_y: float, shift_x: float, **kwargs):
-        """
-        Spatially shift the Boxes
-
-        Parameters
-        ----------
-        shift_y: float
-            Shift percentage on the y axis. Could be negative or positive
-        shift_x: float
-            Shift percentage on the x axis. Could ne negative or positive.
-
-        Returns
-        -------
-        shifted_tensor: aloscene.AugmentedTensor
-            shifted tensor
-        """
-        raise Exception("TODO")
-        original_format = self.points_format
-        original_absolute = self.absolute
-        frame_size = self.frame_size
-
-        n_boxes = self.clone().rel_pos().xcyc()
-
-        n_boxes += torch.as_tensor([[shift_x, shift_y, 0, 0]])  # , device=self.device)
-
-        max_size = torch.as_tensor([1, 1, 1, 1], dtype=torch.float32)
-
-        n_boxes = torch.min(n_boxes.rename(None), max_size)
-        n_boxes = n_boxes.clamp(min=0)
-        n_boxes = n_boxes.reset_names()
-        # Filter to keep only boxes with area > 0
-        area = n_boxes.area()
-        n_boxes = n_boxes[area > 0]
-
-        # Put back the instance into the same state as before
-        if original_absolute:
-            n_boxes = n_boxes.abs_pos(frame_size)
-        n_boxes = n_boxes.get_with_format(original_format)
-
-        return n_boxes
+        raise Exception("Not handle by points 2D")
 
     def as_points(self, points):
         n_points = self.clone()

@@ -1,4 +1,4 @@
-from alonet.panoptic.utils import get_mask_queries
+from alonet.detr_panoptic.utils import get_mask_queries
 import alonet
 import aloscene
 

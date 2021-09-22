@@ -11,9 +11,9 @@ import torch.nn.functional as F
 from torch import nn
 
 from alonet.detr.detr_r50 import DetrR50
-from alonet.panoptic.nn import FPNstyleCNN
-from alonet.panoptic.nn import MHAttentionMap
-from alonet.panoptic.utils import get_mask_queries
+from alonet.detr_panoptic.nn import FPNstyleCNN
+from alonet.detr_panoptic.nn import MHAttentionMap
+from alonet.detr_panoptic.utils import get_mask_queries
 from alonet.detr.misc import assert_and_export_onnx
 
 import aloscene
@@ -72,8 +72,7 @@ class PanopticHead(nn.Module):
         self.device = device
 
         # Load weights
-        if weights is not None:
-            weights = os.path.join(alonet.common.weights.vb_fodler(), "weights", weights, weights + ".pth")
+        if weights is not None and (weights == "detr-r50-panoptic" or ".pth" in weights):
             alonet.common.load_weights(self, weights, device, strict_load_weights=True)
 
     @assert_and_export_onnx(check_mean_std=True, input_mean_std=INPUT_MEAN_STD)

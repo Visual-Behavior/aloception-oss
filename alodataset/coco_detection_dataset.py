@@ -39,9 +39,7 @@ class CocoDetectionDataset(BaseDataset, CocoDetectionSample):
         """
         Attributes
         ----------
-        CATEGORIES : set
-            List of all unique tags read from the database
-        labels_names : list
+        label_names : list
             List of labels according to their corresponding positions
         prepare : :mod:`BaseDataset <base_dataset>`
 
@@ -65,7 +63,7 @@ class CocoDetectionDataset(BaseDataset, CocoDetectionSample):
         Raises
         ------
         Exception
-            If a classes list is decided, each label must be inside of :attr:`CATEGORIES` list attribute
+            If a classes list is decided, each label must be inside of :attr:`label_names` list attribute
 
         Examples
         --------
@@ -108,30 +106,29 @@ class CocoDetectionDataset(BaseDataset, CocoDetectionSample):
         nb_category = max(cat["id"] for cat in cats)
         if stuff_ann_file is not None and name == "coco":
             nb_category = 249  # From original repo https://github.com/facebookresearch/detr/blob/main/models/detr.py
-        self.CATEGORIES = set([cat["name"] for cat in cats])
-        labels_names = ["N/A"] * (nb_category + 1)
+        label_names = ["N/A"] * (nb_category + 1)
         for cat in cats:
-            labels_names[cat["id"]] = cat["name"]
+            label_names[cat["id"]] = cat["name"]
 
         self._ids_renamed = classes
         if classes is None:
-            self.labels_names = labels_names
+            self.label_names = label_names
         else:
-            notclass = [label for label in classes if label not in self.CATEGORIES]
+            notclass = [label for label in classes if label not in label_names]
             if len(notclass) > 0:  # Ignore all labels not in classes
                 raise Exception(
-                    f"The {notclass} classes dont match in CATEGORIES list. Possible values: {self.CATEGORIES}"
+                    f"The {notclass} classes dont match in label_names list. Possible values: {self.label_names}"
                 )
 
-            self.labels_names = classes
-            self._ids_renamed = [-1 if label not in classes else classes.index(label) for label in labels_names]
+            self.label_names = classes
+            self._ids_renamed = [-1 if label not in classes else classes.index(label) for label in label_names]
             self._ids_renamed = np.array(self._ids_renamed)
 
             # Check each annotation and keep only that have at least 1 box in classes list
             ids = []
             for i in self.ids:
                 target = CocoDetectionSample._load_target(self, i)
-                if any([self.ids_renamed[bbox["category_id"]] >= 0 for bbox in target]):
+                if any([self._ids_renamed[bbox["category_id"]] >= 0 for bbox in target]):
                     ids.append(i)
             self.ids = ids  # Remove images without bboxes with classes in classes list
 
@@ -174,7 +171,7 @@ class CocoDetectionDataset(BaseDataset, CocoDetectionSample):
             target["labels"] = torch.from_numpy(new_labels[idxs])
 
         labels_2d = Labels(
-            target["labels"].to(torch.float32), labels_names=self.labels_names, names=("N"), encoding="id"
+            target["labels"].to(torch.float32), labels_names=self.label_names, names=("N"), encoding="id"
         )
         boxes = BoundingBoxes2D(
             target["boxes"],
@@ -287,12 +284,6 @@ class ConvertCocoPolysToMask(object):
         target["size"] = torch.as_tensor([int(h), int(w)])
 
         return image, target
-
-
-def show_random_frame(coco_loader):
-    frames = next(iter(coco_loader.train_loader(batch_size=2)))
-    frames = Frame.batch_list(frames)
-    frames.get_view().render()
 
 
 def main():

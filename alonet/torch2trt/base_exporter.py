@@ -9,9 +9,8 @@ import numpy as np
 from aloscene import Frame
 
 import onnx_graphsurgeon as gs
-import alonet.torch2trt as torch2trt
 from alonet.torch2trt import TRTEngineBuilder, TRTExecutor
-import alonet.torch2trt.utils as utils
+from alonet.torch2trt.utils import print_graph_io
 from torch.onnx import OperatorExportTypes
 
 
@@ -198,7 +197,7 @@ class BaseTRTExporter:
 
         # === Modify ONNX graph for TensorRT compability
         graph = self.adapt_graph(graph, **kwargs)
-        utils.print_graph_io(graph)
+        print_graph_io(graph)
 
         # === Export adapted onnx for TRT engine
         onnx.save(gs.export_onnx(graph), self.adapted_onnx_path)

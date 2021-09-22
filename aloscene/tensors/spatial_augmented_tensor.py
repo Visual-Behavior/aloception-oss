@@ -475,6 +475,7 @@ class SpatialAugmentedTensor(AugmentedTensor):
         h = self.relative_to_absolute(size[0], "h", assert_integer=False)
         # assert_integer = False to avoid raising Assertion. Ex: when coordinates = 900.0000000000001
         w = self.relative_to_absolute(size[1], "w", assert_integer=False)
+        # If a SpatialAgumentedTensor is empty, resize operation does not work. Use view instead.
         if ("N" in self.names and self.size("N") == 0) or ("C" in self.names and self.size("C") == 0):
             shapes = list(self.shape)[:-2] + [h, w]
             return self.rename(None).view(shapes).reset_names()

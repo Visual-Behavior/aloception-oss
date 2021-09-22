@@ -1,20 +1,13 @@
 from typing import List
-from aloscene.bounding_boxes_2d import BoundingBoxes2D
-import argparse
-import os
 import torch
 import torch.nn.functional as F
 from torch import nn
 import math
-import time
 import copy
-import matplotlib.pyplot as plt
-
-from torchvision.io import image
 
 import aloscene
 import alonet
-from alonet.transformers import MLP, position_encoding
+from alonet.transformers import MLP
 
 from alonet.detr import Detr
 from alonet.deformable_detr.utils import inverse_sigmoid
@@ -49,6 +42,8 @@ class DeformableDETR(nn.Module):
         aux_loss=True,
         with_box_refine=False,
         return_dec_outputs=False,
+        return_enc_outputs=False,
+        return_bb_outputs=False,
         weights: str = None,
         device: torch.device = torch.device("cuda"),
         activation_fn: str = "sigmoid",
@@ -95,6 +90,8 @@ class DeformableDETR(nn.Module):
         self.return_intermediate_dec = return_intermediate_dec
         self.hidden_dim = transformer.d_model
         self.return_dec_outputs = return_dec_outputs
+        self.return_enc_outputs = return_enc_outputs
+        self.return_bb_outputs = return_bb_outputs
 
         if activation_fn not in ["sigmoid", "softmax"]:
             raise Exception(f"activation_fn = {activation_fn} must be one of this two values: 'sigmoid' or 'softmax'.")
@@ -114,8 +111,7 @@ class DeformableDETR(nn.Module):
                 in_channels = backbone.num_channels[i]
                 input_proj_list.append(
                     nn.Sequential(
-                        nn.Conv2d(in_channels, self.hidden_dim, kernel_size=1),
-                        nn.GroupNorm(32, self.hidden_dim),
+                        nn.Conv2d(in_channels, self.hidden_dim, kernel_size=1), nn.GroupNorm(32, self.hidden_dim),
                     )
                 )
             for _ in range(num_feature_levels - num_backbone_outs):
@@ -186,9 +182,9 @@ class DeformableDETR(nn.Module):
         Returns
         -------
         dict
-            - "pred_logits": the classification logits (including no-object) for all queries.
-                            If `self.activation_fn` is "softmax", shape = [batch_size x num_queries x (num_classes + 1)]
-                            If `self.activation_fn` is "sigmoid", shape = [batch_size x num_queries x num_classes]
+            - "pred_logits": logits classification (including no-object) for all queries.
+                            If `self.activation_fn` = "softmax", shape = [batch_size x num_queries x (num_classes + 1)]
+                            If `self.activation_fn` = "sigmoid", shape = [batch_size x num_queries x num_classes]
             - "pred_boxes": The normalized boxes coordinates for all queries, represented as
                             (center_x, center_y, height, width). These values are normalized in [0, 1],
                             relative to the size of each individual image (disregarding possible padding).
@@ -237,7 +233,7 @@ class DeformableDETR(nn.Module):
 
         query_embeds = self.query_embed.weight
         transformer_outptus = self.transformer(srcs, masks, pos, query_embeds, **kwargs)
-        return self.forward_heads(transformer_outptus)
+        return self.forward_heads(transformer_outptus, bb_outputs=features)
 
     def forward_position_heads(self, transformer_outptus):
         hs = transformer_outptus["hs"]
@@ -283,10 +279,8 @@ class DeformableDETR(nn.Module):
         outputs_class = torch.stack(outputs_classes)
         return outputs_class
 
-    def forward_heads(self, transformer_outptus: dict, **kwargs):
+    def forward_heads(self, transformer_outptus: dict, bb_outputs: list = None, **kwargs):
         """Apply Deformable heads"""
-        hs = transformer_outptus["hs"]
-
         outputs_class = self.forward_class_heads(transformer_outptus)
         outputs_coord = self.forward_position_heads(transformer_outptus)
 
@@ -298,8 +292,15 @@ class DeformableDETR(nn.Module):
 
         if self.aux_loss:
             out["aux_outputs"] = self._set_aux_loss(outputs_class, outputs_coord, activation_fn=out["activation_fn"])
+
         if self.return_dec_outputs:
-            out["dec_outputs"] = hs
+            out["dec_outputs"] = transformer_outptus["hs"]
+
+        if self.return_enc_outputs:
+            out["enc_outputs"] = transformer_outptus["memory"]
+
+        if self.return_bb_outputs:
+            out["bb_outputs"] = bb_outputs
 
         return out
 
@@ -310,11 +311,7 @@ class DeformableDETR(nn.Module):
         # as a dict having both a Tensor and a list.
         return [{"pred_logits": a, "pred_boxes": b, **kwargs} for a, b in zip(outputs_class[:-1], outputs_coord[:-1])]
 
-    def get_outs_labels(
-        self,
-        m_outputs: dict = None,
-        activation_fn: str = None,
-    ) -> List[torch.Tensor]:
+    def get_outs_labels(self, m_outputs: dict = None, activation_fn: str = None,) -> List[torch.Tensor]:
         """Given the model outs_scores and the model outs_labels,
         return the labels and the associated scores.
 
@@ -492,9 +489,7 @@ class DeformableDETR(nn.Module):
         )
 
     def build_decoder(
-        self,
-        dec_layers: int = 6,
-        return_intermediate_dec=True,
+        self, dec_layers: int = 6, return_intermediate_dec=True,
     ):
 
         decoder_layer = self.build_decoder_layer()

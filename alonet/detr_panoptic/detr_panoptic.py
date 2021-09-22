@@ -100,7 +100,7 @@ class PanopticHead(nn.Module):
                 - "bb_outputs": Backbone outputs, requered in this forward
                 - "enc_outputs": Transformer encoder outputs, requered on this forward
                 - "dec_outputs": Transformer decoder outputs, requered on this forward
-                - "infer_info": Parameters to use in inference procedure
+                - "pred_masks_info": Parameters to use in inference procedure
                 - "aux_outputs": Optional, only returned when auxilary losses are activated. It is a list of
                                 dictionnaries containing the two above keys for each decoder layer.
         """
@@ -122,7 +122,7 @@ class PanopticHead(nn.Module):
         seg_masks = self.mask_head(self.detr.input_proj(src), bbox_mask, [features[i][0] for i in range(3)[::-1]])
 
         out["pred_masks"] = seg_masks.view(bs, bbox_mask.shape[1], seg_masks.shape[-2], seg_masks.shape[-1])
-        out["infer_info"] = {"frame_size": frames.shape[-2:], "gmq_params": gmq_params, "filters": filters}
+        out["pred_masks_info"] = {"frame_size": frames.shape[-2:], "gmq_params": gmq_params, "filters": filters}
         return out  # Return the DETR output + pred_masks
 
     @torch.no_grad()
@@ -148,7 +148,7 @@ class PanopticHead(nn.Module):
         outs_probs = F.softmax(outs_logits, -1)
         outs_scores, outs_labels = outs_probs.max(-1)
 
-        gmq_params = forward_out["infer_info"]["gmq_params"]
+        gmq_params = forward_out["pred_masks_info"]["gmq_params"]
         gmq_params.update(kwargs)
         b_filters = self.detr.get_outs_filter(m_outputs=forward_out, **gmq_params)
 
@@ -156,17 +156,19 @@ class PanopticHead(nn.Module):
         outputs_masks = forward_out["pred_masks"]
         if outputs_masks.numel() > 0:
             outputs_masks = F.interpolate(
-                outputs_masks, size=forward_out["infer_info"]["frame_size"], mode="bilinear", align_corners=False
+                outputs_masks, size=forward_out["pred_masks_info"]["frame_size"], mode="bilinear", align_corners=False
             )
         else:
-            outputs_masks = outputs_masks.view(outputs_masks.shape[0], 0, *forward_out["infer_info"]["frame_size"])
+            outputs_masks = outputs_masks.view(
+                outputs_masks.shape[0], 0, *forward_out["pred_masks_info"]["frame_size"]
+            )
         outputs_masks = (outputs_masks.sigmoid() > maskth).type(torch.long)
-        m_filters = forward_out["infer_info"]["filters"]
+        m_filters = forward_out["pred_masks_info"]["filters"]
 
         # Transform predictions in aloscene.BoundingBoxes2D and aloscene.Masks
         preds_boxes, preds_masks = [], []
         zero_masks = torch.zeros(
-            *forward_out["infer_info"]["frame_size"], device=outputs_masks.device, dtype=torch.long
+            *forward_out["pred_masks_info"]["frame_size"], device=outputs_masks.device, dtype=torch.long
         )
         for scores, labels, boxes, b_filter, masks, m_filter in zip(
             outs_scores, outs_labels, outs_boxes, b_filters, outputs_masks, m_filters
@@ -181,7 +183,7 @@ class PanopticHead(nn.Module):
             if len(masks) > 0:
                 masks = torch.stack([m[1] for m in sorted(masks.items(), key=lambda x: x[0])], dim=0)
             else:
-                masks = zero_masks[[]].view(0, *forward_out["infer_info"]["frame_size"])
+                masks = zero_masks[[]].view(0, *forward_out["pred_masks_info"]["frame_size"])
 
             # Create aloscene objects
             labels = aloscene.Labels(labels.type(torch.float32), encoding="id", scores=scores, names=("N",))

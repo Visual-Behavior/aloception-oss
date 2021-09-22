@@ -8,4 +8,4 @@ from . import raft
 from . import deformable_detr
 from . import callbacks
 
-from . import panoptic
+from . import detr_panoptic

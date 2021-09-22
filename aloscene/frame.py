@@ -16,7 +16,56 @@ Frame = TypeVar("Frame")
 
 
 class Frame(aloscene.tensors.SpatialAugmentedTensor):
-    """Frame (Image) with associated labels and parameters"""
+    """Augmented Frame tensor. The `Frame` cam be created using the path to an image. Othwewise, if the frame
+    is created from a existing tensor or numpy array, the frame dimensions are expected to be ("C", "H", "W").
+    If this is not the case, the `names` must be passed to the tensor. Checkout the example for more information.
+
+    Notes
+    -----
+    Note on dimension:
+
+    - C refet to the channel dimension
+    - N refer to a dimension with a dynamic number of element.
+    - H refer to the height of a `SpatialAugmentedTensor`
+    - W refer to the width of a `SpatialAugmentedTensor`
+    - B refer to the batch dimension
+    - T refer to the temporal dimension
+
+    Parameters
+    ----------
+    boxes2d: dict | aloscene.BoundingBoxes2D
+        Dict of boxes2d or an instance of aloscene.BoundingBoxes2D
+    boxes3d: dict | aloscene.BoundingBoxes3D
+        Dict of boxes3d or an instance of aloscene.BoundingBoxes3D
+    labels: dict | aloscene.Labels
+        Dict of labels or an instance of aloscene.Labels
+    flow: dict | aloscene.Flow
+        Dict of flow or an  instance of aloscene.Flow
+    segmentation: dict | aloscene.Mask
+        Dict of segmentation (aloscene.Mask) or an  instance of aloscene.Mask
+    segmentation: dict | aloscene.Disparity
+        Dict of Disparity  or an  instance of aloscene.Disparity
+
+    normalization: str
+        One of ["255", "01", "minmax_sym"]
+    mean_std: tuple
+        Tuple with the mean and std of the tensor. (mean, std). Example: ((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)))
+
+
+    Examples
+    --------
+    >>> # Creating a frame from a given path
+    >>> frane = aloscene.Frame("path/to/frame.jpg")
+    >>> frame.get_view().render()
+    >>>
+    >>> # Creating a frame from a numpy array or tensor
+    >>> data = np.zeros((3, 256, 512))
+    >>> frame = aloscene.Frame(data, normalization="01")
+    >>>
+    >>> # Creating a frame from a numpy array or tensor
+    >>> data = np.zeros((1, 3, 256, 512))
+    >>> frame = aloscene.Frame(data, normalization="01", names=("B", "C", "H", "W"))
+    """
 
     @staticmethod
     def __new__(
@@ -25,22 +74,23 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         boxes2d: Union[dict, BoundingBoxes2D] = None,
         boxes3d: Union[dict, BoundingBoxes3D] = None,
         labels: Union[dict, Labels] = None,
+        flow: Union[dict, Flow] = None,
+        segmentation: Union[dict, Mask] = None,
+        disparity: Union[dict, Disparity] = None,
         points2d: Union[dict, Points2D] = None,
-        flow: Flow = None,
-        segmentation: Mask = None,
-        disparity: Disparity = None,
         normalization="255",
         mean_std=None,
+        names=("C", "H", "W"),
         *args,
         **kwargs,
     ):
-        """Frame (Image) with associated labels and parameters"""
         if isinstance(x, str):
             # Load frame from path
             x = load_image(x)
             normalization = "255"
-            kwargs["names"] = ("C", "H", "W")
-        tensor = super().__new__(cls, x, *args, **kwargs)
+            names = ("C", "H", "W")
+
+        tensor = super().__new__(cls, x, *args, names=names, **kwargs)
 
         # Add label
         tensor.add_label("points2d", points2d, align_dim=["B", "T"], mergeable=False)
@@ -86,19 +136,37 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         name: str
             If none, the label will be attached without name (if possible). Otherwise if no other unnamed
             labels are attached to the frame, the labels will be added to the set of labels.
+
+        Examples
+        --------
+        >> frame = aloscene.Frame("/path/to/image.jpeg")
+        >> labels = aloscene.Labels([42])
+        >> frame.append_labels(labels)
         """
         self._append_label("labels", labels, name)
 
     def append_boxes2d(self, boxes: BoundingBoxes2D, name: str = None):
-        """Attach a set of boxes to the frame.
+        """Attach a set of BoundingBoxes2D to the frame.
 
         Parameters
         ----------
-        boxes: BoundingBoxes2D
+        boxes: aloscene.BoundingBoxes2D
             Boxes to attached to the Frame
         name: str
             If none, the boxes will be attached without name (if possible). Otherwise if no other unnamed
             boxes are attached to the frame, the boxes will be added to the set of boxes.
+
+        Examples
+        --------
+        >>> # Adding one set of unnamed boxes
+        >>> frane = aloscene.Frame("path/to/frame.jpg")
+        >>> boxes2d = aloscene.BoundingBoxes2D([[0.5, 0.5, 0.5, 0.5]], boxes_format="xcyc", absolute=False)
+        >>> frame.append_boxes2d(boxes2d)
+        >>>
+        >>> # Adding one set of named boxes
+        >>> frane = aloscene.Frame("path/to/frame.jpg")
+        >>> boxes2d = aloscene.BoundingBoxes2D([[0.5, 0.5, 0.5, 0.5]], boxes_format="xcyc", absolute=False)
+        >>> frame.append_boxes2d(boxes2d, "boxes_set")
         """
         self._append_label("boxes2d", boxes, name)
 
@@ -116,7 +184,7 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         self._append_label("points2d", points, name)
 
     def append_boxes3d(self, boxes_3d: BoundingBoxes3D, name: str = None):
-        """Attach boxes 3d to this image
+        """Attach BoundingBoxes3D to the frame
 
         Parameters
         ----------
@@ -125,6 +193,17 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         name: str
             If none, the boxes will be attached without name (if possible). Otherwise if no other unnamed
             boxes are attached to the frame, the boxes will be added to the set of boxes.
+
+        Examples
+        --------
+        >>> # To be render and transform properly, boxes3D required cam_extrinsic parameters.
+        >>> # To make things easier to get started, let's use the waymo dataset sample
+        >>> # and let's add a new set of boxes 3D
+        >>> frame = alodataset.WaymoDataset(sample=True).getitem(0)["front"]
+        >>> # [xc, yc, zc, Dx, Dy, Dz, heading]
+        >>> boxes3d = aloscene.BoundingBoxes3D([[-6.2120, -1.0164, 22.5095, 1.9325, 1.4111, 4.0868, -0.2779]])
+        >>> We append to boxes3D twice because the frame has a temporal dimension (T=2)
+        >>> frame.append_boxes3d([boxes3d, boxes3d], "my_set")
         """
         self._append_label("boxes3d", boxes_3d, name)
 
@@ -138,6 +217,12 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         name: str
             If none, the flow will be attached without name (if possible). Otherwise if no other unnamed
             flow are attached to the frame, the flow will be added to the set of flow.
+
+        Examples
+        --------
+        >>> frame = aloscene.Frame("/path/to/image.jpeg")
+        >>> flow = aloscene.Flow(np.zeros((2, frame.H, frame.W)))
+        >>> frame.append_flow(flow)
         """
         self._append_label("flow", flow, name)
 
@@ -151,6 +236,12 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         name: str
             If none, the disparity will be attached without name (if possible). Otherwise if no other unnamed
             disparity are attached to the frame, the disparity will be added to the set of flow.
+
+        Examples
+        --------
+        >>> frame = aloscene.Frame("/path/to/image.jpeg")
+        >>> disparity = aloscene.Disparity(np.zeros((1, frame.H, frame.W)))
+        >>> frame.append_disparity(disparity)
         """
         self._append_label("disparity", disparity, name)
 
@@ -182,6 +273,10 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
     def norm01(self) -> Frame:
         """Normnalize the tensor from the current tensor
         normalization to values between 0 and 1.
+
+        Examples
+        --------
+        >>> frame_01 = frame.norm01()
         """
         tensor = self
 
@@ -206,7 +301,17 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         return tensor
 
     def norm_as(self, target_frame) -> Frame:
-        """Normalize the tensor as the given `target_frame`."""
+        """Normalize the tensor as the given `target_frame`.
+
+        Parameters
+        ----------
+        target_frame: aloscene.Frame
+            Will change the frame normalization as this `target_frame`
+
+        Examples
+        --------
+        >>> new_frame = frame.norm_as(target_frame)
+        """
         if target_frame.normalization == "01":
             return self.norm01
         elif target_frame.normalization == "255":
@@ -226,6 +331,10 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
     def norm255(self) -> Frame:
         """Normnalize the tensor from the current tensor
         normalization to values between 0 and 255
+
+        Examples
+        --------
+        >>> frame_255 = frame.norm255()
         """
         tensor = self
 
@@ -253,6 +362,10 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
     def norm_minmax_sym(self):
         """
         Normalize the tensor to values between -1 and 1
+
+        Examples
+        --------
+        >>> frame_minmax_sym = frame.norm_minmax_sym()
         """
         tensor = self
         if tensor.normalization == "minmax_sym":
@@ -271,6 +384,12 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         """Normnalize the tensor from the current tensor
         normalization to the expected resnet normalization (x - mean) / std
         with x normalized with value between 0 and 1.
+
+        Examples
+        --------
+        >>> mean = (0.485, 0.456, 0.406)
+        >>> std = (0.229, 0.224, 0.225)
+        >>> normalized_frame = frame.mean_std_norm(mean, std, "my_norm")
         """
         tensor = self
         mean_tensor, std_tensor = self._get_mean_std_tensor(
@@ -298,6 +417,13 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         return tensor
 
     def norm_resnet(self) -> Frame:
+        """Normalized the current frame based on the normalized use on resnet on pytorch. This method will
+        simply call `frame.mean_std_norm()` with the resnet mean/std and the name `resnet`.
+
+        Examples
+        --------
+        >>> frame_resnet = frame.norm_resnet()
+        """
         return self.mean_std_norm(mean=self._resnet_mean_std[0], std=self._resnet_mean_std[1], name="resnet")
 
     def __get_view__(self, title=None):

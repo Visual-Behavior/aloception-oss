@@ -17,12 +17,12 @@ class Flow(aloscene.tensors.SpatialAugmentedTensor):
     """
 
     @staticmethod
-    def __new__(cls, x, occlusion: Mask = None, *args, **kwargs):
+    def __new__(cls, x, occlusion: Mask = None, *args, names=("C", "H", "W"), **kwargs):
         if isinstance(x, str):
             # load flow from path
             x = load_flow(x)
-            kwargs["names"] = ("C", "H", "W")
-        tensor = super().__new__(cls, x, *args, **kwargs)
+            names = ("C", "H", "W")
+        tensor = super().__new__(cls, x, *args, names=names, **kwargs)
         tensor.add_label("occlusion", occlusion, align_dim=["B", "T"], mergeable=True)
         return tensor
 

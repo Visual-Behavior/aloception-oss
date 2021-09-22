@@ -13,6 +13,8 @@ from aloscene.labels import Labels
 import torchvision
 from torchvision.ops.boxes import nms
 
+from aloscene.renderer import View, put_adapative_cv2_text
+
 
 class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
     """Boxes2D Tensor."""
@@ -406,6 +408,7 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
             boxes_abs = self.xyxy().abs_pos(frame.HW)
 
         # Get an imave with values between 0 and 1
+        frame_size = frame.HW
         frame = frame.norm01().cpu().rename(None).permute([1, 2, 0]).detach().contiguous().numpy()
         # Draw bouding boxes
 
@@ -429,12 +432,17 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
             box = box.round()
             x1, y1, x2, y2 = box.as_tensor()
             color = (0, 1, 0)
+            cv2.rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), color, 3)
             if label is not None:
                 color = self.GLOBAL_COLOR_SET[int(label) % len(self.GLOBAL_COLOR_SET)]
-                cv2.putText(
-                    frame, str(int(label)), (int(x2), int(y1)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1, cv2.LINE_AA
+                put_adapative_cv2_text(
+                    frame,
+                    frame_size,
+                    str(int(label)),
+                    int(x1) + (int(x2 - x1) / 2),
+                    int(y1) + (int(y2 - y1) / 2),
+                    bg_color=color,
                 )
-            cv2.rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), color, 3)
         # Return the view to display
         return View(frame, **kwargs)
 

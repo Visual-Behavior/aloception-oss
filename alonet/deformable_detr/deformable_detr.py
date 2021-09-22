@@ -168,9 +168,13 @@ class DeformableDETR(nn.Module):
             self.to(device)
 
         if weights is not None and (
-            weights in ["deformable-detr-r50", "deformable-detr-r50-refinement"] or ".pth" in weights
+            weights in ["deformable-detr-r50", "deformable-detr-r50-refinement"]
+            or ".pth" in weights
+            or ".ckpt" in weights
         ):
             alonet.common.load_weights(self, weights, device, strict_load_weights=strict_load_weights)
+        else:
+            raise ValueError(f"Unknown weights: '{weights}'")
 
     @assert_and_export_onnx(check_mean_std=True, input_mean_std=INPUT_MEAN_STD)
     def forward(self, frames: aloscene.Frame, **kwargs):

@@ -41,7 +41,7 @@ class CocoDetectionDataset(BaseDataset, CocoDetectionSample):
         ----------
         CATEGORIES : set
             List of all unique tags read from the database
-        labels_names : list
+        label_names : list
             List of labels according to their corresponding positions
         prepare : :mod:`BaseDataset <base_dataset>`
 
@@ -110,13 +110,13 @@ class CocoDetectionDataset(BaseDataset, CocoDetectionSample):
         # aux = set([x.split("-")[0] for x in self.CATEGORIES])
         # print(aux, len(aux))
         # print(set([cat["supercategory"] for cat in cats]), len(set([cat["supercategory"] for cat in cats])))
-        labels_names = ["N/A"] * (nb_category + 1)
+        label_names = ["N/A"] * (nb_category + 1)
         for cat in cats:
-            labels_names[cat["id"]] = cat["name"]
+            label_names[cat["id"]] = cat["name"]
 
         self._ids_renamed = classes
         if classes is None:
-            self.labels_names = labels_names
+            self.label_names = label_names
         else:
             notclass = [label for label in classes if label not in self.CATEGORIES]
             if len(notclass) > 0:  # Ignore all labels not in classes
@@ -124,15 +124,15 @@ class CocoDetectionDataset(BaseDataset, CocoDetectionSample):
                     f"The {notclass} classes dont match in CATEGORIES list. Possible values: {self.CATEGORIES}"
                 )
 
-            self.labels_names = classes
-            self._ids_renamed = [-1 if label not in classes else classes.index(label) for label in labels_names]
+            self.label_names = classes
+            self._ids_renamed = [-1 if label not in classes else classes.index(label) for label in label_names]
             self._ids_renamed = np.array(self._ids_renamed)
 
             # Check each annotation and keep only that have at least 1 box in classes list
             ids = []
             for i in self.ids:
                 target = CocoDetectionSample._load_target(self, i)
-                if any([self.ids_renamed[bbox["category_id"]] >= 0 for bbox in target]):
+                if any([self._ids_renamed[bbox["category_id"]] >= 0 for bbox in target]):
                     ids.append(i)
             self.ids = ids  # Remove images without bboxes with classes in classes list
 
@@ -175,7 +175,7 @@ class CocoDetectionDataset(BaseDataset, CocoDetectionSample):
             target["labels"] = torch.from_numpy(new_labels[idxs])
 
         labels_2d = Labels(
-            target["labels"].to(torch.float32), labels_names=self.labels_names, names=("N"), encoding="id"
+            target["labels"].to(torch.float32), labels_names=self.label_names, names=("N"), encoding="id"
         )
         boxes = BoundingBoxes2D(
             target["boxes"],

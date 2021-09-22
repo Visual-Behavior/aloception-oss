@@ -13,6 +13,17 @@ class ApMetricsCallback(pl.Callback):
         self.ap_metrics = []
         super().__init__(*args, **kwargs)
 
+    def inference(self, pl_module: pl.LightningModule, outputs: dict, **kwargs):
+        b_pred_masks = None
+        if "pred_masks" in outputs:
+            b_pred_boxes, b_pred_masks = pl_module.inference(outputs["m_outputs"], **kwargs)
+        else:
+            b_pred_boxes = pl_module.inference(outputs["m_outputs"], **kwargs)
+        if not isinstance(outputs["m_outputs"], list):
+            b_pred_boxes = [b_pred_boxes]
+            b_pred_masks = [b_pred_masks]
+        return b_pred_boxes, b_pred_masks
+
     @rank_zero_only
     def on_validation_batch_end(
         self,
@@ -51,44 +62,28 @@ class ApMetricsCallback(pl.Callback):
         if isinstance(batch, list):  # Resize frames for mask procedure
             batch = batch[0].batch_list(batch)
 
-        is_pre_mask = False
-        if isinstance(outputs["m_outputs"], list):
-            is_temporal = True
-            b_pred_boxes = pl_module.inference(outputs["m_outputs"])
-            if isinstance(b_pred_boxes, tuple):
-                is_pre_mask = True
-                b_pred_masks = b_pred_boxes[1]
-                b_pred_boxes = b_pred_boxes[0]
-        else:
-            b_pred_boxes = [pl_module.inference(outputs["m_outputs"])]
-            if isinstance(b_pred_boxes[0], tuple):
-                is_pre_mask = True
-                b_pred_masks = [b_pred_boxes[0][1]]
-                b_pred_boxes = [b_pred_boxes[0][0]]
-            is_temporal = False
-
-        gt_masks, pred_masks = None, None
-        for b, t_pred_boxes in enumerate(b_pred_boxes):
+        b_pred_boxes, b_pred_masks = self.inference(pl_module, outputs["m_outputs"])
+        is_temporal = isinstance(outputs["m_outputs"], list)
+        for b, (t_pred_boxes, t_pred_masks) in enumerate(zip(b_pred_boxes, b_pred_masks)):
 
             # Retrieve the matching GT boxes at the same time step
             t_gt_boxes = batch[b].boxes2d
+            t_gt_masks = batch[b].segmentation
 
             if not is_temporal:
                 t_gt_boxes = [t_gt_boxes]
+                t_gt_masks = [t_gt_masks]
+
+            if t_pred_masks is None:
+                t_pred_masks = [None] * len(t_gt_masks)
 
             # Add the samples to to the AP metrics for each batch of the current sequence
-            for t, (gt_boxes, pred_boxes) in enumerate(zip(t_gt_boxes, t_pred_boxes)):
+            for t, (gt_boxes, pred_boxes, gt_masks, pred_masks) in enumerate(
+                zip(t_gt_boxes, t_pred_boxes, t_gt_masks, t_pred_masks)
+            ):
                 if t + 1 > len(self.ap_metrics):
                     self.ap_metrics.append(alonet.metrics.ApMetrics())
-                if is_pre_mask:
-                    if is_temporal:
-                        gt_masks = batch[b][t].segmentation
-                    else:
-                        gt_masks = batch[b].segmentation
-                    pred_masks = b_pred_masks[b][t]
-                    self.add_sample(self.ap_metrics[t], pred_boxes, gt_boxes, pred_masks, gt_masks)
-                else:
-                    self.add_sample(self.ap_metrics[t], pred_boxes, gt_boxes)
+                self.add_sample(self.ap_metrics[t], pred_boxes, gt_boxes, pred_masks, gt_masks)
 
     @rank_zero_only
     def add_sample(

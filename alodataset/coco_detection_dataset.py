@@ -33,6 +33,7 @@ class CocoDetectionDataset(BaseDataset, CocoDetectionSample):
         name: str = "coco",
         return_masks=False,
         classes: list = None,
+        fix_classes_len: int = None,
         stuff_ann_file: str = None,
         **kwargs,
     ):
@@ -55,6 +56,9 @@ class CocoDetectionDataset(BaseDataset, CocoDetectionSample):
             Include masks labels in the output, by default False
         classes : list, optional
             List of classes to be filtered in the annotation reading process, by default None
+        fix_classes_len : int, optional
+            Fix to a specific number the number of classes, filling the rest with "N/A" value.
+            Use when the number of model outputs does not match with the number of classes in the dataset.
         stuff_ann_file: str, optional
             Additional annotations with new classes, by default None
         **kwargs : dict
@@ -64,6 +68,8 @@ class CocoDetectionDataset(BaseDataset, CocoDetectionSample):
         ------
         Exception
             If a classes list is decided, each label must be inside of :attr:`label_names` list attribute
+        ValueError
+            If fix_classes_len is desired, fix_classes_len > len(label_names)
 
         Examples
         --------
@@ -134,6 +140,14 @@ class CocoDetectionDataset(BaseDataset, CocoDetectionSample):
 
         self.prepare = ConvertCocoPolysToMask(return_masks)
         self.items = self.ids
+
+        if fix_classes_len is not None:
+            if fix_classes_len > len(self.label_names):
+                self.label_names += ["N/A"] * (fix_classes_len - len(self.label_names))
+            else:
+                raise ValueError(
+                    f"fix_classes_len must be higher than the lenght of label_names ({len(self.label_names)})."
+                )
 
     def getitem(self, idx):
         """Get the :mod:`Frame <aloscene.frame>` corresponds to *idx* index

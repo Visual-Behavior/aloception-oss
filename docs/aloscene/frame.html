@@ -95,7 +95,6 @@
 <li class="toctree-l1"><a class="reference internal" href="../getting_started/alodataset.html">Alodataset: Loading your vision datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../getting_started/alonet.html">Alonet : Training your models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../getting_started/augmented_tensor.html">About augmented tensors</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../getting_started/augmented_tensor.html#Statefull-tensors">Statefull tensors</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Turorials</span></p>
 <ul>
@@ -222,17 +221,65 @@
 <span id="frame"></span><h1>Frame<a class="headerlink" href="#module-aloscene.frame" title="Permalink to this headline">¶</a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="aloscene.frame.Frame">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">aloscene.frame.</span></span><span class="sig-name descname"><span class="pre">Frame</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boxes2d</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">,</span> </span><a class="reference internal" href="bounding_boxes_2d.html#aloscene.bounding_boxes_2d.BoundingBoxes2D" title="aloscene.bounding_boxes_2d.BoundingBoxes2D"><span class="pre">aloscene.bounding_boxes_2d.BoundingBoxes2D</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boxes3d</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">,</span> </span><a class="reference internal" href="bounding_boxes_3d.html#aloscene.bounding_boxes_3d.BoundingBoxes3D" title="aloscene.bounding_boxes_3d.BoundingBoxes3D"><span class="pre">aloscene.bounding_boxes_3d.BoundingBoxes3D</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">,</span> </span><a class="reference internal" href="labels.html#aloscene.labels.Labels" title="aloscene.labels.Labels"><span class="pre">aloscene.labels.Labels</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flow</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="flow.html#aloscene.flow.Flow" title="aloscene.flow.Flow"><span class="pre">aloscene.flow.Flow</span></a><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">segmentation</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="mask.html#aloscene.mask.Mask" title="aloscene.mask.Mask"><span class="pre">aloscene.mask.Mask</span></a><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">disparity</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="disparity.html#aloscene.disparity.Disparity" title="aloscene.disparity.Disparity"><span class="pre">aloscene.disparity.Disparity</span></a><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normalization</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'255'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_std</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aloscene.frame.Frame" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">aloscene.frame.</span></span><span class="sig-name descname"><span class="pre">Frame</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boxes2d</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">,</span> </span><a class="reference internal" href="bounding_boxes_2d.html#aloscene.bounding_boxes_2d.BoundingBoxes2D" title="aloscene.bounding_boxes_2d.BoundingBoxes2D"><span class="pre">aloscene.bounding_boxes_2d.BoundingBoxes2D</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boxes3d</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">,</span> </span><a class="reference internal" href="bounding_boxes_3d.html#aloscene.bounding_boxes_3d.BoundingBoxes3D" title="aloscene.bounding_boxes_3d.BoundingBoxes3D"><span class="pre">aloscene.bounding_boxes_3d.BoundingBoxes3D</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">,</span> </span><a class="reference internal" href="labels.html#aloscene.labels.Labels" title="aloscene.labels.Labels"><span class="pre">aloscene.labels.Labels</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flow</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">,</span> </span><a class="reference internal" href="flow.html#aloscene.flow.Flow" title="aloscene.flow.Flow"><span class="pre">aloscene.flow.Flow</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">segmentation</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">,</span> </span><a class="reference internal" href="mask.html#aloscene.mask.Mask" title="aloscene.mask.Mask"><span class="pre">aloscene.mask.Mask</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">disparity</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">,</span> </span><a class="reference internal" href="disparity.html#aloscene.disparity.Disparity" title="aloscene.disparity.Disparity"><span class="pre">aloscene.disparity.Disparity</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normalization</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'255'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_std</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">('C',</span> <span class="pre">'H',</span> <span class="pre">'W')</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aloscene.frame.Frame" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="spatial_augmented_tensor.html#aloscene.tensors.spatial_augmented_tensor.SpatialAugmentedTensor" title="aloscene.tensors.spatial_augmented_tensor.SpatialAugmentedTensor"><code class="xref py py-class docutils literal notranslate"><span class="pre">aloscene.tensors.spatial_augmented_tensor.SpatialAugmentedTensor</span></code></a></p>
-<p>Frame (Image) with associated labels and parameters</p>
-<dl class="py method">
-<dt class="sig sig-object py" id="aloscene.frame.Frame.append_boxes2d">
-<span class="sig-name descname"><span class="pre">append_boxes2d</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">boxes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aloscene.frame.Frame.append_boxes2d" title="Permalink to this definition">¶</a></dt>
-<dd><p>Attach a set of boxes to the frame.</p>
+<p>Augmented Frame tensor. The <cite>Frame</cite> cam be created using the path to an image. Othwewise, if the frame
+is created from a existing tensor or numpy array, the frame dimensions are expected to be (“C”, “H”, “W”).
+If this is not the case, the <cite>names</cite> must be passed to the tensor. Checkout the example for more information.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>boxes: BoundingBoxes2D</strong></dt><dd><p>Boxes to attached to the Frame</p>
+<dt><strong>boxes2d: dict | aloscene.BoundingBoxes2D</strong></dt><dd><p>Dict of boxes2d or an instance of aloscene.BoundingBoxes2D</p>
+</dd>
+<dt><strong>boxes3d: dict | aloscene.BoundingBoxes3D</strong></dt><dd><p>Dict of boxes3d or an instance of aloscene.BoundingBoxes3D</p>
+</dd>
+<dt><strong>labels: dict | aloscene.Labels</strong></dt><dd><p>Dict of labels or an instance of aloscene.Labels</p>
+</dd>
+<dt><strong>flow: dict | aloscene.Flow</strong></dt><dd><p>Dict of flow or an  instance of aloscene.Flow</p>
+</dd>
+<dt><strong>segmentation: dict | aloscene.Mask</strong></dt><dd><p>Dict of segmentation (aloscene.Mask) or an  instance of aloscene.Mask</p>
+</dd>
+<dt><strong>segmentation: dict | aloscene.Disparity</strong></dt><dd><p>Dict of Disparity  or an  instance of aloscene.Disparity</p>
+</dd>
+<dt><strong>normalization: str</strong></dt><dd><p>One of [“255”, “01”, “minmax_sym”]</p>
+</dd>
+<dt><strong>mean_std: tuple</strong></dt><dd><p>Tuple with the mean and std of the tensor. (mean, std). Example: ((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)))</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>Note on dimension:</p>
+<ul class="simple">
+<li><p>C refet to the channel dimension</p></li>
+<li><p>N refer to a dimension with a dynamic number of element.</p></li>
+<li><p>H refer to the height of a <cite>SpatialAugmentedTensor</cite></p></li>
+<li><p>W refer to the width of a <cite>SpatialAugmentedTensor</cite></p></li>
+<li><p>B refer to the batch dimension</p></li>
+<li><p>T refer to the temporal dimension</p></li>
+</ul>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Creating a frame from a given path</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">frane</span> <span class="o">=</span> <span class="n">aloscene</span><span class="o">.</span><span class="n">Frame</span><span class="p">(</span><span class="s2">&quot;path/to/frame.jpg&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">frame</span><span class="o">.</span><span class="n">get_view</span><span class="p">()</span><span class="o">.</span><span class="n">render</span><span class="p">()</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Creating a frame from a numpy array or tensor</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">512</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">frame</span> <span class="o">=</span> <span class="n">aloscene</span><span class="o">.</span><span class="n">Frame</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">normalization</span><span class="o">=</span><span class="s2">&quot;01&quot;</span><span class="p">)</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Creating a frame from a numpy array or tensor</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">512</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">frame</span> <span class="o">=</span> <span class="n">aloscene</span><span class="o">.</span><span class="n">Frame</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">normalization</span><span class="o">=</span><span class="s2">&quot;01&quot;</span><span class="p">,</span> <span class="n">names</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;W&quot;</span><span class="p">))</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="aloscene.frame.Frame.append_boxes2d">
+<span class="sig-name descname"><span class="pre">append_boxes2d</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">boxes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aloscene.frame.Frame.append_boxes2d" title="Permalink to this definition">¶</a></dt>
+<dd><p>Attach a set of BoundingBoxes2D to the frame.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>boxes: aloscene.BoundingBoxes2D</strong></dt><dd><p>Boxes to attached to the Frame</p>
 </dd>
 <dt><strong>name: str</strong></dt><dd><p>If none, the boxes will be attached without name (if possible). Otherwise if no other unnamed
 boxes are attached to the frame, the boxes will be added to the set of boxes.</p>
@@ -240,12 +287,24 @@ boxes are attached to the frame, the boxes will be added to the set of boxes.</p
 </dl>
 </dd>
 </dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Adding one set of unnamed boxes</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">frane</span> <span class="o">=</span> <span class="n">aloscene</span><span class="o">.</span><span class="n">Frame</span><span class="p">(</span><span class="s2">&quot;path/to/frame.jpg&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">boxes2d</span> <span class="o">=</span> <span class="n">aloscene</span><span class="o">.</span><span class="n">BoundingBoxes2D</span><span class="p">([[</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">]],</span> <span class="n">boxes_format</span><span class="o">=</span><span class="s2">&quot;xcyc&quot;</span><span class="p">,</span> <span class="n">absolute</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">frame</span><span class="o">.</span><span class="n">append_boxes2d</span><span class="p">(</span><span class="n">boxes2d</span><span class="p">)</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Adding one set of named boxes</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">frane</span> <span class="o">=</span> <span class="n">aloscene</span><span class="o">.</span><span class="n">Frame</span><span class="p">(</span><span class="s2">&quot;path/to/frame.jpg&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">boxes2d</span> <span class="o">=</span> <span class="n">aloscene</span><span class="o">.</span><span class="n">BoundingBoxes2D</span><span class="p">([[</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">]],</span> <span class="n">boxes_format</span><span class="o">=</span><span class="s2">&quot;xcyc&quot;</span><span class="p">,</span> <span class="n">absolute</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">frame</span><span class="o">.</span><span class="n">append_boxes2d</span><span class="p">(</span><span class="n">boxes2d</span><span class="p">,</span> <span class="s2">&quot;boxes_set&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="aloscene.frame.Frame.append_boxes3d">
 <span class="sig-name descname"><span class="pre">append_boxes3d</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">boxes_3d</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aloscene.frame.Frame.append_boxes3d" title="Permalink to this definition">¶</a></dt>
-<dd><p>Attach boxes 3d to this image</p>
+<dd><p>Attach BoundingBoxes3D to the frame</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
@@ -257,6 +316,17 @@ boxes are attached to the frame, the boxes will be added to the set of boxes.</p
 </dl>
 </dd>
 </dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># To be render and transform properly, boxes3D required cam_extrinsic parameters.</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># To make things easier to get started, let&#39;s use the waymo dataset sample</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># and let&#39;s add a new set of boxes 3D</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">frame</span> <span class="o">=</span> <span class="n">alodataset</span><span class="o">.</span><span class="n">WaymoDataset</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">getitem</span><span class="p">(</span><span class="mi">0</span><span class="p">)[</span><span class="s2">&quot;front&quot;</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># [xc, yc, zc, Dx, Dy, Dz, heading]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">boxes3d</span> <span class="o">=</span> <span class="n">aloscene</span><span class="o">.</span><span class="n">BoundingBoxes3D</span><span class="p">([[</span><span class="o">-</span><span class="mf">6.2120</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0164</span><span class="p">,</span> <span class="mf">22.5095</span><span class="p">,</span> <span class="mf">1.9325</span><span class="p">,</span> <span class="mf">1.4111</span><span class="p">,</span> <span class="mf">4.0868</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.2779</span><span class="p">]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">We</span> <span class="n">append</span> <span class="n">to</span> <span class="n">boxes3D</span> <span class="n">twice</span> <span class="n">because</span> <span class="n">the</span> <span class="n">frame</span> <span class="n">has</span> <span class="n">a</span> <span class="n">temporal</span> <span class="n">dimension</span> <span class="p">(</span><span class="n">T</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">frame</span><span class="o">.</span><span class="n">append_boxes3d</span><span class="p">([</span><span class="n">boxes3d</span><span class="p">,</span> <span class="n">boxes3d</span><span class="p">],</span> <span class="s2">&quot;my_set&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py method">
@@ -274,6 +344,12 @@ disparity are attached to the frame, the disparity will be added to the set of f
 </dl>
 </dd>
 </dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">frame</span> <span class="o">=</span> <span class="n">aloscene</span><span class="o">.</span><span class="n">Frame</span><span class="p">(</span><span class="s2">&quot;/path/to/image.jpeg&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">disparity</span> <span class="o">=</span> <span class="n">aloscene</span><span class="o">.</span><span class="n">Disparity</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="n">frame</span><span class="o">.</span><span class="n">H</span><span class="p">,</span> <span class="n">frame</span><span class="o">.</span><span class="n">W</span><span class="p">)))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">frame</span><span class="o">.</span><span class="n">append_disparity</span><span class="p">(</span><span class="n">disparity</span><span class="p">)</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py method">
@@ -291,6 +367,12 @@ flow are attached to the frame, the flow will be added to the set of flow.</p>
 </dl>
 </dd>
 </dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">frame</span> <span class="o">=</span> <span class="n">aloscene</span><span class="o">.</span><span class="n">Frame</span><span class="p">(</span><span class="s2">&quot;/path/to/image.jpeg&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">flow</span> <span class="o">=</span> <span class="n">aloscene</span><span class="o">.</span><span class="n">Flow</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">2</span><span class="p">,</span> <span class="n">frame</span><span class="o">.</span><span class="n">H</span><span class="p">,</span> <span class="n">frame</span><span class="o">.</span><span class="n">W</span><span class="p">)))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">frame</span><span class="o">.</span><span class="n">append_flow</span><span class="p">(</span><span class="n">flow</span><span class="p">)</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py method">
@@ -309,6 +391,10 @@ labels are attached to the frame, the labels will be added to the set of labels.
 </dl>
 </dd>
 </dl>
+<p class="rubric">Examples</p>
+<p>&gt;&gt; frame = aloscene.Frame(“/path/to/image.jpeg”)
+&gt;&gt; labels = aloscene.Labels([42])
+&gt;&gt; frame.append_labels(labels)</p>
 </dd></dl>
 
 <dl class="py method">
@@ -335,6 +421,12 @@ mask are attached to the frame, the mask will be added to the set of mask.</p>
 <dd><p>Normnalize the tensor from the current tensor
 normalization to the expected resnet normalization (x - mean) / std
 with x normalized with value between 0 and 1.</p>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">mean</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.485</span><span class="p">,</span> <span class="mf">0.456</span><span class="p">,</span> <span class="mf">0.406</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">std</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.229</span><span class="p">,</span> <span class="mf">0.224</span><span class="p">,</span> <span class="mf">0.225</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">normalized_frame</span> <span class="o">=</span> <span class="n">frame</span><span class="o">.</span><span class="n">mean_std_norm</span><span class="p">(</span><span class="n">mean</span><span class="p">,</span> <span class="n">std</span><span class="p">,</span> <span class="s2">&quot;my_norm&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
 <dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p><a class="reference internal" href="#aloscene.frame.Frame" title="aloscene.frame.Frame">~Frame</a></p>
@@ -347,6 +439,10 @@ with x normalized with value between 0 and 1.</p>
 <span class="sig-name descname"><span class="pre">norm01</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aloscene.frame.Frame.norm01" title="Permalink to this definition">¶</a></dt>
 <dd><p>Normnalize the tensor from the current tensor
 normalization to values between 0 and 1.</p>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">frame_01</span> <span class="o">=</span> <span class="n">frame</span><span class="o">.</span><span class="n">norm01</span><span class="p">()</span>
+</pre></div>
+</div>
 <dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p><a class="reference internal" href="#aloscene.frame.Frame" title="aloscene.frame.Frame">~Frame</a></p>
@@ -359,6 +455,10 @@ normalization to values between 0 and 1.</p>
 <span class="sig-name descname"><span class="pre">norm255</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aloscene.frame.Frame.norm255" title="Permalink to this definition">¶</a></dt>
 <dd><p>Normnalize the tensor from the current tensor
 normalization to values between 0 and 255</p>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">frame_255</span> <span class="o">=</span> <span class="n">frame</span><span class="o">.</span><span class="n">norm255</span><span class="p">()</span>
+</pre></div>
+</div>
 <dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p><a class="reference internal" href="#aloscene.frame.Frame" title="aloscene.frame.Frame">~Frame</a></p>
@@ -371,6 +471,18 @@ normalization to values between 0 and 255</p>
 <span class="sig-name descname"><span class="pre">norm_as</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target_frame</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aloscene.frame.Frame.norm_as" title="Permalink to this definition">¶</a></dt>
 <dd><p>Normalize the tensor as the given <cite>target_frame</cite>.</p>
 <dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>target_frame: aloscene.Frame</strong></dt><dd><p>Will change the frame normalization as this <cite>target_frame</cite></p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">new_frame</span> <span class="o">=</span> <span class="n">frame</span><span class="o">.</span><span class="n">norm_as</span><span class="p">(</span><span class="n">target_frame</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p><a class="reference internal" href="#aloscene.frame.Frame" title="aloscene.frame.Frame">~Frame</a></p>
 </dd>
@@ -381,12 +493,22 @@ normalization to values between 0 and 255</p>
 <dt class="sig sig-object py" id="aloscene.frame.Frame.norm_minmax_sym">
 <span class="sig-name descname"><span class="pre">norm_minmax_sym</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aloscene.frame.Frame.norm_minmax_sym" title="Permalink to this definition">¶</a></dt>
 <dd><p>Normalize the tensor to values between -1 and 1</p>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">frame_minmax_sym</span> <span class="o">=</span> <span class="n">frame</span><span class="o">.</span><span class="n">norm_minmax_sym</span><span class="p">()</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="aloscene.frame.Frame.norm_resnet">
 <span class="sig-name descname"><span class="pre">norm_resnet</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aloscene.frame.Frame.norm_resnet" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="field-list simple">
+<dd><p>Normalized the current frame based on the normalized use on resnet on pytorch. This method will
+simply call <cite>frame.mean_std_norm()</cite> with the resnet mean/std and the name <cite>resnet</cite>.</p>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">frame_resnet</span> <span class="o">=</span> <span class="n">frame</span><span class="o">.</span><span class="n">norm_resnet</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p><a class="reference internal" href="#aloscene.frame.Frame" title="aloscene.frame.Frame">~Frame</a></p>
 </dd>

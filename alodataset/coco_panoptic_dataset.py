@@ -41,7 +41,7 @@ class CocoPanopticDataset(BaseDataset, SplitMixin):
     split : alodataset.Split item, optional
         Define image folder and annotation file/folder to use, by default Split.TRAIN
     return_masks : bool, optional
-        Include masks labels in the output, by default False
+        Include masks labels in the output, by default True
     classes : list, optional
         List of classes to be filtered in the annotation reading process, by default None
     **kwargs : dict

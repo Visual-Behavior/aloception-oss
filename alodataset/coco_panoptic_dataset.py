@@ -17,7 +17,7 @@ from alodataset import BaseDataset, SplitMixin, Split
 from aloscene import Frame, BoundingBoxes2D, Mask, Labels
 
 
-class CocoSegementationDataset(BaseDataset, SplitMixin):
+class CocoPanopticDataset(BaseDataset, SplitMixin):
     """Dataset uses in objects detection tasks. Import panoptic annotations from
     `2017 Panoptic Train/Val annotations <https://cocodataset.org/#download>`_ . Three elements are required:
     `image_folder`, `annotation_folder` and `annotation_file`. See
@@ -41,7 +41,7 @@ class CocoSegementationDataset(BaseDataset, SplitMixin):
     split : alodataset.Split item, optional
         Define image folder and annotation file/folder to use, by default Split.TRAIN
     return_masks : bool, optional
-        Include masks labels in the output, by default False
+        Include masks labels in the output, by default True
     classes : list, optional
         List of classes to be filtered in the annotation reading process, by default None
     fix_classes_len : int, optional
@@ -73,7 +73,7 @@ class CocoSegementationDataset(BaseDataset, SplitMixin):
         fix_classes_len: int = 250,  # Match with pre-trained weights
         **kwargs,
     ):
-        super(CocoSegementationDataset, self).__init__(name=name, split=split, **kwargs)
+        super(CocoPanopticDataset, self).__init__(name=name, split=split, **kwargs)
         if self.sample:
             return
 
@@ -232,7 +232,7 @@ class CocoSegementationDataset(BaseDataset, SplitMixin):
 
 
 if __name__ == "__main__":
-    coco_seg = CocoSegementationDataset()
+    coco_seg = CocoPanopticDataset()
     print(coco_seg.label_names)
     for f, frames in enumerate(coco_seg.train_loader(batch_size=2)):
         frames = Frame.batch_list(frames)

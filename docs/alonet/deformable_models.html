@@ -93,8 +93,8 @@
 <li class="toctree-l1"><a class="reference internal" href="../getting_started/getting_started.html">Getting started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../getting_started/aloscene.html">Aloscene: Computer vision with ease</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../getting_started/alodataset.html">Alodataset: Loading your vision datasets</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../getting_started/alonet.html">Alonet: Loading &amp; training your models</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../getting_started/augmented_tensor.html">About Augmented Tensor</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/alonet.html">Alonet : Training your models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/augmented_tensor.html">About augmented tensors</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Turorials</span></p>
 <ul>
@@ -104,7 +104,6 @@
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/training_deformable_detr.html">Training Deformable DETR</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/finetuning_deformable_detr.html">Finetuning Deformanble DETR</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/tensort_inference.html">Exporting DETR / Deformable-DETR to TensorRT</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../tutorials/training_raft.html">Training RAFT</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Aloception API</span></p>
 <ul class="current">
@@ -321,7 +320,7 @@ For more details, check its paper <a class="reference external" href="https://ar
 
 <dl class="py method">
 <dt class="sig sig-object py" id="alonet.deformable_detr.deformable_detr.DeformableDETR.build_decoder">
-<span class="sig-name descname"><span class="pre">build_decoder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hidden_dim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">256</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dropout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nheads</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">8</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim_feedforward</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1024</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dec_layers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_feature_levels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dec_n_points</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_intermediate_dec</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.deformable_detr.deformable_detr.DeformableDETR.build_decoder" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">build_decoder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dec_layers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_intermediate_dec</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.deformable_detr.deformable_detr.DeformableDETR.build_decoder" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -398,7 +397,7 @@ See PostProcess for information on how to retrieve the unnormalized bounding box
 
 <dl class="py method">
 <dt class="sig sig-object py" id="alonet.deformable_detr.deformable_detr.DeformableDETR.get_outs_filter">
-<span class="sig-name descname"><span class="pre">get_outs_filter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">outs_scores</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outs_labels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">m_outputs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">activation_fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.deformable_detr.deformable_detr.DeformableDETR.get_outs_filter" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">get_outs_filter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">outs_scores</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outs_labels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">m_outputs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">activation_fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.deformable_detr.deformable_detr.DeformableDETR.get_outs_filter" title="Permalink to this definition">¶</a></dt>
 <dd><p>Given the model outs_scores and the model outs_labels,
 return a list of filter for each output. If <cite>out_scores</cite> and <cite>outs_labels</cite> are not provided,
 the method will rely on the model forward outputs <cite>m_outputs</cite> to extract the <cite>outs_scores</cite>
@@ -412,7 +411,9 @@ and the <cite>outs_labels</cite> on its own.</p>
 </dd>
 <dt><strong>m_outputs</strong><span class="classifier">dict, optional</span></dt><dd><p>Dict of forward outputs, by default None</p>
 </dd>
-<dt><strong>threshold</strong><span class="classifier">float, optional</span></dt><dd><p>Score threshold if sigmoid activation is used. By default 0.2</p>
+<dt><strong>threshold</strong><span class="classifier">float, optional</span></dt><dd><p>Score threshold to use. if None and sigmoid is used, 0.2 will be used as default value.</p>
+</dd>
+<dt><strong>softmax_threshold: float, optinal</strong></dt><dd><p>Score threshold if softmax activation is used. None by default.</p>
 </dd>
 <dt><strong>activation_fn</strong><span class="classifier">str, optional</span></dt><dd><p>Either “sigmoid” or “softmax”. By default None.
 If “sigmoid” is used, filter is based on score threshold.
@@ -436,8 +437,41 @@ If “softmax” is used, filter is based on non-background classes.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="alonet.deformable_detr.deformable_detr.DeformableDETR.get_outs_labels">
+<span class="sig-name descname"><span class="pre">get_outs_labels</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">m_outputs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">activation_fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.deformable_detr.deformable_detr.DeformableDETR.get_outs_labels" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given the model outs_scores and the model outs_labels,
+return the labels and the associated scores.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>m_outputs</strong><span class="classifier">dict, optional</span></dt><dd><p>Dict of forward outputs, by default None</p>
+</dd>
+<dt><strong>threshold</strong><span class="classifier">float, optional</span></dt><dd><p>Score threshold if sigmoid activation is used. By default 0.2</p>
+</dd>
+<dt><strong>activation_fn</strong><span class="classifier">str, optional</span></dt><dd><p>Either “sigmoid” or “softmax”. By default None.
+If “sigmoid” is used, filter is based on score threshold.
+If “softmax” is used, filter is based on non-background classes.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>Tuple</dt><dd><p>(torch.Tensor, torch.Tensor) being the predicted labels and scores</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">rtype</dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]
+..</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="alonet.deformable_detr.deformable_detr.DeformableDETR.inference">
-<span class="sig-name descname"><span class="pre">inference</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">forward_out</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.2</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.deformable_detr.deformable_detr.DeformableDETR.inference" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">inference</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">forward_out</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.deformable_detr.deformable_detr.DeformableDETR.inference" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get model outptus as returned by the the forward method</p>
 </dd></dl>
 

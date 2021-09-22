@@ -126,7 +126,7 @@ class LitPanopticDetr(alonet.detr.LitDetr):
             )
         else:
             raise Exception(f"Unsupported base model {self.model_name}")
-        return alonet.panoptic.PanopticHead(detr_model, weights=weights or self.weights)
+        return alonet.detr_panoptic.PanopticHead(detr_model, weights=weights or self.weights)
 
     def build_criterion(
         self,
@@ -141,7 +141,7 @@ class LitPanopticDetr(alonet.detr.LitDetr):
         aux_loss_stage=6,
     ):
         """Build default criterion"""
-        return alonet.panoptic.PanopticCriterion(
+        return alonet.detr_panoptic.PanopticCriterion(
             matcher=matcher or self.matcher,
             loss_ce_weight=loss_ce_weight,
             loss_boxes_weight=loss_boxes_weight,
@@ -155,7 +155,7 @@ class LitPanopticDetr(alonet.detr.LitDetr):
 
     def callbacks(self, data_loader):
         """Default callbacks"""
-        obj_detection_callback = alonet.panoptic.PanopticObjectDetectorCallback(
+        obj_detection_callback = alonet.detr_panoptic.PanopticObjectDetectorCallback(
             val_frames=next(iter(data_loader.val_dataloader()))
         )
         metrics_callback = alonet.callbacks.MetricsCallback()

@@ -13,13 +13,13 @@ class ApMetricsCallback(pl.Callback):
         self.ap_metrics = []
         super().__init__(*args, **kwargs)
 
-    def inference(self, pl_module: pl.LightningModule, outputs: dict, **kwargs):
+    def inference(self, pl_module: pl.LightningModule, m_outputs: dict, **kwargs):
         b_pred_masks = None
-        if "pred_masks" in outputs:
-            b_pred_boxes, b_pred_masks = pl_module.inference(outputs["m_outputs"], **kwargs)
+        if "pred_masks" in m_outputs:
+            b_pred_boxes, b_pred_masks = pl_module.inference(m_outputs, **kwargs)
         else:
-            b_pred_boxes = pl_module.inference(outputs["m_outputs"], **kwargs)
-        if not isinstance(outputs["m_outputs"], list):
+            b_pred_boxes = pl_module.inference(m_outputs, **kwargs)
+        if not isinstance(m_outputs, list):
             b_pred_boxes = [b_pred_boxes]
             b_pred_masks = [b_pred_masks]
         return b_pred_boxes, b_pred_masks

@@ -58,7 +58,8 @@ class CocoDetectionDataset(BaseDataset, CocoDetectionSample):
             List of classes to be filtered in the annotation reading process, by default None
         fix_classes_len : int, optional
             Fix to a specific number the number of classes, filling the rest with "N/A" value.
-            Use when the number of model outputs does not match with the number of classes in the dataset.
+            Use when the number of model outputs does not match with the number of classes in the dataset,
+            by default None
         stuff_ann_file: str, optional
             Additional annotations with new classes, by default None
         **kwargs : dict
@@ -110,8 +111,6 @@ class CocoDetectionDataset(BaseDataset, CocoDetectionSample):
 
         # Setup the class names
         nb_category = max(cat["id"] for cat in cats)
-        if stuff_ann_file is not None and name == "coco":
-            nb_category = 249  # From original repo https://github.com/facebookresearch/detr/blob/main/models/detr.py
         label_names = ["N/A"] * (nb_category + 1)
         for cat in cats:
             label_names[cat["id"]] = cat["name"]

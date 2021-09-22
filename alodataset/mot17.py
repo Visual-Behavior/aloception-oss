@@ -50,7 +50,7 @@ class Mot17(BaseDataset, SequenceMixin, SplitMixin):
 
     def __init__(
         self,
-        validation_sequences: list,
+        validation_sequences: list = None,
         training_sequences: list = None,
         detections_set=["DPM", "SDP", "FRCNN"],
         all_gt: bool = False,
@@ -80,6 +80,8 @@ class Mot17(BaseDataset, SequenceMixin, SplitMixin):
         if self.sample:
             return
 
+        if validation_sequences is None:
+            raise Exception("validation_sequences must be not None.")
         if all_gt is True:
             raise Exception("TODO: Add the conf score label to the boxes")
 
@@ -165,7 +167,7 @@ class Mot17(BaseDataset, SequenceMixin, SplitMixin):
     def getitem(self, idx):
         if self.sample:
             return BaseDataset.__getitem__(self, idx)
-        
+
         seq = list(self.items[idx]["seq"])
         sequence_name = self.items[idx]["mot_sequence"]
 

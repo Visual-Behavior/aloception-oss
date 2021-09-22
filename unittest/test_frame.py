@@ -25,13 +25,13 @@ def get_frame():
 def tensor_equal(frame1, frame2):
     frame1.rename_(None)
     frame2.rename_(None)
-    return torch.allclose(frame1, frame2, atol=1e-5)
+    return torch.allclose(frame1, frame2, atol=1e-4)
 
 
 def test_frame_from_dt():
     # Go through the loaded sequence
     for data in waymo_dataset.stream_loader():
-        assert data["front"].shape == (2, 3, 1280, 1920)
+        assert data["front"].shape[:2] == (2, 3)
         assert data["front"].names == ("T", "C", "H", "W")
         # It should be instance of list since the dataset return a sequence and the
         # boxes are not aligned on T.
@@ -78,6 +78,7 @@ def test_frame_255():
     # Assert back equality
     assert tensor_equal(frame_01.norm255(), frame)
     assert tensor_equal(frame_255.norm255(), frame)
+
     assert tensor_equal(frame_resnet.norm255(), frame)
     assert tensor_equal(my_frame.norm255(), frame)
     assert tensor_equal(frame_minmax_sym.norm255(), frame)

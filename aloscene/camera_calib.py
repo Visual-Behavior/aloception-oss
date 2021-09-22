@@ -1,4 +1,4 @@
-from __future__ import annotations
+# from __future__ import annotations
 from aloscene.tensors.augmented_tensor import AugmentedTensor
 
 
@@ -29,7 +29,7 @@ class CameraIntrinsic(AugmentedTensor):
         assert x.shape[-2] == 3 and x.shape[-1] == 4
         super().__init__(x)
 
-    def _hflip(self, *args, frame_size: tuple[int, int], **kwargs):
+    def _hflip(self, *args, frame_size, **kwargs):
         """
         frame_size: (H, W)
         """
@@ -68,7 +68,7 @@ class CameraIntrinsic(AugmentedTensor):
         cam_intrinsic[..., 1, 2] -= hmin
         return cam_intrinsic
 
-    def _pad(self, offset_y, offset_x, frame_size: tuple[int, int], **kwargs):
+    def _pad(self, offset_y, offset_x, frame_size, **kwargs):
         """Pad the set of boxes based on the given offset
 
         Parameters

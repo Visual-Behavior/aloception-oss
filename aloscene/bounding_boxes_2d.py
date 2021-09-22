@@ -1,4 +1,4 @@
-from __future__ import annotations
+# from __future__ import annotations
 import torch
 from torch import Tensor
 import torchvision
@@ -258,7 +258,7 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
 
         return tensor
 
-    def abs_pos(self, frame_size) -> BoundingBoxes2D:
+    def abs_pos(self, frame_size):
         """Get a new BoundingBoxes2D Tensor with absolute position
         relative to the given `frame_size`.
         """

@@ -1,4 +1,4 @@
-from __future__ import annotations
+# from __future__ import annotations
 import torch
 from torch import Tensor
 
@@ -57,7 +57,7 @@ class BoundingBoxes3D(aloscene.tensors.AugmentedTensor):
             raise import_error
 
     @staticmethod
-    def get_vertices_3d(boxes: BoundingBoxes3D) -> torch.Tensor:
+    def get_vertices_3d(boxes) -> torch.Tensor:
         """Get 8 vertices for each boxes in x, y, z coordinates
 
         Parameters
@@ -96,7 +96,7 @@ class BoundingBoxes3D(aloscene.tensors.AugmentedTensor):
 
     @staticmethod
     def get_vertices_3d_proj(
-        boxes: BoundingBoxes3D,
+        boxes,
         cam_intrinsic: CameraIntrinsic,
         cam_extrinsic: CameraExtrinsic,
         include_vertice_behind_image_plan: bool = True,
@@ -144,10 +144,10 @@ class BoundingBoxes3D(aloscene.tensors.AugmentedTensor):
 
     @staticmethod
     def get_enclosing_box_2d(
-        boxes: BoundingBoxes3D,
+        boxes,
         cam_intrinsic: CameraIntrinsic,
         cam_extrinsic: CameraExtrinsic,
-        frame_size: tuple[int, int],
+        frame_size,
         **kwargs,
     ) -> BoundingBoxes2D:
         """Get the 2d box enclosing the 3d box on image plan
@@ -188,7 +188,7 @@ class BoundingBoxes3D(aloscene.tensors.AugmentedTensor):
         )
 
     @staticmethod
-    def boxes_3d_hflip(boxes: BoundingBoxes3D, cam_extrinsic: Tensor, **kwargs):
+    def boxes_3d_hflip(boxes, cam_extrinsic: Tensor, **kwargs):
         """Flip boxes 3d horizontally
 
         1. Bring boxes to camera refenrence frame using `cam_extrinsic`
@@ -289,7 +289,7 @@ class BoundingBoxes3D(aloscene.tensors.AugmentedTensor):
         # Padding image does not change bbox 3d
         return self.clone()
 
-    def bev_boxes(self) -> aloscene.OrientedBoxes2D:
+    def bev_boxes(self):
         """
         Return the bird eye view boxes of shape (n, 4).
 
@@ -312,7 +312,7 @@ class BoundingBoxes3D(aloscene.tensors.AugmentedTensor):
 
     @staticmethod
     def iou3d(
-        boxes1: BoundingBoxes3D, boxes2: BoundingBoxes3D, ret_union=False
+        boxes1, boxes2, ret_union=False
     ) -> Union[Tensor, Tuple[Tensor, Tensor]]:
         """Calculate IoU 3D for 2 aligned sets of boxes in order
 
@@ -350,7 +350,7 @@ class BoundingBoxes3D(aloscene.tensors.AugmentedTensor):
         else:
             return iou3d
 
-    def iou3d_with(self, boxes2: BoundingBoxes3D, ret_union=False):
+    def iou3d_with(self, boxes2, ret_union=False):
         """Calculate IoU 3D for 2 aligned sets of boxes in order
 
         This function works only with `self` and `boxes2` in CUDA device.
@@ -372,8 +372,8 @@ class BoundingBoxes3D(aloscene.tensors.AugmentedTensor):
 
     @staticmethod
     def giou3d(
-        boxes1: Union[torch.Tensor, BoundingBoxes3D],
-        boxes2: Union[torch.Tensor, BoundingBoxes3D],
+        boxes1,
+        boxes2,
         enclosing_type="smallest",
         ret_iou3d=False,
     ) -> Union[Tensor, Tuple[Tensor, Tensor]]:
@@ -419,7 +419,7 @@ class BoundingBoxes3D(aloscene.tensors.AugmentedTensor):
             return giou
 
     def giou3d_with(
-        self, boxes2: BoundingBoxes3D, enclosing_type="smallest", ret_iou3d=False
+        self, boxes2, enclosing_type="smallest", ret_iou3d=False
     ) -> Union[Tensor, Tuple[Tensor, Tensor]]:
         """Calculate GIoU 3D for 2 aligned sets of boxes in order
 
@@ -445,7 +445,7 @@ class BoundingBoxes3D(aloscene.tensors.AugmentedTensor):
         """
         return self.giou3d(self, boxes2, enclosing_type, ret_iou3d)
 
-    def get_view(self, frame: aloscene.Frame, size: tuple = None, mode: str = "3D", **kwargs) -> View:
+    def get_view(self, frame, size: tuple = None, mode: str = "3D", **kwargs):
         """Create a View instance from a Frame
 
         Parameters

@@ -12,6 +12,7 @@ import onnx_graphsurgeon as gs
 import alonet.torch2trt as torch2trt
 from alonet.torch2trt import TRTEngineBuilder, TRTExecutor
 import alonet.torch2trt.utils as utils
+from torch.onnx import OperatorExportTypes
 
 
 class BaseTRTExporter:
@@ -177,6 +178,7 @@ class BaseTRTExporter:
             output_names=output_names,
             custom_opsets=self.custom_opset,
             enable_onnx_checker=True,
+            operator_export_type=OperatorExportTypes.ONNX_FALLTHROUGH,
         )
         print("Saved ONNX at:", self.onnx_path)
         # empty GPU memory for later TensorRT optimization

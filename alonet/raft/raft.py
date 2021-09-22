@@ -5,7 +5,6 @@ import torch
 
 
 import alonet
-from alonet.raft.misc import assert_and_export_onnx
 from alonet.raft.corr import CorrBlock, AlternateCorrBlock
 from alonet.raft.update import BasicUpdateBlock
 from alonet.raft.extractor import BasicEncoder
@@ -113,8 +112,24 @@ class RAFTBase(nn.Module):
         up_flow = up_flow.permute(0, 1, 4, 2, 5, 3)
         return up_flow.reshape(N, 2, 8 * H, 8 * W)
 
-    @assert_and_export_onnx()
-    def forward(self, frame1: Frame, frame2: Frame, iters=12, flow_init=None, only_last=False):
+    @staticmethod
+    def assert_and_adapt_input(frame1, frame2, is_export_onnx):
+        if is_export_onnx is None:
+            assert isinstance(frame1, torch.Tensor)
+            assert isinstance(frame2, torch.Tensor)
+            assert (frame1.ndim == 4) and (frame2.ndim == 4)
+        elif is_export_onnx is False:
+            for frame in [frame1, frame2]:
+                assert frame.normalization == "minmax_sym"
+                assert frame.names == ("B", "C", "H", "W")
+            frame1 = frame1.as_tensor()
+            frame2 = frame2.as_tensor()
+        else:
+            raise ValueError()
+        return frame1, frame2
+
+    def forward(self, frame1: Frame, frame2: Frame, iters=12, flow_init=None, only_last=False, is_export_onnx=False):
+        # type: (Tensor, Tensor, int, Tensor, bool, bool) -> Dict[str, Tensor]
         """Estimate optical flow between pair of frames
 
         Parameters
@@ -136,6 +151,10 @@ class RAFTBase(nn.Module):
         flows : list of torch.Tensor
             output flows
         """
+
+        # specific check for onnx export
+        frame1, frame2 = self.assert_and_adapt_input(frame1, frame2, is_export_onnx)
+
         hdim = self.hidden_dim
         cdim = self.context_dim
 
@@ -161,7 +180,7 @@ class RAFTBase(nn.Module):
         if flow_init is not None:
             coords1 = coords1 + flow_init
 
-        flow_predictions = []
+        flow_predictions = {}
         for itr in range(iters):
             coords1 = coords1.detach()
             corr = corr_fn(coords1)  # index correlation volume
@@ -178,11 +197,11 @@ class RAFTBase(nn.Module):
             else:
                 flow_up = self.upsample_flow(coords1 - coords0, up_mask)
 
-            flow_predictions.append(flow_up)
+            flow_predictions[f"flow_stage{itr}"] = flow_up
 
         if only_last:
             flow_low = coords1 - coords0
-            return flow_low, flow_up
+            return {"flow_low": flow_low, "flow_up": flow_up}
         else:
             return flow_predictions
 

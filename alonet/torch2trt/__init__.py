@@ -9,3 +9,7 @@ import os
 MS_DEFORM_IM2COL_PLUGIN_LIB = os.path.join(
     ALONET_ROOT, "torch2trt/plugins/ms_deform_im2col/build/libms_deform_im2col_trt.so"
 )
+
+SAMPLE_BILINEAR_PLUGIN_LIB = os.path.join(
+    ALONET_ROOT, "torch2trt/plugins/sample_bilinear/build/libbilinear_sampler.so"
+)

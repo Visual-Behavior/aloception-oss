@@ -1,10 +1,9 @@
 from collections import OrderedDict
-import onnx_graphsurgeon as gs
-from os import stat
-import numpy as np
 import argparse
 import torch
+import os
 
+from alonet import ALONET_ROOT
 from alonet.torch2trt import BaseTRTExporter, SAMPLE_BILINEAR_PLUGIN_LIB, load_trt_custom_plugins
 from alonet.raft import RAFT
 from aloscene import Frame
@@ -89,7 +88,7 @@ if __name__ == "__main__":
     )
     BaseTRTExporter.add_argparse_args(parser)
     kwargs = vars(parser.parse_args())
-    kwargs["onnx_path"] = "/home/julien/dev_bis/aloception/raft-things.onnx"
+    kwargs["onnx_path"] = os.path.join(ALONET_ROOT, "raft-things.onnx")
     kwargs["verbose"] = True
     shape = [1, 3] + kwargs.pop("HW")
     i_shapes = (shape, shape)

@@ -14,10 +14,6 @@ macro(set_ifndef var val)
 endmacro()
 
 # -------- CONFIGURATION --------
-# set_ifndef(TRT_LIB /home/julien/software/TensorRT-8.0.1.6/lib)
-# set_ifndef(TRT_INCLUDE /home/julien/software/TensorRT-8.0.1.6/include)
-# set_ifndef(CUDA_INC_DIR /home/ubuntu/anaconda3/envs/test_cuda_dev/pkgs/cuda-toolkit/include)
-# set_ifndef(CUDA_ARCH_SM 86)
 include(../config.cmake)
 
 string(APPEND CMAKE_CUDA_FLAGS " -gencode arch=compute_${CUDA_ARCH_SM},code=sm_${CUDA_ARCH_SM}")

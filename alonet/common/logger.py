@@ -87,7 +87,7 @@ def log_image(trainer, key, images):
         wandb_images = []
         for i, image_data in enumerate(images):
             image = image_data["image"]
-            boxes = image_data["boxes"]
+            boxes = None if "boxes" not in image_data else image_data["boxes"]
             boxes_dict = None
             if boxes is not None:
                 boxes_dict = {}

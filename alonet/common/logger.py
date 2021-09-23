@@ -29,7 +29,7 @@ def boxes_to_wandb_boxes(boxes: aloscene.BoundingBoxes2D, labels_names: list = N
         }
         if boxes_labels is not None:
             n_box["class_id"] = int(boxes_labels[b])
-            if labels_names is not None:
+            if labels_names is not None and (n_box["class_id"] < len(labels_names) and n_box["class_id"] >= 0):
                 n_box["box_caption"] = labels_names[int(boxes_labels[b])]
             else:
                 n_box["box_caption"] = str(int(boxes_labels[b]))

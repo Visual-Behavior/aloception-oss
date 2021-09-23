@@ -154,7 +154,7 @@ class PanopticHead(nn.Module):
         preds_boxes = self.detr.inference(forward_out, filters=filters, **kwargs)
 
         # Procedure to get information about masks
-        outputs_masks = forward_out["pred_masks"]
+        outputs_masks = forward_out["pred_masks"].squeeze(2)
         if outputs_masks.numel() > 0:
             outputs_masks = F.interpolate(outputs_masks, size=frame_size, mode="bilinear", align_corners=False)
         else:

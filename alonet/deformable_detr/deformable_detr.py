@@ -114,7 +114,8 @@ class DeformableDETR(nn.Module):
                 in_channels = backbone.num_channels[i]
                 input_proj_list.append(
                     nn.Sequential(
-                        nn.Conv2d(in_channels, self.hidden_dim, kernel_size=1), nn.GroupNorm(32, self.hidden_dim),
+                        nn.Conv2d(in_channels, self.hidden_dim, kernel_size=1),
+                        nn.GroupNorm(32, self.hidden_dim),
                     )
                 )
             for _ in range(num_feature_levels - num_backbone_outs):
@@ -167,14 +168,15 @@ class DeformableDETR(nn.Module):
         if device is not None:
             self.to(device)
 
-        if weights is not None and (
-            weights in ["deformable-detr-r50", "deformable-detr-r50-refinement"]
-            or ".pth" in weights
-            or ".ckpt" in weights
-        ):
-            alonet.common.load_weights(self, weights, device, strict_load_weights=strict_load_weights)
-        else:
-            raise ValueError(f"Unknown weights: '{weights}'")
+        if weights is not None:
+            if weights is not None and (
+                weights in ["deformable-detr-r50", "deformable-detr-r50-refinement"]
+                or ".pth" in weights
+                or ".ckpt" in weights
+            ):
+                alonet.common.load_weights(self, weights, device, strict_load_weights=strict_load_weights)
+            else:
+                raise ValueError(f"Unknown weights: '{weights}'")
 
     @assert_and_export_onnx(check_mean_std=True, input_mean_std=INPUT_MEAN_STD)
     def forward(self, frames: aloscene.Frame, **kwargs):
@@ -314,7 +316,11 @@ class DeformableDETR(nn.Module):
         # as a dict having both a Tensor and a list.
         return [{"pred_logits": a, "pred_boxes": b, **kwargs} for a, b in zip(outputs_class[:-1], outputs_coord[:-1])]
 
-    def get_outs_labels(self, m_outputs: dict = None, activation_fn: str = None,) -> List[torch.Tensor]:
+    def get_outs_labels(
+        self,
+        m_outputs: dict = None,
+        activation_fn: str = None,
+    ) -> List[torch.Tensor]:
         """Given the model outs_scores and the model outs_labels,
         return the labels and the associated scores.
 
@@ -492,7 +498,9 @@ class DeformableDETR(nn.Module):
         )
 
     def build_decoder(
-        self, dec_layers: int = 6, return_intermediate_dec=True,
+        self,
+        dec_layers: int = 6,
+        return_intermediate_dec=True,
     ):
 
         decoder_layer = self.build_decoder_layer()

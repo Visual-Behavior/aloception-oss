@@ -31,12 +31,20 @@ class Disparity(aloscene.tensors.SpatialAugmentedTensor):
 
     @staticmethod
     def __new__(
-        cls, x, occlusion: Mask = None, disp_format="unsigned", camera_side=None, png_negate=None, *args, **kwargs
+        cls,
+        x,
+        occlusion: Mask = None,
+        disp_format="unsigned",
+        camera_side=None,
+        png_negate=None,
+        *args,
+        names=("C", "H", "W"),
+        **kwargs
     ):
         if isinstance(x, str):
             x = load_disp(x, png_negate)
-            kwargs["names"] = ("C", "H", "W")
-        tensor = super().__new__(cls, x, *args, **kwargs)
+            names = ("C", "H", "W")
+        tensor = super().__new__(cls, x, *args, names=names, **kwargs)
         tensor.add_label("occlusion", occlusion, align_dim=["B", "T"], mergeable=True)
         tensor.add_property("disp_format", disp_format)
         tensor.add_property("camera_side", camera_side)

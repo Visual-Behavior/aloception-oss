@@ -54,7 +54,7 @@ class RAFTBase(nn.Module):
 
         if weights is not None:
             weights_from_original_repo = ["raft-things", "raft-chairs", "raft-small", "raft-kitti", "raft-sintel"]
-            if weights in weights_from_original_repo or ".pth" in weights:
+            if weights in weights_from_original_repo or ".pth" in weights or ".ckpt" in weights:
                 alonet.common.load_weights(self, weights, device)
             else:
                 raise ValueError(f"Unknown weights: '{weights}'")

@@ -149,7 +149,7 @@ class Points2D(aloscene.tensors.AugmentedTensor):
             else:
                 mul_tensor = torch.tensor([[frame_size[0], frame_size[1]]], device=self.device)
 
-            tensor.rel_pos()
+            tensor = tensor.rel_pos()
             tensor = tensor.mul(mul_tensor)
             tensor.frame_size = frame_size
             tensor.absolute = True

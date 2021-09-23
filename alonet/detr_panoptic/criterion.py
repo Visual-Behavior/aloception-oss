@@ -142,12 +142,34 @@ class PanopticCriterion(alonet.detr.DetrCriterion):
             dim=0,
         )
 
-        # Masks filtered in forward. Remove pad
-        pred_masks = torch.cat([masks[: len(idx)] for (_, idx), masks in zip(indices, outputs["pred_masks"])], dim=0)
-        pred_masks = F.interpolate(
-            pred_masks[:, None], size=target_masks.shape[-2:], mode="bilinear", align_corners=False
+        # Masks resize
+        outputs_masks = F.interpolate(
+            outputs["pred_masks"], size=target_masks.shape[-2:], mode="bilinear", align_corners=False
         )
-        pred_masks = pred_masks[:, 0].flatten(1)
+
+        # Masks alignment with indices
+        pred_masks = []
+        zero_masks = torch.zeros_like(target_masks[0:1])
+        for b, (masks, m_filters) in enumerate(zip(outputs_masks, outputs["pred_masks_info"]["filters"])):
+            m_index = torch.where(m_filters)[0].cpu()
+            b_index = indices[b][0].cpu()
+            masks = {ib.item(): masks[ib == m_index] for ib in b_index if ib in m_index}
+
+            for ib in b_index:
+                ib = ib.item()
+                if ib not in masks:
+                    masks[ib] = zero_masks.clone()
+            if len(masks) > 0:
+                masks = torch.cat([m[1] for m in sorted(masks.items(), key=lambda x: x[0])], dim=0)
+            else:
+                masks = zero_masks[[]].view(0, *target_masks.shape[-2:])
+
+            pred_masks.append(masks)
+
+        pred_masks = torch.cat(pred_masks, dim=0)
+
+        # Reshape for loss process
+        pred_masks = pred_masks.flatten(1)
         target_masks = target_masks.flatten(1).view(pred_masks.shape)
 
         # DICE/F-1 loss

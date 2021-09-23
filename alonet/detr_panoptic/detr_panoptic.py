@@ -167,7 +167,7 @@ class PanopticHead(nn.Module):
         for boxes, masks, b_filter, m_filter in zip(
             preds_boxes, outputs_masks, filters, forward_out["pred_masks_info"]["filters"]
         ):
-            # Boxes/masks synchronization
+            # Boxes/masks alignment
             masks = {im.cpu().item(): masks[i] for i, im in enumerate(torch.where(m_filter)[0]) if b_filter[im]}
             for ib in torch.where(b_filter)[0]:
                 if ib.cpu().item() not in masks:

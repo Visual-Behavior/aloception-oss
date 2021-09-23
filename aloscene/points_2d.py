@@ -19,14 +19,69 @@ from aloscene.renderer import View, put_adapative_cv2_text, adapt_text_size_to_f
 
 
 class Points2D(aloscene.tensors.AugmentedTensor):
-    """Point2D Tensor."""
+    """Points2D Augmented Tensor. Used to represents 2D points in space encoded as xy or yx. The data must be
+    at least 2 dimensional (N, None) where N is the number of points.
+
+    If your're data is more than 2 dimensional you might need to set the `names` to ("B", "N", None) for batch
+    dimension or ("T", "N", None) for the temporal dimension, or even ("B", "T", "N", None) for batch and temporal
+    dimension.
+
+    .. warning:: It is important to note that on `Frame`, Points2D are not mergeable by default\
+        . Indeed, one `Frame` is likely to get more or less points than an other one. Therefore, if you want to create\
+            Points2D with batch dimension, it is recommded to create Points2D tensors as part of a list that enclose \
+                the batch dimension (same for the temporal dimension).
+
+    >>> [Points2D(...), Points2D(...), Points2D(...)].
+
+    Finally, batch & temporal dimension could also be stored like this:
+
+    >>> [[Points2D(...), Points2D(...)], [Points2D(...), Points2D(...)]]
+
+
+
+    Parameters
+    ----------
+    x: list | torch.Tensor | np.array
+        Points2D data. See explanation above for details.
+    points_format: str
+        One of "xy", "yx". Whether your points are stored as "xy" or "yx".
+    absolute: bool
+        Whether your points are encoded as absolute value or relative values (between 0 and 1). If absolute is True,
+        the `frane size` must be given.
+    frame_size: tuple
+        (Height & Width) of the relative frame.
+    names: tuple
+        Names of the dimensions : ("N", None) by default. See explanation above for more details.
+
+    Notes
+    -----
+    Note on dimension:
+
+    - C refers to the channel dimension
+    - N refers to a dimension with a dynamic number of element.
+    - H refers to the height of a `SpatialAugmentedTensor`
+    - W refers to the width of a `SpatialAugmentedTensor`
+    - B refers to the batch dimension
+    - T refers to the temporal dimension
+
+    Examples
+    --------
+    >>> pts2d = aloscene.Points2D(
+    ...     [[0.5, 0.5], [0.4, 0.49]],
+    ...     points_format="yx", absolute=False
+    ....)
+    >>> pts2d = aloscene.Points2D(
+    ...     [[512, 458], [28, 20]],
+    ...     points_format="yx", absolute=True, frame_size=(1200, 1200)
+        )
+    """
 
     FORMATS = ["xy", "yx"]
 
     @staticmethod
     def __new__(
         cls,
-        x,
+        x: Union[list, np.array, torch.Tensor],
         points_format: str,
         absolute: bool,
         labels: Union[dict, Labels] = None,
@@ -35,15 +90,17 @@ class Points2D(aloscene.tensors.AugmentedTensor):
         *args,
         **kwargs,
     ):
+
+        if points_format not in Points2D.FORMATS:
+            raise Exception(
+                "Point2d:Format `{}` not supported. Cound be one of {}".format(points_format, Points2D.FORMATS)
+            )
+
         tensor = super().__new__(cls, x, *args, names=names, **kwargs)
 
         # Add label
         tensor.add_label("labels", labels, align_dim=["N"], mergeable=True)
 
-        if points_format not in Points2D.FORMATS:
-            raise Exception(
-                "Point2d:Format `{}` not supported. Cound be one of {}".format(tensor.points_format, Points2D.FORMATS)
-            )
         tensor.add_property("points_format", points_format)
         tensor.add_property("absolute", absolute)
         tensor.add_property("padded_size", None)
@@ -59,7 +116,8 @@ class Points2D(aloscene.tensors.AugmentedTensor):
         super().__init__(x)
 
     def append_labels(self, labels: Labels, name: str = None):
-        """Attach a set of labels to the boxes.
+        """Attach a set of labels to the boxes. The attached set of labels are supposed to be equal to the
+        number of points. In other words, the N dimensions must match in both tensor.
 
         Parameters
         ----------
@@ -68,76 +126,71 @@ class Points2D(aloscene.tensors.AugmentedTensor):
         name: str
             If none, the label will be attached without name (if possible). Otherwise if no other unnamed
             labels are attached to the frame, the labels will be added to the set of labels.
+
+        Examples
+        --------
+        >>> pts2d = aloscene.Points2D([[0.5, 0.5], [0.2, 0.1]], "yx", False)
+        >>> labels = aloscene.Labels([51, 24])
+        >>> pts2d.append_labels(labels)
+        >>> pts2d.labels
+        >>>
+        Or using named labels
+        >>> pts2d = aloscene.Points2D([[0.5, 0.5], [0.2, 0.1]], "yx", False)
+        >>> labels_set_1 = aloscene.Labels([51, 24])
+        >>> labels_set_2 = aloscene.Labels([51, 24])
+        >>> pts2d.append_labels(labels_set_1, "set1")
+        >>> pts2d.append_labels(labels_set_2, "set2")
+        >>> pts2d.labels["set1"]
+        >>> pts2d.labels["set2"]
         """
         self._append_label("labels", labels, name)
 
-    @staticmethod
-    def xyxy(tensor):
-        """Get a new Point2d Tensor with boxes following this format:
-        [x_center, y_center, width, height]. Could be relative value (betwen 0 and 1)
-        or absolute value based on the current Tensor representation.
-        """
-        if tensor.points_format == "xcyc":
-            return tensor
-        elif tensor.points_format == "xyxy":
-            # Convert from xyxy to xcyc
-            labels = tensor.drop_labels()
-            xcyc_boxes = torch.cat(
-                [tensor[:, :2] + ((tensor[:, 2:] - tensor[:, :2]) / 2), (tensor[:, 2:] - tensor[:, :2])], dim=1
-            )
-            xcyc_boxes.points_format = "xcyc"
-            xcyc_boxes.set_labels(labels)
-            tensor.set_labels(labels)
-            return xcyc_boxes
-        elif tensor.points_format == "yxyx":
-            # Convert from yxyx to xcyc
-            labels = tensor.drop_labels()
-            tensor = tensor.rename_(None)
-            xcyc_boxes = torch.cat(
-                [
-                    tensor[:, :2].flip([1]) + ((tensor[:, 2:].flip([1]) - tensor[:, :2].flip([1])) / 2),
-                    (tensor[:, 2:].flip([1]) - tensor[:, :2].flip([1])),
-                ],
-                dim=1,
-            )
-            tensor.reset_names()
-            xcyc_boxes.reset_names()
-            xcyc_boxes.points_format = "xcyc"
-            xcyc_boxes.set_labels(labels)
-            tensor.set_labels(labels)
-            return xcyc_boxes
-        else:
-            raise Exception(f"Point2d:Do not know mapping from {tensor.points_format} to xcyc")
-
-    def xy(self):
+    def xy(self) -> Points2D:
         """Get a new Point2d Tensor with boxes following this format:
         [x, y]. Could be relative value (betwen 0 and 1)
         or absolute value based on the current Tensor representation.
+
+        Examples
+        --------
+        >>> points_2d_xy = points.xy()
         """
         tensor = self.clone()
         if tensor.points_format == "xy":
             return tensor
         elif tensor.points_format == "yx":
-            tensor = tensor[:, ::-1]
+            tensor = torch.cat([tensor[:, 1:2], tensor[:, 0:1]], dim=-1)
             tensor.points_format = "xy"
             return tensor
 
-    def yx(self):
+    def yx(self) -> Points2D:
         """Get a new Point2d Tensor with boxes following this format:
         [y, x]. Could be relative value (betwen 0 and 1)
         or absolute value based on the current Tensor representation.
+
+        Examples
+        --------
+        >>> points_2d_yx = points.yx()
         """
         tensor = self.clone()
         if tensor.points_format == "yx":
             return tensor
         elif tensor.points_format == "xy":
-            tensor = tensor[:, ::-1]
+            tensor = torch.cat([tensor[:, 1:2], tensor[:, 0:1]], dim=-1)
             tensor.points_format = "yx"
             return tensor
 
-    def abs_pos(self, frame_size) -> Points2D:
+    def abs_pos(self, frame_size: tuple) -> Points2D:
         """Get a new Point2d Tensor with absolute position
         relative to the given `frame_size`.
+
+        Parameters
+        ----------
+        frame_size: tuple
+            Frame size associated with the absolute points2d. (height, width)
+
+        Examples
+        --------
+        >>> points_2d_abs = points.abs_pos((height, width))
         """
         tensor = self.clone()
 
@@ -169,9 +222,13 @@ class Points2D(aloscene.tensors.AugmentedTensor):
 
             return tensor
 
-    def rel_pos(self):
-        """Get a new Point2d Tensor with relative position
-        based on the current frame_size
+    def rel_pos(self) -> Points2D:
+        """Get a new Point2d Tensor with relative position (between 0 and 1)
+        based on the current frame_size.
+
+        Examples
+        --------
+        >>> points_2d_rel = points.rel_pos()
         """
         tensor = self.clone()
 
@@ -187,8 +244,18 @@ class Points2D(aloscene.tensors.AugmentedTensor):
         else:
             return tensor
 
-    def get_with_format(self, points_format):
-        """Set boxes into the desired format (Inplace operation)"""
+    def get_with_format(self, points_format: str) -> Points2D:
+        """Get the points with the desired format.
+
+        Parameters
+        ----------
+        points_format: str
+            One of ("xy", "yx")
+
+        Examples
+        --------
+        >>> n_points = points.get_with_format("yx")
+        """
         if points_format == "xy":
             return self.xy()
         elif points_format == "yx":
@@ -196,20 +263,27 @@ class Points2D(aloscene.tensors.AugmentedTensor):
         else:
             raise Exception(f"desired points_format {points_format} is not handle")
 
-    GLOBAL_COLOR_SET = np.random.uniform(0, 1, (300, 3))
+    _GLOBAL_COLOR_SET = np.random.uniform(0, 1, (300, 3))
 
-    def get_view(self, frame: Tensor = None, size: tuple = None, labels_set: str = None, **kwargs):
+    def get_view(self, frame: aloscene.Frame = None, size: tuple = None, labels_set: str = None, **kwargs):
         """Create a view of the boxes a frame
 
         Parameters
         ----------
         frame: aloscene.Frame
-            Tensor of type Frame to display the boxes on. If the frameis None, a frame will be create on the fly.
+            Tensor of type Frame to display the boxes on. If the frame is None, an empty frame will be create on the
+            fly. If the frame is passed, the frame should be 3 dimensional ("C", "H", "W") or ("H", "W", "C")
         size: (tuple)
             (height, width) Desired size of the view. None by default
         labels_set: str
             If provided, the boxes will rely on this label set to display the boxes color. If labels_set
-            is not provie while the boxes have multiple labels set, the boxes will be display with the same colors.
+            is not provie while the boxes have multiple labels set, the points will be display with the same colors.
+
+        Examples
+        --------
+        >>> points.get_view().render()
+        >>> # Or using a frame to render the points
+        >>> points.get_view(frame).render()
         """
         from aloscene import Frame
 
@@ -255,7 +329,7 @@ class Points2D(aloscene.tensors.AugmentedTensor):
             x1, y1 = box.as_tensor()
             color = (0, 1, 0)
             if label is not None:
-                color = self.GLOBAL_COLOR_SET[int(label) % len(self.GLOBAL_COLOR_SET)]
+                color = self._GLOBAL_COLOR_SET[int(label) % len(self._GLOBAL_COLOR_SET)]
 
                 put_adapative_cv2_text(
                     frame,
@@ -359,14 +433,21 @@ class Points2D(aloscene.tensors.AugmentedTensor):
 
         return cropped_points
 
-    def fit_to_padded_size(self):
-        """If the set of Boxes did not get padded by the pad operation,
-        this method wil padd the boxes to the real padded size.
+    def fit_to_padded_size(self) -> Points2D:
+        """This method can be usefull when one use a padded Frame but only want to learn on the non-padded area.
+        Thefore the target points will remain unpadded while keeping information about the real padded size.
+
+        Therefore. If the set of points did not get padded yet by the pad operation, this method wil pad the points to
+        the real padded size.
 
         Returns
         -------
         padded_boxes2d sa_tensor: aloscene.Point2d
             padded_boxes2d Point2d
+
+        Examples
+        --------
+        >>> padded_points = points.fit_to_padded_size()
         """
         if self.padded_size is None:
             raise Exception("Trying to fit to padded size without any previous stored padded_size.")
@@ -450,7 +531,7 @@ class Points2D(aloscene.tensors.AugmentedTensor):
     def _spatial_shift(self, shift_y: float, shift_x: float, **kwargs):
         raise Exception("Not handle by points 2D")
 
-    def as_points(self, points):
+    def as_points(self, points) -> Points2D:
         n_points = self.clone()
 
         if points.absolute and not n_points.absolute:
@@ -465,7 +546,15 @@ class Points2D(aloscene.tensors.AugmentedTensor):
 
         return n_points
 
-    def remove_padding(self):
+    def remove_padding(self) -> Points2D:
+        """This method can be usefull when one use a padded Frame but only want to learn on the non-padded area.
+        Thefore the target points will remain unpadded while keeping information about the real padded size.
+
+        Thus, this method will simply remove the memorized padded information.
+
+        Returns:
+            [type]: [description]
+        """
         n_points = self.clone()
         n_points.padded_size = None
         return n_points

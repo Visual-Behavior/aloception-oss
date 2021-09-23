@@ -18,18 +18,11 @@ Frame = TypeVar("Frame")
 class Frame(aloscene.tensors.SpatialAugmentedTensor):
     """Augmented Frame tensor. The `Frame` cam be created using the path to an image. Othwewise, if the frame
     is created from a existing tensor or numpy array, the frame dimensions are expected to be ("C", "H", "W").
-    If this is not the case, the `names` must be passed to the tensor. Checkout the example for more information.
+    If this is not the case, the `names` must be passed to the tensor.
 
-    Notes
-    -----
-    Note on dimension:
-
-    - C refet to the channel dimension
-    - N refer to a dimension with a dynamic number of element.
-    - H refer to the height of a `SpatialAugmentedTensor`
-    - W refer to the width of a `SpatialAugmentedTensor`
-    - B refer to the batch dimension
-    - T refer to the temporal dimension
+    If your're data is more than 3 dimensional you might need to set the `names` to ("B", "C", "H", "W") for batch
+    dimension or ("T", "C", "H", "W") for the temporal dimension, or even ("B", "T", "C", "H", "W") for batch and
+    temporal dimension. Checkout the example bellow for an example.
 
     Parameters
     ----------
@@ -51,6 +44,17 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
     mean_std: tuple
         Tuple with the mean and std of the tensor. (mean, std). Example: ((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)))
 
+
+    Notes
+    -----
+    Note on dimension:
+
+    - C refers to the channel dimension
+    - N refers to a dimension with a dynamic number of element.
+    - H refers to the height of a `SpatialAugmentedTensor`
+    - W refers to the width of a `SpatialAugmentedTensor`
+    - B refers to the batch dimension
+    - T refers to the temporal dimension
 
     Examples
     --------

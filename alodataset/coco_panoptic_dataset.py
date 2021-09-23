@@ -9,6 +9,7 @@ import json
 import numpy as np
 import torch
 from PIL import Image
+from typing import Union
 
 from alodataset.utils.panoptic_utils import rgb2id
 from alodataset.utils.panoptic_utils import masks_to_boxes
@@ -82,7 +83,7 @@ class CocoPanopticDataset(BaseDataset, SplitMixin):
         self.ann_folder = os.path.join(self.dataset_dir, self.get_split_ann_folder())
         self.ann_file = os.path.join(self.dataset_dir, self.get_split_ann_file())
         self.return_masks = return_masks
-        self.label_names = None
+        self.label_names, self.label_types, self.label_types_names = None, None, None
         self.items = self._get_sequences()
 
         # Fix classes if it is desired
@@ -109,6 +110,14 @@ class CocoPanopticDataset(BaseDataset, SplitMixin):
                 if any([self._ids_renamed[seg["category_id"]] >= 0 for seg in target]):
                     items.append(self.items[i])
             self.items = items
+
+            # Fix label_types
+            for ltype, vtype in self.label_types.items():
+                vtype = [x for b, x in enumerate(vtype) if self._ids_renamed[b] != -1]
+                ltn = list(sorted(set(self.label_types_names[ltype][vtype])))
+                index = {b: ltn.index(p) for b, p in enumerate(self.label_types_names[ltype]) if p in ltn}
+                self.label_types[ltype] = [index[idx] for idx in index]
+                self.label_types_names[ltype] = ltn
 
         # Fix number of label names if desired
         if fix_classes_len is not None:
@@ -146,9 +155,26 @@ class CocoPanopticDataset(BaseDataset, SplitMixin):
         if "categories" in coco:
             nb_category = max(cat["id"] for cat in coco["categories"])
             self.label_names = ["N/A"] * (nb_category + 1)
+
+            # Get types names
+            self.label_types_names = {
+                k: list(sorted(set([cat[k] for cat in coco["categories"]]))) + ["N/A"]
+                for k in coco["categories"][0].keys()
+                if k not in ["id", "name"]
+            }
+
+            # Make index between type category id and label id
+            self.label_types = {
+                k: [len(self.label_types_names[k]) - 1] * (nb_category + 1) for k in self.label_types_names
+            }
+            if "isthing" in self.label_types_names:
+                self.label_types_names["isthing"] = ["stuff", "thing", "N/A"]
             for cat in coco["categories"]:
                 self.label_names[cat["id"]] = cat["name"]
-        print("Done")
+                for k in self.label_types:
+                    self.label_types[k][cat["id"]] = (
+                        cat[k] if k == "isthing" else self.label_types_names[k].index(cat[k])
+                    )
         return items
 
     def get_split_ann_folder(self):
@@ -172,6 +198,18 @@ class CocoPanopticDataset(BaseDataset, SplitMixin):
         """
         assert self.split in self.SPLIT_ANN_FILES
         return self.SPLIT_ANN_FILES[self.split]
+
+    def _append_type_labels(self, element: Union[BoundingBoxes2D, Mask], labels):
+        if self.label_types is not None:
+            for ktype in self.label_types:
+                label_types = torch.as_tensor(self.label_types[ktype])[labels]
+                label_types = Labels(
+                    label_types.to(torch.float32),
+                    labels_names=self.label_types_names[ktype],
+                    names=("N"),
+                    encoding="id",
+                )
+                element.append_labels(label_types, name=ktype)
 
     def getitem(self, idx):
         """Get the :mod:`Frame <aloscene.frame>` corresponds to *idx* index
@@ -200,6 +238,8 @@ class CocoPanopticDataset(BaseDataset, SplitMixin):
         masks = masks == ids[:, None, None]
         masks = torch.as_tensor(masks, dtype=torch.uint8)
 
+        labels = [ann["category_id"] for ann in ann_info["segments_info"]]
+        # label_types = {k: torch.as_tensor([lbl for lbl in labels self.label_types[labels])}
         labels = torch.as_tensor([ann["category_id"] for ann in ann_info["segments_info"]], dtype=torch.int64)
 
         # Clean index by unique classes filtered
@@ -213,20 +253,18 @@ class CocoPanopticDataset(BaseDataset, SplitMixin):
 
         # Make aloscene.frame
         frame = Frame(img_path)
-
         labels_2d = Labels(labels.to(torch.float32), labels_names=self.label_names, names=("N"), encoding="id")
         boxes_2d = BoundingBoxes2D(
-            masks_to_boxes(masks),
-            boxes_format="xyxy",
-            absolute=True,
-            frame_size=frame.HW,
-            names=("N", None),
-            labels=labels_2d,
+            masks_to_boxes(masks), boxes_format="xyxy", absolute=True, frame_size=frame.HW, names=("N", None),
         )
+        boxes_2d.append_labels(labels_2d, name="name")
+        self._append_type_labels(boxes_2d, labels)
         frame.append_boxes2d(boxes_2d)
 
         if self.return_masks:
-            masks_2d = Mask(masks, names=("N", "H", "W"), labels=labels_2d)
+            masks_2d = Mask(masks, names=("N", "H", "W"))
+            masks_2d.append_labels(labels_2d, name="name")
+            self._append_type_labels(masks_2d, labels)
             frame.append_segmentation(masks_2d)
         return frame
 
@@ -236,6 +274,6 @@ if __name__ == "__main__":
     print(coco_seg.label_names)
     for f, frames in enumerate(coco_seg.train_loader(batch_size=2)):
         frames = Frame.batch_list(frames)
-        frames.get_view().render()
+        frames.get_view([frames.boxes2d[0].get_view(labels_set="name")]).render()
         if f > 1:
             break

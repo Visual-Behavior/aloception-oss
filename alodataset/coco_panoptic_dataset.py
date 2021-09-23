@@ -214,8 +214,7 @@ class CocoPanopticDataset(BaseDataset, SplitMixin):
 
 
 if __name__ == "__main__":
-    coco_seg = CocoPanopticDataset()
-    print(coco_seg.label_names)
+    coco_seg = CocoPanopticDataset(sample=True)
     for f, frames in enumerate(coco_seg.train_loader(batch_size=2)):
         frames = Frame.batch_list(frames)
         frames.get_view().render()

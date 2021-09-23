@@ -106,7 +106,7 @@ class Points2D(aloscene.tensors.AugmentedTensor):
         tensor.add_property("padded_size", None)
 
         if absolute and frame_size is None:
-            raise Exception("If the boxes format are absolute, the `frame_size` must be set")
+            raise Exception("If the points format are absolute, the `frame_size` must be set")
         assert frame_size is None or (isinstance(frame_size, tuple) and len(frame_size) == 2)
         tensor.add_property("frame_size", frame_size)
 
@@ -116,7 +116,7 @@ class Points2D(aloscene.tensors.AugmentedTensor):
         super().__init__(x)
 
     def append_labels(self, labels: Labels, name: str = None):
-        """Attach a set of labels to the boxes. The attached set of labels are supposed to be equal to the
+        """Attach a set of labels to the points. The attached set of labels are supposed to be equal to the
         number of points. In other words, the N dimensions must match in both tensor.
 
         Parameters
@@ -146,7 +146,7 @@ class Points2D(aloscene.tensors.AugmentedTensor):
         self._append_label("labels", labels, name)
 
     def xy(self) -> Points2D:
-        """Get a new Point2d Tensor with boxes following this format:
+        """Get a new Point2d Tensor with points following this format:
         [x, y]. Could be relative value (betwen 0 and 1)
         or absolute value based on the current Tensor representation.
 
@@ -163,7 +163,7 @@ class Points2D(aloscene.tensors.AugmentedTensor):
             return tensor
 
     def yx(self) -> Points2D:
-        """Get a new Point2d Tensor with boxes following this format:
+        """Get a new Point2d Tensor with points following this format:
         [y, x]. Could be relative value (betwen 0 and 1)
         or absolute value based on the current Tensor representation.
 
@@ -266,18 +266,18 @@ class Points2D(aloscene.tensors.AugmentedTensor):
     _GLOBAL_COLOR_SET = np.random.uniform(0, 1, (300, 3))
 
     def get_view(self, frame: aloscene.Frame = None, size: tuple = None, labels_set: str = None, **kwargs):
-        """Create a view of the boxes a frame
+        """Create a view of the points on a frame
 
         Parameters
         ----------
         frame: aloscene.Frame
-            Tensor of type Frame to display the boxes on. If the frame is None, an empty frame will be create on the
+            Tensor of type Frame to display the points on. If the frame is None, an empty frame will be create on the
             fly. If the frame is passed, the frame should be 3 dimensional ("C", "H", "W") or ("H", "W", "C")
         size: (tuple)
             (height, width) Desired size of the view. None by default
         labels_set: str
-            If provided, the boxes will rely on this label set to display the boxes color. If labels_set
-            is not provie while the boxes have multiple labels set, the points will be display with the same colors.
+            If provided, the points will rely on this label set to display the points color. If labels_set
+            is not provie while the points have multiple labels set, the points will be display with the same colors.
 
         Examples
         --------
@@ -305,17 +305,17 @@ class Points2D(aloscene.tensors.AugmentedTensor):
         # Get an imave with values between 0 and 1
         frame_size = (frame.H, frame.W)
         frame = frame.norm01().cpu().rename(None).permute([1, 2, 0]).detach().contiguous().numpy()
-        # Draw bouding boxes
+        # Draw points
 
         # Try to retrieve the associated label ID (if any)
         labels = points_abs.labels if isinstance(points_abs.labels, aloscene.Labels) else [None] * len(points_abs)
         if labels_set is not None and not isinstance(points_abs.labels, dict):
             raise Exception(
-                f"Trying to display a set of boxes labels ({labels_set}) while the boxes do not have multiple set of labels"
+                f"Trying to display a set of points labels ({labels_set}) while the points do not have multiple set of labels"
             )
         elif labels_set is not None and isinstance(points_abs.labels, dict) and labels_set not in points_abs.labels:
             raise Exception(
-                f"Trying to display a set of boxes labels ({labels_set}) while the boxes no not have this set. Avaiable set ("
+                f"Trying to display a set of points labels ({labels_set}) while the points no not have this set. Avaiable set ("
                 + [key for key in points_abs.labels]
                 + ") "
             )
@@ -388,8 +388,8 @@ class Points2D(aloscene.tensors.AugmentedTensor):
             abs_size = tuple(s * fs for s, fs in zip(size, points.frame_size))
             return points.abs_pos(abs_size)
 
-    def _crop(self, H_crop: tuple, W_crop: tuple, **kwargs):
-        """Crop Boxes with the given relative crop
+    def _crop(self, H_crop: tuple, W_crop: tuple, **kwargs) -> Points2D:
+        """Crop Points with the given relative crop
 
         Parameters
         ----------
@@ -397,11 +397,6 @@ class Points2D(aloscene.tensors.AugmentedTensor):
             (start, end) between 0 and 1
         W_crop: tuple
             (start, end) between 0 and 1
-
-        Returns
-        -------
-        cropped_boxes2d sa_tensor: aloscene.Point2d
-            cropped_boxes2d Point2d
         """
         absolute = self.absolute
         frame_size = self.frame_size
@@ -416,7 +411,7 @@ class Points2D(aloscene.tensors.AugmentedTensor):
         max_size = torch.as_tensor([w, h], dtype=torch.float32)
         x, y = W_crop[0] * 100, H_crop[0] * 100
 
-        # Crop boxes
+        # Crop points
         cropped_points = n_points - torch.as_tensor([x, y])
 
         cropped_points_filter = (cropped_points >= 0).as_tensor() & (cropped_points < max_size).as_tensor()
@@ -439,11 +434,6 @@ class Points2D(aloscene.tensors.AugmentedTensor):
 
         Therefore. If the set of points did not get padded yet by the pad operation, this method wil pad the points to
         the real padded size.
-
-        Returns
-        -------
-        padded_boxes2d sa_tensor: aloscene.Point2d
-            padded_boxes2d Point2d
 
         Examples
         --------
@@ -475,8 +465,8 @@ class Points2D(aloscene.tensors.AugmentedTensor):
 
         return points
 
-    def _pad(self, offset_y: tuple, offset_x: tuple, pad_boxes: bool = False, **kwargs):
-        """Pad the set of boxes based on the given offset
+    def _pad(self, offset_y: tuple, offset_x: tuple, pad_boxes: bool = False, **kwargs) -> Points2D:
+        """Pad the set of points based on the given offset
 
         Parameters
         ----------
@@ -484,16 +474,11 @@ class Points2D(aloscene.tensors.AugmentedTensor):
             (percentage top_offset, percentage bottom_offset) Percentage based on the previous size
         offset_x: tuple
             (percentage left_offset, percentage right_offset) Percentage based on the previous size
-        pad_boxes: bool
-            By default, the boxes are not changed when we pad the frame. Therefore the boxes still
-            encode the position of the boxes based on the frame before the padding. This is usefull in some
+        pad_points: bool
+            By default, the points are not changed when we pad the frame. Therefore the points still
+            encode the position of the points based on the frame before the padding. This is usefull in some
             cases, like in transformer architecture where the padded ares are masked. Therefore, the transformer
             do not "see" the padded part of the frames.
-
-        Returns
-        -------
-        boxes2d: aloscene.Point2d
-            padded_boxes2d Point2d or unchange Point2d (if pad_boxes is False)
         """
         # TODO: pad_boxes. Must find a more generic approached for this
         assert offset_y[0] == 0 and offset_x[0] == 0, "Not handle yet"

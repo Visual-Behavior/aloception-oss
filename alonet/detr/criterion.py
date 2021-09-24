@@ -246,7 +246,6 @@ class DetrCriterion(nn.Module):
 
         losses = {}
         if num_boxes == 0 or outputs["pred_masks"].numel() == 0:
-            print("sikas")
             return {
                 "loss_DICE": torch.tensor(0.0, device=frames.device, requires_grad=True),
                 "loss_focal": torch.tensor(0.0, device=frames.device, requires_grad=True),

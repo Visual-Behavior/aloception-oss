@@ -102,7 +102,7 @@ def log_image(trainer, key, images):
     elif isinstance(trainer.logger, TensorBoardLogger):
 
         for i, image_obj in enumerate(images):
-            batch_el_key = (f"{key}_{i}",)
+            batch_el_key = f"{key}_{i}"
             image = image_obj["image"]
             boxes = image_obj["boxes"]
 

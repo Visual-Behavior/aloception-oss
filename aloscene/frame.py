@@ -180,9 +180,9 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         Parameters
         ----------
         boxes: Points2D
-            Points to attached to the Frame
+            Points to attach to the Frame
         name: str
-            If none, the points will be attached without name (if possible). Otherwise if no other unnamed
+            If None, the points will be attached without name (if possible). Otherwise if no other unnamed
             points are attached to the frame, the points will be added to the set of points.
         """
         self._append_label("points2d", points, name)

@@ -699,7 +699,7 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
 
         return boxes
 
-    def _pad(self, offset_y: tuple, offset_x: tuple, pad_boxes: bool = False, **kwargs):
+    def _pad(self, offset_y: tuple, offset_x: tuple, pad_boxes: bool = True, **kwargs):
         """Pad the set of boxes based on the given offset
 
         Parameters
@@ -719,10 +719,9 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
         boxes2d: aloscene.BoundingBoxes2D
             padded_boxes2d BoundingBoxes2D or unchange BoundingBoxes2D (if pad_boxes is False)
         """
-        assert offset_y[0] == 0 and offset_x[0] == 0, "Not handle yet"
 
         if not pad_boxes:
-
+            assert offset_y[0] == 0 and offset_x[0] == 0, "Not handle yet using pad_boxes to False"
             n_boxes = self.clone()
 
             if n_boxes.padded_size is not None:
@@ -739,12 +738,20 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
             raise Exception("Padding with pad_boxes True while padded_size is None is not supported Yet.")
 
         if not self.absolute:
-            boxes = self.abs_pos((100, 100))
-            boxes.frame_size = (100 * (1.0 + offset_y[1]), 100 * (1.0 + offset_x[1]))
+            boxes = self.abs_pos((100, 100)).xcyc()
+            h_shift = boxes.frame_size[0] * offset_y[0]
+            w_shift = boxes.frame_size[1] * offset_x[0]
+            boxes = boxes + torch.as_tensor([[w_shift, h_shift, 0, 0]], device=boxes.device)
+            boxes.frame_size = (100 * (1.0 + offset_y[0] + offset_y[1]), 100 * (1.0 + offset_x[0] + offset_x[1]))
+            boxes = boxes.get_with_format(self.boxes_format)
             boxes = boxes.rel_pos()
         else:
-            boxes = self.clone()
-            boxes.frame_size = (boxes.frame_size[0] * (offset_y[1] + 1.0), boxes.frame_size[1] * (offset_x[1] + 1.0))
+            boxes = self.xcyc()
+            h_shift = boxes.frame_size[0] * offset_y[0]
+            w_shift = boxes.frame_size[1] * offset_x[0]
+            boxes = boxes + torch.as_tensor([[w_shift, h_shift, 0, 0]], device=boxes.device)
+            boxes.frame_size = (100 * (1.0 + offset_y[0] + offset_y[1]), 100 * (1.0 + offset_x[0] + offset_x[1]))
+            boxes = boxes.get_with_format(self.boxes_format)
 
         return boxes
 

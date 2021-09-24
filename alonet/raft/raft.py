@@ -192,12 +192,13 @@ class RAFTBase(nn.Module):
             coords1 = coords1 + delta_flow
 
             # upsample predictions
-            if up_mask is None:
-                flow_up = upflow8(coords1 - coords0)
-            else:
-                flow_up = self.upsample_flow(coords1 - coords0, up_mask)
+            if not only_last or itr == iters - 1:
+                if up_mask is None:
+                    flow_up = upflow8(coords1 - coords0)
+                else:
+                    flow_up = self.upsample_flow(coords1 - coords0, up_mask)
 
-            flow_predictions[f"flow_stage{itr}"] = flow_up
+                flow_predictions[f"flow_stage{itr}"] = flow_up
 
         if only_last:
             flow_low = coords1 - coords0

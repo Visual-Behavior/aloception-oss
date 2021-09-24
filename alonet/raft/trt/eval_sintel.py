@@ -54,6 +54,7 @@ def parse_args():
     torch_parser = subparsers.add_parser("torch")
     trt_parser = subparsers.add_parser("trt")
     trt_parser.add_argument("precision", choices=["fp16", "fp32", "mix"])
+    trt_parser.add_argument("--iters", type=int, default=12)
     trt_parser.add_argument("--engine_path")
     return parser.parse_args()
 
@@ -65,7 +66,8 @@ if __name__ == "__main__":
 
     if backend == "trt":
         precision = kwargs["precision"]
-        engine_path = os.path.join(ALONET_ROOT, f"raft-things_{precision}.engine")
+        iters = kwargs["iters"]
+        engine_path = os.path.join(ALONET_ROOT, f"raft-things_iters{iters}_{precision}.engine")
         model = load_trt_model(engine_path)
     else:
         model = load_torch_model()
@@ -89,9 +91,9 @@ if __name__ == "__main__":
             if backend == "trt":
                 frame1 = frame1.as_tensor().numpy()
                 frame2 = frame2.as_tensor().numpy()
-                if precision == "fp16":
-                    frame1 = frame1.astype(np.float16)
-                    frame2 = frame2.astype(np.float16)
+                # if precision == "fp16":
+                #     frame1 = frame1.astype(np.float16)
+                #     frame2 = frame2.astype(np.float16)
                 flow_pred = model(frame1, frame2)["flow_up"]
             else:
                 frame1 = frame1.to("cuda")

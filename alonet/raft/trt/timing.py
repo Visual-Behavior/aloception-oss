@@ -26,7 +26,9 @@ def get_sample_images(for_trt=False):
     return frame1, frame2
 
 
-def load_trt_model(engine_path):
+def load_trt_model(engine_path=None):
+    if engine_path is None:
+        engine_path = os.path.join(ALONET_ROOT, "raft-things_fp32.engine")
     load_trt_plugins_raft()
     model = TRTExecutor(engine_path)
     model.print_bindings_info()
@@ -40,8 +42,6 @@ def load_torch_model():
 
 
 def timing_trt(engine_path=None):
-    if engine_path is None:
-        engine_path = os.path.join(ALONET_ROOT, "raft-things_fp32.engine")
 
     model = load_trt_model(engine_path)
     frame1, frame2 = get_sample_images(for_trt=True)

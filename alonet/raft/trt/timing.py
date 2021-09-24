@@ -42,10 +42,10 @@ def load_torch_model():
     return model
 
 
-def timing_trt(engine_path=None, precision="fp32"):
+def timing_trt(engine_path=None, precision="fp32", iters=12):
 
     if engine_path is None :
-        engine_path = os.path.join(ALONET_ROOT, f"raft-things_{precision}.engine")
+        engine_path = os.path.join(ALONET_ROOT, f"raft-things_iters{iters}_{precision}.engine")
 
     model = load_trt_model(engine_path)
     frame1, frame2 = get_sample_images(for_trt=True)
@@ -108,6 +108,7 @@ if __name__ == "__main__":
     torch_parser = subparsers.add_parser("torch")
     trt_parser = subparsers.add_parser("trt")
     trt_parser.add_argument("precision", choices=["fp16", "fp32", "mix"])
+    trt_parser.add_argument("--iters", type=int, default=12)
     trt_parser.add_argument("--engine_path")
     kwargs = vars(parser.parse_args())
     backend = kwargs.pop("backend")

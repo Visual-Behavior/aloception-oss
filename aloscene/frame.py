@@ -20,9 +20,9 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
     is created from a existing tensor or numpy array, the frame dimensions are expected to be ("C", "H", "W").
     If this is not the case, the `names` must be passed to the tensor.
 
-    If your're data is more than 3 dimensional you might need to set the `names` to ("B", "C", "H", "W") for batch
+    If your data is more than 3 dimensional you might need to set the `names` to ("B", "C", "H", "W") for batch
     dimension or ("T", "C", "H", "W") for the temporal dimension, or even ("B", "T", "C", "H", "W") for batch and
-    temporal dimension. Checkout the example bellow for an example.
+    temporal dimension. Checkout the example below for an example.
 
     Parameters
     ----------
@@ -50,7 +50,7 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
     Note on dimension:
 
     - C refers to the channel dimension
-    - N refers to a dimension with a dynamic number of element.
+    - N refers to a dimension with a dynamic number of elements.
     - H refers to the height of a `SpatialAugmentedTensor`
     - W refers to the width of a `SpatialAugmentedTensor`
     - B refers to the batch dimension
@@ -180,9 +180,9 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         Parameters
         ----------
         boxes: Points2D
-            Points to attached to the Frame
+            Points to attach to the Frame
         name: str
-            If none, the points will be attached without name (if possible). Otherwise if no other unnamed
+            If None, the points will be attached without name (if possible). Otherwise if no other unnamed
             points are attached to the frame, the points will be added to the set of points.
         """
         self._append_label("points2d", points, name)

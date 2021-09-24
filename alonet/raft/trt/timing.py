@@ -1,5 +1,6 @@
 from torch.utils.data import SequentialSampler
 import numpy as np
+import argparse
 import time
 import os
 
@@ -26,11 +27,11 @@ def get_sample_images(for_trt=False):
     return frame1, frame2
 
 
-def load_trt_model(engine_path=None):
+def load_trt_model(engine_path=None, sync_mode=True):
     if engine_path is None:
         engine_path = os.path.join(ALONET_ROOT, "raft-things_fp32.engine")
     load_trt_plugins_raft()
-    model = TRTExecutor(engine_path)
+    model = TRTExecutor(engine_path, sync_mode=sync_mode)
     model.print_bindings_info()
     return model
 
@@ -41,7 +42,10 @@ def load_torch_model():
     return model
 
 
-def timing_trt(engine_path=None):
+def timing_trt(engine_path=None, precision="fp32"):
+
+    if engine_path is None :
+        engine_path = os.path.join(ALONET_ROOT, f"raft-things_{precision}.engine")
 
     model = load_trt_model(engine_path)
     frame1, frame2 = get_sample_images(for_trt=True)
@@ -67,6 +71,8 @@ def timing_trt(engine_path=None):
     print(f"  min : {times.min()} ms")
     print(f"  median: {int(np.median(times))} ms")
     print(f"  max: {times.max()} ms")
+    print()
+    print(times)
 
 
 def timing_torch():
@@ -97,5 +103,15 @@ def timing_torch():
 
 
 if __name__ == "__main__":
-    # timing_trt()
-    timing_torch()
+    parser = argparse.ArgumentParser()
+    subparsers = parser.add_subparsers(dest="backend")
+    torch_parser = subparsers.add_parser("torch")
+    trt_parser = subparsers.add_parser("trt")
+    trt_parser.add_argument("precision", choices=["fp16", "fp32"])
+    trt_parser.add_argument("--engine_path")
+    kwargs = vars(parser.parse_args())
+    backend = kwargs.pop("backend")
+    if backend == "torch":
+        timing_torch()
+    else :
+        timing_trt(**kwargs)

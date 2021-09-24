@@ -9,6 +9,7 @@ Aloscene
    frame
    bounding_boxes_2d
    oriented_boxes_2d
+   points2d
    labels
    mask
    flow

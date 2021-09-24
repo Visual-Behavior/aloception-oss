@@ -7,7 +7,7 @@ from typing import TypeVar, Union
 import aloscene
 from aloscene.renderer import View
 from aloscene.disparity import Disparity
-from aloscene import BoundingBoxes2D, BoundingBoxes3D, Flow, Mask, Labels
+from aloscene import BoundingBoxes2D, BoundingBoxes3D, Flow, Mask, Labels, Points2D
 
 # from aloscene.camera_calib import CameraExtrinsic, CameraIntrinsic
 from aloscene.io.image import load_image
@@ -18,18 +18,11 @@ Frame = TypeVar("Frame")
 class Frame(aloscene.tensors.SpatialAugmentedTensor):
     """Augmented Frame tensor. The `Frame` cam be created using the path to an image. Othwewise, if the frame
     is created from a existing tensor or numpy array, the frame dimensions are expected to be ("C", "H", "W").
-    If this is not the case, the `names` must be passed to the tensor. Checkout the example for more information.
+    If this is not the case, the `names` must be passed to the tensor.
 
-    Notes
-    -----
-    Note on dimension:
-
-    - C refet to the channel dimension
-    - N refer to a dimension with a dynamic number of element.
-    - H refer to the height of a `SpatialAugmentedTensor`
-    - W refer to the width of a `SpatialAugmentedTensor`
-    - B refer to the batch dimension
-    - T refer to the temporal dimension
+    If your data is more than 3 dimensional you might need to set the `names` to ("B", "C", "H", "W") for batch
+    dimension or ("T", "C", "H", "W") for the temporal dimension, or even ("B", "T", "C", "H", "W") for batch and
+    temporal dimension. Checkout the example below for an example.
 
     Parameters
     ----------
@@ -51,6 +44,17 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
     mean_std: tuple
         Tuple with the mean and std of the tensor. (mean, std). Example: ((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)))
 
+
+    Notes
+    -----
+    Note on dimension:
+
+    - C refers to the channel dimension
+    - N refers to a dimension with a dynamic number of elements.
+    - H refers to the height of a `SpatialAugmentedTensor`
+    - W refers to the width of a `SpatialAugmentedTensor`
+    - B refers to the batch dimension
+    - T refers to the temporal dimension
 
     Examples
     --------
@@ -77,6 +81,7 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         flow: Union[dict, Flow] = None,
         segmentation: Union[dict, Mask] = None,
         disparity: Union[dict, Disparity] = None,
+        points2d: Union[dict, Points2D] = None,
         normalization="255",
         mean_std=None,
         names=("C", "H", "W"),
@@ -92,6 +97,7 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         tensor = super().__new__(cls, x, *args, names=names, **kwargs)
 
         # Add label
+        tensor.add_label("points2d", points2d, align_dim=["B", "T"], mergeable=False)
         tensor.add_label("boxes2d", boxes2d, align_dim=["B", "T"], mergeable=False)
         tensor.add_label("boxes3d", boxes3d, align_dim=["B", "T"], mergeable=False)
         tensor.add_label("flow", flow, align_dim=["B", "T"], mergeable=False)
@@ -167,6 +173,19 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         >>> frame.append_boxes2d(boxes2d, "boxes_set")
         """
         self._append_label("boxes2d", boxes, name)
+
+    def append_points2d(self, points: Points2D, name: str = None):
+        """Attach a set of points to the frame.
+
+        Parameters
+        ----------
+        boxes: Points2D
+            Points to attach to the Frame
+        name: str
+            If None, the points will be attached without name (if possible). Otherwise if no other unnamed
+            points are attached to the frame, the points will be added to the set of points.
+        """
+        self._append_label("points2d", points, name)
 
     def append_boxes3d(self, boxes_3d: BoundingBoxes3D, name: str = None):
         """Attach BoundingBoxes3D to the frame

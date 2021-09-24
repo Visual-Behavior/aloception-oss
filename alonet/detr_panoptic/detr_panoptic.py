@@ -72,8 +72,11 @@ class PanopticHead(nn.Module):
         self.device = device
 
         # Load weights
-        if weights is not None and (weights == "detr-r50-panoptic" or ".pth" in weights):
-            alonet.common.load_weights(self, weights, device, strict_load_weights=True)
+        if weights is not None:
+            if ".pth" in weights or ".ckpt" in weights:
+                alonet.common.load_weights(self, weights, device, strict_load_weights=True)
+            else:
+                raise ValueError(f"Unknown weights: '{weights}'")
 
     @assert_and_export_onnx(check_mean_std=True, input_mean_std=INPUT_MEAN_STD)
     def forward(self, frames: aloscene.frame, get_filter_fn: Callable = None, **kwargs):
@@ -112,7 +115,7 @@ class PanopticHead(nn.Module):
 
         # Filter boxes and get mask indices from them
         get_filter_fn = get_filter_fn or (lambda *args, **kwargs: get_mask_queries(*args, model=self.detr, **kwargs))
-        dec_outputs, filters, gmq_params = get_filter_fn(frames=frames, m_outputs=out, **kwargs)
+        dec_outputs, filters = get_filter_fn(frames=frames, m_outputs=out, **kwargs)
 
         # FIXME h_boxes takes the last one computed, keep this in mind
         # Use box embeddings as input of Multi Head attention
@@ -121,18 +124,22 @@ class PanopticHead(nn.Module):
         seg_masks = self.mask_head(self.detr.input_proj(src), bbox_mask, [features[i][0] for i in range(3)[::-1]])
 
         out["pred_masks"] = seg_masks.view(bs, bbox_mask.shape[1], seg_masks.shape[-2], seg_masks.shape[-1])
-        out["pred_masks_info"] = {"frame_size": frames.shape[-2:], "gmq_params": gmq_params, "filters": filters}
+        out["pred_masks_info"] = {"frame_size": frames.shape[-2:], "filters": filters}
         return out  # Return the DETR output + pred_masks
 
     @torch.no_grad()
-    def inference(self, forward_out: Dict, maskth: int = 0.5, **kwargs):
+    def inference(self, forward_out: Dict, maskth: float = 0.5, filters: list = None, **kwargs):
         """Given the model forward outputs, this method will return an aloscene.Mask tensor with binary
         mask with its corresponding label per object detected.
 
         Parameters
         ----------
-        forward_out: dict
+        forward_out : dict, optinal
             Dict with the model forward outptus
+        maskth : float
+            Threshold value to binarize the masks, by default 0.5
+        filters : list, optional
+            List of filter to select the query predicting an object.
 
         Returns
         -------
@@ -141,40 +148,26 @@ class PanopticHead(nn.Module):
         aloscene.Maks
             Binary mask of PanopticHead
         """
-
-        # Get information about boxes
-        outs_logits, outs_boxes = forward_out["pred_logits"], forward_out["pred_boxes"]
-        outs_probs = F.softmax(outs_logits, -1)
-        outs_scores, outs_labels = outs_probs.max(-1)
-
-        gmq_params = forward_out["pred_masks_info"]["gmq_params"]
-        gmq_params.update(kwargs)
-        b_filters = self.detr.get_outs_filter(m_outputs=forward_out, **gmq_params)
+        # Get boxes from detr inference
+        filters = filters or forward_out["pred_masks_info"]["filters"]
+        frame_size = forward_out["pred_masks_info"]["frame_size"]
+        preds_boxes = self.detr.inference(forward_out, filters=filters, **kwargs)
 
         # Procedure to get information about masks
-        outputs_masks = forward_out["pred_masks"]
+        outputs_masks = forward_out["pred_masks"].squeeze(2)
         if outputs_masks.numel() > 0:
-            outputs_masks = F.interpolate(
-                outputs_masks, size=forward_out["pred_masks_info"]["frame_size"], mode="bilinear", align_corners=False
-            )
+            outputs_masks = F.interpolate(outputs_masks, size=frame_size, mode="bilinear", align_corners=False)
         else:
-            outputs_masks = outputs_masks.view(
-                outputs_masks.shape[0], 0, *forward_out["pred_masks_info"]["frame_size"]
-            )
+            outputs_masks = outputs_masks.view(outputs_masks.shape[0], 0, *frame_size)
         outputs_masks = (outputs_masks.sigmoid() > maskth).type(torch.long)
-        m_filters = forward_out["pred_masks_info"]["filters"]
 
-        # Transform predictions in aloscene.BoundingBoxes2D and aloscene.Masks
-        preds_boxes, preds_masks = [], []
-        zero_masks = torch.zeros(
-            *forward_out["pred_masks_info"]["frame_size"], device=outputs_masks.device, dtype=torch.long
-        )
-        for scores, labels, boxes, b_filter, masks, m_filter in zip(
-            outs_scores, outs_labels, outs_boxes, b_filters, outputs_masks, m_filters
+        # Transform predictions in aloscene.Mask
+        preds_masks = []
+        zero_masks = torch.zeros(*frame_size, device=outputs_masks.device, dtype=torch.long)
+        for boxes, masks, b_filter, m_filter in zip(
+            preds_boxes, outputs_masks, filters, forward_out["pred_masks_info"]["filters"]
         ):
-            scores, boxes, labels = scores[b_filter], boxes[b_filter], labels[b_filter]
-
-            # Boxes/masks synchronization
+            # Boxes/masks alignment
             masks = {im.cpu().item(): masks[i] for i, im in enumerate(torch.where(m_filter)[0]) if b_filter[im]}
             for ib in torch.where(b_filter)[0]:
                 if ib.cpu().item() not in masks:
@@ -182,16 +175,12 @@ class PanopticHead(nn.Module):
             if len(masks) > 0:
                 masks = torch.stack([m[1] for m in sorted(masks.items(), key=lambda x: x[0])], dim=0)
             else:
-                masks = zero_masks[[]].view(0, *forward_out["pred_masks_info"]["frame_size"])
+                masks = zero_masks[[]].view(0, *frame_size)
 
-            # Create aloscene objects
-            labels = aloscene.Labels(labels.type(torch.float32), encoding="id", scores=scores, names=("N",))
-            boxes = aloscene.BoundingBoxes2D(
-                boxes, boxes_format="xcyc", absolute=False, names=("N", None), labels=labels
-            )
-            masks = aloscene.Mask(masks, names=("N", "H", "W"), labels=labels)
-            preds_boxes.append(boxes)
+            # Create aloscene object
+            masks = aloscene.Mask(masks, names=("N", "H", "W"), labels=boxes.labels)
             preds_masks.append(masks)
+
         return preds_boxes, preds_masks
 
 
@@ -199,7 +188,8 @@ if __name__ == "__main__":
     device = torch.device("cuda")
 
     # Load model
-    model = PanopticHead(DetrR50(num_classes=250), weights="detr-r50-panoptic")
+    weights = os.path.expanduser("~/.aloception/weights/detr-r50-panoptic/detr-r50-panoptic.pth")
+    model = PanopticHead(DetrR50(num_classes=250), weights=weights)
     model.to(device)
 
     # Random frame
@@ -210,7 +200,7 @@ if __name__ == "__main__":
     # frame.get_view().render()
 
     # Pred of size (B, NQ, H//4, W//4)
-    foutputs = model(frame, threshold=0.5, background_class=250)
+    foutputs = model(frame, threshold=0.0, background_class=250)
     print(foutputs["pred_masks"].shape)
     boxes, pred = model.inference(foutputs)
     print("size of each pred:", [len(p) for p in pred])

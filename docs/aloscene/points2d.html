@@ -1,0 +1,541 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Points2D &mdash; Aloception 0.0.1 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Label" href="labels.html" />
+    <link rel="prev" title="OrientedBoxes2D" href="oriented_boxes_2d.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> Aloception
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption" role="heading"><span class="caption-text">Geting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/getting_started.html">Getting started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/aloscene.html">Aloscene: Computer vision with ease</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/alodataset.html">Alodataset: Loading your vision datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/alonet.html">Alonet : Training your models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/augmented_tensor.html">About augmented tensors</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Turorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/data_setup.html">How to setup your data?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/training_detr.html">Training Detr</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/finetuning_detr.html">Finetuning DETR</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/training_deformable_detr.html">Training Deformable DETR</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/finetuning_deformable_detr.html">Finetuning Deformanble DETR</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/tensort_inference.html">Exporting DETR / Deformable-DETR to TensorRT</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Aloception API</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="aloscene.html">Aloscene</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="frame.html">Frame</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bounding_boxes_2d.html">BoundingBoxes2D</a></li>
+<li class="toctree-l2"><a class="reference internal" href="oriented_boxes_2d.html">OrientedBoxes2D</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Points2D</a></li>
+<li class="toctree-l2"><a class="reference internal" href="labels.html">Label</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mask.html">Mask</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mask.html#module-aloscene.mask">Mask API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="flow.html">Flow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="disparity.html">Disparity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bounding_boxes_3d.html">BoundingBoxes3D</a></li>
+<li class="toctree-l2"><a class="reference internal" href="camera_calib.html">Camera calibration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="augmented_tensor.html">Augmented Tensor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="spatial_augmented_tensor.html">Spatial Augmented Tensor</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../alodataset/alodataset.html">Alodataset</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../alonet/alonet.html">Alonet</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Aloception</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="aloscene.html">Aloscene</a> &raquo;</li>
+        
+      <li>Points2D</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../_sources/aloscene/points2d.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast.container,
+.nboutput.nblast.container {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast.container + .nbinput.container {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="points2d">
+<h1>Points2D<a class="headerlink" href="#points2d" title="Permalink to this headline">¶</a></h1>
+<a class="reference internal image-reference" href="../_images/points2d_header.png"><img alt="Points2D Header" src="../_images/points2d_header.png" style="width: 100%;" /></a>
+<span class="target" id="module-aloscene.points_2d"></span><dl class="py class">
+<dt class="sig sig-object py" id="aloscene.points_2d.Points2D">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">aloscene.points_2d.</span></span><span class="sig-name descname"><span class="pre">Points2D</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">list</span><span class="p"><span class="pre">,</span> </span><span class="pre">numpy.array</span><span class="p"><span class="pre">,</span> </span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">points_format</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">absolute</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">bool</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">,</span> </span><a class="reference internal" href="labels.html#aloscene.labels.Labels" title="aloscene.labels.Labels"><span class="pre">aloscene.labels.Labels</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frame_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">('N',</span> <span class="pre">None)</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aloscene.points_2d.Points2D" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="augmented_tensor.html#aloscene.tensors.augmented_tensor.AugmentedTensor" title="aloscene.tensors.augmented_tensor.AugmentedTensor"><code class="xref py py-class docutils literal notranslate"><span class="pre">aloscene.tensors.augmented_tensor.AugmentedTensor</span></code></a></p>
+<p>Points2D Augmented Tensor. Used to represents 2D points in space encoded as xy or yx. The data must be
+at least 2 dimensional (N, None) where N is the number of points.</p>
+<p>If your’re data is more than 2 dimensional you might need to set the <cite>names</cite> to (“B”, “N”, None) for batch
+dimension or (“T”, “N”, None) for the temporal dimension, or even (“B”, “T”, “N”, None) for batch and temporal
+dimension.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>It is important to note that on <cite>Frame</cite>, Points2D are not mergeable by default        . Indeed, one <cite>Frame</cite> is likely to get more or less points than an other one. Therefore, if you want to create            Points2D with batch dimension, it is recommded to create Points2D tensors as part of a list that enclose                 the batch dimension (same for the temporal dimension).</p>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="p">[</span><span class="n">Points2D</span><span class="p">(</span><span class="o">...</span><span class="p">),</span> <span class="n">Points2D</span><span class="p">(</span><span class="o">...</span><span class="p">),</span> <span class="n">Points2D</span><span class="p">(</span><span class="o">...</span><span class="p">)]</span><span class="o">.</span>
+</pre></div>
+</div>
+<p>Finally, batch &amp; temporal dimension could also be stored like this:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="p">[[</span><span class="n">Points2D</span><span class="p">(</span><span class="o">...</span><span class="p">),</span> <span class="n">Points2D</span><span class="p">(</span><span class="o">...</span><span class="p">)],</span> <span class="p">[</span><span class="n">Points2D</span><span class="p">(</span><span class="o">...</span><span class="p">),</span> <span class="n">Points2D</span><span class="p">(</span><span class="o">...</span><span class="p">)]]</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>x: list | torch.Tensor | np.array</strong></dt><dd><p>Points2D data. See explanation above for details.</p>
+</dd>
+<dt><strong>points_format: str</strong></dt><dd><p>One of “xy”, “yx”. Whether your points are stored as “xy” or “yx”.</p>
+</dd>
+<dt><strong>absolute: bool</strong></dt><dd><p>Whether your points are encoded as absolute value or relative values (between 0 and 1). If absolute is True,
+the <cite>frane size</cite> must be given.</p>
+</dd>
+<dt><strong>frame_size: tuple</strong></dt><dd><p>(Height &amp; Width) of the relative frame.</p>
+</dd>
+<dt><strong>names: tuple</strong></dt><dd><p>Names of the dimensions : (“N”, None) by default. See explanation above for more details.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>Note on dimension:</p>
+<ul class="simple">
+<li><p>C refers to the channel dimension</p></li>
+<li><p>N refers to a dimension with a dynamic number of element.</p></li>
+<li><p>H refers to the height of a <cite>SpatialAugmentedTensor</cite></p></li>
+<li><p>W refers to the width of a <cite>SpatialAugmentedTensor</cite></p></li>
+<li><p>B refers to the batch dimension</p></li>
+<li><p>T refers to the temporal dimension</p></li>
+</ul>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">pts2d</span> <span class="o">=</span> <span class="n">aloscene</span><span class="o">.</span><span class="n">Points2D</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="p">[[</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.49</span><span class="p">]],</span>
+<span class="gp">... </span>    <span class="n">points_format</span><span class="o">=</span><span class="s2">&quot;yx&quot;</span><span class="p">,</span> <span class="n">absolute</span><span class="o">=</span><span class="kc">False</span>
+<span class="go">....)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pts2d</span> <span class="o">=</span> <span class="n">aloscene</span><span class="o">.</span><span class="n">Points2D</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="p">[[</span><span class="mi">512</span><span class="p">,</span> <span class="mi">458</span><span class="p">],</span> <span class="p">[</span><span class="mi">28</span><span class="p">,</span> <span class="mi">20</span><span class="p">]],</span>
+<span class="gp">... </span>    <span class="n">points_format</span><span class="o">=</span><span class="s2">&quot;yx&quot;</span><span class="p">,</span> <span class="n">absolute</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">frame_size</span><span class="o">=</span><span class="p">(</span><span class="mi">1200</span><span class="p">,</span> <span class="mi">1200</span><span class="p">)</span>
+<span class="go">    )</span>
+</pre></div>
+</div>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="aloscene.points_2d.Points2D.FORMATS">
+<span class="sig-name descname"><span class="pre">FORMATS</span></span><em class="property"> <span class="pre">=</span> <span class="pre">['xy',</span> <span class="pre">'yx']</span></em><a class="headerlink" href="#aloscene.points_2d.Points2D.FORMATS" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aloscene.points_2d.Points2D.abs_pos">
+<span class="sig-name descname"><span class="pre">abs_pos</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">frame_size</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aloscene.points_2d.Points2D.abs_pos" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a new Point2d Tensor with absolute position
+relative to the given <cite>frame_size</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>frame_size: tuple</strong></dt><dd><p>Frame size associated with the absolute points2d. (height, width)</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">points_2d_abs</span> <span class="o">=</span> <span class="n">points</span><span class="o">.</span><span class="n">abs_pos</span><span class="p">((</span><span class="n">height</span><span class="p">,</span> <span class="n">width</span><span class="p">))</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="#aloscene.points_2d.Points2D" title="aloscene.points_2d.Points2D"><code class="xref py py-class docutils literal notranslate"><span class="pre">Points2D</span></code></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aloscene.points_2d.Points2D.append_labels">
+<span class="sig-name descname"><span class="pre">append_labels</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">labels</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aloscene.points_2d.Points2D.append_labels" title="Permalink to this definition">¶</a></dt>
+<dd><p>Attach a set of labels to the points. The attached set of labels are supposed to be equal to the
+number of points. In other words, the N dimensions must match in both tensor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>labels: aloscene.Labels</strong></dt><dd><p>Set of labels to attached to the frame</p>
+</dd>
+<dt><strong>name: str</strong></dt><dd><p>If none, the label will be attached without name (if possible). Otherwise if no other unnamed
+labels are attached to the frame, the labels will be added to the set of labels.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">pts2d</span> <span class="o">=</span> <span class="n">aloscene</span><span class="o">.</span><span class="n">Points2D</span><span class="p">([[</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">]],</span> <span class="s2">&quot;yx&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">labels</span> <span class="o">=</span> <span class="n">aloscene</span><span class="o">.</span><span class="n">Labels</span><span class="p">([</span><span class="mi">51</span><span class="p">,</span> <span class="mi">24</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pts2d</span><span class="o">.</span><span class="n">append_labels</span><span class="p">(</span><span class="n">labels</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pts2d</span><span class="o">.</span><span class="n">labels</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="go">Or using named labels</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pts2d</span> <span class="o">=</span> <span class="n">aloscene</span><span class="o">.</span><span class="n">Points2D</span><span class="p">([[</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">]],</span> <span class="s2">&quot;yx&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">labels_set_1</span> <span class="o">=</span> <span class="n">aloscene</span><span class="o">.</span><span class="n">Labels</span><span class="p">([</span><span class="mi">51</span><span class="p">,</span> <span class="mi">24</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">labels_set_2</span> <span class="o">=</span> <span class="n">aloscene</span><span class="o">.</span><span class="n">Labels</span><span class="p">([</span><span class="mi">51</span><span class="p">,</span> <span class="mi">24</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pts2d</span><span class="o">.</span><span class="n">append_labels</span><span class="p">(</span><span class="n">labels_set_1</span><span class="p">,</span> <span class="s2">&quot;set1&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pts2d</span><span class="o">.</span><span class="n">append_labels</span><span class="p">(</span><span class="n">labels_set_2</span><span class="p">,</span> <span class="s2">&quot;set2&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pts2d</span><span class="o">.</span><span class="n">labels</span><span class="p">[</span><span class="s2">&quot;set1&quot;</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pts2d</span><span class="o">.</span><span class="n">labels</span><span class="p">[</span><span class="s2">&quot;set2&quot;</span><span class="p">]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aloscene.points_2d.Points2D.as_points">
+<span class="sig-name descname"><span class="pre">as_points</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">points</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aloscene.points_2d.Points2D.as_points" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="#aloscene.points_2d.Points2D" title="aloscene.points_2d.Points2D"><code class="xref py py-class docutils literal notranslate"><span class="pre">Points2D</span></code></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aloscene.points_2d.Points2D.fit_to_padded_size">
+<span class="sig-name descname"><span class="pre">fit_to_padded_size</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aloscene.points_2d.Points2D.fit_to_padded_size" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method can be usefull when one use a padded Frame but only want to learn on the non-padded area.
+Thefore the target points will remain unpadded while keeping information about the real padded size.</p>
+<p>Therefore. If the set of points did not get padded yet by the pad operation, this method wil pad the points to
+the real padded size.</p>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">padded_points</span> <span class="o">=</span> <span class="n">points</span><span class="o">.</span><span class="n">fit_to_padded_size</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="#aloscene.points_2d.Points2D" title="aloscene.points_2d.Points2D"><code class="xref py py-class docutils literal notranslate"><span class="pre">Points2D</span></code></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aloscene.points_2d.Points2D.get_view">
+<span class="sig-name descname"><span class="pre">get_view</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">frame</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels_set</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aloscene.points_2d.Points2D.get_view" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a view of the points on a frame</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>frame: aloscene.Frame</strong></dt><dd><p>Tensor of type Frame to display the points on. If the frame is None, an empty frame will be create on the
+fly. If the frame is passed, the frame should be 3 dimensional (“C”, “H”, “W”) or (“H”, “W”, “C”)</p>
+</dd>
+<dt><strong>size: (tuple)</strong></dt><dd><p>(height, width) Desired size of the view. None by default</p>
+</dd>
+<dt><strong>labels_set: str</strong></dt><dd><p>If provided, the points will rely on this label set to display the points color. If labels_set
+is not provie while the points have multiple labels set, the points will be display with the same colors.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">points</span><span class="o">.</span><span class="n">get_view</span><span class="p">()</span><span class="o">.</span><span class="n">render</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Or using a frame to render the points</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">points</span><span class="o">.</span><span class="n">get_view</span><span class="p">(</span><span class="n">frame</span><span class="p">)</span><span class="o">.</span><span class="n">render</span><span class="p">()</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aloscene.points_2d.Points2D.get_with_format">
+<span class="sig-name descname"><span class="pre">get_with_format</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">points_format</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aloscene.points_2d.Points2D.get_with_format" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the points with the desired format.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>points_format: str</strong></dt><dd><p>One of (“xy”, “yx”)</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">n_points</span> <span class="o">=</span> <span class="n">points</span><span class="o">.</span><span class="n">get_with_format</span><span class="p">(</span><span class="s2">&quot;yx&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="#aloscene.points_2d.Points2D" title="aloscene.points_2d.Points2D"><code class="xref py py-class docutils literal notranslate"><span class="pre">Points2D</span></code></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aloscene.points_2d.Points2D.rel_pos">
+<span class="sig-name descname"><span class="pre">rel_pos</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aloscene.points_2d.Points2D.rel_pos" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a new Point2d Tensor with relative position (between 0 and 1)
+based on the current frame_size.</p>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">points_2d_rel</span> <span class="o">=</span> <span class="n">points</span><span class="o">.</span><span class="n">rel_pos</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="#aloscene.points_2d.Points2D" title="aloscene.points_2d.Points2D"><code class="xref py py-class docutils literal notranslate"><span class="pre">Points2D</span></code></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aloscene.points_2d.Points2D.remove_padding">
+<span class="sig-name descname"><span class="pre">remove_padding</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aloscene.points_2d.Points2D.remove_padding" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method can be usefull when one use a padded Frame but only want to learn on the non-padded area.
+Thefore the target points will remain unpadded while keeping information about the real padded size.</p>
+<p>Thus, this method will simply remove the memorized padded information.</p>
+<dl class="simple">
+<dt>Returns:</dt><dd><p>[type]: [description]</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="#aloscene.points_2d.Points2D" title="aloscene.points_2d.Points2D"><code class="xref py py-class docutils literal notranslate"><span class="pre">Points2D</span></code></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aloscene.points_2d.Points2D.xy">
+<span class="sig-name descname"><span class="pre">xy</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aloscene.points_2d.Points2D.xy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a new Point2d Tensor with points following this format:
+[x, y]. Could be relative value (betwen 0 and 1)
+or absolute value based on the current Tensor representation.</p>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">points_2d_xy</span> <span class="o">=</span> <span class="n">points</span><span class="o">.</span><span class="n">xy</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="#aloscene.points_2d.Points2D" title="aloscene.points_2d.Points2D"><code class="xref py py-class docutils literal notranslate"><span class="pre">Points2D</span></code></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aloscene.points_2d.Points2D.yx">
+<span class="sig-name descname"><span class="pre">yx</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aloscene.points_2d.Points2D.yx" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a new Point2d Tensor with points following this format:
+[y, x]. Could be relative value (betwen 0 and 1)
+or absolute value based on the current Tensor representation.</p>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">points_2d_yx</span> <span class="o">=</span> <span class="n">points</span><span class="o">.</span><span class="n">yx</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="#aloscene.points_2d.Points2D" title="aloscene.points_2d.Points2D"><code class="xref py py-class docutils literal notranslate"><span class="pre">Points2D</span></code></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="labels.html" class="btn btn-neutral float-right" title="Label" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="oriented_boxes_2d.html" class="btn btn-neutral float-left" title="OrientedBoxes2D" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2021, Visual Behavior.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

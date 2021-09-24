@@ -50,7 +50,7 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
     Note on dimension:
 
     - C refers to the channel dimension
-    - N refers to a dimension with a dynamic number of element.
+    - N refers to a dimension with a dynamic number of elements.
     - H refers to the height of a `SpatialAugmentedTensor`
     - W refers to the width of a `SpatialAugmentedTensor`
     - B refers to the batch dimension

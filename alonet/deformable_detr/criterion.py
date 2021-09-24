@@ -1,14 +1,15 @@
 # Mostly inspired from https://github.com/fundamentalvision/Deformable-DETR/blob/main/models/deformable_detr.py#L198
 
 import torch
-from torch import nn
 
 import torch.nn.functional as F
 import aloscene
 from alonet.detr import DetrCriterion
 
 
-def sigmoid_focal_loss(inputs:torch.Tensor, targets:torch.Tensor, num_boxes:torch.Tensor, alpha: float = 0.25, gamma: float = 2)-> torch.Tensor:
+def sigmoid_focal_loss(
+    inputs: torch.Tensor, targets: torch.Tensor, num_boxes: torch.Tensor, alpha: float = 0.25, gamma: float = 2
+) -> torch.Tensor:
     """Sigmoid focal loss for classification
 
     Parameters
@@ -45,10 +46,10 @@ def sigmoid_focal_loss(inputs:torch.Tensor, targets:torch.Tensor, num_boxes:torc
 
 class DeformableCriterion(DetrCriterion):
     """ This class computes the loss for Deformable DETR. The process happens in two steps
-        
+
         1) we compute hungarian assignment between ground truth boxes and the outputs of the model
         2) we supervise each pair of matched ground-truth / prediction (supervise class and box)
-    
+
     This Criterion is rouhgly smilar to `DetrCriterion` except for the labels loss and the metrics.
     """
 
@@ -61,7 +62,8 @@ class DeformableCriterion(DetrCriterion):
             Label class weight, to use in CE or sigmoid focal (default) loss (depends of network configuration)
         focal_alpha : float, optional
             This parameter is used only when the model use sigmoid activation function.
-            Weighting factor in range (0,1) to balance positive vs negative examples. -1 for no weighting., by default 0.25
+            Weighting factor in range (0,1) to balance positive vs negative examples. -1 for no weighting,
+            by default 0.25
 
         Notes
         -----
@@ -70,21 +72,24 @@ class DeformableCriterion(DetrCriterion):
             * If forward_out["activate_fn"] == "sigmoid", sigmoid focal loss will be computed
         """
 
-        if "loss_ce_weight" in kwargs or "loss_sig_focal" in kwargs:
+        if "loss_ce_weight" in kwargs or "loss_focal_label" in kwargs:
             raise Exception(
-                f"Usage not supported in class {self.__class__.__name__}. The weight of ce or sig_focal losses must be provided on the 'loss_label_weight' attribute."
+                f"Usage not supported in class {self.__class__.__name__}. The weight of ce or focal for labels losses"
+                + "must be provided on the 'loss_label_weight' attribute."
             )
 
-        kwargs["loss_ce_weight"] = loss_label_weight  # Add loss_label_weight as loss_ce_weight and loss_sig_focal
+        kwargs["loss_ce_weight"] = loss_label_weight  # Add loss_label_weight as loss_ce_weight and loss_focal_label
         super().__init__(**kwargs)
         self.focal_alpha = focal_alpha
-        self.loss_weights["loss_sig_focal"] = loss_label_weight
+        self.loss_weights["loss_focal_label"] = loss_label_weight
 
         if kwargs["aux_loss_stage"] > 0:
             for i in range(kwargs["aux_loss_stage"] - 1):
-                self.loss_weights.update({f"loss_sig_focal_{i}": loss_label_weight})
+                self.loss_weights.update({f"loss_focal_label_{i}": loss_label_weight})
 
-    def loss_labels(self, outputs: dict, frames: aloscene.Frame, indices: list, num_boxes: torch.Tensor, **kwargs) -> torch.Tensor:
+    def loss_labels(
+        self, outputs: dict, frames: aloscene.Frame, indices: list, num_boxes: torch.Tensor, **kwargs
+    ) -> torch.Tensor:
         """Compute the clasification loss
 
         Parameters
@@ -94,7 +99,7 @@ class DeformableCriterion(DetrCriterion):
         frames : aloscene.Frame
             Target frame with ground truth boxes2d and labels
         indices : list
-            List of tuple with matching predicted indices and target indices. `len(indices)` is equal to batch size. 
+            List of tuple with matching predicted indices and target indices. `len(indices)` is equal to batch size.
         num_boxes : torch.Tensor
             Number of total target boxes
 
@@ -144,7 +149,7 @@ class DeformableCriterion(DetrCriterion):
             sigmoid_focal_loss(pred_logits, target_classes_onehot, num_boxes, alpha=self.focal_alpha, gamma=2)
             * pred_logits.shape[1]
         )
-        losses = {"loss_sig_focal": loss_focal}  # Compute loss_sig_focal instead of loss_ce
+        losses = {"loss_focal_label": loss_focal}  # Compute loss_focal_label instead of loss_ce
 
         return losses
 
@@ -159,7 +164,7 @@ class DeformableCriterion(DetrCriterion):
         frames : aloscene.Frame
             Target frame with ground truth boxes2d and labels
         indices : list
-            List of tuple with matching predicted indices and target indices. `len(indices)` is equal to batch size. 
+            List of tuple with matching predicted indices and target indices. `len(indices)` is equal to batch size.
         num_boxes : torch.Tensor
             Number of total target boxes
 

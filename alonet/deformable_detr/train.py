@@ -1,19 +1,7 @@
-import os
 import torch
-from torch import nn
-import torch.nn.functional as F
 
 from argparse import ArgumentParser
-
-import pytorch_lightning as pl
-import wandb
-
-import logging
-from typing import *
-
-import alodataset
-import aloscene
-import alonet
+from typing import Union
 
 from alonet.deformable_detr import DeformableDetrR50, DeformableDetrR50Refinement
 from alonet.deformable_detr import DeformableCriterion, DeformableDetrHungarianMatcher
@@ -55,7 +43,8 @@ class LitDeformableDetr(LitDetr):
             "--model_name",
             type=str,
             default="deformable-detr-r50-refinement",
-            help="Model name to use. One of ['deformable-detr-r50-refinement', 'deformable-detr-r50']. (default deformable-detr-r50-refinement)",
+            help="Model name to use. One of ['deformable-detr-r50-refinement', 'deformable-detr-r50']. "
+            + "(default deformable-detr-r50-refinement)",
         )
 
         return parent_parser
@@ -100,6 +89,8 @@ class LitDeformableDetr(LitDetr):
         loss_label_weight=1,
         loss_boxes_weight=5,
         loss_giou_weight=2,
+        loss_dice_weight=0,
+        loss_focal_weight=0,
         losses=["labels", "boxes"],
         aux_loss_stage=6,
         eos_coef=0.1,
@@ -133,15 +124,30 @@ class LitDeformableDetr(LitDetr):
             loss_label_weight=loss_label_weight,
             loss_boxes_weight=loss_boxes_weight,
             loss_giou_weight=loss_giou_weight,
+            loss_dice_weight=loss_dice_weight,
+            loss_focal_weight=loss_focal_weight,
             losses=losses,
             aux_loss_stage=aux_loss_stage,
             eos_coef=eos_coef,
         )
 
-    def build_matcher(self, cost_class=1, cost_boxes=5, cost_giou=2):
-        return alonet.deformable_detr.matcher.DeformableDetrHungarianMatcher(
-            cost_class=cost_class, cost_boxes=cost_boxes, cost_giou=cost_giou
-        )
+    def build_matcher(self, cost_class=1, cost_boxes=5, cost_giou=2) -> DeformableDetrHungarianMatcher:
+        """Build matcher to match between predictions and targets
+
+        Parameters
+        ----------
+        cost_class : int, optional
+            Weight of the classification error in the matching cost, by default 1
+        cost_boxes : int, optional
+            Weight of the L1 error of the bounding box coordinates in the matching cost, by default 5
+        cost_giou : int, optional
+            Weight of the giou loss of the bounding box in the matching cost, by default 2
+
+        Returns
+        -------
+        DeformableDetrHungarianMatcher
+        """
+        return DeformableDetrHungarianMatcher(cost_class=cost_class, cost_boxes=cost_boxes, cost_giou=cost_giou)
 
     def configure_optimizers(self):
         """Configure optimzier using AdamW"""
@@ -171,24 +177,6 @@ class LitDeformableDetr(LitDetr):
         ]
         optimizer = torch.optim.AdamW(param_dicts, lr=1e-4, weight_decay=1e-4)
         return optimizer
-
-    def build_matcher(self, cost_class=1, cost_boxes=5, cost_giou=2) -> DeformableDetrHungarianMatcher:
-        """Build matcher to match between predictions and targets
-
-        Parameters
-        ----------
-        cost_class : int, optional
-            Weight of the classification error in the matching cost, by default 1
-        cost_boxes : int, optional
-            Weight of the L1 error of the bounding box coordinates in the matching cost, by default 5
-        cost_giou : int, optional
-            Weight of the giou loss of the bounding box in the matching cost, by default 2
-
-        Returns
-        -------
-        DeformableDetrHungarianMatcher
-        """
-        return DeformableDetrHungarianMatcher(cost_class=cost_class, cost_boxes=cost_boxes, cost_giou=cost_giou)
 
 
 if __name__ == "__main__":

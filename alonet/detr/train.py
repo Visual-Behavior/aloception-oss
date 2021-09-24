@@ -1,24 +1,13 @@
-from datetime import time
-import os, logging
+import logging
 import torch
-from torch import nn
-import torch.nn.functional as F
+from typing import Union
 
 from argparse import ArgumentParser, Namespace
-
 import pytorch_lightning as pl
-import wandb
 
-from typing import *
-
-from alonet.callbacks import MetricsCallback
-from alonet.detr import CocoDetection2Detr
 from aloscene import Frame
-
-import alodataset
 import aloscene
 import alonet
-from aloscene import frame
 
 
 class LitDetr(pl.LightningModule):
@@ -148,6 +137,7 @@ class LitDetr(pl.LightningModule):
         outputs.update({"m_outputs": m_outputs})
         return outputs
 
+    @torch.no_grad()
     def validation_step(self, frames, batch_idx):
         """Run one step of validation
 
@@ -207,6 +197,8 @@ class LitDetr(pl.LightningModule):
         loss_ce_weight=1,
         loss_boxes_weight=5,
         loss_giou_weight=2,
+        loss_dice_weight=0,
+        loss_focal_weight=0,
         eos_coef=0.1,
         losses=["labels", "boxes"],
         aux_loss_stage=6,
@@ -216,6 +208,8 @@ class LitDetr(pl.LightningModule):
             loss_ce_weight=loss_ce_weight,
             loss_boxes_weight=loss_boxes_weight,
             loss_giou_weight=loss_giou_weight,
+            loss_dice_weight=loss_dice_weight,
+            loss_focal_weight=loss_focal_weight,
             eos_coef=eos_coef,
             losses=losses,
             aux_loss_stage=aux_loss_stage,
@@ -267,9 +261,7 @@ if __name__ == "__main__":
 
     # Logger config
     logging.basicConfig(
-        level=logging.INFO,
-        format="[%(asctime)s][%(levelname)s] %(message)s",
-        datefmt="%d-%m-%y %H:%M:%S",
+        level=logging.INFO, format="[%(asctime)s][%(levelname)s] %(message)s", datefmt="%d-%m-%y %H:%M:%S",
     )
     logger = logging.getLogger("aloception")
 

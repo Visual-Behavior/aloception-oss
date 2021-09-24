@@ -12,6 +12,8 @@ def get_mask_queries(
     device = dec_outputs.device
     if filters is None:
         if matcher is None:
+            if "threshold" not in kwargs:
+                kwargs.update({"threshold": 0.5})
             filters = model.get_outs_filter(m_outputs=m_outputs, **kwargs)
         else:
             nq = dec_outputs.size(1)

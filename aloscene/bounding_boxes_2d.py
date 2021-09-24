@@ -1,16 +1,14 @@
 from __future__ import annotations
 import torch
 from torch import Tensor
-import torchvision
 
-from typing import *
+from typing import Union
 import numpy as np
 import cv2
 
 import aloscene
 from aloscene.renderer import View
 from aloscene.labels import Labels
-import torchvision
 from torchvision.ops.boxes import nms
 
 
@@ -119,13 +117,7 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
         if tensor.boxes_format == "xcyc":
             labels = tensor.drop_labels()
             # Convert from xcyc to xyxy
-            n_tensor = torch.cat(
-                [
-                    tensor[:, :2] - (tensor[:, 2:] / 2),
-                    tensor[:, :2] + (tensor[:, 2:] / 2),
-                ],
-                dim=1,
-            )
+            n_tensor = torch.cat([tensor[:, :2] - (tensor[:, 2:] / 2), tensor[:, :2] + (tensor[:, 2:] / 2)], dim=1,)
             n_tensor.boxes_format = "xyxy"
             n_tensor.set_labels(labels)
             return n_tensor
@@ -135,13 +127,7 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
             labels = tensor.drop_labels()
             tensor.rename_(None)
             # Convert from yxyx to xyxy
-            n_tensor = torch.cat(
-                [
-                    tensor[:, :2].flip([1]),
-                    tensor[:, 2:].flip([1]),
-                ],
-                dim=1,
-            )
+            n_tensor = torch.cat([tensor[:, :2].flip([1]), tensor[:, 2:].flip([1])], dim=1,)
             tensor.reset_names()
             n_tensor.reset_names()
             n_tensor.boxes_format = "xyxy"
@@ -181,13 +167,7 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
             labels = tensor.drop_labels()
             tensor.rename_(None)
             # Convert from xyxy to yxyx
-            yxyx_boxes = torch.cat(
-                [
-                    tensor[:, :2].flip([1]),
-                    tensor[:, 2:].flip([1]),
-                ],
-                dim=1,
-            )
+            yxyx_boxes = torch.cat([tensor[:, :2].flip([1]), tensor[:, 2:].flip([1])], dim=1,)
             yxyx_boxes.reset_names()
             tensor.reset_names()
             yxyx_boxes.boxes_format = "yxyx"
@@ -413,12 +393,12 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
         labels = boxes_abs.labels if isinstance(boxes_abs.labels, aloscene.Labels) else [None] * len(boxes_abs)
         if labels_set is not None and not isinstance(boxes_abs.labels, dict):
             raise Exception(
-                f"Trying to display a set of boxes labels ({labels_set}) while the boxes do not have multiple set of labels"
+                f"Trying to display a boxes labels set ({labels_set}) while boxes do not have multiple set of labels"
             )
         elif labels_set is not None and isinstance(boxes_abs.labels, dict) and labels_set not in boxes_abs.labels:
             raise Exception(
-                f"Trying to display a set of boxes labels ({labels_set}) while the boxes no not have this set. Avaiable set ("
-                + [key for key in boxes_abs.labels]
+                f"Trying to display a boxes labels set ({labels_set}) while boxes do not have this set. Avaiable set ("
+                + f"{[key for key in boxes_abs.labels]}"
                 + ") "
             )
         elif labels_set is not None:
@@ -587,7 +567,8 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
 
         Returns
         -------
-            int64 tensor with the indices of the elements that have been kept by NMS, sorted in decreasing order of scores
+            int64 tensor
+            The indices of the elements that have been kept by NMS, sorted in decreasing order of scores
         """
         nms_boxes = self.xyxy()
 

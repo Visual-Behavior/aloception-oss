@@ -273,6 +273,12 @@ if __name__ == "__main__":
     coco_seg = CocoPanopticDataset(sample=True)
     for f, frames in enumerate(coco_seg.train_loader(batch_size=2)):
         frames = Frame.batch_list(frames)
-        frames.get_view([frames.boxes2d[0].get_view(labels_set="name")]).render()
+        labels_set = "name" if isinstance(frames.boxes2d[0].labels, dict) else None
+        views = [fr.boxes2d.get_view(fr, labels_set=labels_set) for fr in frames]
+        if hasattr(frames, "segmentation"):
+            views += [fr.segmentation.get_view(fr, labels_set=labels_set) for fr in frames]
+        frames.get_view(views).render()
+        # frames.get_view(labels_set=labels_set).render()
+
         if f > 1:
             break

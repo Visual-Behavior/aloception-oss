@@ -15,8 +15,9 @@ def load_trt_plugins_raft():
 
 
 class RaftTRTExporter(BaseTRTExporter):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, iters, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.iters = iters
 
     @staticmethod
     def replace_grid_sampler(graph, node, idx):
@@ -75,7 +76,7 @@ class RaftTRTExporter(BaseTRTExporter):
         frame1 = frame1.as_tensor()
         frame2 = frame2.as_tensor()
         model_inputs = (frame1, frame2)
-        model_kwargs = {"iters": 12, "flow_init": None, "only_last": True, "is_export_onnx": None}
+        model_kwargs = {"iters": self.iters, "flow_init": None, "only_last": True, "is_export_onnx": None}
         return model_inputs, model_kwargs
 
 
@@ -86,10 +87,11 @@ if __name__ == "__main__":
     parser.add_argument(
         "--HW", type=int, nargs=2, default=[368, 496], help="Height and width of input image, default 368, 496"
     )
+    parser.add_argument("--iters", type=int, default=12)
     # parser.add_argument("--precision", choices=["fp16", "fp32"], default="fp32")
     BaseTRTExporter.add_argparse_args(parser)
     kwargs = vars(parser.parse_args())
-    kwargs["onnx_path"] = os.path.join(ALONET_ROOT, "raft-things.onnx")
+    kwargs["onnx_path"] = os.path.join(ALONET_ROOT, f"raft-things_iters{kwargs['iters']}.onnx")
     kwargs["verbose"] = True
     shape = [1, 3] + kwargs.pop("HW")
     i_shapes = (shape, shape)

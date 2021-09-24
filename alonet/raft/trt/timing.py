@@ -107,7 +107,7 @@ if __name__ == "__main__":
     subparsers = parser.add_subparsers(dest="backend")
     torch_parser = subparsers.add_parser("torch")
     trt_parser = subparsers.add_parser("trt")
-    trt_parser.add_argument("precision", choices=["fp16", "fp32"])
+    trt_parser.add_argument("precision", choices=["fp16", "fp32", "mix"])
     trt_parser.add_argument("--engine_path")
     kwargs = vars(parser.parse_args())
     backend = kwargs.pop("backend")

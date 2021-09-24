@@ -20,7 +20,7 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
     is created from a existing tensor or numpy array, the frame dimensions are expected to be ("C", "H", "W").
     If this is not the case, the `names` must be passed to the tensor.
 
-    If your're data is more than 3 dimensional you might need to set the `names` to ("B", "C", "H", "W") for batch
+    If your data is more than 3 dimensional you might need to set the `names` to ("B", "C", "H", "W") for batch
     dimension or ("T", "C", "H", "W") for the temporal dimension, or even ("B", "T", "C", "H", "W") for batch and
     temporal dimension. Checkout the example bellow for an example.
 

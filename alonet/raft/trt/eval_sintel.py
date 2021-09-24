@@ -2,11 +2,13 @@ from torch.utils.data import SequentialSampler
 import numpy as np
 import argparse
 import torch
+import os
 
 from alonet.common.pl_helpers import load_training
 from alodataset import SintelFlowDataset, Split
 from alonet.raft.utils import Padder
 from alonet.raft import LitRAFT
+from alonet import ALONET_ROOT
 from aloscene import Frame
 
 from alonet.raft.trt.timing import load_trt_model
@@ -46,11 +48,27 @@ def load_dataset():
     )
 
 
+def parse_args():
+    parser = argparse.ArgumentParser()
+    subparsers = parser.add_subparsers(dest="backend")
+    torch_parser = subparsers.add_parser("torch")
+    trt_parser = subparsers.add_parser("trt")
+    trt_parser.add_argument("precision", choices=["fp16", "fp32", "mix"])
+    trt_parser.add_argument("--engine_path")
+    return parser.parse_args()
+
+
 if __name__ == "__main__":
 
-    args = parse_args()
-    use_trt = args.backend == "trt"
-    model = load_trt_model() if use_trt else load_torch_model()
+    kwargs = vars(parse_args())
+    backend = kwargs.pop("backend")
+
+    if backend == "trt":
+        precision = kwargs["precision"]
+        engine_path = os.path.join(ALONET_ROOT, f"raft-things_{precision}.engine")
+        model = load_trt_model(engine_path)
+    else:
+        model = load_torch_model()
     dataset = load_dataset()
 
     padder = Padder()  # pads inputs to multiple of 8
@@ -68,9 +86,12 @@ if __name__ == "__main__":
             # frame1 = padder.pad(frame1)
             # frame2 = padder.pad(frame2)
 
-            if use_trt:
+            if backend == "trt":
                 frame1 = frame1.as_tensor().numpy()
                 frame2 = frame2.as_tensor().numpy()
+                if precision == "fp16":
+                    frame1 = frame1.astype(np.float16)
+                    frame2 = frame2.astype(np.float16)
                 flow_pred = model(frame1, frame2)["flow_up"]
             else:
                 frame1 = frame1.to("cuda")

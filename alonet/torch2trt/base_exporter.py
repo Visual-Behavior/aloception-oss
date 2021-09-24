@@ -260,6 +260,8 @@ class BaseTRTExporter:
             help="/path/onnx/will/be/exported. If not defined, this will be set as ~/.aloception/weights/MODEL/MODEL.onnx",
         )
         parser.add_argument("--batch_size", type=int, default=1, help="Engine batch size, default = 1")
-        parser.add_argument("--precision", type=str, default="fp32", help="fp32/fp16/mix, default FP32")
+        parser.add_argument(
+            "--precision", choices=["fp32", "fp16", "mix"], default="fp32", help="fp32/fp16/mix, default FP32"
+        )
         parser.add_argument("--verbose", action="store_true", help="Helpful when debugging")
         return parent_parser

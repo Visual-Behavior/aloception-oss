@@ -86,7 +86,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--HW", type=int, nargs=2, default=[368, 496], help="Height and width of input image, default 368, 496"
     )
-    parser.add_argument("--precision", choices=["fp16", "fp32"], default="fp32")
+    # parser.add_argument("--precision", choices=["fp16", "fp32"], default="fp32")
     BaseTRTExporter.add_argparse_args(parser)
     kwargs = vars(parser.parse_args())
     kwargs["onnx_path"] = os.path.join(ALONET_ROOT, "raft-things.onnx")

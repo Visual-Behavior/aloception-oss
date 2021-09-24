@@ -169,7 +169,7 @@ class DeformableDETR(nn.Module):
             self.to(device)
 
         if weights is not None:
-            if weights is not None and (
+            if (
                 weights in ["deformable-detr-r50", "deformable-detr-r50-refinement"]
                 or ".pth" in weights
                 or ".ckpt" in weights

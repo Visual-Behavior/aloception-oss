@@ -84,7 +84,7 @@ class Detr(nn.Module):
             self.to(device)
 
         if weights is not None:
-            if weights is not None and (weights == "detr-r50" or ".pth" in weights or ".ckpt" in weights):
+            if weights == "detr-r50" or ".pth" in weights or ".ckpt" in weights:
                 alonet.common.load_weights(self, "detr-r50", device, strict_load_weights=strict_load_weights)
             else:
                 raise ValueError(f"Unknown weights: '{weights}'")

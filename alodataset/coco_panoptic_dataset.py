@@ -257,23 +257,23 @@ class CocoPanopticDataset(BaseDataset, SplitMixin):
         boxes_2d = BoundingBoxes2D(
             masks_to_boxes(masks), boxes_format="xyxy", absolute=True, frame_size=frame.HW, names=("N", None),
         )
-        boxes_2d.append_labels(labels_2d, name="name")
+        boxes_2d.append_labels(labels_2d, name="category")
         self._append_type_labels(boxes_2d, labels)
         frame.append_boxes2d(boxes_2d)
 
         if self.return_masks:
             masks_2d = Mask(masks, names=("N", "H", "W"))
-            masks_2d.append_labels(labels_2d, name="name")
+            masks_2d.append_labels(labels_2d, name="category")
             self._append_type_labels(masks_2d, labels)
             frame.append_segmentation(masks_2d)
         return frame
 
 
 if __name__ == "__main__":
-    coco_seg = CocoPanopticDataset(sample=True)
+    coco_seg = CocoPanopticDataset(sample=False)
     for f, frames in enumerate(coco_seg.train_loader(batch_size=2)):
         frames = Frame.batch_list(frames)
-        labels_set = "name" if isinstance(frames.boxes2d[0].labels, dict) else None
+        labels_set = "category" if isinstance(frames.boxes2d[0].labels, dict) else None
         views = [fr.boxes2d.get_view(fr, labels_set=labels_set) for fr in frames]
         if hasattr(frames, "segmentation"):
             views += [fr.segmentation.get_view(fr, labels_set=labels_set) for fr in frames]

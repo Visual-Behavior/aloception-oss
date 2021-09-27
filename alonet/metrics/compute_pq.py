@@ -28,12 +28,13 @@ class PQStatCat(object):
         return self
 
 
-class PQmetrics(object):
+class PQMetrics(object):
     """Compute Panoptic, Segmentation and Recognition Qualities Metrics."""
 
     def __init__(self):
         self.pq_per_cat = defaultdict(PQStatCat)
         self.class_names = None
+        self.categories = dict()
 
     def __getitem__(self, label_id: int):
         return self.pq_per_cat[label_id]
@@ -43,7 +44,7 @@ class PQmetrics(object):
             self.pq_per_cat[label] += pq_stat_cat
         return self
 
-    def init_data_objects(self, class_names: list):
+    def update_data_objects(self, cat_labels: aloscene.Labels, isthing_labels: aloscene.Labels):
         """Init data objects used to compute the PQ metrics given some `class_names` list
 
         Parameters
@@ -51,9 +52,13 @@ class PQmetrics(object):
         class_names: list
             List of class_names to use to init the pq_stat_cat
         """
-        self.class_names = class_names
-        self.categories = {id: {"category": cname, "isthing": True} for id, cname in enumerate(class_names)}  # TODO
-        self.pq_per_cat.fromkeys(range(len(class_names)))
+        self.class_names = cat_labels.labels_names
+        self.categories.update(
+            {
+                id: {"category": self.class_names[id], "isthing": it == 1}
+                for id, it in zip(list(cat_labels.numpy().astype(int)), list(isthing_labels.numpy().astype(int)))
+            }
+        )
 
     def pq_average(self, isthing: bool = None, print_result: bool = False) -> Tuple[Dict, Dict]:
         """Calculate SQ, RQ and PQ metrics from the categories, and thing/stuff/all if desired
@@ -77,7 +82,7 @@ class PQmetrics(object):
         per_class_results = {}
         for label, label_info in self.categories.items():
             if isthing is not None:
-                cat_isthing = label_info["isthing"] == 1
+                cat_isthing = label_info["isthing"]
                 if isthing != cat_isthing:
                     continue
             iou = self.pq_per_cat[label].iou
@@ -85,13 +90,13 @@ class PQmetrics(object):
             fp = self.pq_per_cat[label].fp
             fn = self.pq_per_cat[label].fn
             if tp + fp + fn == 0:
-                per_class_results[label] = {"pq": 0.0, "sq": 0.0, "rq": 0.0}
+                per_class_results[label_info["category"]] = {"pq": 0.0, "sq": 0.0, "rq": 0.0}
                 continue
             n += 1
             pq_class = iou / (tp + 0.5 * fp + 0.5 * fn)
             sq_class = iou / tp if tp != 0 else 0
             rq_class = tp / (tp + 0.5 * fp + 0.5 * fn)
-            per_class_results[label] = {"pq": pq_class, "sq": sq_class, "rq": rq_class}
+            per_class_results[label_info["category"]] = {"pq": pq_class, "sq": sq_class, "rq": rq_class}
             pq += pq_class
             sq += sq_class
             rq += rq_class
@@ -101,7 +106,9 @@ class PQmetrics(object):
             self.print_map(result, per_class_results)
         return result, per_class_results
 
-    def add_sample(self, p_mask: aloscene.Mask, t_mask: aloscene.Mask):
+    def add_sample(
+        self, p_mask: aloscene.Mask, t_mask: aloscene.Mask, **kwargs,
+    ):
         """Add a new prediction and target masks to PQ metrics estimation process
 
         Parameters
@@ -116,21 +123,19 @@ class PQmetrics(object):
         Exception
             p_mask and t_mask must be an aloscene.Mask object, and must have labels attribute
         """
-        assert isinstance(p_mask, aloscene.Mask)
-        assert isinstance(t_mask, aloscene.Mask)
-        assert isinstance(p_mask.labels, aloscene.Labels)
-        assert isinstance(t_mask.labels, aloscene.Labels)
-        assert isinstance(p_mask.labels.scores, torch.Tensor)
-        assert hasattr(t_mask.labels, "labels_names")
+        assert isinstance(p_mask, aloscene.Mask) and isinstance(t_mask, aloscene.Mask)
+        assert isinstance(p_mask.labels, aloscene.Labels) and isinstance(t_mask.labels, dict)
+        assert "category" in t_mask.labels and "isthing" in t_mask.labels
+        assert hasattr(t_mask.labels["category"], "labels_names") and hasattr(t_mask.labels["isthing"], "labels_names")
+        assert len(t_mask.labels["category"]) == len(t_mask.labels["isthing"])
 
         p_mask = p_mask.to(torch.device("cpu"))
         t_mask = t_mask.to(torch.device("cpu"))
 
-        if self.class_names is None:
-            self.class_names = t_mask.labels.labels_names
+        self.update_data_objects(t_mask.labels["category"], t_mask.labels["isthing"])
 
-        pan_pred = p_mask.masks2panoptic()
-        pan_gt = t_mask.masks2panoptic()
+        pan_pred = p_mask.mask2id()
+        pan_gt = t_mask.mask2id(labels_set="category")
 
         # ground truth segments area calculation
         gt_segms = {}
@@ -167,17 +172,20 @@ class PQmetrics(object):
         matched = set()
         for label_tuple, intersection in gt_pred_map.items():
             gt_label, pred_label = label_tuple
+            if gt_label not in gt_segms:
+                continue
+            if pred_label not in pred_segms:
+                continue
             if gt_label != pred_label:
                 continue
-
             union = pred_segms[pred_label] + gt_segms[gt_label] - intersection - gt_pred_map.get((VOID, pred_label), 0)
             iou = intersection / union
-            if iou > 0.5:
+            if iou > 0.5:  # Add matches from this IoU (take from original paper)
                 self.pq_per_cat[gt_label].tp += 1
                 self.pq_per_cat[gt_label].iou += iou
                 matched.add(pred_label)
 
-        # count false positives
+        # count false negative
         for gt_label in gt_segms:
             if gt_label in matched:
                 continue
@@ -195,16 +203,13 @@ class PQmetrics(object):
             self.pq_per_cat[pred_label].fp += 1
 
     def calc_map(self, print_result: bool = False):
-        if print_result:
-            print("TOTAL PQ: ")
-        pq_total, _ = self.pq_average(None, print_result)
-        if print_result:
-            print("THINGS PQ: ")
-        pq_things, _ = self.pq_average(True, print_result)
-        if print_result:
-            print("TOTAL PQ: ")
-        pq_stuff, _ = self.pq_average(False, print_result)
-        return pq_total, pq_things, pq_stuff
+        all_maps = dict()
+        all_maps_per_class = dict()
+        for key, cat in zip(["all", "thing", "stuff"], [None, True, False]):
+            if print_result:
+                print(f"PQmetrics for {key}: ")
+            all_maps[key], all_maps_per_class[key] = self.pq_average(cat, print_result)
+        return all_maps, all_maps_per_class
 
     @staticmethod
     def print_map(average_pq: Dict, pq_per_class: Dict):  # TODO

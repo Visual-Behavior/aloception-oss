@@ -1,139 +1,23 @@
-import pytorch_lightning as pl
-import aloscene
-import alonet
 import matplotlib.pyplot as plt
 from pytorch_lightning.utilities import rank_zero_only
 from alonet.common.logger import log_figure, log_scalar
 
-# import wandb
+from alonet.metrics import ApMetrics
+from alonet.callbacks import BaseMetricsCallback
 
 
-class ApMetricsCallback(pl.Callback):
+class ApMetricsCallback(BaseMetricsCallback):
     def __init__(self, *args, **kwargs):
-        self.ap_metrics = []
-        super().__init__(*args, **kwargs)
-
-    def inference(self, pl_module: pl.LightningModule, m_outputs: dict, **kwargs):
-        b_pred_masks = None
-        if "pred_masks" in m_outputs:
-            b_pred_boxes, b_pred_masks = pl_module.inference(m_outputs, **kwargs)
-        else:
-            b_pred_boxes = pl_module.inference(m_outputs, **kwargs)
-        if not isinstance(m_outputs, list):
-            b_pred_boxes = [b_pred_boxes]
-            b_pred_masks = [b_pred_masks]
-        return b_pred_boxes, b_pred_masks
-
-    @rank_zero_only
-    def on_validation_batch_end(
-        self,
-        trainer: pl.Trainer,
-        pl_module: pl.LightningModule,
-        outputs: dict,
-        batch: list,
-        batch_idx: int,
-        dataloader_idx: int,
-    ):
-        """Method call after each validation batch. This class is a pytorch lightning callback, therefore
-        this method will by automaticly call by pl.
-
-        This method will call the `infernece` method of the module's model and will expect to receive the
-        predicted boxes2D. Theses boxes will be aggregate to compute the AP metrics in the `on_validation_end` method.
-        The infernece method will be call using the `m_outputs` key from the outputs dict. If `m_outputs` is a list,
-        then the list will be consider as an temporal list. Therefore, this callback will aggregate the predicted boxes
-        for each element of the sequence and will log the final results with the timestep prefix val/t/ instead of
-        simply /val/
-
-        Parameters
-        ----------
-        trainer: pl.Trainer
-            Pytorch lightning trainer
-        pl_module: pl.LightningModule
-            Pytorch lightning module. The "m_outputs" key is expected for this this callback to work properly.
-        outputs:
-            Training/Validation step outputs of the pl.LightningModule class.
-        batch: list
-            Batch comming from the dataloader. Usually, a list of frame.
-        batch_idx: int
-            Id the batch
-        dataloader_idx: int
-            Dataloader batch ID.
-        """
-        if isinstance(batch, list):  # Resize frames for mask procedure
-            batch = batch[0].batch_list(batch)
-
-        b_pred_boxes, b_pred_masks = self.inference(pl_module, outputs["m_outputs"])
-        is_temporal = isinstance(outputs["m_outputs"], list)
-        for b, (t_pred_boxes, t_pred_masks) in enumerate(zip(b_pred_boxes, b_pred_masks)):
-
-            # Retrieve the matching GT boxes at the same time step
-            t_gt_boxes = batch[b].boxes2d
-            t_gt_masks = batch[b].segmentation
-
-            if not is_temporal:
-                t_gt_boxes = [t_gt_boxes]
-                t_gt_masks = [t_gt_masks]
-
-            if t_pred_masks is None:
-                t_pred_masks = [None] * len(t_gt_masks)
-
-            # Add the samples to to the AP metrics for each batch of the current sequence
-            for t, (gt_boxes, pred_boxes, gt_masks, pred_masks) in enumerate(
-                zip(t_gt_boxes, t_pred_boxes, t_gt_masks, t_pred_masks)
-            ):
-                if t + 1 > len(self.ap_metrics):
-                    self.ap_metrics.append(alonet.metrics.ApMetrics())
-                self.add_sample(self.ap_metrics[t], pred_boxes, gt_boxes, pred_masks, gt_masks)
-
-    @rank_zero_only
-    def add_sample(
-        self,
-        ap_metrics: alonet.metrics.ApMetrics,
-        pred_boxes: aloscene.BoundingBoxes2D,
-        gt_boxes: aloscene.BoundingBoxes2D,
-        pred_masks: aloscene.Mask = None,
-        gt_masks: aloscene.Mask = None,
-    ):
-        """Add a smple to some `alonet.metrics.ApMetrics()` class. One might want to inhert this method
-        to edit the `pred_boxes` and `gt_boxes` boxes before to add them to the ApMetrics class.
-
-        Parameters
-        ----------
-        ap_metrics: alonet.metrics.ApMetrics
-            ApMetrics intance.
-        pred_boxes: aloscene.BoundingBoxes2D
-            Predicted boxes2D.
-        gt_boxes: aloscene.BoundingBoxes2D
-            GT boxes2d.
-        pred_masks: aloscene.Mask
-            Predicted Masks for segmentation task
-        gt_masks: aloscene.Mask
-            GT masks in segmentation task.
-        """
-        ap_metrics.add_sample(pred_boxes, gt_boxes, pred_masks, gt_masks)
+        super().__init__(*args, base_metric=ApMetrics, **kwargs)
 
     @rank_zero_only
     def on_validation_end(self, trainer, pl_module):
-        """Method call at the end of each validation epoch. The method will use all the aggregate
-        data over the epoch to log the final metrics on wandb.
-        This class is a pytorch lightning callback, therefore this method will by automaticly call by pl.
-
-        This method is currently a WIP since some metrics are not logged due to some wandb error when loading
-        Table.
-
-        Parameters
-        ----------
-        trainer: pl.Trainer
-            Pytorch lightning trainer
-        pl_module: pl.LightningModule
-            Pytorch lightning module
-        """
         if trainer.logger is None:
             return
 
-        for t, ap_metrics in enumerate(self.ap_metrics):
+        for t, ap_metrics in enumerate(self.metrics):
 
-            prefix = f"val/{t}/" if len(self.ap_metrics) > 1 else "val/"
+            prefix = f"val/{t}/" if len(self.metrics) > 1 else "val/"
             # step = trainer.global_step
 
             (
@@ -260,4 +144,4 @@ class ApMetricsCallback(pl.Callback):
             log_scalar(trainer, f"{prefix}map_bbox", all_maps["box"]["all"])
             log_scalar(trainer, f"{prefix}map_mask", all_maps["mask"]["all"])
 
-        self.ap_metrics = []
+        self.metrics = []

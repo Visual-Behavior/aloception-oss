@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict, List, Union
 import torch
 
 import aloscene
@@ -7,13 +7,32 @@ import aloscene
 def get_mask_queries(
     frames: aloscene.frame, m_outputs: Dict, model: torch.nn, matcher: torch.nn = None, filters: List = None, **kwargs
 ):
+    """Mask process filter throught matcher or our_filter function
 
+    Parameters
+    ----------
+    frames : aloscene.frame
+        Input frames
+    m_outputs : Dict
+        Forward output
+    model : torch.nn
+        model with inference function
+    matcher : torch.nn, optional
+        Matcher between GT and pred elements, by default None
+    filters : List, optional
+        Boolean mask for each batch, by default None
+
+    Returns
+    -------
+    torch.Tensor, List
+        Mask reduced from (M,H,W) to (N,H,W) with boolean mask per batch (M >= N)
+    """
     dec_outputs = m_outputs["dec_outputs"][-1]
     device = dec_outputs.device
     if filters is None:
         if matcher is None:
             if "threshold" not in kwargs:
-                kwargs.update({"threshold": 0.5})
+                kwargs.update({"threshold": 0.85})  # Take from original paper
             filters = model.get_outs_filter(m_outputs=m_outputs, **kwargs)
         else:
             nq = dec_outputs.size(1)
@@ -31,3 +50,31 @@ def get_mask_queries(
         for b, (idx, fs) in enumerate(zip(filters, fsizes))
     ]
     return torch.cat(dec_outputs, dim=0), filters
+
+
+def get_base_model_frame(frames: Union[list, aloscene.Frame], cat: str = "category") -> aloscene.Frame:
+    """Get frames with correct labels for criterion process
+
+    Parameters
+    ----------
+    frames : aloscene.Frame
+        frames to set labels
+
+    Returns
+    -------
+    aloscene.Frame
+        frames with correct set of labels
+    """
+    if isinstance(frames, list):
+        frames = aloscene.Frame.batch_list(frames)
+
+    frames = frames.clone()
+
+    def criterion(b):
+        b.labels = b.labels[cat]
+
+    if isinstance(frames.boxes2d[0].labels, dict):
+        frames.apply_on_label(frames.boxes2d, criterion)
+    if isinstance(frames.segmentation[0].labels, dict):
+        frames.apply_on_label(frames.segmentation, criterion)
+    return frames

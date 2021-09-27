@@ -1,15 +1,11 @@
 import torch
 import pytorch_lightning as pl
 import wandb
-from typing import *
+from typing import Union
 import aloscene
-import alodataset
-import alonet
 from pytorch_lightning.utilities import rank_zero_only
 
 import numpy as np
-import matplotlib.pyplot as plt
-from pytorch_lightning.loggers import WandbLogger, TensorBoardLogger
 from alonet.common.logger import log_image
 
 
@@ -156,8 +152,8 @@ class ObjectDetectorCallback(pl.Callback):
             frame = frame.permute([1, 2, 0]).contiguous().numpy()
 
             # Get panoptic view
-            target_masks = target_masks.masks2panoptic()
-            p_mask = p_mask.masks2panoptic()
+            target_masks = target_masks.mask2id()
+            p_mask = p_mask.mask2id()
             target_masks[target_masks == -1] = len(labels_names)  # Background N/A
             p_mask[p_mask == -1] = len(labels_names)  # Background N/A
             target_masks = target_masks.astype(np.uint8)

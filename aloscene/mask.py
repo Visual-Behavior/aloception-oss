@@ -45,7 +45,7 @@ class Mask(aloscene.tensors.SpatialAugmentedTensor):
         """
         self._append_label("labels", labels, name)
 
-    def iou_with(self, mask2) -> torch.Tensor:
+    def iou_with(self, mask2, threshold=0.5) -> torch.Tensor:
         """ IoU calculation between mask2 and itself
 
         Parameters
@@ -64,9 +64,9 @@ class Mask(aloscene.tensors.SpatialAugmentedTensor):
             return torch.rand(0, len(mask2))
         elif len(mask2) == 0:
             return torch.rand(len(self), 0)
-        mask1 = self.flatten(["H", "W"], "features").rename(None)  # (N, f=WxH)
-        mask2 = mask2.flatten(["H", "W"], "features").rename(None)  # (M, f=WxH)
-        assert mask1.size[-1] == mask2.shape[-1]
+        mask1 = self.flatten(["H", "W"], "features").rename(None)  # Binary mask (N, f=WxH)
+        mask2 = mask2.flatten(["H", "W"], "features").rename(None)  # Binary mask (M, f=WxH)
+        assert mask1.shape[-1] == mask2.shape[-1]
         intersection = mask1.matmul(mask2.transpose(0, 1))  # (N, M)
         mask1, mask2 = mask1.sum(-1, keepdim=True), mask2.sum(-1, keepdim=True)
         union = mask1.repeat(1, len(mask2)) + mask2.transpose(0, 1)  # (N, M)
@@ -97,7 +97,7 @@ class Mask(aloscene.tensors.SpatialAugmentedTensor):
         """
         from aloscene import Frame
 
-        if not (isinstance(self.labels, aloscene.Labels) or isinstance(self.labels, dict)):
+        if not isinstance(self.labels, (aloscene.Labels, dict)):
             return super().get_view(size=size, frame=frame, **kwargs)
 
         if frame is not None:
@@ -116,9 +116,9 @@ class Mask(aloscene.tensors.SpatialAugmentedTensor):
             frame = 0.4 * frame + 0.6 * masks
         return View(frame, **kwargs)
 
-    def __get_view__(self, labels_set: str = None, title: str = None):
+    def __get_view__(self, labels_set: str = None, title: str = None, **kwargs):
         """Create a view of the frame"""
-        frame, annotations = self.masks2id(labels_set=labels_set, return_ann=True)
+        frame, annotations = self.mask2id(labels_set=labels_set, return_ann=True)
         # Frame construction by segmentation masks
         if self.labels is not None and len(self) > 0:
             frame = self.GLOBAL_COLOR_SET[frame]
@@ -137,7 +137,7 @@ class Mask(aloscene.tensors.SpatialAugmentedTensor):
             )
         return View(frame, title=title)
 
-    def masks2id(self, labels_set: str = None, return_ann: bool = False):
+    def mask2id(self, labels_set: str = None, return_ann: bool = False):
         """Create a panoptic view of the frame, where each pixel represent one class
 
         Parameters
@@ -164,12 +164,13 @@ class Mask(aloscene.tensors.SpatialAugmentedTensor):
 
             frame = np.concatenate([np.zeros_like(frame[..., [0]]), frame], axis=-1)  # Add background class with ID=-1
             frame = np.argmax(frame, axis=-1).astype("int") - 1  # Get one mask by ID
+            copy_frame = frame.copy()
 
             for i, label in enumerate(labels):  # Add ID in text and use same color by object ID
                 # Change ID if labels are defined
                 if label is not None:
                     label = int(label)
-                    frame[frame == i] = label
+                    copy_frame[frame == i] = label
 
                     if return_ann:
                         feat = self[i].cpu().detach().contiguous().numpy()  # Get i_mask
@@ -180,8 +181,8 @@ class Mask(aloscene.tensors.SpatialAugmentedTensor):
                         text = str(label) if labels.labels_names is None else labels.labels_names[label]
                         annotations.append({"color": (0, 0, 0), "x": int(x), "y": int(y), "text": text})
         if return_ann:
-            return frame, annotations
-        return frame
+            return copy_frame, annotations
+        return copy_frame
 
     def _get_set_labels(self, labels_set: str = None):
         if not (labels_set is None or isinstance(self.labels, dict)):

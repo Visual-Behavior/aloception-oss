@@ -1,4 +1,4 @@
-from alonet.detr_panoptic.utils import get_mask_queries
+from alonet.detr_panoptic.utils import get_mask_queries, get_base_model_frame
 import alonet
 import aloscene
 
@@ -47,25 +47,8 @@ class LitPanopticDetr(alonet.detr.LitDetr):
         return parent_parser
 
     def training_step(self, frames, batch_idx):
-        """Train the model for one step
-
-        Parameters
-        ----------
-        frames: list | aloscene.Frame
-            List of aloscene.Frame without batch dimension or a Frame with the batch dimension
-        batch_idx: int
-            Batch id given by Lightning
-
-        Returns
-        -------
-        outptus: dict
-            dict with the `loss` to optimize and the `metrics` to log.
-        """
-        # Batch list of frame if needed
-        if isinstance(frames, list):
-            frames = aloscene.Frame.batch_list(frames)
-
-        # Assert inputs content
+        # Get correct set of labels and assert inputs content
+        frames = get_base_model_frame(frames)
         self.assert_input(frames)
         get_filter_fn = lambda *args, **kwargs: get_mask_queries(
             *args, model=self.model.detr, matcher=self.matcher, **kwargs
@@ -78,6 +61,11 @@ class LitPanopticDetr(alonet.detr.LitDetr):
         outputs.update({"metrics": losses})
         outputs.update({"m_outputs": m_outputs})
         return outputs
+
+    def validation_step(self, frames, batch_idx):
+        # Get correct set of labels
+        frames = get_base_model_frame(frames)
+        return super().validation_step(frames, batch_idx)
 
     def build_model(self, num_classes=250, aux_loss=True, weights=None):
         """Build model with default parameters"""
@@ -128,8 +116,9 @@ class LitPanopticDetr(alonet.detr.LitDetr):
             val_frames=next(iter(data_loader.val_dataloader()))
         )
         metrics_callback = alonet.callbacks.MetricsCallback()
-        ap_metrics_callback = alonet.callbacks.ApMetricsCallback()
-        return [obj_detection_callback, metrics_callback, ap_metrics_callback]
+        ap_metrics_callback = alonet.detr_panoptic.PanopticApMetricsCallbacks()
+        pq_metrics_callback = alonet.callbacks.PQMetricsCallback()
+        return [obj_detection_callback, metrics_callback, ap_metrics_callback, pq_metrics_callback]
 
     def run_train(self, data_loader, args, project="panoptic-detr", expe_name=None, callbacks: list = None):
         expe_name = expe_name or self.model_name

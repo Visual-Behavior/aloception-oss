@@ -63,7 +63,7 @@ class PanopticHead(nn.Module):
 
         # Use values provides of DETR module in MHA and FPN
         hidden_dim, nheads = DETR_module.transformer.d_model, DETR_module.transformer.nhead
-        self.bbox_attention = MHAttentionMap(hidden_dim, hidden_dim, nheads, dropout=0.0)
+        self.bbox_attention = MHAttentionMap(hidden_dim, hidden_dim, nheads, dropout=0.1)
         self.mask_head = FPNstyleCNN(hidden_dim + nheads, [1024, 512, 256], hidden_dim)
 
         if device is not None:
@@ -159,7 +159,10 @@ class PanopticHead(nn.Module):
             outputs_masks = F.interpolate(outputs_masks, size=frame_size, mode="bilinear", align_corners=False)
         else:
             outputs_masks = outputs_masks.view(outputs_masks.shape[0], 0, *frame_size)
-        outputs_masks = (outputs_masks.sigmoid() > maskth).type(torch.long)
+
+        # Keep high scores for one-hot encoding
+        # outputs_masks = (outputs_masks.sigmoid() > maskth).type(torch.long)
+        outputs_masks = F.threshold(outputs_masks.sigmoid(), maskth, 0.0)
 
         # Transform predictions in aloscene.Mask
         preds_masks = []
@@ -167,13 +170,24 @@ class PanopticHead(nn.Module):
         for boxes, masks, b_filter, m_filter in zip(
             preds_boxes, outputs_masks, filters, forward_out["pred_masks_info"]["filters"]
         ):
+            # One shot encoding, to keep the high score class
+            masks = torch.cat([zero_masks.unsqueeze(0), masks], dim=0)  # Add zero mask to null result
+            onehot_masks = torch.zeros_like(masks)
+            onehot_masks.scatter_(0, masks.argmax(dim=0, keepdim=True), 1)
+            masks = onehot_masks[1:].type(torch.long)  # Remove layer added
+
             # Boxes/masks alignment
-            masks = {im.cpu().item(): masks[i] for i, im in enumerate(torch.where(m_filter)[0]) if b_filter[im]}
+            align_masks = []
+            m_filter = torch.where(m_filter)[0]
             for ib in torch.where(b_filter)[0]:
-                if ib.cpu().item() not in masks:
-                    masks[ib] = zero_masks.clone()
-            if len(masks) > 0:
-                masks = torch.stack([m[1] for m in sorted(masks.items(), key=lambda x: x[0])], dim=0)
+                im = (ib == m_filter).nonzero()
+                if im.numel() > 0:
+                    align_masks.append(masks[im.item()])
+                else:
+                    align_masks.append(zero_masks)
+
+            if len(align_masks) > 0:
+                masks = torch.stack(align_masks, dim=0)
             else:
                 masks = zero_masks[[]].view(0, *frame_size)
 
@@ -200,7 +214,7 @@ if __name__ == "__main__":
     # frame.get_view().render()
 
     # Pred of size (B, NQ, H//4, W//4)
-    foutputs = model(frame, threshold=0.0, background_class=250)
+    foutputs = model(frame, threshold=0.5, background_class=250)
     print(foutputs["pred_masks"].shape)
     boxes, pred = model.inference(foutputs)
     print("size of each pred:", [len(p) for p in pred])

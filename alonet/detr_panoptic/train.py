@@ -88,7 +88,7 @@ class LitPanopticDetr(alonet.detr.LitDetr):
     def build_criterion(
         self,
         matcher=None,
-        loss_dice_weight=5,
+        loss_dice_weight=2,
         loss_focal_weight=2,
         loss_ce_weight=1,
         loss_boxes_weight=5,

@@ -246,50 +246,36 @@ class DetrCriterion(nn.Module):
 
         losses = {}
         if num_boxes == 0 or outputs["pred_masks"].numel() == 0:
-            print("sikas")
             return {
                 "loss_DICE": torch.tensor(0.0, device=frames.device, requires_grad=True),
                 "loss_focal": torch.tensor(0.0, device=frames.device, requires_grad=True),
             }
 
-        target_masks = torch.cat(
-            [
-                # Select masks per batch following the `target_indices` from the Hungarian matching
-                masks.as_tensor()[indices[b][1]]
-                for b, masks in enumerate(frames.segmentation)
-            ],
-            dim=0,
-        )
-
         # Masks resize
-        outputs_masks = F.interpolate(
-            outputs["pred_masks"], size=target_masks.shape[-2:], mode="bilinear", align_corners=False
-        )
+        fr_shape = frames.shape[-2:]  # (H,W)
+        outputs_masks = F.interpolate(outputs["pred_masks"], size=fr_shape, mode="bilinear", align_corners=False)
 
         # Masks alignment with indices
-        pred_masks = []
-        zero_masks = torch.zeros_like(target_masks[0:1])
-        for masks, m_filters, b_index in zip(outputs_masks, outputs["pred_masks_info"]["filters"], indices):
-            m_index = torch.where(m_filters)[0].cpu()
-            b_index = b_index[0].cpu()
-            masks = {ib.item(): masks[ib == m_index] for ib in b_index if ib in m_index}
+        pred_masks, target_masks = [], []
+        zero_masks = torch.zeros_like(frames[0][0:1]).as_tensor()
+        for gt_masks, p_masks, m_filters, b_index in zip(
+            frames.segmentation, outputs_masks, outputs["pred_masks_info"]["filters"], indices
+        ):
+            # Get pred_masks by indices matcher and append zero mask if it is necessary
+            m_index = torch.where(m_filters)[0]
+            for ib in b_index[0].to(m_index.device):
+                im = (ib == m_index).nonzero()
+                if im.numel() > 0:
+                    im = im.item()
+                    pred_masks.append(p_masks[im : im + 1])
+                else:
+                    pred_masks.append(zero_masks)
 
-            for ib in b_index:
-                ib = ib.item()
-                if ib not in masks:
-                    masks[ib] = zero_masks.clone()
-            if len(masks) > 0:
-                masks = torch.cat([m[1] for m in sorted(masks.items(), key=lambda x: x[0])], dim=0)
-            else:
-                masks = zero_masks[[]].view(0, *target_masks.shape[-2:])
-
-            pred_masks.append(masks)
-
-        pred_masks = torch.cat(pred_masks, dim=0)
+            target_masks.append(gt_masks.as_tensor()[b_index[1]])
 
         # Reshape for loss process
-        pred_masks = pred_masks.flatten(1)
-        target_masks = target_masks.flatten(1).view(pred_masks.shape)
+        pred_masks = torch.cat(pred_masks, dim=0).flatten(1)
+        target_masks = torch.cat(target_masks, dim=0).flatten(1).view(pred_masks.shape)
 
         # DICE/F-1 loss
         losses["loss_DICE"] = dice_loss(pred_masks, target_masks, num_boxes)

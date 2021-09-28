@@ -133,6 +133,8 @@ class CocoDetectionDataset(BaseDataset, CocoDetectionSample):
             ids = []
             for i in self.ids:
                 target = CocoDetectionSample._load_target(self, i)
+                if stuff_ann_file is not None:
+                    target += self.coco_stuff.loadAnns(self.coco_stuff.getAnnIds(i))
                 if any([self._ids_renamed[bbox["category_id"]] >= 0 for bbox in target]):
                     ids.append(i)
             self.ids = ids  # Remove images without bboxes with classes in classes list
@@ -182,6 +184,9 @@ class CocoDetectionDataset(BaseDataset, CocoDetectionSample):
             idxs = np.where(new_labels >= 0)[0]
             target["boxes"] = target["boxes"][idxs]
             target["labels"] = torch.from_numpy(new_labels[idxs])
+
+            if self.prepare.return_masks:
+                target["masks"] = target["masks"][idxs]
 
         labels_2d = Labels(
             target["labels"].to(torch.float32), labels_names=self.label_names, names=("N"), encoding="id"

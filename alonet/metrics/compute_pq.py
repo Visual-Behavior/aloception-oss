@@ -103,7 +103,12 @@ class PQMetrics(object):
 
         result = {"pq": pq / n, "sq": sq / n, "rq": rq / n, "n": n}
         if print_result:
-            self.print_map(result, per_class_results)
+            suffix = ""
+            if isthing is not None and isthing:
+                suffix = "th"
+            elif isthing is not None and not isthing:
+                suffix = "st"
+            self.print_map(result, per_class_results, suffix=suffix)
         return result, per_class_results
 
     def add_sample(
@@ -155,18 +160,19 @@ class PQMetrics(object):
             assert label < len(self.class_names)
             pred_segms[label] = label_cnt  # Get area for each class
 
-        # confusion matrix calculation
-        aux_off = VOID if VOID < 0 else 0
-        pan_gt = pan_gt - aux_off
-        pan_pred = pan_pred - aux_off
-
-        pan_gt_pred = pan_gt.astype(np.uint64) * OFFSET + pan_pred.astype(np.uint64)
+        # confusion matrix calculation if not empty views
         gt_pred_map = {}
-        labels, labels_cnt = np.unique(pan_gt_pred, return_counts=True)
-        for label, intersection in zip(labels, labels_cnt):
-            gt_id = label // OFFSET + aux_off
-            pred_id = label % OFFSET + aux_off
-            gt_pred_map[(gt_id, pred_id)] = intersection
+        if len(gt_segms) > 0 and len(pred_segms) > 0:
+            aux_off = VOID if VOID < 0 else 0
+            pan_gt = pan_gt - aux_off
+            pan_pred = pan_pred - aux_off
+
+            pan_gt_pred = pan_gt.astype(np.uint64) * OFFSET + pan_pred.astype(np.uint64)
+            labels, labels_cnt = np.unique(pan_gt_pred, return_counts=True)
+            for label, intersection in zip(labels, labels_cnt):
+                gt_id = label // OFFSET + aux_off
+                pred_id = label % OFFSET + aux_off
+                gt_pred_map[(gt_id, pred_id)] = intersection
 
         # count all matched pairs
         matched = set()
@@ -205,15 +211,58 @@ class PQMetrics(object):
     def calc_map(self, print_result: bool = False):
         all_maps = dict()
         all_maps_per_class = dict()
-        for key, cat in zip(["all", "thing", "stuff"], [None, True, False]):
-            if print_result:
-                print(f"PQmetrics for {key}: ")
-            all_maps[key], all_maps_per_class[key] = self.pq_average(cat, print_result)
+        for key, cat in zip(["stuff", "thing", "all"], [False, True, None]):
+            if cat is not None:
+                all_maps[key], all_maps_per_class[key] = self.pq_average(cat, print_result)
+            else:
+                all_maps[key], all_maps_per_class[key] = self.pq_average(cat)
+
+        if print_result:
+            self.print_head()
+            self.print_body(all_maps["all"], {})
+
         return all_maps, all_maps_per_class
 
+    def print_map(self, average_pq: Dict, pq_per_class: Dict, suffix: str = ""):
+        self.print_head(suffix)
+        self.print_body(average_pq, pq_per_class)
+
     @staticmethod
-    def print_map(average_pq: Dict, pq_per_class: Dict):  # TODO
-        print("AVERAGE PQ:")
-        print(average_pq)
-        print("PQ PER CLASS:")
-        print(pq_per_class)
+    def print_head(suffix: str = ""):
+        make_row = lambda vals: (" %5s |" * len(vals)) % tuple(vals)
+        make_sep = lambda n: ("-------+" * (n + 1))
+
+        print()
+        print(make_sep(5))
+        print(" " * 23 + "|" + make_row([v + suffix for v in ["PQ", "SQ", "RQ"]]))
+        print(make_sep(5))
+
+    @staticmethod
+    def print_body(average_pq: Dict, pq_per_class: Dict):
+        make_row = lambda vals: (" %5s |" * len(vals)) % tuple(vals)
+        make_sep = lambda n: ("-------+" * (n + 1))
+
+        for cat, metrics in pq_per_class.items():
+            print(
+                make_row(
+                    [
+                        cat[:21] if len(cat) > 20 else cat + " " * (21 - len(cat)),
+                        "%.3f" % metrics["pq"],
+                        "%.3f" % metrics["sq"],
+                        "%.3f" % metrics["rq"],
+                    ]
+                )
+            )
+        print(make_sep(5))
+        n = "%d" % average_pq["n"]
+        print(
+            make_row(
+                [
+                    "total = %s" % n + " " * (13 - len(n)),
+                    "%.3f" % average_pq["pq"],
+                    "%.3f" % average_pq["sq"],
+                    "%.3f" % average_pq["rq"],
+                ]
+            )
+        )
+        print(make_sep(5))

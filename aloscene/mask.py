@@ -170,7 +170,7 @@ class Mask(aloscene.tensors.SpatialAugmentedTensor):
                 # Change ID if labels are defined
                 if label is not None:
                     label = int(label)
-                    copy_frame[frame == i] = label
+                    frame[copy_frame == i] = label
 
                     if return_ann:
                         feat = self[i].cpu().detach().contiguous().numpy()  # Get i_mask
@@ -181,8 +181,8 @@ class Mask(aloscene.tensors.SpatialAugmentedTensor):
                         text = str(label) if labels.labels_names is None else labels.labels_names[label]
                         annotations.append({"color": (0, 0, 0), "x": int(x), "y": int(y), "text": text})
         if return_ann:
-            return copy_frame, annotations
-        return copy_frame
+            return frame, annotations
+        return frame
 
     def _get_set_labels(self, labels_set: str = None):
         if not (labels_set is None or isinstance(self.labels, dict)):

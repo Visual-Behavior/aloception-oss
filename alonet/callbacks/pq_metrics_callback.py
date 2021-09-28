@@ -18,7 +18,7 @@ class PQMetricsCallback(BaseMetricsCallback):
         for t, pq_metrics in enumerate(self.metrics):
 
             prefix = f"val/{t}/" if len(self.metrics) > 1 else "val/"
-            all_maps, all_maps_per_class = pq_metrics.calc_map(print_result=True)
+            all_maps, all_maps_per_class = pq_metrics.calc_map(print_result=False)
 
             log_scalar(trainer, f"{prefix}PQ", all_maps["all"]["pq"])
             log_scalar(trainer, f"{prefix}SQ", all_maps["all"]["sq"])

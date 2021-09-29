@@ -84,7 +84,11 @@ def add_argparse_args(parent_parser, add_pl_args=True, mode="training"):
 
 
 def load_training(
-    lit_model_class, args: Namespace = None, run_id: str = None, project_run_id: str = None, **kwargs,
+    lit_model_class,
+    args: Namespace = None,
+    run_id: str = None,
+    project_run_id: str = None,
+    **kwargs,
 ):
     """Load training"""
     run_id = args.run_id if run_id is None and "run_id" in args else run_id
@@ -108,6 +112,8 @@ def load_training(
             lit_model = lit_model_class.load_from_checkpoint(weights_path, strict=strict, args=args, **kwargs)
         else:
             raise Exception(f"Impossible to load the weights at the following destination:{weights_path}")
+    elif args.no_run_id:
+        lit_model = lit_model_class(args=args, **kwargs)
     else:
         raise Exception("--run_id (optionally --project_run_id) must be given to load the experiment.")
 

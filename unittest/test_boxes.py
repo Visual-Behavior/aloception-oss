@@ -304,15 +304,18 @@ def test_padded_boxes():
     boxes_rel_padded = boxes_rel.pad(offset_y=(0, 1.0), offset_x=(0, 3.0), pad_boxes=False)
 
     assert boxes_abs_padded.frame_size == (80, 80)
-    assert boxes_abs_padded.padded_size == (80 * 2, 80 * 4)
+
+    assert boxes_abs_padded.padded_size == ((0, 80 * 1), (0, 80 * 3))
     assert boxes_rel_padded.frame_size == None
-    assert boxes_rel_padded.padded_size == (200, 400)
+    print(boxes_rel_padded.padded_size)
+    assert boxes_rel_padded.padded_size == ((0, 1.0), (0, 3.0))
 
     boxes_abs_padded = boxes_abs_padded.pad(offset_y=(0, 1.0), offset_x=(0, 1.0), pad_boxes=False)
     boxes_rel_padded = boxes_rel_padded.pad(offset_y=(0, 1.0), offset_x=(0, 1.0), pad_boxes=False)
 
     assert boxes_abs_padded.frame_size == (80, 80)
-    assert boxes_abs_padded.padded_size == (80 * 2 * 2, 80 * 4 * 2)
+    print(boxes_abs_padded.padded_size)
+    assert boxes_abs_padded.padded_size == ((0, 80 * 3), (0, 80 * 7))
     assert boxes_rel_padded.frame_size == None
     assert boxes_rel_padded.padded_size == (400, 800)
 

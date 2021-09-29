@@ -54,6 +54,7 @@ class DeformableDETR(nn.Module):
         activation_fn: str = "sigmoid",
         return_intermediate_dec: bool = True,
         strict_load_weights: bool = True,
+        tracing=False,
     ):
         """Initializes the model.
 
@@ -95,6 +96,10 @@ class DeformableDETR(nn.Module):
         self.return_intermediate_dec = return_intermediate_dec
         self.hidden_dim = transformer.d_model
         self.return_dec_outputs = return_dec_outputs
+        self.tracing = tracing
+
+        if self.tracing and aux_loss is True:
+            raise Exception("Can't use aux_loss=True when tracking. Pleaset set aux_loss=False")
 
         if activation_fn not in ["sigmoid", "softmax"]:
             raise Exception(f"activation_fn = {activation_fn} must be one of this two values: 'sigmoid' or 'softmax'.")
@@ -243,7 +248,12 @@ class DeformableDETR(nn.Module):
 
         query_embeds = self.query_embed.weight
         transformer_outptus = self.transformer(srcs, masks, pos, query_embeds, **kwargs)
-        return self.forward_heads(transformer_outptus)
+
+        forward_head = self.forward_heads(transformer_outptus)
+        if not self.tracing:
+            return forward_head
+        else:
+            return forward_head["pred_logits"], forward_head["pred_boxes"]
 
     def forward_position_heads(self, transformer_outptus):
         hs = transformer_outptus["hs"]
@@ -299,8 +309,9 @@ class DeformableDETR(nn.Module):
         out = {
             "pred_logits": outputs_class[self.num_decoder_layers - 1],
             "pred_boxes": outputs_coord[self.num_decoder_layers - 1],
-            "activation_fn": self.activation_fn,
         }
+        if not self.tracing:
+            out["activation_fn"] = self.activation_fn
 
         if self.aux_loss:
             out["aux_outputs"] = self._set_aux_loss(outputs_class, outputs_coord, activation_fn=out["activation_fn"])

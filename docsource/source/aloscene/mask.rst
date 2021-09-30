@@ -2,7 +2,7 @@ Mask
 ----
 
 The aloscene :attr:`Mask` object represents a binary or float mask. It can be used to represent different objects,
-for example occlusions mask for flow and disparity use cases.
+for example occlusions mask for flow and disparity use cases, or binary masks for segmentation tasks
 
 .. note::
 

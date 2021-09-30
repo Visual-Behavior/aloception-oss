@@ -1,16 +1,27 @@
+"""DETR model, that use the parameters of original DETR-R50 architecture."""
 import time
-import torchvision
 import argparse
 import torch
 
 from alonet.detr import Detr
 import aloscene
 import alonet
-from alonet.detr.misc import assert_and_export_onnx
 
 
 class DetrR50(Detr):
-    """DETR R50 as described in the paper: https://arxiv.org/abs/2005.12872"""
+    """DETR R50 as described in the paper: https://arxiv.org/abs/2005.12872
+
+    Parameters
+    ----------
+    num_classes : int, optional
+        Neuron number in embed layer, by default 91
+    background_class : int, optional
+        Id use for background class, by default 91
+    *args : Namespace
+        Positional arguments (see `Detr <detr>` class)
+    **kwargs: Dict
+        Additional parameters (see `Detr <detr>` class)
+    """
 
     def __init__(self, *args, num_classes=91, background_class=91, **kwargs):
         # Positional encoding

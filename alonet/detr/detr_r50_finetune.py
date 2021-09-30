@@ -1,5 +1,5 @@
-"""Module to create a custom :mod:`DetrR50 <alonet.detr.detr_r50>` model which allows to upload a decided pretrained weights
-and change the `class_embed` layer in order to train custom classes.
+"""Module to create a custom :mod:`DetrR50 <alonet.detr.detr_r50>` model which allows to upload a decided pretrained
+weights and change the `class_embed` layer in order to train custom classes.
 """
 
 from alonet.detr import DetrR50

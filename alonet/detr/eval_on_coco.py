@@ -1,21 +1,9 @@
-import os
-import torch
-from torch import nn
-import torch.nn.functional as F
-
 from argparse import ArgumentParser
+import torch
 
-import pytorch_lightning as pl
-import wandb
-
-from typing import *
-
-from alonet.callbacks import MetricsCallback
 from alonet.detr import CocoDetection2Detr
-from alonet.detr import DetrObjectDetectorCallback
 from alonet.detr import LitDetr
 
-import alodataset
 import aloscene
 import alonet
 

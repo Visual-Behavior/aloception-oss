@@ -1,6 +1,6 @@
 # Inspired by the official DETR repository and adapted for aloception
 """
-DETR model and criterion classes.
+End-to-End Object Detection with Transformers (DETR) model.
 """
 import torch
 import torch.nn.functional as F

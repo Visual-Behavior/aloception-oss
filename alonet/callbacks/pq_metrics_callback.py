@@ -1,3 +1,9 @@
+"""Callback that stores samples in each step to calculate the different Panoptic Quality metrics
+
+See Also
+--------
+    :mod:`PQMetrics <alonet.metrics.compute_pq>`, the specific metric implement in this callback
+"""
 import matplotlib.pyplot as plt
 from pytorch_lightning.utilities import rank_zero_only
 from alonet.common.logger import log_figure, log_scalar

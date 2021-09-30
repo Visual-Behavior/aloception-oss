@@ -1,10 +1,76 @@
+"""Compute Panoptic, Segmentation and Recognition Qualities Metrics.
+
+Examples
+--------
+.. code-block:: python
+
+    import torch
+
+    from alodataset import CocoPanopticDataset, Split
+    from alonet.detr_panoptic import LitPanopticDetr
+    from alonet.metrics import PQMetrics
+
+    from aloscene import Frame
+
+    device = torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")
+
+    # Model/Dataset definition to evaluate
+    dataset = CocoPanopticDataset(split=Split.VAL)
+    model = LitPanopticDetr(weights = "detr-r50-panoptic").model
+    model.eval().to(device)
+
+    # Metric to develop
+    metric = PQMetrics()
+
+    for frame in dataset.stream_loader():
+        # Frame to batch
+        frame = Frame.batch_list([frame]).to(device)
+
+        # Masks inference and get GT from frame
+        _, pred_masks = model.inference(model(frame))
+        pred_masks = pred_masks[0] # Predictions of the first batch
+        gt_masks = frame[0].segmentation  # GT of first batch
+
+        # Add samples to evaluate metrics
+        metric.add_sample(p_mask=pred_masks, t_mask=gt_masks)
+
+    # Print results
+    metric.calc_map(print_result=True)
+
+.. list-table:: Summary of expected result
+    :widths: 15 15 10 10 10
+    :header-rows: 1
+    :align: center
+
+    * - Category
+      - Total cat.
+      - PQ
+      - SQ
+      - RQ
+    * - Things
+      - 80
+      - 0.557
+      - 0.803
+      - 0.685
+    * - Stuff
+      - 53
+      - 0.370
+      - 0.784
+      - 0.463
+    * - All
+      - 133
+      - 0.483
+      - 0.795
+      - 0.596
+"""
+
 # Inspired by the official panopticapi and adapted for aloception
 # https://github.com/cocodataset/panopticapi/blob/master/panopticapi/evaluation.py
 
 import numpy as np
 import torch
 from collections import defaultdict
-from typing import Dict, Tuple
+from typing import Dict
 
 import aloscene
 
@@ -13,8 +79,9 @@ OFFSET = 256 * 256 * 256
 
 
 class PQStatCat(object):
+    """Keep TP, FP, FN and IoU metrics per class"""
+
     def __init__(self):
-        """Keep TP, FP, FN and IoU metrics per class"""
         self.iou = 0.0
         self.tp = 0
         self.fp = 0
@@ -29,8 +96,6 @@ class PQStatCat(object):
 
 
 class PQMetrics(object):
-    """Compute Panoptic, Segmentation and Recognition Qualities Metrics."""
-
     def __init__(self):
         self.pq_per_cat = defaultdict(PQStatCat)
         self.class_names = None
@@ -45,12 +110,14 @@ class PQMetrics(object):
         return self
 
     def update_data_objects(self, cat_labels: aloscene.Labels, isthing_labels: aloscene.Labels):
-        """Init data objects used to compute the PQ metrics given some `class_names` list
+        """Update data objects categories, appending new categories from each sample
 
         Parameters
         ----------
-        class_names: list
-            List of class_names to use to init the pq_stat_cat
+        cat_labels : :mod:`Labels <aloscene.labels>`
+            Categories labels to append
+        isthing_labels : :mod:`Labels <aloscene.labels>`
+            Description of thing/stuff labels to append
         """
         self.class_names = cat_labels.labels_names
         self.categories.update(
@@ -60,16 +127,14 @@ class PQMetrics(object):
             }
         )
 
-    def pq_average(self, isthing: bool = None, print_result: bool = False) -> Tuple[Dict, Dict]:
+    def pq_average(self, isthing: bool = None, print_result: bool = False):
         """Calculate SQ, RQ and PQ metrics from the categories, and thing/stuff/all if desired
 
         Parameters
         ----------
-        categories : Dict
-            Dictionary with information of if one category is 'thing' or 'stuff'
         isthing : bool
             Calculate metrics for the 'thing' category (if it True) or 'stuff' category (if it False).
-            By default the procedure is executed over both
+            By default the metric is executed over both
         print_result : bool
             Print result in console, by default False
 
@@ -108,7 +173,7 @@ class PQMetrics(object):
                 suffix = "th"
             elif isthing is not None and not isthing:
                 suffix = "st"
-            self.print_map(result, per_class_results, suffix=suffix)
+            _print_map(result, per_class_results, suffix=suffix)
         return result, per_class_results
 
     def add_sample(
@@ -118,15 +183,17 @@ class PQMetrics(object):
 
         Parameters
         ----------
-        p_mask : aloscene.Mask
+        p_mask : :mod:`Mask <aloscene.mask>`
             Predicted masks by network inference
-        t_mask : aloscene.Mask
+        t_mask : :mod:`Mask <aloscene.mask>`
             Target masks with labels and labels_names properties
 
         Raises
         ------
         Exception
-            p_mask and t_mask must be an aloscene.Mask object, and must have labels attribute
+            :attr:`p_mask` and :attr:`t_mask` must be an :mod:`Mask <aloscene.mask>` object and have the same shapes,
+            as well as must have labels attribute. Finally, :attr:`t_mask` must have two minimal labels:
+            :attr:`category` and :attr:`isthing`
         """
         assert isinstance(p_mask, aloscene.Mask) and isinstance(t_mask, aloscene.Mask)
         assert isinstance(p_mask.labels, aloscene.Labels) and isinstance(t_mask.labels, dict)
@@ -209,6 +276,19 @@ class PQMetrics(object):
             self.pq_per_cat[pred_label].fp += 1
 
     def calc_map(self, print_result: bool = False):
+        """Calcule PQ-RQ-SQ maps
+
+        Parameters
+        ----------
+        print_result : bool, optional
+            Print results, by default False
+
+        Returns
+        -------
+        Tuple[Dict,Dict]
+            - Summary with all maps result (average)
+            - Summary with all maps result per class
+        """
         all_maps = dict()
         all_maps_per_class = dict()
         for key, cat in zip(["stuff", "thing", "all"], [False, True, None]):
@@ -218,51 +298,52 @@ class PQMetrics(object):
                 all_maps[key], all_maps_per_class[key] = self.pq_average(cat)
 
         if print_result:
-            self.print_head()
-            self.print_body(all_maps["all"], {})
+            _print_head()
+            _print_body(all_maps["all"], {})
 
         return all_maps, all_maps_per_class
 
-    def print_map(self, average_pq: Dict, pq_per_class: Dict, suffix: str = ""):
-        self.print_head(suffix)
-        self.print_body(average_pq, pq_per_class)
 
-    @staticmethod
-    def print_head(suffix: str = ""):
-        make_row = lambda vals: (" %5s |" * len(vals)) % tuple(vals)
-        make_sep = lambda n: ("-------+" * (n + 1))
+def _print_map(average_pq: Dict, pq_per_class: Dict, suffix: str = ""):
+    _print_head(suffix)
+    _print_body(average_pq, pq_per_class)
 
-        print()
-        print(make_sep(5))
-        print(" " * 23 + "|" + make_row([v + suffix for v in ["PQ", "SQ", "RQ"]]))
-        print(make_sep(5))
 
-    @staticmethod
-    def print_body(average_pq: Dict, pq_per_class: Dict):
-        make_row = lambda vals: (" %5s |" * len(vals)) % tuple(vals)
-        make_sep = lambda n: ("-------+" * (n + 1))
+def _print_head(suffix: str = ""):
+    make_row = lambda vals: (" %5s |" * len(vals)) % tuple(vals)
+    make_sep = lambda n: ("-------+" * (n + 1))
 
-        for cat, metrics in pq_per_class.items():
-            print(
-                make_row(
-                    [
-                        cat[:21] if len(cat) > 20 else cat + " " * (21 - len(cat)),
-                        "%.3f" % metrics["pq"],
-                        "%.3f" % metrics["sq"],
-                        "%.3f" % metrics["rq"],
-                    ]
-                )
-            )
-        print(make_sep(5))
-        n = "%d" % average_pq["n"]
+    print()
+    print(make_sep(5))
+    print(" " * 23 + "|" + make_row([v + suffix for v in ["PQ", "SQ", "RQ"]]))
+    print(make_sep(5))
+
+
+def _print_body(average_pq: Dict, pq_per_class: Dict):
+    make_row = lambda vals: (" %5s |" * len(vals)) % tuple(vals)
+    make_sep = lambda n: ("-------+" * (n + 1))
+
+    for cat, metrics in pq_per_class.items():
         print(
             make_row(
                 [
-                    "total = %s" % n + " " * (13 - len(n)),
-                    "%.3f" % average_pq["pq"],
-                    "%.3f" % average_pq["sq"],
-                    "%.3f" % average_pq["rq"],
+                    cat[:21] if len(cat) > 20 else cat + " " * (21 - len(cat)),
+                    "%.3f" % metrics["pq"],
+                    "%.3f" % metrics["sq"],
+                    "%.3f" % metrics["rq"],
                 ]
             )
         )
-        print(make_sep(5))
+    print(make_sep(5))
+    n = "%d" % average_pq["n"]
+    print(
+        make_row(
+            [
+                "total = %s" % n + " " * (13 - len(n)),
+                "%.3f" % average_pq["pq"],
+                "%.3f" % average_pq["sq"],
+                "%.3f" % average_pq["rq"],
+            ]
+        )
+    )
+    print(make_sep(5))

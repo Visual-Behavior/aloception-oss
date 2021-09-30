@@ -9,3 +9,10 @@ AP Metrics
    :undoc-members:
    :show-inheritance:
 
+PQ Metrics
+----------------------------------
+
+.. automodule:: alonet.metrics.compute_pq
+   :members:
+   :undoc-members:
+   :show-inheritance:

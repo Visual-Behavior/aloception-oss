@@ -1,3 +1,4 @@
+"""Callback for any object detection training that use :mod:`Frame <aloscene.frame>` as GT. """
 import torch
 import pytorch_lightning as pl
 import wandb
@@ -10,19 +11,16 @@ from alonet.common.logger import log_image
 
 
 class ObjectDetectorCallback(pl.Callback):
-    """Callback for any object detection training that use
-    alonet.Frames as GT.
+    """The callback load frames every x training step as well as once every validation step on the given
+    :attr:`val_frames` and log the different objects predicted
+
+    Parameters
+    ----------
+    val_frames : Union[list, :mod:`Frames <aloscene.frame>`]
+        List of sample from the validation set to use to load the validation progress
     """
 
     def __init__(self, val_frames: Union[list, aloscene.Frame]):
-        """The callback load frames every x training step as well as once
-        every validation step on the given `val_frames`
-
-        Parameters
-        ----------
-        val_frames: list | alonet.Frame
-            List of sample from the validation set to use to load the validation progress
-        """
         super().__init__()
         # Batch list of frame if needed
         if isinstance(val_frames, list):
@@ -34,11 +32,11 @@ class ObjectDetectorCallback(pl.Callback):
 
         Parameters
         ----------
-        frames: list of aloscene.Frame
+        frames : list of :mod:`~aloscene.frame`
             Frame with GT boxes2d attached
-        preds_boxes: list of aloscene.BoundingBoxes2D
+        preds_boxes : list of :mod:`BoundingBoxes2D <aloscene.bounding_boxes_2d>`
             A set of predicted boxes2d
-        trainer: pl.trainer.trainer.Trainer
+        trainer : pl.trainer.trainer.Trainer
             Lightning trainer
         """
         images = []
@@ -93,9 +91,9 @@ class ObjectDetectorCallback(pl.Callback):
 
         Parameter:
         ----------
-        frames: aloscene.Frame
+        frames : :mod:`~aloscene.frame`
             Frame with GT boxes2d attached
-        preds_boxes: aloscene.BoundingBoxes3D
+        preds_boxes : :mod:`BoundingBoxes3D <aloscene.bounding_boxes_3d>`
             A set of predicted boxes3d
         trainer: pl.trainer.trainer.Trainer
             Lightning trainer
@@ -123,11 +121,11 @@ class ObjectDetectorCallback(pl.Callback):
 
         Parameters
         ----------
-        frames: list of aloscene.Frame
+        frames : list of :mod:`~aloscene.frame`
             Frame with GT masks attached
-        preds_masks: list of aloscene.Mask
+        preds_masks : list of :mod:`Mask <aloscene.mask>`
             A set of predicted segmentation masks
-        trainer: pl.trainer.trainer.Trainer
+        trainer : pl.trainer.trainer.Trainer
             Lightning trainer
         """
         images = []
@@ -170,11 +168,9 @@ class ObjectDetectorCallback(pl.Callback):
         log_image(trainer, name, images)
 
     def on_train_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx):
-        """ """
         if trainer.logger is None:
             return
         raise Exception("To inhert in a child class")
-        pass
 
     @rank_zero_only
     def on_validation_epoch_end(self, trainer, pl_module):

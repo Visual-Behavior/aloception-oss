@@ -46,7 +46,7 @@ def main():
 
     ap_metrics = alonet.metrics.ApMetrics()
 
-    for it, data in enumerate(coco_loader.val_dataloader(limit=None, sampler=torch.utils.data.SequentialSampler)):
+    for it, data in enumerate(coco_loader.val_dataloader(sampler=torch.utils.data.SequentialSampler)):
         frame = aloscene.Frame.batch_list(data)
         frame = frame.to(device)
 

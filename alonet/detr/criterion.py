@@ -1,3 +1,8 @@
+"""This class computes the loss for :mod:`DETR <alonet.detr.detr>`. The process happens in two steps:
+
+1) We compute hungarian assignment between ground truth boxes and the outputs of the model
+2) We supervise each pair of matched ground-truth / prediction (supervise class and box).
+"""
 import torch
 from torch import nn
 
@@ -6,18 +11,19 @@ import torch.nn.functional as F
 import aloscene
 
 
-def dice_loss(inputs: torch.Tensor, targets: torch.Tensor, num_boxes: int) -> torch.Tensor:
+def dice_loss(inputs: torch.Tensor, targets: torch.Tensor, num_boxes: int):
     """Compute the DICE loss, similar to generalized IOU for masks
 
     Parameters
     ----------
-    inputs : [type]
+    inputs : torch.Tensor
         A float tensor of arbitrary shape. The predictions for each example.
-    targets : [type]
+    targets : torch.Tensor
         A float tensor with the same shape as inputs. Stores the binary classification label for each element in inputs
         (0 for the negative class and 1 for the positive class).
-    num_boxes : [type]
+    num_boxes : int
         Number of boxes
+
     Returns
     -------
     torch.Tensor
@@ -33,17 +39,17 @@ def dice_loss(inputs: torch.Tensor, targets: torch.Tensor, num_boxes: int) -> to
 
 def sigmoid_focal_loss(
     inputs: torch.Tensor, targets: torch.Tensor, num_boxes: int, alpha: float = 0.25, gamma: float = 2
-) -> torch.Tensor:
+):
     """Loss used in RetinaNet for dense detection: https://arxiv.org/abs/1708.02002.
 
     Parameters
     ----------
-    inputs : [type]
+    inputs : torch.Tensor
         A float tensor of arbitrary shape. The predictions for each example.
-    targets : [type]
+    targets : torch.Tensor
         A float tensor with the same shape as inputs. Stores the binary classification label for each element in inputs
         (0 for the negative class and 1 for the positive class).
-    num_boxes : [type]
+    num_boxes : int
         Number of boxes
     alpha : float, optional
         (optional) Weighting factor in range (0,1) to balance positive vs negative examples, by default 0.25
@@ -68,10 +74,30 @@ def sigmoid_focal_loss(
 
 
 class DetrCriterion(nn.Module):
-    """This class computes the loss for DETR.
-    The process happens in two steps:
-    1) we compute hungarian assignment between ground truth boxes and the outputs of the model
-    2) we supervise each pair of matched ground-truth / prediction (supervise class and box)"""
+    """
+    Parameters
+    ----------
+    num_classes: int
+        number of object categories, omitting the special no-object category
+    matcher: nn.Module
+        module able to compute a matching between targets and proposed boxes
+    loss_ce_weight: float
+        Cross entropy class weight
+    loss_boxes_weight: float
+        Boxes loss l1 weight
+    loss_giou_weight: float
+        Boxes loss GIOU
+    loss_dice_weight: float
+        DICE/F-1 loss weight use in masks_loss
+    loss_focal_weight: float
+        Focal loss weight use in masks_loss
+    eos_coef: float
+        relative classification weight applied to the no-object category
+    aux_loss_stage:
+        Number of auxialiry stage
+    losses: list
+        list of all the losses to be applied. See get_loss for list of available losses.
+    """
 
     def __init__(
         self,
@@ -85,31 +111,6 @@ class DetrCriterion(nn.Module):
         aux_loss_stage: int,
         losses: list,
     ):
-        """Create the criterion.
-
-        Parameters
-        ----------
-        num_classes: int
-            number of object categories, omitting the special no-object category
-        matcher: nn.Module
-            module able to compute a matching between targets and proposed boxes
-        loss_ce_weight: float
-            Cross entropy class weight
-        loss_boxes_weight: float
-            Boxes loss l1 weight
-        loss_giou_weight: float
-            Boxes loss GIOU
-        loss_dice_weight: float
-            DICE/F-1 loss weight use in masks_loss
-        loss_focal_weight: float
-            Focal loss weight use in masks_loss
-        eos_coef: float
-            relative classification weight applied to the no-object category
-        aux_loss_stage:
-            Number of auxialiry stage
-        losses: list
-            list of all the losses to be applied. See get_loss for list of available losses.
-        """
         super().__init__()
         self.matcher = matcher
         self.eos_coef = eos_coef
@@ -135,13 +136,13 @@ class DetrCriterion(nn.Module):
 
         Parameters
         ----------
-        outputs: dict
+        outputs : dict
             Detr model forward outputs
-        frames: aloscene.Frane
-            Trgat frame with boxes2d and labels
-        indices: list
+        frames : :mod:`Frames <aloscene.frame>`
+            Target frame with boxes2d and labels
+        indices : list
             List of tuple with predicted indices and target indices
-        num_boxes: torch.Tensor
+        num_boxes : torch.Tensor
             Number of total target boxes
         """
         assert frames.names[0] == "B"
@@ -177,13 +178,13 @@ class DetrCriterion(nn.Module):
 
         Parameters
         ----------
-        outputs: dict
+        outputs : dict
             Detr model forward outputs
-        frames: aloscene.Frane
-            Trgat frame with boxes2d and labels
-        indices: list
+        frames : :mod:`Frames <aloscene.frame>`
+            Target frame with boxes2d and labels
+        indices : list
             List of tuple with predicted indices and target indices
-        num_boxes: torch.Tensor
+        num_boxes : torch.Tensor
             Number of total target boxes
         """
         losses = {}
@@ -220,20 +221,18 @@ class DetrCriterion(nn.Module):
 
         return losses
 
-    def loss_masks(
-        self, outputs: dict, frames: aloscene.Frame, indices: list, num_boxes: torch.Tensor, **kwargs
-    ) -> dict:
-        """Compute the losses related to the bounding boxes, the L1 regression loss and the GIoU loss
+    def loss_masks(self, outputs: dict, frames: aloscene.Frame, indices: list, num_boxes: torch.Tensor, **kwargs):
+        """Compute the losses related to the masks, used sigmoid focal and DICE/F-1 losses
 
         Parameters
         ----------
-        outputs: dict
+        outputs : dict
             Detr model forward outputs
-        frames: aloscene.Frane
-            Trgat frame with boxes2d and labels
-        indices: list
+        frames : :mod:`Frames <aloscene.frame>`
+            Target frame with boxes2d and labels
+        indices : list
             List of tuple with predicted indices and target indices
-        num_boxes: torch.Tensor
+        num_boxes : torch.Tensor
             Number of total target boxes
 
         Returns
@@ -299,15 +298,15 @@ class DetrCriterion(nn.Module):
 
         Parameters
         ----------
-        loss: str
+        loss : str
             Name of the loss to compute
-        outputs: dict
+        outputs : dict
             Detr model forward outputs
-        frames: aloscene.Frane
+        frames : :mod:`Frames <aloscene.frame>`
             Trgat frame with boxes2d and labels
-        indices: list
+        indices : list
             List of tuple with predicted indices and target indices
-        num_boxes: torch.Tensor
+        num_boxes : torch.Tensor
             Number of total target boxes
 
         Returns
@@ -325,13 +324,13 @@ class DetrCriterion(nn.Module):
 
         Parameters
         ----------
-        outputs: dict
+        outputs : dict
             Detr model forward outputs
-        frames: aloscene.Frane
+        frames : :mod:`Frames <aloscene.frame>`
             Trgat frame with boxes2d and labels
-        indices: list
+        indices : list
             List of tuple with predicted indices and target indices
-        num_boxes: torch.Tensor
+        num_boxes : torch.Tensor
             Number of total target boxes
 
         Returns
@@ -345,10 +344,15 @@ class DetrCriterion(nn.Module):
             - true_neg:  Among the negative predictions of the model, how much are really negative ?
             - slot_true_neg: Among all the negative slot, how may are predicted as negative ? (class invariant)
 
-        One important thing: The metrics described above do not reflect directly the true performance of the model.
-        The are only directly corredlated with the loss & the hungarian used to train the model. Therefore, the
-        computed recall, is NOT the recall, is not the true recall but the recall based on the SLOT & the hungarian
-        choice. That being said, it is still a usefull information to monitor the training progress.
+        Notes
+        -----
+        .. important::
+
+            The metrics described above do not reflect directly the true performance of the model.
+            The are only directly corredlated with the loss & the hungarian used to train the model. Therefore, the
+            computed recall, is NOT the recall, is not the true recall but the recall based on the SLOT & the hungarian
+            choice. That being said, it is still a usefull information to monitor the training progress.
+
         """
         metrics = {}
         if num_boxes == 0:
@@ -433,18 +437,19 @@ class DetrCriterion(nn.Module):
 
         Parameters
         ----------
-        outputs: dict
+        outputs : dict
             Detr model forward outputs
-        frames: aloscene.Frane
-            Trgat frame with boxes2d and labels
-        indices: list
+        frames : :mod:`Frames <aloscene.frame>`
+            Target frame with boxes2d and labels
+        indices : list
             List of tuple with predicted indices and target indices
-        num_boxes: torch.Tensor
+        num_boxes : torch.Tensor
             Number of total target boxes
 
         Returns
         -------
-        metrics: dict
+        dict
+            Metrics
         """
         if num_boxes == 0:
             return {}
@@ -502,10 +507,17 @@ class DetrCriterion(nn.Module):
         ----------
         outputs: dict
             Dict of tensors, see the output specification of the model for the format
-        targets: aloscene.Frame
-            ...
+        targets: Frame
+            Target frames
         compute_statistical_metrics: bool
-            Whether to compute statistical data bout the model outputs/inputs. (False by default)
+            Whether to compute statistical data bout the model outputs/inputs, by default False
+
+        Returns
+        -------
+        torch.tensor
+            Total loss as weighting of losses
+        dict
+            Individual losses
         """
         assert isinstance(frames, aloscene.Frame)
         assert isinstance(frames.boxes2d[0], aloscene.BoundingBoxes2D)

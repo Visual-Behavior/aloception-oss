@@ -1,8 +1,21 @@
-"""`Pytorch Lightning Data Module <https://pytorch-lightning.readthedocs.io/en/latest/extensions/datamodules.html>`_
-connector between dataset and model. Load train/val/test sets and make the preprocessing required for use by the
-architecture. Make the connection between :mod:`~alodataset.CocoPanopticDataset` and
-:mod:`~alonet.panoptic.LitPanopticDetr` modules. See :mod:`~alonet.detr.Data2Detr` to see all information
-about the methods.
+"""LightningDataModule that make the connection between :mod:`CocoPanopticDataset <alodataset.coco_panoptic_dataset>`
+and :mod:`LitPanopticDetr <alonet.detr_panoptic.train>` modules. See
+:mod:`Data2Detr <alonet.detr.data_modules.data2detr>` to more information about the methods and configurations.
+
+Examples
+--------
+.. code-block:: python
+
+    from alonet.detr import CocoPanoptic2Detr
+    from aloscene import Frame
+
+    datamodule = CocoPanoptic2Detr(sample = True)
+
+    train_frame = next(iter(datamodule.train_dataloader()))
+    train_frame = Frame.batch_list(train_frame).get_view().render()
+
+    val_frame = next(iter(datamodule.val_dataloader()))
+    val_frame = Frame.batch_list(val_frame).get_view().render()
 """
 
 from typing import Optional
@@ -13,6 +26,14 @@ import alodataset
 
 class CocoPanoptic2Detr(Data2Detr):
     def setup(self, stage: Optional[str] = None):
+        """:attr:`train_dataset` and :attr:`val_dataset` datasets setup, follow the parameters used
+        in class declaration. Also, set :attr:`label_names` attribute.
+
+        Parameters
+        ----------
+        stage : str, optional
+            Stage either `fit`, `validate`, `test` or `predict`, by default None
+        """
         if stage == "fit" or stage is None:
             # Setup train/val loaders
             self.train_dataset = alodataset.CocoPanopticDataset(

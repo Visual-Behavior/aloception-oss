@@ -26,6 +26,53 @@ class CocoDetectionSample(CocoDetection):
 
 
 class CocoDetectionDataset(BaseDataset, CocoDetectionSample):
+    """
+    Attributes
+    ----------
+    label_names : list
+        List of labels according to their corresponding positions
+    prepare : :mod:`BaseDataset <base_dataset>`
+
+    Parameters
+    ----------
+    img_folder : str
+        Path to the image folder relative at `dataset_dir` (stored into the aloception config file)
+    ann_file : str
+        Path to the annotation file relative at `dataset_dir` (stored into the aloception config file)
+    name : str, optional
+        Key of database name in `alodataset_config.json` file, by default *coco*
+    return_masks : bool, optional
+        Include masks labels in the output, by default False
+    classes : list, optional
+        List of classes to be filtered in the annotation reading process, by default None
+    fix_classes_len : int, optional
+        Fix to a specific number the number of classes, filling the rest with "N/A" value.
+        Use when the number of model outputs does not match with the number of classes in the dataset,
+        by default None
+    stuff_ann_file: str, optional
+        Additional annotations with new classes, by default None
+    **kwargs : dict
+        :mod:`BaseDataset <base_dataset>` optional parameters
+
+    Raises
+    ------
+    Exception
+        If a classes list is decided, each label must be inside of :attr:`label_names` list attribute
+    ValueError
+        If fix_classes_len is desired, fix_classes_len > len(label_names)
+
+    Examples
+    --------
+        >>> coco_ds = CocoDetectionDataset(
+        ... img_folder = "val2017",
+        ... ann_file = "annotations/instances_val2017.json",
+        ... mode = "validation"
+        )
+        >>> frames = next(iter(coco_ds.train_loader()))
+        >>> frames = frames[0].batch_list(frames)
+        >>> frames.get_view(frames.boxes2d,).render()
+    """
+
     def __init__(
         self,
         img_folder: str = None,
@@ -37,53 +84,6 @@ class CocoDetectionDataset(BaseDataset, CocoDetectionSample):
         stuff_ann_file: str = None,
         **kwargs,
     ):
-        """
-        Attributes
-        ----------
-        label_names : list
-            List of labels according to their corresponding positions
-        prepare : :mod:`BaseDataset <base_dataset>`
-
-        Parameters
-        ----------
-        img_folder : str
-            Path to the image folder relative at `dataset_dir` (stored into the aloception config file)
-        ann_file : str
-            Path to the annotation file relative at `dataset_dir` (stored into the aloception config file)
-        name : str, optional
-            Key of database name in `alodataset_config.json` file, by default *coco*
-        return_masks : bool, optional
-            Include masks labels in the output, by default False
-        classes : list, optional
-            List of classes to be filtered in the annotation reading process, by default None
-        fix_classes_len : int, optional
-            Fix to a specific number the number of classes, filling the rest with "N/A" value.
-            Use when the number of model outputs does not match with the number of classes in the dataset,
-            by default None
-        stuff_ann_file: str, optional
-            Additional annotations with new classes, by default None
-        **kwargs : dict
-            :mod:`BaseDataset <base_dataset>` optional parameters
-
-        Raises
-        ------
-        Exception
-            If a classes list is decided, each label must be inside of :attr:`label_names` list attribute
-        ValueError
-            If fix_classes_len is desired, fix_classes_len > len(label_names)
-
-        Examples
-        --------
-            >>> coco_ds = CocoDetectionDataset(
-            ... img_folder = "val2017",
-            ... ann_file = "annotations/instances_val2017.json",
-            ... mode = "validation"
-            )
-            >>> frames = next(iter(coco_ds.train_loader()))
-            >>> frames = frames[0].batch_list(frames)
-            >>> frames.get_view(frames.boxes2d,).render()
-        """
-
         if "sample" not in kwargs:
             kwargs["sample"] = False
 

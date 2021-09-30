@@ -89,7 +89,7 @@ class ObjectDetectorCallback(pl.Callback):
     ):
         """Given a frames and predicted boxes3d, this method will log the images into wandb
 
-        Parameter:
+        Parameters
         ----------
         frames : :mod:`~aloscene.frame`
             Frame with GT boxes2d attached

@@ -1,6 +1,21 @@
 Models
 ======
 
+Panoptic Head is a pytorch module that implements a network to connect with the output of a
+:doc:`Detr-based model <detr_models>`. This new module is able to predict a segmentation features, represented by
+a binary mask for each object predicted by :doc:`Detr model <detr_models>`.
+
+.. figure:: ../images/panoptic_head.png
+  :width: 100%
+  :alt: Panoptic Head model
+  :class: with-shadow
+
+  Block diagram of panoptic head model, taken from
+  `End-to-End Object Detection with Transformers <https://arxiv.org/pdf/2005.12872.pdf>`_ paper
+
+.. seealso::
+   :doc:`Mask </aloscene/mask>` object to know the data representation of predictions.
+
 Basic usage
 --------------------
 

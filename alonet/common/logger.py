@@ -3,6 +3,7 @@ from pytorch_lightning.loggers import TensorBoardLogger, WandbLogger
 import warnings
 import numpy as np
 import wandb
+from alodataset.utils.panoptic_utils import id2rgb
 
 
 def boxes_to_wandb_boxes(boxes: aloscene.BoundingBoxes2D, labels_names: list = None):
@@ -110,16 +111,22 @@ def log_image(trainer, key, images):
         for i, image_obj in enumerate(images):
             batch_el_key = f"{key}_{i}"
             image = image_obj["image"]
-            boxes = image_obj["boxes"]
+            boxes = None if "boxes" not in image_obj else image_obj["boxes"]
+            masks = None if "masks" not in image_obj else image_obj["masks"]
 
+            if boxes is None and masks is None:
+                trainer.logger.experiment.add_image(batch_el_key, image, trainer.global_step)
+
+            if masks is not None:
+                for m in masks:
+                    img = (id2rgb(m["masks"]) * 0.8 + image * 0.2).transpose(2, 0, 1).astype(np.uint8)
+                    trainer.logger.experiment.add_image(f"{batch_el_key}_{m['name']}", img, trainer.global_step)
             if boxes is not None:
-                image = np.transpose(image, (2, 0, 1))
+                image = aloscene.Frame(np.transpose(image, (2, 0, 1)), names=["C", "H", "W"])
                 for b in boxes:
-                    img = b["boxes"].get_view(aloscene.Frame(image, names=["C", "H", "W"])).image
+                    img = b["boxes"].get_view(image).image
                     img = np.transpose(img, (2, 0, 1))
                     trainer.logger.experiment.add_image(f"{batch_el_key}_{b['name']}", img, trainer.global_step)
-            else:
-                trainer.logger.experiment.add_image(batch_el_key, image, trainer.global_step)
     else:
         warnings.warn("image logging not implemented for current logger")
 

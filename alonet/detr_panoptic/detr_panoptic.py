@@ -117,7 +117,6 @@ class PanopticHead(nn.Module):
         get_filter_fn = get_filter_fn or (lambda *args, **kwargs: get_mask_queries(*args, model=self.detr, **kwargs))
         dec_outputs, filters = get_filter_fn(frames=frames, m_outputs=out, **kwargs)
 
-        # FIXME h_boxes takes the last one computed, keep this in mind
         # Use box embeddings as input of Multi Head attention
         bbox_mask = self.bbox_attention(dec_outputs, out["enc_outputs"], mask=mask)
         # And then, use MHA ouput as input of FPN-style CNN

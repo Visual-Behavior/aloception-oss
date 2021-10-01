@@ -1,3 +1,4 @@
+"""Binary or float Mask, use in oclussion, segmentation, crop and forward process"""
 import numpy as np
 import cv2
 import torch
@@ -12,15 +13,16 @@ from aloscene.labels import Labels
 
 
 class Mask(aloscene.tensors.SpatialAugmentedTensor):
-    """Binary or Float Mask
-
+    """
     Parameters
     ----------
-    x :
-        path to the mask file (png) or tensor (values between 0. and 1.)
+    x : Union[torch.Tensor, str]
+        Path to the mask file (png) or tensor (values between 0. and 1.)
+    labels : Union[dict, :mod:`Labels <aloscene.labels>`], optional
+        Labels for each mask, used for rendering segmentation maps
     """
 
-    GLOBAL_COLOR_SET = np.random.uniform(0, 1, (300, 3))
+    _GLOBAL_COLOR_SET = np.random.uniform(0, 1, (300, 3))
 
     @staticmethod
     def __new__(cls, x, labels: Union[dict, Labels] = None, *args, **kwargs):
@@ -37,26 +39,33 @@ class Mask(aloscene.tensors.SpatialAugmentedTensor):
 
         Parameters
         ----------
-        labels: aloscene.Labels
+        labels : :mod:`Labels <aloscene.labels>`
             Set of labels to attached to the masks
-        name: str
+        name : str
             If none, the label will be attached without name (if possible). Otherwise if no other unnamed
             labels are attached to the frame, the labels will be added to the set of labels.
         """
         self._append_label("labels", labels, name)
 
-    def iou_with(self, mask2, threshold=0.5) -> torch.Tensor:
+    def iou_with(self, mask2, threshold: float = 0.5):
         """ IoU calculation between mask2 and itself
 
         Parameters
         ----------
-        mask2 : aloscene.Mask
+        mask2 : :mod:`Mask <aloscene.mask>`
             Masks with size (M,H,W)
+        threshold : float
+            Threshold to binarize the masks, by default 0.5
 
         Returns
         -------
         torch.Tensor
             IoU matrix of size (N,M)
+
+        Raises
+        ------
+        Exception
+            Features size (H,W) between masks have to be the same
         """
         if len(self) == 0 and len(mask2) == 0:
             return torch.rand(0, 0)
@@ -74,7 +83,7 @@ class Mask(aloscene.tensors.SpatialAugmentedTensor):
         return intersection / (union - intersection)
 
     def get_view(self, frame: Tensor = None, size: tuple = None, labels_set: str = None, **kwargs):
-        """Get view of segmentation mask and used it in a input Frame
+        """Get view of segmentation mask and used it in a input :mod:`Frame <aloscene.frame>`
 
         Parameters
         ----------
@@ -88,12 +97,12 @@ class Mask(aloscene.tensors.SpatialAugmentedTensor):
         Returns
         -------
         Renderer.View
-            Frame view, ready to render
+            Frame view, ready to be rendered
 
         Raises
         ------
         Exception
-            Input frame must be a aloscene.Frame object
+            Input frame must be a :mod:`Frame <aloscene.frame>` object
         """
         from aloscene import Frame
 
@@ -121,7 +130,7 @@ class Mask(aloscene.tensors.SpatialAugmentedTensor):
         frame, annotations = self.mask2id(labels_set=labels_set, return_ann=True)
         # Frame construction by segmentation masks
         if hasattr(self, "labels") and self.labels is not None and len(self) > 0:
-            frame = self.GLOBAL_COLOR_SET[frame]
+            frame = self._GLOBAL_COLOR_SET[frame]
 
         # Add relative text in frame
         for anno in annotations:

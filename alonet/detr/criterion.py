@@ -31,7 +31,7 @@ class DetrCriterion(nn.Module):
     aux_loss_stage:
         Number of auxialiry stage
     losses: list
-        list of all the losses to be applied. See get_loss for list of available losses.
+        list of all the losses to be applied. See :func:`get_loss` for list of available losses.
     """
 
     def __init__(
@@ -166,13 +166,14 @@ class DetrCriterion(nn.Module):
     ):
         """Compute a loss given the model outputs, the target frame, the results from the matcher
         and the number of total boxes accross the devices.
+
         Parameters
         ----------
-        loss: str
+        loss : str
             Name of the loss to compute
-        outputs: dict
+        outputs : dict
             Detr model forward outputs
-        frames: aloscene.Frane
+        frames : :mod:`Frames <aloscene.frame>`
             Trgat frame with boxes2d and labels
         indices: list
             List of tuple with predicted indices and target indices
@@ -180,6 +181,11 @@ class DetrCriterion(nn.Module):
             Number of total target boxes
         update_loss_map : dict
             Append new loss function to take into account in total loss process, by default None
+
+        Returns
+        -------
+        Dict
+            Losses of the loss procedure.
         """
         loss_map = {"labels": self.loss_labels, "boxes": self.loss_boxes}
         if update_loss_map is not None:

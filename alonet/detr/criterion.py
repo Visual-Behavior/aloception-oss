@@ -12,7 +12,8 @@ import aloscene
 
 
 class DetrCriterion(nn.Module):
-    """
+    """ Create the criterion.
+
     Parameters
     ----------
     num_classes: int
@@ -154,30 +155,35 @@ class DetrCriterion(nn.Module):
         return batch_idx, src_idx
 
     def get_loss(
-        self, loss: str, outputs: dict, frames: aloscene.Frame, indices: list, num_boxes: torch.Tensor, **kwargs
+        self,
+        loss: str,
+        outputs: dict,
+        frames: aloscene.Frame,
+        indices: list,
+        num_boxes: torch.Tensor,
+        update_loss_map: dict = None,
+        **kwargs,
     ):
         """Compute a loss given the model outputs, the target frame, the results from the matcher
         and the number of total boxes accross the devices.
-
         Parameters
         ----------
-        loss : str
+        loss: str
             Name of the loss to compute
-        outputs : dict
+        outputs: dict
             Detr model forward outputs
-        frames : :mod:`Frames <aloscene.frame>`
+        frames: aloscene.Frane
             Trgat frame with boxes2d and labels
-        indices : list
+        indices: list
             List of tuple with predicted indices and target indices
-        num_boxes : torch.Tensor
+        num_boxes: torch.Tensor
             Number of total target boxes
-
-        Returns
-        -------
-        Dict
-            Losses of the loss procedure.
+        update_loss_map : dict
+            Append new loss function to take into account in total loss process, by default None
         """
-        loss_map = {"labels": self.loss_labels, "boxes": self.loss_boxes, "masks": self.loss_masks}
+        loss_map = {"labels": self.loss_labels, "boxes": self.loss_boxes}
+        if update_loss_map is not None:
+            loss_map.update(update_loss_map)
         assert loss in loss_map, f"do you really want to compute {loss} loss?"
         return loss_map[loss](outputs, frames, indices, num_boxes, **kwargs)
 

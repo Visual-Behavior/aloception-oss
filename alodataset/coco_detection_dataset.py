@@ -5,7 +5,6 @@ in a :mod:`Frame object <aloscene.frame>`. Ideal for object detection applicatio
 
 import torch
 import torch.utils.data
-from pycocotools.coco import COCO
 from pycocotools import mask as coco_mask
 import numpy as np
 import os
@@ -34,7 +33,6 @@ class CocoDetectionDataset(BaseDataset, CocoDetectionSample):
         return_masks=False,
         classes: list = None,
         fix_classes_len: int = None,
-        stuff_ann_file: str = None,
         **kwargs,
     ):
         """
@@ -60,8 +58,6 @@ class CocoDetectionDataset(BaseDataset, CocoDetectionSample):
             Fix to a specific number the number of classes, filling the rest with "N/A" value.
             Use when the number of model outputs does not match with the number of classes in the dataset,
             by default None
-        stuff_ann_file: str, optional
-            Additional annotations with new classes, by default None
         **kwargs : dict
             :mod:`BaseDataset <base_dataset>` optional parameters
 
@@ -96,7 +92,6 @@ class CocoDetectionDataset(BaseDataset, CocoDetectionSample):
             dataset_dir = BaseDataset.get_dataset_dir(self)
             img_folder = os.path.join(dataset_dir, img_folder)
             ann_file = os.path.join(dataset_dir, ann_file)
-            stuff_ann_file = None if stuff_ann_file is None else os.path.join(dataset_dir, stuff_ann_file)
             kwargs["sample"] = self.sample
 
         super(CocoDetectionDataset, self).__init__(name=name, root=img_folder, annFile=ann_file, **kwargs)
@@ -104,10 +99,6 @@ class CocoDetectionDataset(BaseDataset, CocoDetectionSample):
             return
 
         cats = self.coco.loadCats(self.coco.getCatIds())
-        self.coco_stuff = None
-        if stuff_ann_file is not None:
-            self.coco_stuff = COCO(stuff_ann_file)
-            cats += self.coco_stuff.loadCats(self.coco_stuff.getCatIds())
 
         # Setup the class names
         nb_category = max(cat["id"] for cat in cats)
@@ -133,8 +124,6 @@ class CocoDetectionDataset(BaseDataset, CocoDetectionSample):
             ids = []
             for i in self.ids:
                 target = CocoDetectionSample._load_target(self, i)
-                if stuff_ann_file is not None:
-                    target += self.coco_stuff.loadAnns(self.coco_stuff.getAnnIds(i))
                 if any([self._ids_renamed[bbox["category_id"]] >= 0 for bbox in target]):
                     ids.append(i)
             self.ids = ids  # Remove images without bboxes with classes in classes list
@@ -168,8 +157,6 @@ class CocoDetectionDataset(BaseDataset, CocoDetectionSample):
         img, target = CocoDetectionSample.__getitem__(self, idx)
 
         image_id = self.ids[idx]
-        if self.coco_stuff is not None:
-            target += self.coco_stuff.loadAnns(self.coco_stuff.getAnnIds(image_id))
         target = {"image_id": image_id, "annotations": target}
 
         frame = Frame(np.transpose(np.array(img), [2, 0, 1]), names=("C", "H", "W"))

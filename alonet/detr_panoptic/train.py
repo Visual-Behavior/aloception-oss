@@ -104,7 +104,7 @@ class LitPanopticDetr(alonet.detr.LitDetr):
         aux_loss_stage=6,
     ):
         """Build default criterion"""
-        return alonet.detr.DetrCriterion(
+        return alonet.detr_panoptic.PanopticCriterion(
             matcher=matcher or self.matcher,
             loss_ce_weight=loss_ce_weight,
             loss_boxes_weight=loss_boxes_weight,

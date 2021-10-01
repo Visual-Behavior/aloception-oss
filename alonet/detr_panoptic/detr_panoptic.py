@@ -86,6 +86,11 @@ class PanopticHead(nn.Module):
         ----------
         frames : aloscene.frame
             Input frame to network
+        get_filter_fn : Callable
+            Function that returns two parameters: the :attr:`dec_outputs` tensor filtered by a boolean mask per
+            batch. It is expected that the function will at least receive :attr:`frames` and :attr:`m_outputs`
+            parameters as input. By default the function used to this purpuse is :func:`get_outs_filter` from
+            based model.
 
         Returns
         -------

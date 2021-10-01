@@ -6,67 +6,6 @@ import torch.nn.functional as F
 import aloscene
 
 
-def dice_loss(inputs: torch.Tensor, targets: torch.Tensor, num_boxes: int) -> torch.Tensor:
-    """Compute the DICE loss, similar to generalized IOU for masks
-
-    Parameters
-    ----------
-    inputs : [type]
-        A float tensor of arbitrary shape. The predictions for each example.
-    targets : [type]
-        A float tensor with the same shape as inputs. Stores the binary classification label for each element in inputs
-        (0 for the negative class and 1 for the positive class).
-    num_boxes : [type]
-        Number of boxes
-    Returns
-    -------
-    torch.Tensor
-        DICE/F-1 loss
-    """
-    inputs = inputs.sigmoid()
-    inputs = inputs.flatten(1)
-    numerator = 2 * (inputs * targets).sum(1)
-    denominator = inputs.sum(-1) + targets.sum(-1)
-    loss = 1 - (numerator + 1) / (denominator + 1)
-    return loss.sum() / num_boxes
-
-
-def sigmoid_focal_loss(
-    inputs: torch.Tensor, targets: torch.Tensor, num_boxes: int, alpha: float = 0.25, gamma: float = 2
-) -> torch.Tensor:
-    """Loss used in RetinaNet for dense detection: https://arxiv.org/abs/1708.02002.
-
-    Parameters
-    ----------
-    inputs : [type]
-        A float tensor of arbitrary shape. The predictions for each example.
-    targets : [type]
-        A float tensor with the same shape as inputs. Stores the binary classification label for each element in inputs
-        (0 for the negative class and 1 for the positive class).
-    num_boxes : [type]
-        Number of boxes
-    alpha : float, optional
-        (optional) Weighting factor in range (0,1) to balance positive vs negative examples, by default 0.25
-    gamma : float, optional
-        Exponent of the modulating factor (1 - p_t) to balance easy vs hard examples, by default 2
-
-    Returns
-    -------
-    torch.Tensor
-        Sigmoid focal loss
-    """
-    prob = inputs.sigmoid()
-    ce_loss = F.binary_cross_entropy_with_logits(inputs, targets, reduction="none")
-    p_t = prob * targets + (1 - prob) * (1 - targets)
-    loss = ce_loss * ((1 - p_t) ** gamma)
-
-    if alpha >= 0:
-        alpha_t = alpha * targets + (1 - alpha) * (1 - targets)
-        loss = alpha_t * loss
-
-    return loss.mean(1).sum() / num_boxes
-
-
 class DetrCriterion(nn.Module):
     """This class computes the loss for DETR.
     The process happens in two steps:
@@ -79,11 +18,9 @@ class DetrCriterion(nn.Module):
         loss_ce_weight: float,
         loss_boxes_weight: float,
         loss_giou_weight: float,
-        loss_dice_weight: float,
-        loss_focal_weight: float,
         eos_coef: float,
         aux_loss_stage: int,
-        losses: list,
+        losses,
     ):
         """Create the criterion.
 
@@ -99,10 +36,6 @@ class DetrCriterion(nn.Module):
             Boxes loss l1 weight
         loss_giou_weight: float
             Boxes loss GIOU
-        loss_dice_weight: float
-            DICE/F-1 loss weight use in masks_loss
-        loss_focal_weight: float
-            Focal loss weight use in masks_loss
         eos_coef: float
             relative classification weight applied to the no-object category
         aux_loss_stage:
@@ -116,13 +49,7 @@ class DetrCriterion(nn.Module):
         self.losses = losses
 
         # Define the weight dict
-        loss_weights = {
-            "loss_ce": loss_ce_weight,
-            "loss_bbox": loss_boxes_weight,
-            "loss_giou": loss_giou_weight,
-            "loss_DICE": loss_dice_weight,
-            "loss_focal": loss_focal_weight,
-        }
+        loss_weights = {"loss_ce": loss_ce_weight, "loss_bbox": loss_boxes_weight, "loss_giou": loss_giou_weight}
         if aux_loss_stage > 0:
             aux_loss_weights = {}
             for i in range(aux_loss_stage - 1):
@@ -172,153 +99,6 @@ class DetrCriterion(nn.Module):
 
         return losses
 
-    def loss_boxes(self, outputs: dict, frames: aloscene.Frame, indices: list, num_boxes: torch.Tensor, **kwargs):
-        """Compute the losses related to the bounding boxes, the L1 regression loss and the GIoU loss
-
-        Parameters
-        ----------
-        outputs: dict
-            Detr model forward outputs
-        frames: aloscene.Frane
-            Trgat frame with boxes2d and labels
-        indices: list
-            List of tuple with predicted indices and target indices
-        num_boxes: torch.Tensor
-            Number of total target boxes
-        """
-        losses = {}
-        if num_boxes == 0:
-            return {}
-
-        # print('loss_boxes:indices', indices)
-        idx = self._get_src_permutation_idx(indices)
-
-        pred_boxes = outputs["pred_boxes"][idx]
-        pred_boxes = aloscene.BoundingBoxes2D(
-            pred_boxes, boxes_format="xcyc", absolute=False, device=pred_boxes.device
-        )
-
-        target_boxes = torch.cat(
-            [
-                # Convert to xcyc and relative pos (based on the imge size) ans select
-                # into the boxes per batch following the `target_indices` from the Hungarian matching
-                boxes2d.xcyc().rel_pos().as_tensor()[indices[b][1]]
-                for b, boxes2d in enumerate(frames.boxes2d)
-            ],
-            dim=0,
-        )
-        target_boxes = aloscene.BoundingBoxes2D(target_boxes, boxes_format="xcyc", absolute=False)
-
-        # L1 loss
-        loss_bbox = F.l1_loss(pred_boxes.as_tensor(), target_boxes.as_tensor(), reduction="none")
-        losses["loss_bbox"] = loss_bbox.sum() / num_boxes
-
-        # Giou loss
-        giou = pred_boxes.giou_with(target_boxes)
-        loss_giou = 1 - torch.diag(giou)
-        losses["loss_giou"] = loss_giou.sum() / num_boxes
-
-        return losses
-
-    def loss_masks(
-        self, outputs: dict, frames: aloscene.Frame, indices: list, num_boxes: torch.Tensor, **kwargs
-    ) -> dict:
-        """Compute the losses related to the bounding boxes, the L1 regression loss and the GIoU loss
-
-        Parameters
-        ----------
-        outputs: dict
-            Detr model forward outputs
-        frames: aloscene.Frane
-            Trgat frame with boxes2d and labels
-        indices: list
-            List of tuple with predicted indices and target indices
-        num_boxes: torch.Tensor
-            Number of total target boxes
-
-        Returns
-        -------
-        Dict:
-            DICE and focal losses results
-        """
-        assert frames.names[0] == "B"
-        assert frames.segmentation[0].labels is not None and frames.segmentation[0].labels.encoding == "id"
-
-        losses = {}
-        if num_boxes == 0 or outputs["pred_masks"].numel() == 0:
-            return {
-                "loss_DICE": torch.tensor(0.0, device=frames.device, requires_grad=True),
-                "loss_focal": torch.tensor(0.0, device=frames.device, requires_grad=True),
-            }
-
-        # Masks resize
-        fr_shape = frames.shape[-2:]  # (H,W)
-        outputs_masks = F.interpolate(outputs["pred_masks"], size=fr_shape, mode="bilinear", align_corners=False)
-
-        # Masks alignment with indices
-        pred_masks, target_masks = [], []
-        zero_masks = torch.zeros_like(frames[0][0:1]).as_tensor()
-        for gt_masks, p_masks, m_filters, b_index in zip(
-            frames.segmentation, outputs_masks, outputs["pred_masks_info"]["filters"], indices
-        ):
-            # Get pred_masks by indices matcher and append zero mask if it is necessary
-            m_index = torch.where(m_filters)[0]
-            for ib in b_index[0].to(m_index.device):
-                im = (ib == m_index).nonzero()
-                if im.numel() > 0:
-                    im = im.item()
-                    pred_masks.append(p_masks[im : im + 1])
-                else:
-                    pred_masks.append(zero_masks)
-
-            target_masks.append(gt_masks.as_tensor()[b_index[1]])
-
-        # Reshape for loss process
-        pred_masks = torch.cat(pred_masks, dim=0).flatten(1)
-        target_masks = torch.cat(target_masks, dim=0).flatten(1).view(pred_masks.shape)
-
-        # DICE/F-1 loss
-        losses["loss_DICE"] = dice_loss(pred_masks, target_masks, num_boxes)
-
-        # Sigmoid focal loss
-        losses["loss_focal"] = sigmoid_focal_loss(pred_masks, target_masks, num_boxes, **kwargs)
-
-        return losses
-
-    def _get_src_permutation_idx(self, indices, **kwargs):
-        # permute predictions following indices
-        batch_idx = torch.cat([torch.full_like(src, i) for i, (src, _) in enumerate(indices)])
-        src_idx = torch.cat([src for (src, _) in indices])
-        return batch_idx, src_idx
-
-    def get_loss(
-        self, loss: str, outputs: dict, frames: aloscene.Frame, indices: list, num_boxes: torch.Tensor, **kwargs
-    ):
-        """Compute a loss given the model outputs, the target frame, the results from the matcher
-        and the number of total boxes accross the devices.
-
-        Parameters
-        ----------
-        loss: str
-            Name of the loss to compute
-        outputs: dict
-            Detr model forward outputs
-        frames: aloscene.Frane
-            Trgat frame with boxes2d and labels
-        indices: list
-            List of tuple with predicted indices and target indices
-        num_boxes: torch.Tensor
-            Number of total target boxes
-
-        Returns
-        -------
-        Dict
-            Losses of the loss procedure.
-        """
-        loss_map = {"labels": self.loss_labels, "boxes": self.loss_boxes, "masks": self.loss_masks}
-        assert loss in loss_map, f"do you really want to compute {loss} loss?"
-        return loss_map[loss](outputs, frames, indices, num_boxes, **kwargs)
-
     @torch.no_grad()
     def get_metrics(self, outputs: dict, frames: aloscene.Frame, indices: list, num_boxes: torch.Tensor, **kwargs):
         """Compute some usefull metrics related to the model performance
@@ -339,16 +119,15 @@ class DetrCriterion(nn.Module):
         metrics: dict
             - objectness_recall: Percentage of detect object among the GT object (class invariant)
             - recall : Percentage of detect class among all the GT class
-            - objectness_true_pos: Among the positive prediction of the model. how much are really positive ?
-              (class invariant)
+            - objectness_true_pos: Among the positive prediction of the model. how much are really positive ? (class invariant)
             - precision: Among the positive prediction of the model. how much are well classify ?
             - true_neg:  Among the negative predictions of the model, how much are really negative ?
             - slot_true_neg: Among all the negative slot, how may are predicted as negative ? (class invariant)
 
-        One important thing: The metrics described above do not reflect directly the true performance of the model.
-        The are only directly corredlated with the loss & the hungarian used to train the model. Therefore, the
-        computed recall, is NOT the recall, is not the true recall but the recall based on the SLOT & the hungarian
-        choice. That being said, it is still a usefull information to monitor the training progress.
+        One important thing: The metrics described above do not reflect directly the true performance of the model. The are only
+        directly corredlated with the loss & the hungarian used to train the model. Therefore, the computed recall, is NOT
+        the recall, is not the true recall but the recall based on the SLOT & the hungarian choice. That being said, it is still
+        a usefull information to monitor the training progress.
         """
         metrics = {}
         if num_boxes == 0:
@@ -487,6 +266,94 @@ class DetrCriterion(nn.Module):
             "scatter_t_boxes_size": (["width", "height"], scatter_t_boxes_size),
             "scatter_t_boxes_pos": (["x", "y"], scatter_t_boxes_pos),
         }
+
+    def loss_boxes(self, outputs: dict, frames: aloscene.Frame, indices: list, num_boxes: torch.Tensor, **kwargs):
+        """Compute the losses related to the bounding boxes, the L1 regression loss and the GIoU loss
+
+        Parameters
+        ----------
+        outputs: dict
+            Detr model forward outputs
+        frames: aloscene.Frane
+            Trgat frame with boxes2d and labels
+        indices: list
+            List of tuple with predicted indices and target indices
+        num_boxes: torch.Tensor
+            Number of total target boxes
+        """
+        losses = {}
+        if num_boxes == 0:
+            return {}
+
+        # print('loss_boxes:indices', indices)
+        idx = self._get_src_permutation_idx(indices)
+
+        pred_boxes = outputs["pred_boxes"][idx]
+        pred_boxes = aloscene.BoundingBoxes2D(
+            pred_boxes, boxes_format="xcyc", absolute=False, device=pred_boxes.device
+        )
+
+        target_boxes = torch.cat(
+            [
+                # Convert to xcyc and relative pos (based on the imge size) ans select
+                # into the boxes per batch following the `target_indices` from the Hungarian matching
+                boxes2d.xcyc().rel_pos().as_tensor()[indices[b][1]]
+                for b, boxes2d in enumerate(frames.boxes2d)
+            ],
+            dim=0,
+        )
+        target_boxes = aloscene.BoundingBoxes2D(target_boxes, boxes_format="xcyc", absolute=False)
+
+        # L1 loss
+        loss_bbox = F.l1_loss(pred_boxes.as_tensor(), target_boxes.as_tensor(), reduction="none")
+        losses["loss_bbox"] = loss_bbox.sum() / num_boxes
+
+        # Giou loss
+        giou = pred_boxes.giou_with(target_boxes)
+        loss_giou = 1 - torch.diag(giou)
+        losses["loss_giou"] = loss_giou.sum() / num_boxes
+
+        return losses
+
+    def _get_src_permutation_idx(self, indices, **kwargs):
+        # permute predictions following indices
+        batch_idx = torch.cat([torch.full_like(src, i) for i, (src, _) in enumerate(indices)])
+        src_idx = torch.cat([src for (src, _) in indices])
+        return batch_idx, src_idx
+
+    def get_loss(
+        self,
+        loss: str,
+        outputs: dict,
+        frames: aloscene.Frame,
+        indices: list,
+        num_boxes: torch.Tensor,
+        update_loss_map: dict = None,
+        **kwargs,
+    ):
+        """Compute a loss given the model outputs, the target frame, the results from the matcher
+        and the number of total boxes accross the devices.
+
+        Parameters
+        ----------
+        loss: str
+            Name of the loss to compute
+        outputs: dict
+            Detr model forward outputs
+        frames: aloscene.Frane
+            Trgat frame with boxes2d and labels
+        indices: list
+            List of tuple with predicted indices and target indices
+        num_boxes: torch.Tensor
+            Number of total target boxes
+        update_loss_map : dict
+            Append new loss function to take into account in total loss process, by default None
+        """
+        loss_map = {"labels": self.loss_labels, "boxes": self.loss_boxes}
+        if update_loss_map is not None:
+            loss_map.update(update_loss_map)
+        assert loss in loss_map, f"do you really want to compute {loss} loss?"
+        return loss_map[loss](outputs, frames, indices, num_boxes, **kwargs)
 
     def forward(
         self,

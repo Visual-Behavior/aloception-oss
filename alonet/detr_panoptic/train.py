@@ -4,6 +4,7 @@ train models based on :mod:`~alonet.detr_panoptic.detr_panoptic` module
 
 from alonet.detr_panoptic.utils import get_mask_queries, get_base_model_frame
 import alonet
+import torch
 
 
 class LitPanopticDetr(alonet.detr.LitDetr):
@@ -91,16 +92,10 @@ class LitPanopticDetr(alonet.detr.LitDetr):
             Only :attr:`detr-r50-panoptic` and :attr:`deformable-detr-r50-panoptic` models are supported yet.
         """
         if self.model_name == "detr-r50-panoptic":
-            detr_model = alonet.detr.DetrR50Finetune(
-                num_classes=num_classes, aux_loss=aux_loss, weights="detr-r50", background_class=250
-            )
+            detr_model = alonet.detr.DetrR50Finetune(num_classes=num_classes, aux_loss=aux_loss, background_class=250)
         elif self.model_name == "deformable-detr-r50-panoptic":
             detr_model = alonet.deformable_detr.DeformableDetrR50Refinement(
-                num_classes=num_classes,
-                aux_loss=aux_loss,
-                weights="deformable-detr-r50-refinement",
-                activation_fn="softmax",
-                background_class=250,
+                num_classes=num_classes, aux_loss=aux_loss, activation_fn="softmax", background_class=250,
             )
         else:
             raise Exception(f"Unsupported base model {self.model_name}")
@@ -108,7 +103,7 @@ class LitPanopticDetr(alonet.detr.LitDetr):
 
     def build_criterion(
         self,
-        matcher=None,
+        matcher: torch.nn = None,
         loss_dice_weight=2,
         loss_focal_weight=2,
         loss_ce_weight=1,
@@ -147,7 +142,7 @@ class LitPanopticDetr(alonet.detr.LitDetr):
         :mod:`DetrCriterion <alonet.detr.criterion>`
             Criterion use to train the model
         """
-        return alonet.detr.DetrCriterion(
+        return alonet.detr_panoptic.PanopticCriterion(
             matcher=matcher or self.matcher,
             loss_ce_weight=loss_ce_weight,
             loss_boxes_weight=loss_boxes_weight,

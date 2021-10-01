@@ -86,6 +86,11 @@ class PanopticHead(nn.Module):
         ----------
         frames : :mod:`Frames <aloscene.frame>`
             Input frame to network
+        get_filter_fn : Callable
+            Function that returns two parameters: the :attr:`dec_outputs` tensor filtered by a boolean mask per
+            batch. It is expected that the function will at least receive :attr:`frames` and :attr:`m_outputs`
+            parameters as input. By default the function used to this purpuse is :func:`get_outs_filter` from
+            based model.
 
         Returns
         -------
@@ -118,7 +123,6 @@ class PanopticHead(nn.Module):
         get_filter_fn = get_filter_fn or (lambda *args, **kwargs: get_mask_queries(*args, model=self.detr, **kwargs))
         dec_outputs, filters = get_filter_fn(frames=frames, m_outputs=out, **kwargs)
 
-        # FIXME h_boxes takes the last one computed, keep this in mind
         # Use box embeddings as input of Multi Head attention
         bbox_mask = self.bbox_attention(dec_outputs, out["enc_outputs"], mask=mask)
         # And then, use MHA ouput as input of FPN-style CNN

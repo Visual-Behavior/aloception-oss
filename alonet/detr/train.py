@@ -256,14 +256,12 @@ class LitDetr(pl.LightningModule):
     def build_criterion(
         self,
         matcher: torch.nn = None,
-        loss_ce_weight: float = 1,
-        loss_boxes_weight: float = 5,
-        loss_giou_weight: float = 2,
-        loss_dice_weight: float = 0,
-        loss_focal_weight: float = 0,
-        eos_coef: float = 0.1,
-        losses: list = ["labels", "boxes"],
-        aux_loss_stage: int = 6,
+        loss_ce_weight=1,
+        loss_boxes_weight=5,
+        loss_giou_weight=2,
+        eos_coef=0.1,
+        losses=["labels", "boxes"],
+        aux_loss_stage=6,
     ):
         """Build the default criterion
 
@@ -277,10 +275,6 @@ class LitDetr(pl.LightningModule):
             Weight of boxes loss in total loss, by default 5
         loss_giou_weight : float, optional
             Weight of GIoU loss in total loss, by default 2
-        loss_dice_weight : float, optional
-            Weight of DICE/F-1 loss in total loss, by default 0 (use by loss_masks procedure)
-        loss_focal_weight : float, optional
-            Weight of sigmoid focal loss in total loss, by default 0 (use by loss_masks procedure)
         eos_coef : float, optional
             Background/End of the Sequence (EOS) coefficient, by default 0.1
         losses : list, optional
@@ -299,8 +293,6 @@ class LitDetr(pl.LightningModule):
             loss_ce_weight=loss_ce_weight,
             loss_boxes_weight=loss_boxes_weight,
             loss_giou_weight=loss_giou_weight,
-            loss_dice_weight=loss_dice_weight,
-            loss_focal_weight=loss_focal_weight,
             eos_coef=eos_coef,
             losses=losses,
             aux_loss_stage=aux_loss_stage,

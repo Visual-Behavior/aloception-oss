@@ -4,6 +4,7 @@ import requests
 import shutil
 import torch
 import json
+from tqdm import tqdm
 from typing import List, Callable, Dict
 from enum import Enum
 
@@ -268,13 +269,14 @@ class BaseDataset(torch.utils.data.Dataset):
             content = json.loads(f.read())
 
         if dataset_dir is None:
-            dataset_dir = _user_prompt(
-                f"{self.name} does not exist in config file. "
-                + "Do you want to download and use a sample?: (Y)es or (N)o: "
-            )
-            if dataset_dir.lower() in ["y", "yes"]:  # Download sample and change root directory
-                self.sample = True
-                return os.path.join(self.vb_folder, "samples")
+            if self.name in DATASETS_DOWNLOAD_PATHS:
+                dataset_dir = _user_prompt(
+                    f"{self.name} does not exist in config file. "
+                    + "Do you want to download and use a sample?: (Y)es or (N)o: "
+                )
+                if dataset_dir.lower() in ["y", "yes"]:  # Download sample and change root directory
+                    self.sample = True
+                    return os.path.join(self.vb_folder, "samples")
             dataset_dir = _user_prompt(f"Please write a new root directory for {self.name} dataset: ")
             dataset_dir = os.path.expanduser(dataset_dir)
 
@@ -384,8 +386,18 @@ class BaseDataset(torch.utils.data.Dataset):
         if not os.path.exists(os.path.join(dest)):
             print(f"Download {self.name} sample...")
             if "http" in src:
-                r = requests.get(src, allow_redirects=True)
-                open(dest, "wb").write(r.content)
+                with open(dest, "wb") as f:
+                    response = requests.get(src, stream=True)
+                    total_length = response.headers.get("content-length")
+
+                    if total_length is None:  # no content length header
+                        f.write(response.content)
+                    else:
+                        pbar = tqdm()
+                        pbar.reset(total=int(total_length))  # initialise with new `total`
+                        for data in response.iter_content(chunk_size=4096):
+                            f.write(data)
+                            pbar.update(len(data))
             else:
                 shutil.copy2(src, dest)
 

@@ -97,7 +97,7 @@ class Mask(aloscene.tensors.SpatialAugmentedTensor):
         """
         from aloscene import Frame
 
-        if not isinstance(self.labels, (aloscene.Labels, dict)):
+        if not (hasattr(self, "labels") and isinstance(self.labels, (aloscene.Labels, dict))):
             return super().get_view(size=size, frame=frame, **kwargs)
 
         if frame is not None:
@@ -113,14 +113,14 @@ class Mask(aloscene.tensors.SpatialAugmentedTensor):
         frame = frame.norm01().cpu().rename(None).permute([1, 2, 0]).detach().contiguous().numpy()
         frame = cv2.resize(frame, (self.shape[-1], self.shape[-2]))
         if masks.shape[-1] > 0:
-            frame = 0.4 * frame + 0.6 * masks
+            frame = 0.2 * frame + 0.8 * masks
         return View(frame, **kwargs)
 
     def __get_view__(self, labels_set: str = None, title: str = None, **kwargs):
         """Create a view of the frame"""
         frame, annotations = self.mask2id(labels_set=labels_set, return_ann=True)
         # Frame construction by segmentation masks
-        if self.labels is not None and len(self) > 0:
+        if hasattr(self, "labels") and self.labels is not None and len(self) > 0:
             frame = self.GLOBAL_COLOR_SET[frame]
 
         # Add relative text in frame
@@ -159,7 +159,7 @@ class Mask(aloscene.tensors.SpatialAugmentedTensor):
         # Try to retrieve the associated label ID (if any)
         labels = self._get_set_labels(labels_set=labels_set)
         annotations = []
-        if self.labels is not None and len(labels) > 0:
+        if hasattr(self, "labels") and self.labels is not None and len(labels) > 0:
             assert len(labels) == len(self)  # Required to make panoptic view
 
             frame = np.concatenate([np.zeros_like(frame[..., [0]]), frame], axis=-1)  # Add background class with ID=-1
@@ -195,6 +195,8 @@ class Mask(aloscene.tensors.SpatialAugmentedTensor):
                 + f"{[key for key in self.labels]}"
                 + ") "
             )
+        elif not hasattr(self, "labels"):
+            labels = [None] * len(self)
         elif labels_set is not None and isinstance(self.labels, dict):
             labels = self.labels[labels_set]
             assert isinstance(labels, aloscene.Labels) and labels.encoding == "id"

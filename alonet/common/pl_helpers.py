@@ -93,7 +93,7 @@ def load_training(
     if "weights" in kwargs and kwargs["weights"] is not None:  # Highest priority
         weights_path = kwargs["weights"]
 
-    strict = True if "nostrict" in args else not args.nostrict
+    strict = True if "nostrict" not in args else not args.nostrict
     if run_id is not None and project_run_id is not None:
         run_id_project_dir = os.path.join(vb_folder(), f"project_{project_run_id}")
         ckpt_path = os.path.join(run_id_project_dir, run_id, "last.ckpt")

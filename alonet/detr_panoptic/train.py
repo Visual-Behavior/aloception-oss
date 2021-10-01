@@ -82,16 +82,10 @@ class LitPanopticDetr(alonet.detr.LitDetr):
     def build_model(self, num_classes=250, aux_loss=True, weights=None):
         """Build model with default parameters"""
         if self.model_name == "detr-r50-panoptic":
-            detr_model = alonet.detr.DetrR50Finetune(
-                num_classes=num_classes, aux_loss=aux_loss, weights="detr-r50", background_class=250
-            )
+            detr_model = alonet.detr.DetrR50Finetune(num_classes=num_classes, aux_loss=aux_loss, background_class=250)
         elif self.model_name == "deformable-detr-r50-panoptic":
             detr_model = alonet.deformable_detr.DeformableDetrR50Refinement(
-                num_classes=num_classes,
-                aux_loss=aux_loss,
-                weights="deformable-detr-r50-refinement",
-                activation_fn="softmax",
-                background_class=250,
+                num_classes=num_classes, aux_loss=aux_loss, activation_fn="softmax", background_class=250,
             )
         else:
             raise Exception(f"Unsupported base model {self.model_name}")

@@ -1,7 +1,4 @@
 import torch
-from torch import nn
-
-from alonet.multi_gpu import get_world_size, is_dist_avail_and_initialized
 from alonet.detr import DetrCriterion
 import torch.nn.functional as F
 import aloscene

@@ -69,7 +69,7 @@ class Disparity(aloscene.tensors.SpatialAugmentedTensor):
     def __get_view__(self):
         assert all(dim not in self.names for dim in ["B", "T"]), "disparity should not have batch or time dimension"
         cmap = matplotlib.cm.get_cmap("nipy_spectral")
-        disp = self.rename(None).permute([1, 2, 0]).detach().contiguous().numpy()
+        disp = self.rename(None).permute([1, 2, 0]).detach().contiguous().cpu().numpy()
         disp = matplotlib.colors.Normalize()(disp)
         disp_color = cmap(disp)[:, :, 0, :3]
         return View(disp_color)

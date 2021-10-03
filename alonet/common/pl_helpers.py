@@ -84,16 +84,19 @@ def add_argparse_args(parent_parser, add_pl_args=True, mode="training"):
 
 
 def load_training(
-    lit_model_class, args: Namespace = None, run_id: str = None, project_run_id: str = None, **kwargs,
+    lit_model_class,
+    args: Namespace = None,
+    run_id: str = None,
+    project_run_id: str = None,
+    **kwargs,
 ):
     """Load training"""
     run_id = args.run_id if run_id is None and "run_id" in args else run_id
     project_run_id = args.project_run_id if project_run_id is None and "project_run_id" in args else project_run_id
-    weights_path = getattr(args, "weights", None)
+    weights_path = getattr(args, "weights", None) if args is not None else None
     if "weights" in kwargs and kwargs["weights"] is not None:  # Highest priority
         weights_path = kwargs["weights"]
-
-    strict = True if "nostrict" in args else not args.nostrict
+    strict = True if args is None else not args.nostrict
     if run_id is not None and project_run_id is not None:
         run_id_project_dir = os.path.join(vb_folder(), f"project_{project_run_id}")
         ckpt_path = os.path.join(run_id_project_dir, run_id, "last.ckpt")

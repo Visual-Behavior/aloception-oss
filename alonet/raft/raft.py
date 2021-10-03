@@ -112,11 +112,11 @@ class RAFTBase(nn.Module):
             mask = torch.softmax(mask, dim=2)
 
             up_flow = F.unfold(8 * flow, [3, 3], padding=1)
-            up_flow = up_flow.view(N, out_plane, 9, 1, 1, H, W)
+            up_flow = up_flow.view(N, self.out_plane, 9, 1, 1, H, W)
 
             up_flow = torch.sum(mask * up_flow, dim=2)
             up_flow = up_flow.permute(0, 1, 4, 2, 5, 3)
-            return up_flow.reshape(N, out_plane, 8 * H, 8 * W)
+            return up_flow.reshape(N, self.out_plane, 8 * H, 8 * W)
 
     def forward_heads(self, m_outputs, only_last=False):
         if not only_last:
@@ -194,14 +194,14 @@ class RAFTBase(nn.Module):
     @torch.no_grad()
     def inference(self, m_outputs, only_last=False):
         def generate_frame(out_dict):
-            flow_low = Flow(out_dict["flow"], names=("B", "C", "H", "W"))
+            #flow_low = Flow(out_dict["flow"], names=("B", "C", "H", "W"))
             flow_up = Flow(out_dict["up_flow"], names=("B", "C", "H", "W"))
-            return flow_low, flow_up
+            return flow_up
 
         if only_last:
             return generate_frame(m_outputs[-1])
         else:
-            [generate_frame(out_dict) for out_dict in m_outputs]
+            return [generate_frame(out_dict) for out_dict in m_outputs]
             
 
 class RAFT(RAFTBase):
@@ -272,8 +272,10 @@ if __name__ == "__main__":
 
     # inference
     with torch.no_grad():
-        flow = raft.forward(frame1, frame2)["up_flow"][-1]  # keep only last stage flow estimation
+        m_outputs = raft.forward(frame1, frame2)  # keep only last stage flow estimation
+        output = raft.inference(m_outputs)
+        
+        flow = output[-1]
         flow = padder.unpad(flow)  # unpad to original image resolution
-        flow = raft.inference(flow)
         flow = flow.detach().cpu()
         flow.get_view().render()

@@ -17,7 +17,7 @@ class RAFTCriterion(nn.Module):
         flow_loss = 0.0
 
         # exlude invalid pixels and extremely large diplacements
-        mag = torch.sum(flow_gt ** 2, dim=1).sqrt()
+        mag = torch.sum(flow_gt ** 2, dim=1, keepdim=True).sqrt()
         if valid is None:
             valid = torch.ones_like(mag, dtype=torch.bool)
         else:
@@ -37,7 +37,6 @@ class RAFTCriterion(nn.Module):
                 epe_per_iter.append(epe)
         else:
             epe_per_iter = None
-
         epe = torch.sum((m_outputs[-1]["up_flow"] - flow_gt) ** 2, dim=1).sqrt()
         epe = epe.view(-1)[valid.view(-1)]
 

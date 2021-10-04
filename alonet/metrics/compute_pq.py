@@ -99,6 +99,7 @@ class PQMetrics(object):
     def __init__(self):
         self.pq_per_cat = defaultdict(PQStatCat)
         self.class_names = None
+        self.isfull = False
         self.categories = dict()
 
     def __getitem__(self, label_id: int):
@@ -120,12 +121,22 @@ class PQMetrics(object):
             Description of thing/stuff labels to append
         """
         self.class_names = cat_labels.labels_names
-        self.categories.update(
-            {
-                id: {"category": self.class_names[id], "isthing": it == 1}
-                for id, it in zip(list(cat_labels.numpy().astype(int)), list(isthing_labels.numpy().astype(int)))
-            }
-        )
+        if isthing_labels is not None:
+            self.categories.update(
+                {
+                    id: {"category": self.class_names[id], "isthing": it == 1}
+                    for id, it in zip(list(cat_labels.numpy().astype(int)), list(isthing_labels.numpy().astype(int)))
+                }
+            )
+            self.isfull = True
+        else:
+            self.categories.update(
+                {
+                    id: {"category": self.class_names[id], "isthing": True}
+                    for id in list(cat_labels.numpy().astype(int))
+                }
+            )
+            self.isfull = False
 
     def pq_average(self, isthing: bool = None, print_result: bool = False):
         """Calculate SQ, RQ and PQ metrics from the categories, and thing/stuff/all if desired
@@ -196,18 +207,26 @@ class PQMetrics(object):
             :attr:`category` and :attr:`isthing`
         """
         assert isinstance(p_mask, aloscene.Mask) and isinstance(t_mask, aloscene.Mask)
-        assert isinstance(p_mask.labels, aloscene.Labels) and isinstance(t_mask.labels, dict)
-        assert "category" in t_mask.labels and "isthing" in t_mask.labels
-        assert hasattr(t_mask.labels["category"], "labels_names") and hasattr(t_mask.labels["isthing"], "labels_names")
-        assert len(t_mask.labels["category"]) == len(t_mask.labels["isthing"])
+        assert isinstance(p_mask.labels, aloscene.Labels) and isinstance(t_mask.labels, (dict, aloscene.Labels))
 
         p_mask = p_mask.to(torch.device("cpu"))
         t_mask = t_mask.to(torch.device("cpu"))
 
-        self.update_data_objects(t_mask.labels["category"], t_mask.labels["isthing"])
+        label_set = None
+        if isinstance(t_mask.labels, aloscene.Labels):
+            self.update_data_objects(t_mask.labels, None)
+        else:
+            assert "category" in t_mask.labels and hasattr(t_mask.labels["category"], "labels_names")
+            if "isthing" in t_mask.labels:
+                assert hasattr(t_mask.labels["isthing"], "labels_names")
+                assert len(t_mask.labels["category"]) == len(t_mask.labels["isthing"])
+                self.update_data_objects(t_mask.labels["category"], t_mask.labels["isthing"])
+                label_set = "category"
+            else:
+                self.update_data_objects(t_mask.labels["category"], None)
 
         pan_pred = p_mask.mask2id()
-        pan_gt = t_mask.mask2id(labels_set="category")
+        pan_gt = t_mask.mask2id(labels_set=label_set)
 
         # ground truth segments area calculation
         gt_segms = {}
@@ -291,7 +310,11 @@ class PQMetrics(object):
         """
         all_maps = dict()
         all_maps_per_class = dict()
-        for key, cat in zip(["stuff", "thing", "all"], [False, True, None]):
+        if self.isfull:
+            keys, cats = ["stuff", "thing", "all"], [False, True, None]
+        else:
+            keys, cats = ["all"], [None]
+        for key, cat in zip(keys, cats):
             if cat is not None:
                 all_maps[key], all_maps_per_class[key] = self.pq_average(cat, print_result)
             else:

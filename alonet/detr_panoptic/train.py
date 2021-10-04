@@ -1,6 +1,5 @@
 from alonet.detr_panoptic.utils import get_mask_queries, get_base_model_frame
 import alonet
-import aloscene
 
 
 class LitPanopticDetr(alonet.detr.LitDetr):

@@ -26,7 +26,7 @@ class PQMetricsCallback(BaseMetricsCallback):
 
             # Bar per each PQ class
             plt.style.use("ggplot")
-            for cat in ["thing", "stuff"]:
+            for cat in ["thing", "stuff"] if len(all_maps_per_class) > 1 else ["all"]:
                 x_set, y_set = zip(*all_maps_per_class[cat].items())
                 y_set = [y["pq"] for y in y_set]
 

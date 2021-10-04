@@ -66,7 +66,8 @@ class CrowdHumanDataset(BaseDataset):
 
         self.items = []
         for a, ann_file in enumerate(self.ann_file):
-            self.items += self.load_json_lines(ann_file, a)
+            line = self.load_json_lines(ann_file, a)
+            self.items += line
 
         self.bbox_types = ["vbox", "fbox", "hbox"]
         self.boxes_limit = boxes_limit
@@ -79,8 +80,9 @@ class CrowdHumanDataset(BaseDataset):
         items = []
         for line in lines:
             content = json.loads(line.strip("\n"))
-            content["ann_id"] = ann_id
-            items.append(content)
+            if len(content["gtboxes"]) <= 50 and len(content["gtboxes"]) >= 2:
+                content["ann_id"] = ann_id
+                items.append(content)
 
         return items
 

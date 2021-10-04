@@ -31,6 +31,8 @@ class Detr(nn.Module):
         aux_loss=True,
         weights: str = None,
         return_dec_outputs=False,
+        return_enc_outputs=False,
+        return_bb_outputs=False,
         device: torch.device = torch.device("cpu"),
         strict_load_weights=True,
     ):
@@ -53,7 +55,14 @@ class Detr(nn.Module):
         aux_loss: bool
             True if auxiliary decoding losses (loss at each decoder layer) are to be used.
         return_dec_outputs: bool
-            If True, the dict output will contains a key : "dec_outputs" with the decoder outputs of shape (stage, batch, num_queries, dim)
+            If True, the dict output will contains a key : "dec_outputs"
+            with the decoder outputs of shape (stage, batch, num_queries, dim)
+        return_enc_outputs: bool
+            If True, the dict output will contains a key : "enc_outputs"
+            with the encoder outputs of shape (num_enc, stage, HB, WB)
+        return_bb_outputs: bool
+            If True, the dict output will contains a key : "bb_outputs"
+            with the the list of the different backbone outputs
         strict_load_weights : bool
             Load the weights (if any given) with strict=True.
         """
@@ -63,6 +72,8 @@ class Detr(nn.Module):
         self.num_decoder_layers = transformer.decoder.num_layers
         self.num_classes = num_classes
         self.return_dec_outputs = return_dec_outputs
+        self.return_enc_outputs = return_enc_outputs
+        self.return_bb_outputs = return_bb_outputs
 
         # +1 on the num of class because Detr use softmax, and the background class
         # is by default assume to be the last element. (Except if background_class is set to be different.
@@ -127,8 +138,7 @@ class Detr(nn.Module):
         mask = mask.to(torch.bool)
 
         transformer_outptus = self.transformer(self.input_proj(src), mask, self.query_embed.weight, pos[-1], **kwargs)
-
-        return self.forward_heads(transformer_outptus)
+        return self.forward_heads(transformer_outptus, bb_outputs=features)
 
     def forward_position_heads(self, transformer_outptus):
         hs = transformer_outptus["hs"]
@@ -139,7 +149,7 @@ class Detr(nn.Module):
         outputs_class = self.class_embed(hs)
         return outputs_class
 
-    def forward_heads(self, transformer_outptus, **kwargs):
+    def forward_heads(self, transformer_outptus, bb_outputs=None, **kwargs):
         """Apply Detr heads and the final output and
         on the auxiliarry outputs as well.
         """
@@ -156,6 +166,12 @@ class Detr(nn.Module):
 
         if self.return_dec_outputs:
             out["dec_outputs"] = transformer_outptus["hs"]
+
+        if self.return_enc_outputs:
+            out["enc_outputs"] = transformer_outptus["memory"]
+
+        if self.return_bb_outputs:
+            out["bb_outputs"] = bb_outputs
 
         return out
 
@@ -186,6 +202,7 @@ class Detr(nn.Module):
         m_outputs: dict = None,
         background_class=None,
         threshold: float = None,
+        **kwargs,
     ):
         """Given the model outs_scores and the model outs_labels whit method return
         a list of filter for each output. If `out_scores` and `outs_labels` are not provided,
@@ -211,14 +228,14 @@ class Detr(nn.Module):
         filters = []
         for scores, labels in zip(outs_scores, outs_labels):
             if threshold is None:
-                filters.append(labels != self.background_class)
+                filters.append(labels != background_class)
             else:
-                filters.append((labels != self.background_class) & (scores > threshold))
+                filters.append((labels != background_class) & (scores > threshold))
 
         return filters
 
     @torch.no_grad()
-    def inference(self, forward_out: dict, filters=None, background_class=None):
+    def inference(self, forward_out: dict, filters=None, background_class=None, threshold=None):
         """Given the model forward outputs, this method
         will retrun an aloscene.BoundingBoxes2D tensor.
 
@@ -240,7 +257,10 @@ class Detr(nn.Module):
 
         if filters is None:
             filters = self.get_outs_filter(
-                outs_scores=outs_scores, outs_labels=outs_labels, background_class=background_class
+                outs_scores=outs_scores,
+                outs_labels=outs_labels,
+                background_class=background_class,
+                threshold=threshold,
             )
 
         preds_boxes = []

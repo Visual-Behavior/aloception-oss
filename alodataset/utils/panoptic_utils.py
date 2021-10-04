@@ -1,6 +1,8 @@
 import numpy as np
 import torch
 
+GLOBAL_COLOR_SET = np.random.uniform(0, 1, (300, 3))
+
 
 # Function get from PanopticAPI: https://github.com/cocodataset/panopticapi/blob/master/panopticapi/utils.py
 def rgb2id(color):
@@ -12,7 +14,9 @@ def rgb2id(color):
 
 
 # Function get from PanopticAPI: https://github.com/cocodataset/panopticapi/blob/master/panopticapi/utils.py
-def id2rgb(id_map):
+def id2rgb(id_map, random_color=True):
+    if random_color:
+        return (256 * GLOBAL_COLOR_SET[id_map]).astype(np.uint8)
     if isinstance(id_map, np.ndarray):
         id_map_copy = id_map.copy()
         rgb_shape = tuple(list(id_map.shape) + [3])

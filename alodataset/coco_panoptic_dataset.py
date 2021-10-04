@@ -44,6 +44,9 @@ class CocoPanopticDataset(BaseDataset, SplitMixin):
         Include masks labels in the output, by default True
     classes : list, optional
         List of classes to be filtered in the annotation reading process, by default None
+    fix_classes_len : int, optional
+        Fix to a specific number the number of classes, filling the rest with "N/A" value.
+        Use when the number of model outputs does not match with the number of classes in the dataset, by default 250
     **kwargs : dict
         :mod:`BaseDataset <base_dataset>` optional parameters
 
@@ -62,7 +65,13 @@ class CocoPanopticDataset(BaseDataset, SplitMixin):
     }
 
     def __init__(
-        self, name: str = "coco", split=Split.TRAIN, return_masks: bool = True, classes: list = None, **kwargs
+        self,
+        name: str = "coco",
+        split=Split.TRAIN,
+        return_masks: bool = True,
+        classes: list = None,
+        fix_classes_len: int = 250,  # Match with pre-trained weights
+        **kwargs,
     ):
         super(CocoPanopticDataset, self).__init__(name=name, split=split, **kwargs)
         if self.sample:
@@ -100,6 +109,15 @@ class CocoPanopticDataset(BaseDataset, SplitMixin):
                 if any([self._ids_renamed[seg["category_id"]] >= 0 for seg in target]):
                     items.append(self.items[i])
             self.items = items
+
+        # Fix number of label names if desired
+        if fix_classes_len is not None:
+            if fix_classes_len > len(self.label_names):
+                self.label_names += ["N/A"] * (fix_classes_len - len(self.label_names))
+            else:
+                raise ValueError(
+                    f"fix_classes_len must be higher than the lenght of label_names ({len(self.label_names)})."
+                )
 
     def _get_sequences(self):
         """ """

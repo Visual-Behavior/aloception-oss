@@ -121,7 +121,10 @@ class PQMetrics(object):
         return result, per_class_results
 
     def add_sample(
-        self, p_mask: aloscene.Mask, t_mask: aloscene.Mask, **kwargs,
+        self,
+        p_mask: aloscene.Mask,
+        t_mask: aloscene.Mask,
+        **kwargs,
     ):
         """Add a new prediction and target masks to PQ metrics estimation process
 
@@ -159,9 +162,10 @@ class PQMetrics(object):
 
         # Get positional ID by object
         pan_pred = p_mask.mask2id(return_cats=False) - VOID_CLASS_ID
-        pred_lbl = p_mask.labels.numpy()
+        pred_lbl = p_mask.labels.numpy().astype("int")
         pan_gt = t_mask.mask2id(labels_set=label_set, return_cats=False) - VOID_CLASS_ID
         gt_lbl = t_mask.labels.numpy() if label_set is None else t_mask.labels[label_set].numpy()
+        gt_lbl = gt_lbl.astype("int")
         VOID = 0  # VOID class in first position
 
         # ground truth segments area calculation
@@ -170,7 +174,7 @@ class PQMetrics(object):
         for label, label_cnt in zip(labels, labels_cnt):
             if label == VOID:  # Ignore pixels without category
                 continue
-            assert label < len(self.class_names) + 1
+            assert gt_lbl[label - 1] < len(self.class_names)
             gt_segms[label] = {
                 "area": label_cnt,  # Get area for each object
                 "cat_id": gt_lbl[label - 1],  # Decode category class
@@ -182,7 +186,7 @@ class PQMetrics(object):
         for label, label_cnt in zip(labels, labels_cnt):
             if label == VOID:  # Ignore pixels without category
                 continue
-            assert label < len(self.class_names) + 1
+            assert pred_lbl[label - 1] < len(self.class_names)
             pred_segms[label] = {
                 "area": label_cnt,  # Get area for each object
                 "cat_id": pred_lbl[label - 1],  # Decode category class
@@ -216,8 +220,8 @@ class PQMetrics(object):
             )
             iou = intersection / union
             if iou > 0.5:  # Add matches from this IoU (take from original paper)
-                self.pq_per_cat[gt_label].tp += 1
-                self.pq_per_cat[gt_label].iou += iou
+                self.pq_per_cat[gt_segms[gt_label]["cat_id"]].tp += 1
+                self.pq_per_cat[gt_segms[gt_label]["cat_id"]].iou += iou
                 gt_matched.add(gt_label)
                 pred_matched.add(pred_label)
 
@@ -251,7 +255,7 @@ class PQMetrics(object):
             else:
                 all_maps[key], all_maps_per_class[key] = self.pq_average(cat)
 
-        if print_result and not self.isfull:
+        if print_result and self.isfull:
             self.print_head()
             self.print_body(all_maps["all"], {})
 

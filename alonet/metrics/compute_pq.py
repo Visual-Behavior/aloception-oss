@@ -120,9 +120,13 @@ class PQMetrics(object):
         """
         self.class_names = cat_labels.labels_names
         if isthing_labels is not None:
+            try:
+                thing_id = isthing_labels.labels_names.index("thing")
+            except:
+                thing_id = len(isthing_labels.labels_names)
             self.categories.update(
                 {
-                    id: {"category": self.class_names[id], "isthing": it == 1}
+                    id: {"category": self.class_names[id], "isthing": it == thing_id}
                     for id, it in zip(list(cat_labels.numpy().astype(int)), list(isthing_labels.numpy().astype(int)))
                 }
             )

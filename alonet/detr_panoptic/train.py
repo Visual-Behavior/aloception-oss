@@ -92,7 +92,7 @@ class LitPanopticDetr(alonet.detr.LitDetr):
             Only :attr:`detr-r50-panoptic` and :attr:`deformable-detr-r50-panoptic` models are supported yet.
         """
         if self.model_name == "detr-r50-panoptic":
-            detr_model = alonet.detr.DetrR50Finetune(num_classes=num_classes, aux_loss=aux_loss, background_class=250)
+            detr_model = alonet.detr.DetrR50(num_classes=num_classes, aux_loss=aux_loss, background_class=250)
         elif self.model_name == "deformable-detr-r50-panoptic":
             detr_model = alonet.deformable_detr.DeformableDetrR50Refinement(
                 num_classes=num_classes, aux_loss=aux_loss, activation_fn="softmax", background_class=250,

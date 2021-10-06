@@ -73,9 +73,7 @@ from collections import defaultdict
 from typing import Dict
 
 import aloscene
-
-VOID = -1
-OFFSET = 256 * 256 * 256
+from alodataset.utils.panoptic_utils import VOID_CLASS_ID, OFFSET
 
 
 class PQStatCat(object):
@@ -214,6 +212,7 @@ class PQMetrics(object):
 
         label_set = None
         if isinstance(t_mask.labels, aloscene.Labels):
+            assert hasattr(t_mask.labels, "labels_names")
             self.update_data_objects(t_mask.labels, None)
         else:
             assert "category" in t_mask.labels and hasattr(t_mask.labels["category"], "labels_names")
@@ -225,8 +224,13 @@ class PQMetrics(object):
             else:
                 self.update_data_objects(t_mask.labels["category"], None)
 
-        pan_pred = p_mask.mask2id()
-        pan_gt = t_mask.mask2id(labels_set=label_set)
+        # Get positional ID by object
+        pan_pred = p_mask.mask2id(return_cats=False) - VOID_CLASS_ID
+        pred_lbl = p_mask.labels.numpy().astype("int")
+        pan_gt = t_mask.mask2id(labels_set=label_set, return_cats=False) - VOID_CLASS_ID
+        gt_lbl = t_mask.labels.numpy() if label_set is None else t_mask.labels[label_set].numpy()
+        gt_lbl = gt_lbl.astype("int")
+        VOID = 0  # VOID class in first position
 
         # ground truth segments area calculation
         gt_segms = {}
@@ -234,8 +238,11 @@ class PQMetrics(object):
         for label, label_cnt in zip(labels, labels_cnt):
             if label == VOID:  # Ignore pixels without category
                 continue
-            assert label < len(self.class_names)
-            gt_segms[label] = label_cnt  # Get area for each class
+            assert gt_lbl[label - 1] < len(self.class_names)
+            gt_segms[label] = {
+                "area": label_cnt,  # Get area for each object
+                "cat_id": gt_lbl[label - 1],  # Decode category class
+            }
 
         # predicted segments area calculation
         pred_segms = {}
@@ -243,56 +250,61 @@ class PQMetrics(object):
         for label, label_cnt in zip(labels, labels_cnt):
             if label == VOID:  # Ignore pixels without category
                 continue
-            assert label < len(self.class_names)
-            pred_segms[label] = label_cnt  # Get area for each class
+            assert pred_lbl[label - 1] < len(self.class_names)
+            pred_segms[label] = {
+                "area": label_cnt,  # Get area for each object
+                "cat_id": pred_lbl[label - 1],  # Decode category class
+            }
 
         # confusion matrix calculation if not empty views
         gt_pred_map = {}
         if len(gt_segms) > 0 and len(pred_segms) > 0:
-            aux_off = VOID if VOID < 0 else 0
-            pan_gt = pan_gt - aux_off
-            pan_pred = pan_pred - aux_off
-
             pan_gt_pred = pan_gt.astype(np.uint64) * OFFSET + pan_pred.astype(np.uint64)
             labels, labels_cnt = np.unique(pan_gt_pred, return_counts=True)
             for label, intersection in zip(labels, labels_cnt):
-                gt_id = label // OFFSET + aux_off
-                pred_id = label % OFFSET + aux_off
+                gt_id = label // OFFSET
+                pred_id = label % OFFSET
                 gt_pred_map[(gt_id, pred_id)] = intersection
 
         # count all matched pairs
-        matched = set()
+        pred_matched, gt_matched = set(), set()
         for label_tuple, intersection in gt_pred_map.items():
             gt_label, pred_label = label_tuple
             if gt_label not in gt_segms:
                 continue
             if pred_label not in pred_segms:
                 continue
-            if gt_label != pred_label:
+            if gt_segms[gt_label]["cat_id"] != pred_segms[pred_label]["cat_id"]:
                 continue
-            union = pred_segms[pred_label] + gt_segms[gt_label] - intersection - gt_pred_map.get((VOID, pred_label), 0)
+            union = (
+                pred_segms[pred_label]["area"]
+                + gt_segms[gt_label]["area"]
+                - intersection
+                - gt_pred_map.get((VOID, pred_label), 0)
+            )
             iou = intersection / union
             if iou > 0.5:  # Add matches from this IoU (take from original paper)
-                self.pq_per_cat[gt_label].tp += 1
-                self.pq_per_cat[gt_label].iou += iou
-                matched.add(pred_label)
+                self.pq_per_cat[gt_segms[gt_label]["cat_id"]].tp += 1
+                self.pq_per_cat[gt_segms[gt_label]["cat_id"]].iou += iou
+                gt_matched.add(gt_label)
+                pred_matched.add(pred_label)
 
         # count false negative
-        for gt_label in gt_segms:
-            if gt_label in matched:
+        for gt_label, gt_info in gt_segms.items():
+            if gt_label in gt_matched:
                 continue
-            self.pq_per_cat[gt_label].fn += 1
+            self.pq_per_cat[gt_info["cat_id"]].fn += 1
 
         # count false positives
-        for pred_label, pred_area in pred_segms.items():
-            if pred_label in matched:
+        for pred_label, pred_info in pred_segms.items():
+            if pred_label in pred_matched:
                 continue
             # intersection of the segment with VOID
             intersection = gt_pred_map.get((VOID, pred_label), 0)
             # predicted segment is ignored if more than half of the segment correspond to VOID regions
-            if intersection / pred_area > 0.5:
+            if intersection / pred_info["area"] > 0.5:
                 continue
-            self.pq_per_cat[pred_label].fp += 1
+            self.pq_per_cat[pred_info["cat_id"]].fp += 1
 
     def calc_map(self, print_result: bool = False):
         """Calcule PQ-RQ-SQ maps
@@ -315,14 +327,14 @@ class PQMetrics(object):
         else:
             keys, cats = ["all"], [None]
         for key, cat in zip(keys, cats):
-            if cat is not None:
+            if cat is not None or not self.isfull:
                 all_maps[key], all_maps_per_class[key] = self.pq_average(cat, print_result)
             else:
                 all_maps[key], all_maps_per_class[key] = self.pq_average(cat)
 
-        if print_result:
-            _print_head()
-            _print_body(all_maps["all"], {})
+        if print_result and self.isfull:
+            self.print_head()
+            self.print_body(all_maps["all"], {})
 
         return all_maps, all_maps_per_class
 

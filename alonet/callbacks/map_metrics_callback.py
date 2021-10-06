@@ -9,10 +9,10 @@ from pytorch_lightning.utilities import rank_zero_only
 from alonet.common.logger import log_figure, log_scalar
 
 from alonet.metrics import ApMetrics
-from alonet.callbacks import BaseMetricsCallback
+from alonet.callbacks import InstancesBaseMetricsCallback
 
 
-class ApMetricsCallback(BaseMetricsCallback):
+class ApMetricsCallback(InstancesBaseMetricsCallback):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, base_metric=ApMetrics, **kwargs)
 

@@ -22,8 +22,6 @@ class Mask(aloscene.tensors.SpatialAugmentedTensor):
         Labels for each mask, used for rendering segmentation maps
     """
 
-    _GLOBAL_COLOR_SET = np.random.uniform(0, 1, (300, 3))
-
     @staticmethod
     def __new__(cls, x, labels: Union[dict, Labels] = None, *args, **kwargs):
         # Load frame from path
@@ -47,15 +45,13 @@ class Mask(aloscene.tensors.SpatialAugmentedTensor):
         """
         self._append_label("labels", labels, name)
 
-    def iou_with(self, mask2, threshold: float = 0.5):
+    def iou_with(self, mask2) -> torch.Tensor:
         """ IoU calculation between mask2 and itself
 
         Parameters
         ----------
         mask2 : :mod:`Mask <aloscene.mask>`
             Masks with size (M,H,W)
-        threshold : float
-            Threshold to binarize the masks, by default 0.5
 
         Returns
         -------
@@ -82,7 +78,9 @@ class Mask(aloscene.tensors.SpatialAugmentedTensor):
         union[union == 0] = 0.001  # Avoid divide by 0
         return intersection / (union - intersection)
 
-    def get_view(self, frame: Tensor = None, size: tuple = None, labels_set: str = None, **kwargs):
+    def get_view(
+        self, frame: Tensor = None, size: tuple = None, labels_set: str = None, color_by_cat: bool = False, **kwargs
+    ):
         """Get view of segmentation mask and used it in a input :mod:`Frame <aloscene.frame>`
 
         Parameters
@@ -93,6 +91,8 @@ class Mask(aloscene.tensors.SpatialAugmentedTensor):
             Size of a desired masks, by default not-resize
         labels_set : str, optional
             Set of labels to show in segmentation when multiple labels are defined, by default None
+        color_by_cat : bool, optional
+            Set same color by category ID, by default False
 
         Returns
         -------
@@ -118,19 +118,22 @@ class Mask(aloscene.tensors.SpatialAugmentedTensor):
             frame = torch.zeros(3, *size)
             frame = Frame(frame, names=("C", "H", "W"), normalization="01")
 
-        masks = self.__get_view__(labels_set=labels_set, **kwargs).image
+        masks = self.__get_view__(labels_set=labels_set, color_by_cat=color_by_cat, **kwargs).image
         frame = frame.norm01().cpu().rename(None).permute([1, 2, 0]).detach().contiguous().numpy()
         frame = cv2.resize(frame, (self.shape[-1], self.shape[-2]))
         if masks.shape[-1] > 0:
             frame = 0.2 * frame + 0.8 * masks
         return View(frame, **kwargs)
 
-    def __get_view__(self, labels_set: str = None, title: str = None, **kwargs):
+    def __get_view__(self, labels_set: str = None, title: str = None, color_by_cat: bool = False, **kwargs):
         """Create a view of the frame"""
-        frame, annotations = self.mask2id(labels_set=labels_set, return_ann=True)
+        from alodataset.utils.panoptic_utils import id2rgb
+
+        frame, annotations = self.mask2id(labels_set=labels_set, return_ann=True, return_cats=color_by_cat)
+
         # Frame construction by segmentation masks
         if hasattr(self, "labels") and self.labels is not None and len(self) > 0:
-            frame = self._GLOBAL_COLOR_SET[frame]
+            frame = id2rgb(frame)
 
         # Add relative text in frame
         for anno in annotations:
@@ -146,7 +149,7 @@ class Mask(aloscene.tensors.SpatialAugmentedTensor):
             )
         return View(frame, title=title)
 
-    def mask2id(self, labels_set: str = None, return_ann: bool = False):
+    def mask2id(self, labels_set: str = None, return_ann: bool = False, return_cats: bool = False):
         """Create a panoptic view of the frame, where each pixel represent one class
 
         Parameters
@@ -155,13 +158,16 @@ class Mask(aloscene.tensors.SpatialAugmentedTensor):
             If multilabels are handled, get mask_id by a set of label desired, by default None
         return_ann : bool, optional
             Return annotations to get_view function, by default False
+        return_cats : bool, optional
+            Return categories ID instance ID, by default False.
 
         Returns
         -------
         np.array
             Array of (H,W) dimensions, where each value represent one class
         """
-        """"""
+        from alodataset.utils.panoptic_utils import VOID_CLASS_ID
+
         assert self.names[0] != "T" and self.names[1] != "B"
         frame = self.cpu().rename(None).permute([1, 2, 0]).detach().contiguous().numpy()
 
@@ -171,15 +177,17 @@ class Mask(aloscene.tensors.SpatialAugmentedTensor):
         if hasattr(self, "labels") and self.labels is not None and len(labels) > 0:
             assert len(labels) == len(self)  # Required to make panoptic view
 
-            frame = np.concatenate([np.zeros_like(frame[..., [0]]), frame], axis=-1)  # Add background class with ID=-1
-            frame = np.argmax(frame, axis=-1).astype("int") - 1  # Get one mask by ID
+            frame = np.concatenate([np.zeros_like(frame[..., [0]]), frame], axis=-1)  # Add BG class with ID=VOID
+            frame = np.argmax(frame, axis=-1).astype("int") + VOID_CLASS_ID  # Get one mask by ID
             copy_frame = frame.copy()
 
             for i, label in enumerate(labels):  # Add ID in text and use same color by object ID
                 # Change ID if labels are defined
                 if label is not None:
                     label = int(label)
-                    frame[copy_frame == i] = label
+
+                    if return_cats:
+                        frame[copy_frame == (i + VOID_CLASS_ID + 1)] = label
 
                     if return_ann:
                         feat = self[i].cpu().detach().contiguous().numpy()  # Get i_mask

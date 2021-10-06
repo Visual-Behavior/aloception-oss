@@ -12,17 +12,21 @@ import alodataset
 
 
 class CocoPanoptic2Detr(Data2Detr):
-    def setup(self, stage: Optional[str] = None):
+    def setup(self, stage: Optional[str] = None, fix_classes_len: int = 250):
         if stage == "fit" or stage is None:
             # Setup train/val loaders
             self.train_dataset = alodataset.CocoPanopticDataset(
                 transform_fn=self.val_transform if self.train_on_val else self.train_transform,
                 sample=self.sample,
                 split=alodataset.Split.VAL if self.train_on_val else alodataset.Split.TRAIN,
+                fix_classes_len=fix_classes_len,
             )
             self.sample = self.train_dataset.sample or self.sample  # Update sample if user prompt is given
             self.val_dataset = alodataset.CocoPanopticDataset(
-                transform_fn=self.val_transform, sample=self.sample, split=alodataset.Split.VAL,
+                transform_fn=self.val_transform,
+                sample=self.sample,
+                split=alodataset.Split.VAL,
+                fix_classes_len=fix_classes_len,
             )
             self.sample = self.val_dataset.sample or self.sample  # Update sample if user prompt is given
             self.label_names = self.val_dataset.label_names if hasattr(self.val_dataset, "label_names") else None

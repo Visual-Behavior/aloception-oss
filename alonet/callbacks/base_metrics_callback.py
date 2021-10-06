@@ -6,7 +6,7 @@ from pytorch_lightning.utilities import rank_zero_only
 # import wandb
 
 
-class BaseMetricsCallback(pl.Callback):
+class InstancesBaseMetricsCallback(pl.Callback):
     def __init__(self, base_metric: metrics, *args, **kwargs):
         self.metrics = []
         self.base_metric = base_metric

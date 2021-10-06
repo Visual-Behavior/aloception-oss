@@ -1,11 +1,17 @@
+from typing import Union
 import numpy as np
 import torch
 
+# from alonet.metrics.compute_pq import VOID
+
+VOID_CLASS_ID = -1
 GLOBAL_COLOR_SET = np.random.uniform(0, 1, (300, 3))
+GLOBAL_COLOR_SET[VOID_CLASS_ID] = [0, 0, 0]
+OFFSET = 256 * 256 * 256
 
 
 # Function get from PanopticAPI: https://github.com/cocodataset/panopticapi/blob/master/panopticapi/utils.py
-def rgb2id(color):
+def rgb2id(color: Union[list, np.ndarray]):
     if isinstance(color, np.ndarray) and len(color.shape) == 3:
         if color.dtype == np.uint8:
             color = color.astype(np.int32)
@@ -14,9 +20,9 @@ def rgb2id(color):
 
 
 # Function get from PanopticAPI: https://github.com/cocodataset/panopticapi/blob/master/panopticapi/utils.py
-def id2rgb(id_map, random_color=True):
+def id2rgb(id_map: np.ndarray, random_color: bool = True):
     if random_color:
-        return (256 * GLOBAL_COLOR_SET[id_map]).astype(np.uint8)
+        return GLOBAL_COLOR_SET[id_map]
     if isinstance(id_map, np.ndarray):
         id_map_copy = id_map.copy()
         rgb_shape = tuple(list(id_map.shape) + [3])
@@ -24,10 +30,10 @@ def id2rgb(id_map, random_color=True):
         for i in range(3):
             rgb_map[..., i] = id_map_copy % 256
             id_map_copy //= 256
-        return rgb_map
+        return rgb_map / 255.0
     color = []
     for _ in range(3):
-        color.append(id_map % 256)
+        color.append((id_map % 256) / 255.0)
         id_map //= 256
     return color
 

@@ -132,16 +132,18 @@ class Disparity(aloscene.tensors.SpatialAugmentedTensor):
         disp = torch.absolute(disp)
         return disp
 
-    def signed(self):
+    def signed(self, camera_side: str = None):
         """
         Returns a copy of disparity map in signed disparity format
         """
         disp = self.clone()
         if disp.disp_format == "signed":
             return disp
-        if disp.camera_side is None:
+        camera_side = camera_side if camera_side is not None else disp.camera_side
+        if camera_side is None:
             raise ValueError("Cannot convert disparity to signed format if `camera side` is None.")
         disp.disp_format = "signed"
-        if disp.camera_side == "left":
+        if camera_side == "left":
             disp = -1 * disp
+        disp.camera_side = camera_side
         return disp

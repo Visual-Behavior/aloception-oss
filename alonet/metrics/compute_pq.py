@@ -53,9 +53,13 @@ class PQMetrics(object):
         """
         self.class_names = cat_labels.labels_names
         if isthing_labels is not None:
+            try:
+                thing_id = isthing_labels.labels_names.index("thing")
+            except:
+                thing_id = len(isthing_labels.labels_names)
             self.categories.update(
                 {
-                    id: {"category": self.class_names[id], "isthing": it == 1}
+                    id: {"category": self.class_names[id], "isthing": it == thing_id}
                     for id, it in zip(list(cat_labels.numpy().astype(int)), list(isthing_labels.numpy().astype(int)))
                 }
             )
@@ -121,10 +125,7 @@ class PQMetrics(object):
         return result, per_class_results
 
     def add_sample(
-        self,
-        p_mask: aloscene.Mask,
-        t_mask: aloscene.Mask,
-        **kwargs,
+        self, p_mask: aloscene.Mask, t_mask: aloscene.Mask, **kwargs,
     ):
         """Add a new prediction and target masks to PQ metrics estimation process
 

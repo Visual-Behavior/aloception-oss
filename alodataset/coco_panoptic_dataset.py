@@ -111,13 +111,14 @@ class CocoPanopticDataset(BaseDataset, SplitMixin):
                     items.append(self.items[i])
             self.items = items
 
-            # Fix label_types
-            for ltype, vtype in self.label_types.items():
-                vtype = [x for b, x in enumerate(vtype) if self._ids_renamed[b] != -1]
-                ltn = list(sorted(set(self.label_types_names[ltype][vtype])))
-                index = {b: ltn.index(p) for b, p in enumerate(self.label_types_names[ltype]) if p in ltn}
-                self.label_types[ltype] = [index[idx] for idx in index]
-                self.label_types_names[ltype] = ltn
+            # Fix label_types: If `classes` is desired, remove types that not include this classes and fix indices
+            if self.label_types is not None:
+                for ltype, vtype in self.label_types.items():
+                    vtype = [x for b, x in enumerate(vtype) if self._ids_renamed[b] != -1]
+                    ltn = list(sorted(set([self.label_types_names[ltype][vt] for vt in vtype])))
+                    index = {b: ltn.index(p) for b, p in enumerate(self.label_types_names[ltype]) if p in ltn}
+                    self.label_types[ltype] = [index[idx] for idx in vtype]
+                    self.label_types_names[ltype] = ltn
 
         # Fix number of label names if desired
         if fix_classes_len is not None:
@@ -238,8 +239,6 @@ class CocoPanopticDataset(BaseDataset, SplitMixin):
         masks = masks == ids[:, None, None]
         masks = torch.as_tensor(masks, dtype=torch.uint8)
 
-        labels = [ann["category_id"] for ann in ann_info["segments_info"]]
-        # label_types = {k: torch.as_tensor([lbl for lbl in labels self.label_types[labels])}
         labels = torch.as_tensor([ann["category_id"] for ann in ann_info["segments_info"]], dtype=torch.int64)
 
         # Clean index by unique classes filtered

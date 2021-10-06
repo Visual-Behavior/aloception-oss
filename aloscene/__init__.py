@@ -10,3 +10,4 @@ from .flow import Flow
 from .points_2d import Points2D
 from .frame import Frame
 from .disparity import Disparity
+from .depth import Depth

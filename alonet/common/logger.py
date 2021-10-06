@@ -119,7 +119,7 @@ def log_image(trainer, key, images):
 
             if masks is not None:
                 for m in masks:
-                    img = (id2rgb(m["masks"]) * 0.8 + image * 0.2).transpose(2, 0, 1).astype(np.uint8)
+                    img = (256 * id2rgb(m["masks"]) * 0.8 + image * 0.2).transpose(2, 0, 1).astype(np.uint8)
                     trainer.logger.experiment.add_image(f"{batch_el_key}_{m['name']}", img, trainer.global_step)
             if boxes is not None:
                 image = aloscene.Frame(np.transpose(image, (2, 0, 1)), names=["C", "H", "W"])

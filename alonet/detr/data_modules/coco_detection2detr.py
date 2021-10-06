@@ -1,23 +1,3 @@
-"""LightningDataModule that make the connection between :mod:`CocoDetectionDataset <alodataset.coco_detection_dataset>`
-and :mod:`LitDetr <alonet.detr.train>` modules. See :mod:`Data2Detr <alonet.detr.data_modules.data2detr>`
-to more information about the methods and configurations.
-
-Examples
---------
-.. code-block:: python
-
-    from alonet.detr import CocoDetection2Detr
-    from aloscene import Frame
-
-    datamodule = CocoDetection2Detr(sample = True)
-
-    train_frame = next(iter(datamodule.train_dataloader()))
-    train_frame = Frame.batch_list(train_frame).get_view().render()
-
-    val_frame = next(iter(datamodule.val_dataloader()))
-    val_frame = Frame.batch_list(val_frame).get_view().render()
-"""
-
 from argparse import ArgumentParser, Namespace
 from typing import Optional
 

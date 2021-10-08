@@ -1,3 +1,5 @@
 from .object_detector_callback import ObjectDetectorCallback
 from .metrics_callback import MetricsCallback
+from .base_metrics_callback import InstancesBaseMetricsCallback
 from .map_metrics_callback import ApMetricsCallback
+from .pq_metrics_callback import PQMetricsCallback

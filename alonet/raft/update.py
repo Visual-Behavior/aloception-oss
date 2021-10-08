@@ -4,10 +4,10 @@ import torch.nn.functional as F
 
 
 class FlowHead(nn.Module):
-    def __init__(self, input_dim=128, hidden_dim=256):
+    def __init__(self, input_dim=128, hidden_dim=256, out_planes=2):
         super(FlowHead, self).__init__()
         self.conv1 = nn.Conv2d(input_dim, hidden_dim, 3, padding=1)
-        self.conv2 = nn.Conv2d(hidden_dim, 2, 3, padding=1)
+        self.conv2 = nn.Conv2d(hidden_dim, out_planes, 3, padding=1)
         self.relu = nn.ReLU(inplace=True)
 
     def forward(self, x):
@@ -27,7 +27,7 @@ class ConvGRU(nn.Module):
         z = torch.sigmoid(self.convz(hx))
         r = torch.sigmoid(self.convr(hx))
         q = torch.tanh(self.convq(torch.cat([r * h, x], dim=1)))
-
+        
         h = (1 - z) * h + z * q
         return h
 
@@ -62,11 +62,12 @@ class SepConvGRU(nn.Module):
 
 
 class SmallMotionEncoder(nn.Module):
-    def __init__(self, corr_levels, corr_radius):
+    def __init__(self, corr_levels, corr_radius, out_planes=2):
         super(SmallMotionEncoder, self).__init__()
-        cor_planes = corr_levels * (2 * corr_radius + 1) ** 2
+        cor_planes = corr_levels * (2 * corr_radius + 1) ** out_planes
+
         self.convc1 = nn.Conv2d(cor_planes, 96, 1, padding=0)
-        self.convf1 = nn.Conv2d(2, 64, 7, padding=3)
+        self.convf1 = nn.Conv2d(out_planes, 64, 7, padding=3)
         self.convf2 = nn.Conv2d(64, 32, 3, padding=1)
         self.conv = nn.Conv2d(128, 80, 3, padding=1)
 
@@ -80,14 +81,14 @@ class SmallMotionEncoder(nn.Module):
 
 
 class BasicMotionEncoder(nn.Module):
-    def __init__(self, corr_levels, corr_radius):
+    def __init__(self, corr_levels, corr_radius, out_planes=2):
         super(BasicMotionEncoder, self).__init__()
-        cor_planes = corr_levels * (2 * corr_radius + 1) ** 2
+        cor_planes = corr_levels * (2 * corr_radius + 1) ** out_planes
         self.convc1 = nn.Conv2d(cor_planes, 256, 1, padding=0)
         self.convc2 = nn.Conv2d(256, 192, 3, padding=1)
-        self.convf1 = nn.Conv2d(2, 128, 7, padding=3)
+        self.convf1 = nn.Conv2d(out_planes, 128, 7, padding=3)
         self.convf2 = nn.Conv2d(128, 64, 3, padding=1)
-        self.conv = nn.Conv2d(64 + 192, 128 - 2, 3, padding=1)
+        self.conv = nn.Conv2d(64 + 192, 128 - out_planes, 3, padding=1)
 
     def forward(self, flow, corr):
         cor = F.relu(self.convc1(corr))
@@ -101,11 +102,11 @@ class BasicMotionEncoder(nn.Module):
 
 
 class SmallUpdateBlock(nn.Module):
-    def __init__(self, corr_levels, corr_radius, hidden_dim=96):
+    def __init__(self, corr_levels, corr_radius, hidden_dim=96, out_planes=2):
         super(SmallUpdateBlock, self).__init__()
-        self.encoder = SmallMotionEncoder(corr_levels, corr_radius)
-        self.gru = ConvGRU(hidden_dim=hidden_dim, input_dim=82 + 64)
-        self.flow_head = FlowHead(hidden_dim, hidden_dim=128)
+        self.encoder = SmallMotionEncoder(corr_levels, corr_radius, out_planes=out_planes)
+        self.gru = ConvGRU(hidden_dim=hidden_dim, input_dim=hidden_dim + 49)
+        self.flow_head = FlowHead(hidden_dim, hidden_dim=128, out_planes=out_planes)
 
     def forward(self, net, inp, corr, flow):
         motion_features = self.encoder(flow, corr)
@@ -117,11 +118,11 @@ class SmallUpdateBlock(nn.Module):
 
 
 class BasicUpdateBlock(nn.Module):
-    def __init__(self, corr_levels, corr_radius, hidden_dim=128, input_dim=128):
+    def __init__(self, corr_levels, corr_radius, hidden_dim=128, input_dim=128, out_planes=2):
         super(BasicUpdateBlock, self).__init__()
-        self.encoder = BasicMotionEncoder(corr_levels, corr_radius)
+        self.encoder = BasicMotionEncoder(corr_levels, corr_radius, out_planes=out_planes)
         self.gru = SepConvGRU(hidden_dim=hidden_dim, input_dim=128 + hidden_dim)
-        self.flow_head = FlowHead(hidden_dim, hidden_dim=256)
+        self.flow_head = FlowHead(hidden_dim, hidden_dim=256, out_planes=out_planes)
 
         self.mask = nn.Sequential(
             nn.Conv2d(128, 256, 3, padding=1), nn.ReLU(inplace=True), nn.Conv2d(256, 64 * 9, 1, padding=0)

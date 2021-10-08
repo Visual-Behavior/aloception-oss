@@ -46,8 +46,8 @@ class RAFTBase(nn.Module):
         update_block,
         alternate_corr=False,
         weights: str = None,
-        corr_block = CorrBlock,
-        device: torch.device = torch.device("cpu")
+        corr_block=CorrBlock,
+        device: torch.device = torch.device("cpu"),
     ):
         super().__init__()
         self.fnet = fnet
@@ -179,22 +179,19 @@ class RAFTBase(nn.Module):
         for itr in range(iters):
             coords1 = coords1.detach()
             corr = corr_fn(coords1)  # index correlation volume
-            disp = coords1 - coords0
-            net, up_mask, delta_disp = self.update_block(net, inp, corr, disp)
-            coords1 = coords1 + delta_disp
-            m_outputs.append({
-                "flow":coords1 - coords0,
-                "hidden_state":net,
-                "up_mask":up_mask,
-                "delta_disp":delta_disp
-            })
+            flow = coords1 - coords0
+            net, up_mask, delta_flow = self.update_block(net, inp, corr, flow)
+            coords1 = coords1 + delta_flow
+            m_outputs.append(
+                {"flow": coords1 - coords0, "hidden_state": net, "up_mask": up_mask, "delta_flow": delta_flow}
+            )
 
         return self.forward_heads(m_outputs, only_last=only_last)
 
     @torch.no_grad()
     def inference(self, m_outputs, only_last=False):
         def generate_frame(out_dict):
-            #flow_low = Flow(out_dict["flow"], names=("B", "C", "H", "W"))
+            # flow_low = Flow(out_dict["flow"], names=("B", "C", "H", "W"))
             flow_up = Flow(out_dict["up_flow"], names=("B", "C", "H", "W"))
             return flow_up
 
@@ -202,7 +199,7 @@ class RAFTBase(nn.Module):
             return generate_frame(m_outputs[-1])
         else:
             return [generate_frame(out_dict) for out_dict in m_outputs]
-            
+
 
 class RAFT(RAFTBase):
     """
@@ -274,7 +271,7 @@ if __name__ == "__main__":
     with torch.no_grad():
         m_outputs = raft.forward(frame1, frame2)  # keep only last stage flow estimation
         output = raft.inference(m_outputs)
-        
+
         flow = output[-1]
         flow = padder.unpad(flow)  # unpad to original image resolution
         flow = flow.detach().cpu()

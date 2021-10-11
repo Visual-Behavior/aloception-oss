@@ -8,6 +8,7 @@ from pytorch_lightning.utilities import rank_zero_only
 
 import numpy as np
 from alonet.common.logger import log_image
+from alodataset.utils.panoptic_utils import VOID_CLASS_ID
 
 
 class ObjectDetectorCallback(pl.Callback):
@@ -127,8 +128,12 @@ class ObjectDetectorCallback(pl.Callback):
             A set of predicted segmentation masks
         trainer : pl.trainer.trainer.Trainer
             Lightning trainer
+        name : str
+            Name to show in wandb
         """
         images = []
+        # Show categories with same color if there are many categories
+        color_by_cat = len(frames[0].segmentation.labels.labels_names) > 20
         for b, p_mask in enumerate(pred_masks):
             # 1. Get view of segmentation: More efficient but does not allow filtering classes in wandb
             # frame = frames[b]
@@ -140,29 +145,45 @@ class ObjectDetectorCallback(pl.Callback):
 
             # 2. Send masks to wandb (expend more time process)
             # Retrive label names
-            labels_names = frames.segmentation[b].labels.labels_names
-            if labels_names is not None:
-                labels_names = {i: name for i, name in enumerate(labels_names)}
-
             target_masks = frames.segmentation[b]
+            labels_names = target_masks.labels.labels_names
+            if labels_names is not None:
+                if color_by_cat:
+                    labels_gt = {i: name for i, name in enumerate(labels_names)}
+                    labels_pred = labels_gt
+                else:  # TODO: synchronize colors by matcher (?)
+                    labels = target_masks.labels.cpu().numpy().astype("int")
+                    labels_gt = {
+                        i + VOID_CLASS_ID + 1: labels_names[id]
+                        for i, id in enumerate(labels)
+                        if id < len(labels_names)
+                    }
+                    labels = p_mask.labels.cpu().numpy().astype("int")
+                    labels_pred = {
+                        i + VOID_CLASS_ID + 1: labels_names[id]
+                        for i, id in enumerate(labels)
+                        if id < len(labels_names)
+                    }
 
             frame = frames[b].detach().norm255().cpu().type(torch.uint8).rename(None)
             frame = frame.permute([1, 2, 0]).contiguous().numpy()
 
             # Get panoptic view
-            target_masks = target_masks.mask2id()
-            p_mask = p_mask.mask2id()
-            target_masks[target_masks == -1] = len(labels_names)  # Background N/A
-            p_mask[p_mask == -1] = len(labels_names)  # Background N/A
+            target_masks = target_masks.mask2id(return_cats=color_by_cat)
+            p_mask = p_mask.mask2id(return_cats=color_by_cat)
+            if VOID_CLASS_ID < 0:
+                bg_val = max(max(labels_gt.keys()), max(labels_pred.keys())) + 1
+                target_masks[target_masks == VOID_CLASS_ID] = bg_val  # Background N/A
+                p_mask[p_mask == VOID_CLASS_ID] = bg_val  # Background N/A
             target_masks = target_masks.astype(np.uint8)
             p_mask = p_mask.astype(np.uint8)
 
             # Add masks to frame
             masks = []
             if target_masks.size != 0:
-                masks.append({"name": "ground_truth", "class_labels": labels_names, "masks": target_masks})
+                masks.append({"name": "ground_truth", "class_labels": labels_gt, "masks": target_masks})
             if p_mask.size != 0:
-                masks.append({"name": "predictions", "class_labels": labels_names, "masks": p_mask})
+                masks.append({"name": "predictions", "class_labels": labels_pred, "masks": p_mask})
             images.append({"image": frame, "masks": masks if len(masks) > 0 else None})
 
         log_image(trainer, name, images)

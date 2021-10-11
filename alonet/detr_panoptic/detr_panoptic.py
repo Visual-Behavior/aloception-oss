@@ -35,6 +35,8 @@ class PanopticHead(nn.Module):
         Configure module in CPU or GPU, by default torch.device("cpu")
     weights : str, optional
         Load weights from name project, by default None
+    strict_load_weights : bool
+        Load the weights (if any given) with strict = ``True`` (by default).
     """
 
     INPUT_MEAN_STD = alonet.detr.detr.INPUT_MEAN_STD
@@ -46,6 +48,7 @@ class PanopticHead(nn.Module):
         aux_loss: bool = None,
         device: torch.device = torch.device("cpu"),
         weights: str = None,
+        strict_load_weights: bool = True,
     ):
         super().__init__()
         self.detr = DETR_module
@@ -74,7 +77,7 @@ class PanopticHead(nn.Module):
         # Load weights
         if weights is not None:
             if ".pth" in weights or ".ckpt" in weights:
-                alonet.common.load_weights(self, weights, device, strict_load_weights=True)
+                alonet.common.load_weights(self, weights, device, strict_load_weights=strict_load_weights)
             else:
                 raise ValueError(f"Unknown weights: '{weights}'")
 

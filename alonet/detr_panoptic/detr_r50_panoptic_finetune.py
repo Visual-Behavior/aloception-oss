@@ -6,7 +6,7 @@ change the number of outputs in :attr:`class_embed` layer, in order to train cus
 from torch import nn
 from argparse import Namespace
 from alonet.detr_panoptic import PanopticHead
-from alonet.detr import DetrR50Finetune
+from alonet.detr import DetrR50
 from alonet.common.weights import load_weights
 
 
@@ -20,6 +20,8 @@ class DetrR50PanopticFinetune(PanopticHead):
         Number of classes in the :attr:`class_embed` output layer
     background_class : int, optional
         Background class, by default None
+    base_model : torch.nn, optional
+        Base model to couple PanopticHead, by default :mod:`DetrR50 <alonet.detr.detr_r50>`
     base_weights : str, optional
         Load weights from original :mod:`DetrR50 <alonet.detr.detr_r50>` +
         :mod:`PanopticHead <alonet.detr_panoptic.detr_panoptic>`,
@@ -27,7 +29,7 @@ class DetrR50PanopticFinetune(PanopticHead):
     freeze_detr : bool, optional
         Freeze :mod:`DetrR50 <alonet.detr.detr_r50>` weights, by default False
     weights : str, optional
-        Weights in finetune model, by default None
+        Weights for finetune model, by default None
 
     Raises
     ------
@@ -39,14 +41,15 @@ class DetrR50PanopticFinetune(PanopticHead):
         self,
         num_classes: int,
         background_class: int = None,
-        base_weights: str = "/home/johan/.aloception/weights/detr-r50-panoptic/detr-r50-panoptic.pth",
+        base_model: nn = None,
+        base_weights: str = "detr-r50-panoptic",
         freeze_detr: bool = False,
         weights: str = None,
         *args: Namespace,
         **kwargs: dict,
     ):
         """Init method"""
-        base_model = DetrR50Finetune(*args, background_class=background_class, num_classes=250, **kwargs)
+        base_model = base_model or DetrR50(*args, background_class=background_class, num_classes=250, **kwargs)
         super().__init__(*args, DETR_module=base_model, freeze_detr=freeze_detr, weights=base_weights, **kwargs)
 
         self.detr.num_classes = num_classes

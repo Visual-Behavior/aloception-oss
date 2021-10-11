@@ -174,7 +174,13 @@ class ObjectDetectorCallback(pl.Callback):
             target_masks = target_masks.mask2id(return_cats=color_by_cat)
             p_mask = p_mask.mask2id(return_cats=color_by_cat)
             if VOID_CLASS_ID < 0:
-                bg_val = max(max(labels_gt.keys()), max(labels_pred.keys())) + 1
+                bg_val = (
+                    max(
+                        max(labels_gt.keys() if len(labels_gt) > 0 else [0]),
+                        max(labels_pred.keys() if len(labels_pred) > 0 else [0]),
+                    )
+                    + 1
+                )
                 target_masks[target_masks == VOID_CLASS_ID] = bg_val  # Background N/A
                 p_mask[p_mask == VOID_CLASS_ID] = bg_val  # Background N/A
             target_masks = target_masks.astype(np.uint8)

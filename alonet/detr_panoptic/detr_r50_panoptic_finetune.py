@@ -24,8 +24,7 @@ class DetrR50PanopticFinetune(PanopticHead):
         Base model to couple PanopticHead, by default :mod:`DetrR50 <alonet.detr.detr_r50>`
     base_weights : str, optional
         Load weights from original :mod:`DetrR50 <alonet.detr.detr_r50>` +
-        :mod:`PanopticHead <alonet.detr_panoptic.detr_panoptic>`,
-        by default "/home/johan/.aloception/weights/detr-r50-panoptic/detr-r50-panoptic.pth"
+        :mod:`PanopticHead <alonet.detr_panoptic.detr_panoptic>`, by default "detr-r50-panoptic"
     freeze_detr : bool, optional
         Freeze :mod:`DetrR50 <alonet.detr.detr_r50>` weights, by default False
     weights : str, optional

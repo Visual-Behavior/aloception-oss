@@ -5,6 +5,8 @@ Panoptic module to use in object detection/segmentation tasks.
 """
 import os
 from typing import Callable, Dict
+import argparse
+import time
 
 import torch
 import torch.nn.functional as F
@@ -207,7 +209,7 @@ class PanopticHead(nn.Module):
         return preds_boxes, preds_masks
 
 
-if __name__ == "__main__":
+def main(image_path):
     device = torch.device("cuda")
 
     # Load model
@@ -215,17 +217,32 @@ if __name__ == "__main__":
     model = PanopticHead(DetrR50(num_classes=250), weights=weights)
     model.to(device)
 
-    # Random frame
-    # frame = aloscene.Frame(torch.rand((3, 250, 250)), names=("C", "H", "W")).norm_resnet().to(device)
-    frame = aloscene.Frame("./images/aloception.png", names=("C", "H", "W")).norm_resnet().to(device)
-    frame = frame.resize((300, 300))
-    frame = frame.batch_list([frame])
-    # frame.get_view().render()
+    # Open and prepare a batch for the model
+    frame = aloscene.Frame(image_path).norm_resnet()
+    frames = aloscene.Frame.batch_list([frame])
+    frames = frames.to(device)
 
     # Pred of size (B, NQ, H//4, W//4)
-    foutputs = model(frame, threshold=0.5, background_class=250)
-    print(foutputs["pred_masks"].shape)
-    boxes, pred = model.inference(foutputs)
-    print("size of each pred:", [len(p) for p in pred])
+    with torch.no_grad():
+        # Measure inference time
+        tic = time.time()
+        [model(frames) for _ in range(20)]
+        toc = time.time()
+        print(f"{(toc - tic)/20*1000} ms")
 
-    frame.get_view([boxes[0].get_view(frame[0]), pred[0].get_view(frame[0])]).render()
+        # Predict boxes
+        m_outputs = model(frames, threshold=0.5, background_class=250)
+
+    pred_boxes, pred_masks = model.inference(m_outputs)
+
+    # Add and display the boxes/masks predicted
+    frame.append_boxes2d(pred_boxes[0], "pred_boxes")
+    frame.append_segmentation(pred_masks[0], "pred_masks")
+    frame.get_view().render()
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Detr R50 Panoptic inference on image")
+    parser.add_argument("image_path", type=str, help="Path to the image for inference")
+    args = parser.parse_args()
+    main(args.image_path)

@@ -271,8 +271,8 @@ class PQMetrics(object):
                 all_maps[key], all_maps_per_class[key] = self.pq_average(cat)
 
         if print_result and self.isfull:
-            self.print_head()
-            self.print_body(all_maps["all"], {})
+            _print_head()
+            _print_body(all_maps["all"], {})
 
         return all_maps, all_maps_per_class
 

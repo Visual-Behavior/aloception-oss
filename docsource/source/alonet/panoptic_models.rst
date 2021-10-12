@@ -75,6 +75,15 @@ Panoptic head API
    :undoc-members:
    :show-inheritance:
 
+
+DetrR50 Panoptic Finetune
+-----------------------------------------------
+
+.. automodule:: alonet.detr_panoptic.detr_r50_panoptic_finetune
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 .. Hyperlinks
 .. |detr| replace:: Detr-based models
 .. _detr: detr_models.html#module-alonet.detr.detr

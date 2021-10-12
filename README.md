@@ -98,6 +98,7 @@ configuration. Please, ref to the `pytorch website <https://pytorch.org/>`_  for
   <li><a href="https://visual-behavior.github.io/aloception/tutorials/data_setup.html">How to setup your data?</a></li>
   <li><a href="https://visual-behavior.github.io/aloception/tutorials/training_detr.html">Training Detr</a></li>
   <li><a href="https://visual-behavior.github.io/aloception/tutorials/finetuning_detr.html">Finetuning DETR</a></li>
+  <li><a href="https://visual-behavior.github.io/aloception/tutorials/training_panoptic.html">Training Panoptic Head</a></li>
   <li><a href="https://visual-behavior.github.io/aloception/tutorials/training_deformable_detr.html">Training Deformable DETR</a></li>
   <li><a href="https://visual-behavior.github.io/aloception/tutorials/finetuning_deformable_detr.html">Finetuning Deformanble DETR</a></li>
   <li><a href="https://visual-behavior.github.io/aloception/tutorials/tensort_inference.html">Exporting DETR / Deformable-DETR to TensorRT</a></li>
@@ -112,7 +113,7 @@ configuration. Please, ref to the `pytorch website <https://pytorch.org/>`_  for
 | detr-r50  | https://arxiv.org/abs/2005.12872   | alonet.detr.DetrR50 | <a href="#detr">Detr</a>
 | deformable-detr  | https://arxiv.org/abs/2010.04159  | alonet.deformable_detr.DeformableDETR  | <a href="#deformable-detr">Deformable detr</a>
 | RAFT | https://arxiv.org/abs/2003.12039 | alonet.raft.RAFT  | <a href="#raft">  RAFT </a> |   |
-
+| detr-r50-panoptic  | https://arxiv.org/abs/2005.12872   | alonet.detr_panoptic.PanopticHead | <a href="#detr-panoptic">DetrPanoptic</a>
 
 ## Detr
 
@@ -171,6 +172,26 @@ flow = raft.inference(raft(padder.pad(frame[0:1]), padder.pad(frame[1:2])))
 flow[0].get_view().render()
 ```
 
+## Detr Panoptic
+
+Here is a simple example to get started with **PanopticHead** and aloception. To learn more about PanopticHead, you can checkout the <a href="./alonet/detr_panoptic">panoptic README</a>.
+
+```python
+# Open and normalized frame
+frame = aloscene.Frame("/path/to/image.jpg").norm_resnet()
+
+# Load the model using pre-trained weights
+detr_model = alonet.detr.DetrR50(num_classes=250, background_class=250)
+model = alonet.detr_panoptic.PanopticHead(DETR_module=detr_model, weights="detr-r50-panoptic")
+
+# Run inference
+pred_boxes, pred_masks = model.inference(model([frame]))
+
+# Add and display the boxes/masks predicted
+frame.append_boxes2d(pred_boxes[0], "pred_boxes")
+frame.append_segmentation(pred_masks[0], "pred_masks")
+frame.get_view().render()
+```
 
 # Alodataset
 
@@ -182,6 +203,7 @@ Here is a list of all the datasets you can use on Aloception. If you're dataset 
 | Dataset name  | alodataset location  | To try
 |---|---|---|
 | CocoDetection  | alodataset.CocoDetectionDataset   | `python alodataset/coco_detection_dataset.py`
+| CocoPanoptic  | alodataset.CocoPanopticDataset   | `python alodataset/coco_panopic_dataset.py`
 | CrowdHuman  | alodataset.CrowdHumanDataset   | `python alodataset/crowd_human_dataset.py `
 | Waymo  | alodataset.WaymoDataset   | `python alodataset/waymo_dataset.py`
 | ChairsSDHom | alodataset.ChairsSDHomDataset | `python alodataset/chairssdhom_dataset.py`

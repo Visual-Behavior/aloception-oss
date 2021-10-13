@@ -1,3 +1,9 @@
+"""Class to implement a callback based for a specific metric
+
+See Also
+--------
+    All the possible :doc:`alonet.metrics`
+"""
 import pytorch_lightning as pl
 import aloscene
 from alonet import metrics
@@ -7,13 +13,20 @@ from pytorch_lightning.utilities import rank_zero_only
 
 
 class InstancesBaseMetricsCallback(pl.Callback):
+    """
+    Parameters
+    ----------
+    base_metric : metrics
+        A metric object of :doc:`alonet.metrics`
+    """
+
     def __init__(self, base_metric: metrics, *args, **kwargs):
         self.metrics = []
         self.base_metric = base_metric
         super().__init__(*args, **kwargs)
 
     def inference(self, pl_module: pl.LightningModule, m_outputs: dict, **kwargs):
-        """This method will call the `infernece` method of the module's model and will expect to receive the
+        """This method will call the :func:`inference` method of the module's model and will expect to receive the
         predicted boxes2D and/or Masks.
 
         Parameters
@@ -25,12 +38,15 @@ class InstancesBaseMetricsCallback(pl.Callback):
 
         Returns
         -------
-        :mod:`~aloscene.bounding_boxes_2d`, :mod:`~aloscene.Mask`
-            Boxes and masks predicted from inference function
+        :mod:`BoundingBoxes2D <aloscene.bounding_boxes_2d>`
+            Boxes predicted
+        :mod:`Mask <aloscene.mask>`
+            Masks predicted
 
         Notes
         -----
-            If `m_outputs` does not contain "pred_masks" attribute, a [None]*B attribute will be returned by default
+            If :attr:`m_outputs` does not contain :attr:`pred_masks` attribute, a [None]*B list will be returned
+            by default
         """
         b_pred_masks = None
         if "pred_masks" in m_outputs:
@@ -70,8 +86,8 @@ class InstancesBaseMetricsCallback(pl.Callback):
         trainer: pl.Trainer
             Pytorch lightning trainer
         pl_module: pl.LightningModule
-            Pytorch lightning module. The "m_outputs" key is expected for this this callback to work properly.
-        outputs:
+            Pytorch lightning module. The :attr:`m_outputs` key is expected for this this callback to work properly.
+        outputs: dict
             Training/Validation step outputs of the pl.LightningModule class.
         batch: list
             Batch comming from the dataloader. Usually, a list of frame.
@@ -115,20 +131,20 @@ class InstancesBaseMetricsCallback(pl.Callback):
         pred_masks: aloscene.Mask = None,
         gt_masks: aloscene.Mask = None,
     ):
-        """Add a smaple to some `alonet.metrics` class. One might want to inhert this method
-        to edit the `pred_boxes` and `gt_boxes` boxes before to add them to the ApMetrics class.
+        """Add a sample to some :doc:`alonet.metrics`. One might want to inhert this method
+        to edit the :attr:`pred_boxes` and :attr:`gt_boxes` boxes before to add them.
 
         Parameters
         ----------
-        ap_metrics: Union[:mod:`~alonet.metrics.ApMetrics`, :mod:`~alonet.metrics.PQMetrics`
-            ApMetrics intance.
-        pred_boxes: :mod:`~aloscene.BoundingBoxes2D`
+        base_metric : :doc:`alonet.metrics`
+            Metric intance.
+        pred_boxes : :mod:`BoundingBoxes2D <aloscene.bounding_boxes_2d>`
             Predicted boxes2D.
-        gt_boxes: :mod:`~aloscene.BoundingBoxes2D`
+        gt_boxes : :mod:`BoundingBoxes2D <aloscene.bounding_boxes_2d>`
             GT boxes2d.
-        pred_masks: :mod:`~aloscene.Mask`
+        pred_masks : :mod:`Mask <aloscene.mask>`
             Predicted Masks for segmentation task
-        gt_masks: :mod:`~aloscene.Mask`
+        gt_masks : :mod:`Mask <aloscene.mask>`
             GT masks in segmentation task.
         """
         base_metric.add_sample(p_bbox=pred_boxes, t_bbox=gt_boxes, p_mask=pred_masks, t_mask=gt_masks)

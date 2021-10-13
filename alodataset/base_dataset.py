@@ -35,17 +35,20 @@ class Split(Enum):
 
 
 def stream_loader(dataset, num_workers=2):
-    """Get a stream loader from the dataset. Compared to the `train_loader`
-    the `stream_loader` do not have batch dimension and do not shuffle the dataset.
+    """Get a stream loader from the dataset. Compared to the :func:`train_loader`
+    the :func:`stream_loader` do not have batch dimension and do not shuffle the dataset.
 
     Parameters
     ----------
-    num_workers: (int)
-        2 by default.
+    dataset : torch.utils.data.Dataset
+        Dataset to make dataloader
+    num_workers : int
+        Number of workers, by default 2
 
-    Return:
+    Returns
     -------
-    a generator
+    torch.utils.data.DataLoader
+        A generator
     """
     data_loader = torch.utils.data.DataLoader(
         dataset, batch_size=None, collate_fn=lambda d: dataset._collate_fn(d), num_workers=num_workers
@@ -54,7 +57,24 @@ def stream_loader(dataset, num_workers=2):
 
 
 def train_loader(dataset, batch_size=1, num_workers=2, sampler=torch.utils.data.RandomSampler):
-    """Get training loader from the dataset"""
+    """Get training loader from the dataset
+
+    Parameters
+    ----------
+    dataset : torch.utils.data.Dataset
+        Dataset to make dataloader
+    batch_size : int, optional
+        Batch size, by default 1
+    num_workers : int, optional
+        Number of workers, by default 2
+    sampler : torch.utils.data, optional
+        Callback to sampler the dataset, by default torch.utils.data.RandomSampler
+
+    Returns
+    -------
+    torch.utils.data.DataLoader
+        A generator
+    """
     sampler = sampler(dataset) if sampler is not None else None
 
     data_loader = torch.utils.data.DataLoader(
@@ -295,22 +315,42 @@ class BaseDataset(torch.utils.data.Dataset):
         return batch_data
 
     def stream_loader(self, num_workers=2):
-        """Get a stream loader from the dataset. Compared to the `train_loader`
-        the `stream_loader` do not have batch dimension and do not shuffle the dataset.
+        """Get a stream loader from the dataset. Compared to the :func:`train_loader`
+        the :func:`stream_loader` do not have batch dimension and do not shuffle the dataset.
 
         Parameters
         ----------
-        num_workers: (int)
-            2 by default.
+        dataset : torch.utils.data.Dataset
+            Dataset to make dataloader
+        num_workers : int
+            Number of workers, by default 2
 
         Returns
         -------
-        a generator
+        torch.utils.data.DataLoader
+            A generator
         """
         return stream_loader(self, num_workers=num_workers)
 
     def train_loader(self, batch_size=1, num_workers=2, sampler=torch.utils.data.RandomSampler):
-        """Get training loader from the dataset"""
+        """Get training loader from the dataset
+
+        Parameters
+        ----------
+        dataset : torch.utils.data.Dataset
+            Dataset to make dataloader
+        batch_size : int, optional
+            Batch size, by default 1
+        num_workers : int, optional
+            Number of workers, by default 2
+        sampler : torch.utils.data, optional
+            Callback to sampler the dataset, by default torch.utils.data.RandomSampler
+
+        Returns
+        -------
+        torch.utils.data.DataLoader
+            A generator
+        """
         return train_loader(self, batch_size=batch_size, num_workers=num_workers, sampler=sampler)
 
     def prepare(self):

@@ -8,6 +8,11 @@ import alodataset
 class CocoDetection2Detr(Data2Detr):
     """LightningDataModule to use coco dataset in Detr models
 
+    Attributes
+    ----------
+    label_names : list
+        List of labels names use to encode the classes by index
+
     Parameters
     ----------
     classes : list, optional
@@ -67,6 +72,14 @@ class CocoDetection2Detr(Data2Detr):
             self.train_loader_kwargs["ann_file"] = val_ann
 
     def setup(self, stage: Optional[str] = None):
+        """:attr:`train_dataset` and :attr:`val_dataset` datasets setup, follow the parameters used
+        in class declaration. Also, set :attr:`label_names` attribute.
+
+        Parameters
+        ----------
+        stage : str, optional
+            Stage either `fit`, `validate`, `test` or `predict`, by default None
+        """
         if stage == "fit" or stage is None:
             # Setup train/val loaders
             self.train_dataset = alodataset.CocoDetectionDataset(

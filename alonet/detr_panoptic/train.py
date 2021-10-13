@@ -2,9 +2,12 @@
 train models based on :mod:`~alonet.detr_panoptic.detr_panoptic` module
 """
 
-from alonet.detr_panoptic.utils import get_mask_queries, get_base_model_frame
 import alonet
 import torch
+from argparse import ArgumentParser, _ArgumentGroup, Namespace
+
+from alonet.detr_panoptic.utils import get_mask_queries, get_base_model_frame
+from aloscene import Frame
 
 
 class LitPanopticDetr(alonet.detr.LitDetr):
@@ -30,25 +33,30 @@ class LitPanopticDetr(alonet.detr.LitDetr):
     """
 
     @staticmethod
-    def add_argparse_args(parent_parser, parser=None):
-        parser = parent_parser.add_argument_group("LitPanoptic") if parser is None else parser
+    def add_argparse_args(parent_parser: ArgumentParser, parser: _ArgumentGroup = None):
+        parser = parent_parser.add_argument_group("LitPanopticDetr") if parser is None else parser
         parser.add_argument(
-            "--weights", type=str, default=None, help="One of (detr-r50-panoptic). Default: None",
+            "--weights", type=str, default=None, help="One of {detr-r50-panoptic}, by default %(default)s",
         )
-        parser.add_argument("--gradient_clip_val", type=float, default=0.1, help="Gradient clipping norm (default 0.1")
         parser.add_argument(
-            "--accumulate_grad_batches", type=int, default=4, help="Number of gradient accumulation steps (default 4)"
+            "--gradient_clip_val", type=float, default=0.1, help="Gradient clipping norm, by default %(default)s"
+        )
+        parser.add_argument(
+            "--accumulate_grad_batches",
+            type=int,
+            default=4,
+            help="Number of gradient accumulation steps, by default %(default)s",
         )
         parser.add_argument(
             "--model_name",
             type=str,
             default="detr-r50-panoptic",
-            help="Model name to use. One of {'detr-r50-panoptic', 'deformable-detr-r50-panoptic'}"
-            + " (default panoptic-detr)",
+            help="Model name to use. One of {'detr-r50-panoptic', 'deformable-detr-r50-panoptic'},"
+            + " by default %(default)s",
         )
         return parent_parser
 
-    def training_step(self, frames, batch_idx):
+    def training_step(self, frames: Frame, batch_idx: int):
         # Get correct set of labels and assert inputs content
         frames = get_base_model_frame(frames)
         self.assert_input(frames)
@@ -64,18 +72,22 @@ class LitPanopticDetr(alonet.detr.LitDetr):
         outputs.update({"m_outputs": m_outputs})
         return outputs
 
-    def validation_step(self, frames, batch_idx):
+    def validation_step(self, frames: Frame, batch_idx: int):
         # Get correct set of labels
         frames = get_base_model_frame(frames)
         return super().validation_step(frames, batch_idx)
 
-    def build_model(self, num_classes=250, aux_loss=True, weights=None):
+    def build_model(
+        self, num_classes: int = 250, background_class: int = 250, aux_loss: bool = True, weights: str = None
+    ):
         """Build the default model
 
         Parameters
         ----------
         num_classes : int, optional
             Number of classes in embed layer, by default 250
+        background_class : int, optional
+            Background class id, by default 250
         aux_loss : bool, optional
             Return auxiliar outputs in forward output, by default True
         weights : str, optional
@@ -92,10 +104,12 @@ class LitPanopticDetr(alonet.detr.LitDetr):
             Only :attr:`detr-r50-panoptic` and :attr:`deformable-detr-r50-panoptic` models are supported yet.
         """
         if self.model_name == "detr-r50-panoptic":
-            detr_model = alonet.detr.DetrR50(num_classes=num_classes, aux_loss=aux_loss, background_class=250)
+            detr_model = alonet.detr.DetrR50(
+                num_classes=num_classes, aux_loss=aux_loss, background_class=background_class
+            )
         elif self.model_name == "deformable-detr-r50-panoptic":
             detr_model = alonet.deformable_detr.DeformableDetrR50Refinement(
-                num_classes=num_classes, aux_loss=aux_loss, activation_fn="softmax", background_class=250,
+                num_classes=num_classes, aux_loss=aux_loss, activation_fn="softmax", background_class=background_class,
             )
         else:
             raise Exception(f"Unsupported base model {self.model_name}")
@@ -104,14 +118,14 @@ class LitPanopticDetr(alonet.detr.LitDetr):
     def build_criterion(
         self,
         matcher: torch.nn = None,
-        loss_dice_weight=2,
-        loss_focal_weight=2,
-        loss_ce_weight=1,
-        loss_boxes_weight=5,
-        loss_giou_weight=2,
-        eos_coef=0.1,
-        losses=["masks", "boxes", "labels"],
-        aux_loss_stage=6,
+        loss_dice_weight: float = 2,
+        loss_focal_weight: float = 2,
+        loss_ce_weight: float = 1,
+        loss_boxes_weight: float = 5,
+        loss_giou_weight: float = 2,
+        eos_coef: float = 0.1,
+        losses: list = ["masks", "boxes", "labels"],
+        aux_loss_stage: int = 6,
     ):
         """Build the default criterion
 
@@ -154,7 +168,7 @@ class LitPanopticDetr(alonet.detr.LitDetr):
             losses=losses,
         )
 
-    def callbacks(self, data_loader):
+    def callbacks(self, data_loader: Frame):
         obj_detection_callback = alonet.detr_panoptic.PanopticObjectDetectorCallback(
             val_frames=next(iter(data_loader.val_dataloader()))
         )
@@ -163,6 +177,13 @@ class LitPanopticDetr(alonet.detr.LitDetr):
         pq_metrics_callback = alonet.callbacks.PQMetricsCallback()
         return [obj_detection_callback, metrics_callback, ap_metrics_callback, pq_metrics_callback]
 
-    def run_train(self, data_loader, args, project="panoptic-detr", expe_name=None, callbacks: list = None):
+    def run_train(
+        self,
+        data_loader: Frame,
+        args: Namespace,
+        project: str = "panoptic-detr",
+        expe_name: str = None,
+        callbacks: list = None,
+    ):
         expe_name = expe_name or self.model_name
         super().run_train(data_loader, args, project, expe_name, callbacks)

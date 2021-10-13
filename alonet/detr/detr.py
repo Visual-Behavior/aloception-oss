@@ -144,8 +144,13 @@ class Detr(nn.Module):
         mask = mask[:, 0]
         mask = mask.to(torch.bool)
 
-        transformer_outptus = self.transformer(self.input_proj(src), mask, self.query_embed.weight, pos[-1], **kwargs)
-        return self.forward_heads(transformer_outptus, bb_outputs=features)
+        input_proj = self.input_proj(src)
+        transformer_outptus = self.transformer(input_proj, mask, self.query_embed.weight, pos[-1], **kwargs)
+
+        # Feature reconstruction with features[-1][0] = input_proj(features[-1][0])
+        if self.return_bb_outputs:
+            features[-1] = (input_proj, features[-1][1])
+        return self.forward_heads(transformer_outptus, bb_outputs=(features, pos))
 
     def forward_position_heads(self, transformer_outptus: dict):
         """Forward from transformer decoder output into bbox_embed layer to get box predictions

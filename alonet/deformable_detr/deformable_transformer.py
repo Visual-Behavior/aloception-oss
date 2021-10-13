@@ -8,13 +8,12 @@
 # ------------------------------------------------------------------------
 
 import copy
-from typing import Optional, List
 import math
 
 import torch
 import torch.nn.functional as F
-from torch import nn, Tensor
-from torch.nn.init import xavier_uniform_, constant_, uniform_, normal_
+from torch import nn
+from torch.nn.init import xavier_uniform_, constant_, normal_
 
 from .utils import inverse_sigmoid
 from .ops.modules import MSDeformAttn
@@ -145,7 +144,7 @@ class DeformableTransformer(nn.Module):
 
     def gen_encoder_output_proposals(self, memory, memory_padding_mask, spatial_shapes):
         N_, S_, C_ = memory.shape
-        base_scale = 4.0
+        # base_scale = 4.0
         proposals = []
         _cur = 0
         for lvl, (H_, W_) in enumerate(spatial_shapes):
@@ -270,8 +269,17 @@ class DeformableTransformer(nn.Module):
             **kwargs,
         )
 
-        dec_outputs
         transformer_outputs.update(dec_outputs)
+
+        # Memory by layer
+        memory_split = []
+        init_pos = torch.tensor(0)
+        memory.transpose_(1, 2)
+        for spatial_shape in spatial_shapes:
+            pos = init_pos + spatial_shape.prod().item()
+            memory_split.append(memory[..., init_pos:pos].view(bs, c, *spatial_shape))
+            init_pos = pos
+        transformer_outputs["memory"] = memory_split
 
         if self.two_stage:
             transformer_outputs["enc_outputs_class"] = enc_outputs_class

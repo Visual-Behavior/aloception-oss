@@ -12,6 +12,26 @@ from aloscene.utils.data_utils import LDtoDL
 
 
 class SpatialAugmentedTensor(AugmentedTensor):
+    """Spatial Augmented Tensor. Used to represets any 2D data. The spatial augmented tensor can be used as a
+    basis for images, depth or ant spatially related data. Moreover, for stereo setup, the augmented tensor
+    can encode data about the baseline and/or the side of the current plane ("left" or "right").
+
+    focal_length: float | None
+        Focal length of the current frame.
+    plane_size: tuple | None
+        The `plane size` is used to unproject the 2D projected points from the camera plane to 3D points. If the
+        `plane_size` is not provided, the plane_size will be assume to be equal to the current
+        tensor size. In some cases, this asumption might be Fase. If so, one must pass the plane_size using one tuple
+        (height, width).
+    principal_point: tuple | None
+        Coordinates of the plane center in the following format : (c_y, c_x), in pixels. If none, when required,
+        the principal points will be assume to be half the size of the plane.
+    camera_side : {'left', 'right', None}
+        If part of a stereo setup, will encode the side of the camere "left" or "right" or None.
+    baseline: float | None
+        If part of a stereo setup, the `baseline` is the distance between the two cameras.
+    """
+
     @staticmethod
     def __new__(
         cls,
@@ -19,14 +39,31 @@ class SpatialAugmentedTensor(AugmentedTensor):
         *args,
         cam_intrinsic: CameraIntrinsic = None,
         cam_extrinsic: CameraExtrinsic = None,
+        focal_length: float = None,
+        plane_size: tuple = None,
+        camera_side: str = None,
+        baseline: float = None,
+        principal_point: tuple = None,
         mask=None,
         **kwargs,
     ):
         tensor = super().__new__(cls, x, *args, **kwargs)
+
+        tensor.add_label("mask", mask, align_dim=["B", "T"], mergeable=True)
+
         # Add camera parameters as labels
+        tensor.add_property("focal_length", focal_length)
+        plane_size = plane_size if plane_size is not None else (tensor.H, tensor.W)
+        tensor.add_property("plane_size", plane_size)
+        tensor.add_property("camera_side", camera_side)
+        tensor.add_property("baseline", baseline)
+        tensor.add_property("principal_point", principal_point)
+
+        # TODO: Make is so that the following get generated automaticly if enough information is provided
+        # from the data above. As such, we can handle multi frame with different parameters.
         tensor.add_label("cam_intrinsic", cam_intrinsic, align_dim=["B", "T"], mergeable=True)
         tensor.add_label("cam_extrinsic", cam_extrinsic, align_dim=["B", "T"], mergeable=True)
-        tensor.add_label("mask", mask, align_dim=["B", "T"], mergeable=True)
+
         return tensor
 
     def __init__(self, x, *args, **kwargs):

@@ -22,9 +22,6 @@ class Disparity(aloscene.tensors.SpatialAugmentedTensor):
     disp_format : {'signed'|'unsigned'}
         If unsigned, disparity is interpreted as a distance (positive value) in pixels.
         If signed, disparity is interpreted as a relative offset (values can be negative).
-    camera_side : {'left', 'right', None}
-        side of the camera. Default None.
-        Necessary to switch from unsigned to signed format.
     png_negate: bool
         if true, the sign of disparity is reversed when loaded from file.
         this parameter should be explicitely set every time a .png file is used.
@@ -36,8 +33,7 @@ class Disparity(aloscene.tensors.SpatialAugmentedTensor):
         x,
         occlusion: Mask = None,
         disp_format="unsigned",
-        camera_side=None,
-        png_negate=None,
+        png_negate: bool = None,
         *args,
         names=("C", "H", "W"),
         **kwargs,
@@ -48,7 +44,6 @@ class Disparity(aloscene.tensors.SpatialAugmentedTensor):
         tensor = super().__new__(cls, x, *args, names=names, **kwargs)
         tensor.add_label("occlusion", occlusion, align_dim=["B", "T"], mergeable=True)
         tensor.add_property("disp_format", disp_format)
-        tensor.add_property("camera_side", camera_side)
         return tensor
 
     def __init__(self, x, *args, **kwargs):
@@ -148,3 +143,54 @@ class Disparity(aloscene.tensors.SpatialAugmentedTensor):
             disp = -1 * disp
         disp.camera_side = camera_side
         return disp
+
+    def as_depth(
+        self, baseline: float = None, focal_length: float = None, camera_side: float = None, plane_size: tuple = None
+    ):
+        """Return a Depth augmented tensor based on the given `baseline` & `focal_length`.
+
+        Parameters
+        ----------
+        baseline: float | None
+            The `baseline` must be known to convert this disp tensor into a depth tensor.
+            The `baseline` must be given either from from the current disp tensor or from this parameter.
+        focal_length: float | None
+            The `focal_length` must be known to convert this depth tensor into a disparity tensor. The `focal_length`
+            must be given either from this current disp tensor or from this parameter.
+        plane_size float | None
+            In case the disparity size is different from the plane size, the `plane_size` will be used to recaled the
+            disparity values before to convert it to depth. If plane_size is None, the plane size will be assume to
+            be the size of the disparity map (In some cases, this might not be true) .
+        """
+        baseline = baseline if baseline is not None else self.baseline
+        focal_length = focal_length if focal_length is not None else self.focal_length
+        camera_side = camera_side if camera_side is not None else self.camera_side
+        plane_size = plane_size if plane_size is not None else self.plane_size
+
+        if baseline is None:
+            raise Exception(
+                "Can't convert to disparity. The `baseline` must be given either from the current depth tensor or from the as_depth(baseline=...) method."
+            )
+        if focal_length is None:
+            raise Exception(
+                "The `focal_length` must be given either from the current depth tensor or from the as_depth(focal_length=...) method."
+            )
+
+        disparity = self.unsigned()
+
+        if plane_size is not None and self.HW != plane_size:
+            disparity = (disparity * plane_size[1] / self.W).as_tensor()
+        else:
+            disparity = disparity.as_tensor()
+        zero_filter = disparity == 0
+        disparity[zero_filter] = 1
+        depth = self.baseline * self.focal_length / disparity
+        depth[zero_filter] = np.inf
+        return aloscene.Depth(
+            depth,
+            baseline=self.baseline,
+            focal_length=self.focal_length,
+            camera_side=camera_side,
+            plane_size=plane_size,
+            names=self.names,
+        )

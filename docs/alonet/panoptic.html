@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>Aloscene &mdash; Aloception 0.0.1 documentation</title>
+  <title>Detr panoptic &mdash; Aloception 0.0.1 documentation</title>
   
 
   
@@ -42,8 +42,8 @@
     
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Frame" href="frame.html" />
-    <link rel="prev" title="Deformable DETR" href="../tutorials/export_tensorrt/Tutorial%20-%20Export%20Deformable%20DETR%20to%20TensorRT%20and%20inference.html" /> 
+    <link rel="next" title="Models" href="panoptic_models.html" />
+    <link rel="prev" title="Training" href="deformable_training.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
@@ -108,24 +108,21 @@
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Aloception API</span></p>
 <ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Aloscene</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="frame.html">Frame</a></li>
-<li class="toctree-l2"><a class="reference internal" href="bounding_boxes_2d.html">BoundingBoxes2D</a></li>
-<li class="toctree-l2"><a class="reference internal" href="oriented_boxes_2d.html">OrientedBoxes2D</a></li>
-<li class="toctree-l2"><a class="reference internal" href="points2d.html">Points2D</a></li>
-<li class="toctree-l2"><a class="reference internal" href="labels.html">Label</a></li>
-<li class="toctree-l2"><a class="reference internal" href="mask.html">Mask</a></li>
-<li class="toctree-l2"><a class="reference internal" href="mask.html#module-aloscene.mask">Mask API</a></li>
-<li class="toctree-l2"><a class="reference internal" href="flow.html">Flow</a></li>
-<li class="toctree-l2"><a class="reference internal" href="disparity.html">Disparity</a></li>
-<li class="toctree-l2"><a class="reference internal" href="bounding_boxes_3d.html">BoundingBoxes3D</a></li>
-<li class="toctree-l2"><a class="reference internal" href="camera_calib.html">Camera calibration</a></li>
-<li class="toctree-l2"><a class="reference internal" href="augmented_tensor.html">Augmented Tensor</a></li>
-<li class="toctree-l2"><a class="reference internal" href="spatial_augmented_tensor.html">Spatial Augmented Tensor</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../aloscene/aloscene.html">Aloscene</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../alodataset/alodataset.html">Alodataset</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="alonet.html">Alonet</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="detr.html">Detr</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deformable.html">Deformable DETR</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Detr panoptic</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="panoptic_models.html">Models</a></li>
+<li class="toctree-l3"><a class="reference internal" href="panoptic_training.html">Training</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="../alodataset/alodataset.html">Alodataset</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../alonet/alonet.html">Alonet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="alonet.callbacks.html">Callbacks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="alonet.metrics.html">Metrics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="alonet.transformers.html">Transformer</a></li>
+</ul>
+</li>
 </ul>
 
             
@@ -174,13 +171,15 @@
     
       <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
         
-      <li>Aloscene</li>
+          <li><a href="alonet.html">Alonet</a> &raquo;</li>
+        
+      <li>Detr panoptic</li>
     
     
       <li class="wy-breadcrumbs-aside">
         
           
-            <a href="../_sources/aloscene/aloscene.rst.txt" rel="nofollow"> View page source</a>
+            <a href="../_sources/alonet/panoptic.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -217,62 +216,24 @@
     text-align: unset;
 }
 </style>
-<div class="section" id="aloscene">
-<h1>Aloscene<a class="headerlink" href="#aloscene" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="detr-panoptic">
+<h1>Detr panoptic<a class="headerlink" href="#detr-panoptic" title="Permalink to this headline">¶</a></h1>
+<p>The module allows the implementation of a neural network that connects the output of a <a class="reference external" href="detr_models.html#module-alonet.detr.detr">Detr-based models</a> for the prediction of
+segmentation maps, according to the boxes predicted from the base model.</p>
 <div class="toctree-wrapper compound">
-<p class="caption" role="heading"><span class="caption-text">Package Reference</span></p>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="frame.html">Frame</a></li>
-<li class="toctree-l1"><a class="reference internal" href="bounding_boxes_2d.html">BoundingBoxes2D</a></li>
-<li class="toctree-l1"><a class="reference internal" href="oriented_boxes_2d.html">OrientedBoxes2D</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="oriented_boxes_2d.html#basic-usage">Basic usage</a></li>
-<li class="toctree-l2"><a class="reference internal" href="oriented_boxes_2d.html#module-aloscene.oriented_boxes_2d">API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="panoptic_models.html">Models</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="panoptic_models.html#basic-usage">Basic usage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="panoptic_models.html#module-alonet.detr_panoptic.detr_panoptic">Panoptic head API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="panoptic_models.html#module-alonet.detr_panoptic.detr_r50_panoptic_finetune">DetrR50 Panoptic Finetune</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="points2d.html">Points2D</a></li>
-<li class="toctree-l1"><a class="reference internal" href="labels.html">Label</a></li>
-<li class="toctree-l1"><a class="reference internal" href="mask.html">Mask</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="mask.html#basic-use">Basic Use</a></li>
+<li class="toctree-l1"><a class="reference internal" href="panoptic_training.html">Training</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="panoptic_training.html#id1">Training</a></li>
+<li class="toctree-l2"><a class="reference internal" href="panoptic_training.html#module-alonet.detr_panoptic.callbacks">Callbacks</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="mask.html#module-aloscene.mask">Mask API</a></li>
-<li class="toctree-l1"><a class="reference internal" href="flow.html">Flow</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="flow.html#basic-use">Basic Use</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="flow.html#creating-a-flow-object">Creating a Flow object</a></li>
-<li class="toctree-l3"><a class="reference internal" href="flow.html#easy-visualization">Easy visualization</a></li>
-<li class="toctree-l3"><a class="reference internal" href="flow.html#easy-transformations">Easy transformations</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="flow.html#module-aloscene.flow">Flow API</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="disparity.html">Disparity</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="disparity.html#basic-use">Basic Use</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="disparity.html#creating-a-disparity-object">Creating a Disparity object</a></li>
-<li class="toctree-l3"><a class="reference internal" href="disparity.html#sign-convention">Sign convention</a></li>
-<li class="toctree-l3"><a class="reference internal" href="disparity.html#easy-visualization">Easy visualization</a></li>
-<li class="toctree-l3"><a class="reference internal" href="disparity.html#easy-transformations">Easy transformations</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="disparity.html#module-aloscene.disparity">Disparity API</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="bounding_boxes_3d.html">BoundingBoxes3D</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="notebooks/bounding_boxes_3d.html">Visualization</a></li>
-<li class="toctree-l2"><a class="reference internal" href="notebooks/bounding_boxes_3d.html#Transformation">Transformation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="notebooks/bounding_boxes_3d.html#IoU-/-GIoU-3D">IoU / GIoU 3D</a></li>
-<li class="toctree-l2"><a class="reference internal" href="notebooks/bounding_boxes_3d.html#Other-features">Other features</a></li>
-<li class="toctree-l2"><a class="reference internal" href="bounding_boxes_3d.html#module-aloscene.bounding_boxes_3d">API</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="camera_calib.html">Camera calibration</a></li>
-</ul>
-</div>
-<div class="toctree-wrapper compound">
-<p class="caption" role="heading"><span class="caption-text">Augmented Tensor</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="augmented_tensor.html">Augmented Tensor</a></li>
-<li class="toctree-l1"><a class="reference internal" href="spatial_augmented_tensor.html">Spatial Augmented Tensor</a></li>
 </ul>
 </div>
 </div>
@@ -283,8 +244,8 @@
           </div>
           <footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-        <a href="frame.html" class="btn btn-neutral float-right" title="Frame" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
-        <a href="../tutorials/export_tensorrt/Tutorial%20-%20Export%20Deformable%20DETR%20to%20TensorRT%20and%20inference.html" class="btn btn-neutral float-left" title="Deformable DETR" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="panoptic_models.html" class="btn btn-neutral float-right" title="Models" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="deformable_training.html" class="btn btn-neutral float-left" title="Training" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
     </div>
 
   <hr/>

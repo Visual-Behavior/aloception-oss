@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>Training Detr &mdash; Aloception 0.0.1 documentation</title>
+  <title>Training Panoptic Head module &mdash; Aloception 0.0.1 documentation</title>
   
 
   
@@ -44,8 +44,8 @@
     
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Finetuning DETR" href="finetuning_detr.html" />
-    <link rel="prev" title="How to setup your data?" href="data_setup.html" /> 
+    <link rel="next" title="Training Deformable DETR" href="training_deformable_detr.html" />
+    <link rel="prev" title="Finetuning DETR" href="finetuning_detr.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
@@ -101,14 +101,14 @@
 <p class="caption" role="heading"><span class="caption-text">Turorials</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="data_setup.html">How to setup your data?</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Training Detr</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#1.-LitDetr-argument-levels">1. LitDetr argument levels</a></li>
+<li class="toctree-l1"><a class="reference internal" href="training_detr.html">Training Detr</a></li>
+<li class="toctree-l1"><a class="reference internal" href="finetuning_detr.html">Finetuning DETR</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Training Panoptic Head module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#1.-LitPanopticDetr-and-CocoPanoptic2Detr">1. LitPanopticDetr and CocoPanoptic2Detr</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#2.-Train-process">2. Train process</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#3.-Make-inferences">3. Make inferences</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="finetuning_detr.html">Finetuning DETR</a></li>
-<li class="toctree-l1"><a class="reference internal" href="training_panoptic.html">Training Panoptic Head module</a></li>
 <li class="toctree-l1"><a class="reference internal" href="training_deformable_detr.html">Training Deformable DETR</a></li>
 <li class="toctree-l1"><a class="reference internal" href="finetuning_deformable_detr.html">Finetuning Deformanble DETR</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tensort_inference.html">Exporting DETR / Deformable-DETR to TensorRT</a></li>
@@ -166,13 +166,13 @@
     
       <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
         
-      <li>Training Detr</li>
+      <li>Training Panoptic Head module</li>
     
     
       <li class="wy-breadcrumbs-aside">
         
           
-            <a href="../_sources/tutorials/training_detr.ipynb.txt" rel="nofollow"> View page source</a>
+            <a href="../_sources/tutorials/training_panoptic.ipynb.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -455,108 +455,126 @@ div.rendered_html tbody tr:hover {
     text-align: unset;
 }
 </style>
-<div class="section" id="Training-Detr">
-<h1>Training Detr<a class="headerlink" href="#Training-Detr" title="Permalink to this headline">¶</a></h1>
-<p>This tutorial explains how to use <a class="reference internal" href="../alonet/detr_training.html#alonet.detr.train.LitDetr"><span class="std std-ref">LitDetr</span></a> module to train <a class="reference external" href="https://arxiv.org/abs/2005.12872">DETR50 architecture</a> from scratch, using <a class="reference external" href="https://cocodataset.org/#detection-2017">COCO2017 detection dataset</a> as input.</p>
+<div class="section" id="Training-Panoptic-Head-module">
+<h1>Training Panoptic Head module<a class="headerlink" href="#Training-Panoptic-Head-module" title="Permalink to this headline">¶</a></h1>
+<p>This tutorial explains how to use <a class="reference internal" href="../alonet/panoptic_training.html#alonet.detr_panoptic.train.LitPanopticDetr"><span class="std std-ref">LitPanopticDetr</span></a> module to train the <a class="reference internal" href="../alonet/panoptic_models.html"><span class="doc">PanopticHead</span></a> architecture from scratch, using <a class="reference external" href="http://images.cocodataset.org/annotations/panoptic_annotations_trainval2017.zip">COCO2017 panoptic annotations</a> and <a class="reference external" href="https://cocodataset.org/#detection-2017">COCO2017 detection dataset</a> as inputs. With that, the new architecture is able to detect boxes and
+masks for object tasks.</p>
 <div class="admonition note">
 <p class="admonition-title fa fa-exclamation-circle"><strong>Goals</strong></p>
 <ol class="arabic simple">
-<li><p>Learn the different ways to instantiate the <a class="reference internal" href="../alonet/detr_training.html#alonet.detr.train.LitDetr"><span class="std std-ref">LitDetr</span></a> class</p></li>
-<li><p>Train <a class="reference external" href="https://arxiv.org/abs/2005.12872">DETR50 architecture</a></p></li>
+<li><p>Declaration of <a class="reference internal" href="../alonet/panoptic_training.html#alonet.detr_panoptic.train.LitPanopticDetr"><span class="std std-ref">LitPanopticDetr</span></a> and <a class="reference internal" href="../alonet/detr_connectors.html#cocopanoptic2detr"><span class="std std-ref">CocoPanoptic2Detr</span></a> modules</p></li>
+<li><p>Run training</p></li>
 <li><p>Load trained weights and make inference with pre-trained weights</p></li>
 </ol>
 </div>
-<div class="section" id="1.-LitDetr-argument-levels">
-<h2>1. LitDetr argument levels<a class="headerlink" href="#1.-LitDetr-argument-levels" title="Permalink to this headline">¶</a></h2>
+<div class="admonition warning">
+<p class="admonition-title fa fa-exclamation-circle"><strong>Warning</strong></p>
+<p>The following guide needs to download <a class="reference external" href="http://images.cocodataset.org/annotations/panoptic_annotations_trainval2017.zip">COCO2017 panoptic annotations</a> and <a class="reference external" href="https://cocodataset.org/#detection-2017">COCO2017 detection dataset</a> previously. The dataset module assumes that the information is stored in the following way:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>| coco
+| ├── train2017
+| \| ├── img_train_0.jpg
+| \| ├── img_train_1.jpg
+| \| ├── …
+| \| └── img_train_L.jpg
+| ├── valid2017
+| \| ├── img_val_0.jpg
+| \| ├── img_val_1.jpg
+| \| ├── …
+| \| └── img_val_M.jpg
+| └── annotations
+| ├── panoptic_train2017.json
+| ├── panoptic_val2017.json
+| ├── panoptic_train2017
+| \| ├── img_ann_train_0.jpg
+| \| ├── img_ann_train_1.jpg
+| \| ├── …
+| \| └── img_ann_train_L.jpg
+| └── panoptic_val2017
+| ├── img_ann_val_0.jpg
+| ├── img_ann_val_1.jpg
+| ├── …
+| └── img_ann_val_M.jpg
+</pre></div>
+</div>
+<p>See <a class="reference external" href="https://cocodataset.org/#panoptic-2018">https://cocodataset.org/#panoptic-2018</a> for more information about panoptic tasks.</p>
+</div>
+<div class="section" id="1.-LitPanopticDetr-and-CocoPanoptic2Detr">
+<h2>1. LitPanopticDetr and CocoPanoptic2Detr<a class="headerlink" href="#1.-LitPanopticDetr-and-CocoPanoptic2Detr" title="Permalink to this headline">¶</a></h2>
 <p><a class="reference internal" href="../index.html"><span class="doc">Aloception</span></a> is developed under the <a class="reference external" href="https://www.pytorchlightning.ai/">Pytorch Lightning</a> framework, and provides different modules that facilitate the use of datasets and training models.</p>
 <div class="admonition note">
 <p class="admonition-title fa fa-exclamation-circle"><strong>See also</strong></p>
 <p>All information is availabled at:</p>
 <ul class="simple">
-<li><p><a class="reference external" href="https://arxiv.org/abs/2005.12872">End-to-End Object Detection with Transformers (DETR)</a></p></li>
 <li><p><a class="reference external" href="https://pytorch-lightning.readthedocs.io/en/latest/common/lightning_module.html">Pytorch Lightning Module</a></p></li>
+<li><p><a class="reference external" href="https://pytorch-lightning.readthedocs.io/en/latest/extensions/datamodules.html">Pytorch Lightning Data Module</a></p></li>
 </ul>
 </div>
-<p>There are multiple ways to instantiate the module, starting with the most common one: using the default parameters</p>
+<p><a class="reference internal" href="../alonet/panoptic_training.html#alonet.detr_panoptic.train.LitPanopticDetr"><span class="std std-ref">LitPanopticDetr</span></a> is a module based on <a class="reference internal" href="../alonet/detr_training.html#alonet.detr.train.LitDetr"><span class="std std-ref">LitDetr</span></a>. For this reason, the ways to instantiate the module are the same.</p>
+<div class="admonition note">
+<p class="admonition-title fa fa-exclamation-circle"><strong>See also</strong></p>
+<p>Previous knowledged about <a class="reference internal" href="training_detr.html"><span class="doc">how to train a Detr model</span></a></p>
+</div>
+<p>On the other hand, <a class="reference internal" href="../alonet/detr_connectors.html#cocopanoptic2detr"><span class="std std-ref">CocoPanoptic2Detr</span></a> follows the same logic than <a class="reference internal" href="../alonet/detr_connectors.html#cocodetection2detr"><span class="std std-ref">CocoDetection2Detr</span></a>. Therefore, the declaration of the modules could be:</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">alonet.detr</span> <span class="kn">import</span> <span class="n">LitDetr</span>
+<span></span><span class="kn">from</span> <span class="nn">alonet.detr_panoptic</span> <span class="kn">import</span> <span class="n">LitPanopticDetr</span>
+<span class="kn">from</span> <span class="nn">alonet.detr</span> <span class="kn">import</span> <span class="n">CocoPanoptic2Detr</span>
 
-<span class="n">litdetr</span> <span class="o">=</span> <span class="n">LitDetr</span><span class="p">()</span>
+<span class="n">lit_panoptic</span> <span class="o">=</span> <span class="n">LitPanopticDetr</span><span class="p">()</span>
+<span class="n">coco_loader</span> <span class="o">=</span> <span class="n">CocoPanoptic2Detr</span><span class="p">()</span>
 </pre></div>
 </div>
 </div>
-<p>Like all modules in <a class="reference internal" href="../index.html"><span class="doc">Aloception</span></a> based on <a class="reference external" href="https://www.pytorchlightning.ai/">Pytorch Lightning</a>, <a class="reference internal" href="../alonet/detr_training.html#alonet.detr.train.LitDetr"><span class="std std-ref">LitDetr</span></a> has a static method that concatenates its default parameters to other modules.</p>
+<div class="admonition note">
+<p class="admonition-title fa fa-exclamation-circle"><strong>Important</strong></p>
+<ol class="arabic simple">
+<li><p>By default, <a class="reference internal" href="../alonet/panoptic_training.html#alonet.detr_panoptic.train.LitPanopticDetr"><span class="std std-ref">LitPanopticDetr</span></a> load the <a class="reference internal" href="../alonet/detr_models.html#module-alonet.detr.detr_r50"><span class="std std-ref">DETR50</span></a> pretrained weights</p></li>
+<li><p><a class="reference internal" href="../alonet/panoptic_training.html#alonet.detr_panoptic.train.LitPanopticDetr"><span class="std std-ref">LitPanopticDetr</span></a> does not have <code class="docutils literal notranslate"><span class="pre">num_classes</span></code> attribute, because <a class="reference internal" href="../alonet/panoptic_models.html"><span class="doc">PanopticHead</span></a> is a module that match with the output of a model based on <a class="reference internal" href="../alonet/detr_models.html#module-alonet.detr.detr"><span class="std std-ref">DETR</span></a>, using the number of classes defined by it. Then, there are two ways to change the number of classes.</p></li>
+</ol>
+</div>
+<ol class="arabic simple">
+<li><p>Use a finetune mode on <a class="reference internal" href="../alonet/panoptic_training.html#alonet.detr_panoptic.train.LitPanopticDetr"><span class="std std-ref">LitPanopticDetr</span></a> declaration:</p></li>
+</ol>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">argparse</span> <span class="kn">import</span> <span class="n">ArgumentParser</span>
+<span></span><span class="kn">from</span> <span class="nn">alonet.detr</span> <span class="kn">import</span> <span class="n">DetrR50Finetune</span>
+<span class="kn">from</span> <span class="nn">alonet.detr_panoptic</span> <span class="kn">import</span> <span class="n">PanopticHead</span>
 
-<span class="n">parser</span> <span class="o">=</span> <span class="n">ArgumentParser</span><span class="p">()</span>
-<span class="n">parser</span> <span class="o">=</span> <span class="n">litdetr</span><span class="o">.</span><span class="n">add_argparse_args</span><span class="p">(</span><span class="n">parser</span><span class="p">)</span>
-<span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">([])</span>
+<span class="c1"># Define Detr finetune model</span>
+<span class="n">my_detr_model</span> <span class="o">=</span> <span class="n">DetrR50Finetune</span><span class="p">(</span><span class="n">num_classes</span> <span class="o">=</span> <span class="mi">2</span><span class="p">)</span>
+<span class="c1"># Uses it to create a new panoptic head model</span>
+<span class="n">my_model</span> <span class="o">=</span> <span class="n">PanopticHead</span><span class="p">(</span><span class="n">DETR_module</span> <span class="o">=</span> <span class="n">my_detr_model</span><span class="p">)</span>
+<span class="c1"># Make the pytorch lightning module</span>
+<span class="n">lit_panoptic</span> <span class="o">=</span> <span class="n">LitPanopticDetr</span><span class="p">(</span><span class="n">model_name</span><span class="o">=</span><span class="s2">&quot;finetune&quot;</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="n">my_model</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
-<p>However, if we want to change a specific parameter, it should be changed in class definition</p>
+<ol class="arabic simple" start="2">
+<li><p>Implement directly the <a class="reference internal" href="../alonet/panoptic_models.html#module-alonet.detr_panoptic.detr_r50_panoptic_finetune"><span class="std std-ref">DetrR50PanopticFinetune</span></a> model:</p></li>
+</ol>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">argparse</span> <span class="kn">import</span> <span class="n">Namespace</span>
+<span></span><span class="kn">from</span> <span class="nn">alonet.detr_panoptic</span> <span class="kn">import</span> <span class="n">DetrR50PanopticFinetune</span>
 
-<span class="k">def</span> <span class="nf">params2Namespace</span><span class="p">(</span><span class="n">litdetr</span><span class="p">):</span>
-    <span class="k">return</span> <span class="n">Namespace</span><span class="p">(</span>
-        <span class="n">accumulate_grad_batches</span><span class="o">=</span><span class="n">litdetr</span><span class="o">.</span><span class="n">accumulate_grad_batches</span><span class="p">,</span>
-        <span class="n">gradient_clip_val</span><span class="o">=</span><span class="n">litdetr</span><span class="o">.</span><span class="n">gradient_clip_val</span><span class="p">,</span>
-        <span class="n">model_name</span><span class="o">=</span><span class="n">litdetr</span><span class="o">.</span><span class="n">model_name</span><span class="p">,</span>
-        <span class="n">weights</span><span class="o">=</span><span class="n">litdetr</span><span class="o">.</span><span class="n">weights</span>
-    <span class="p">)</span>
-
-<span class="n">litdetr</span> <span class="o">=</span> <span class="n">LitDetr</span><span class="p">(</span><span class="n">gradient_clip_val</span><span class="o">=</span><span class="mf">0.6</span><span class="p">)</span>
-<span class="n">params2Namespace</span><span class="p">(</span><span class="n">litdetr</span><span class="p">)</span>
+<span class="c1"># Define Detr+PanopticHead with custom number of classes</span>
+<span class="n">my_model</span> <span class="o">=</span> <span class="n">DetrR50PanopticFinetune</span><span class="p">(</span><span class="n">num_classes</span> <span class="o">=</span> <span class="mi">2</span><span class="p">)</span>
+<span class="c1"># Make the pytorch lightning module</span>
+<span class="n">lit_panoptic</span> <span class="o">=</span> <span class="n">LitPanopticDetr</span><span class="p">(</span><span class="n">model_name</span><span class="o">=</span><span class="s2">&quot;finetune&quot;</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="n">my_model</span><span class="p">)</span>
 </pre></div>
 </div>
-</div>
-<p>These parameters could be easily modified in console if we provide them to the module</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">([])</span> <span class="c1"># Remove [] to run in script</span>
-<span class="n">litdetr</span> <span class="o">=</span> <span class="n">LitDetr</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
-<span class="n">params2Namespace</span><span class="p">(</span><span class="n">litdetr</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-<p>Also, we could use both examples to fix some parameters and use the rest as the values entered via the command line</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">alonet.detr</span> <span class="kn">import</span> <span class="n">LitDetr</span><span class="p">,</span> <span class="n">DetrR50Finetune</span>
-
-<span class="n">my_model</span> <span class="o">=</span> <span class="n">DetrR50Finetune</span><span class="p">(</span><span class="n">num_classes</span> <span class="o">=</span> <span class="mi">2</span><span class="p">)</span>
-<span class="n">litdetr</span> <span class="o">=</span> <span class="n">LitDetr</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">model_name</span><span class="o">=</span><span class="s2">&quot;finetune&quot;</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="n">my_model</span><span class="p">)</span>
-<span class="n">params2Namespace</span><span class="p">(</span><span class="n">litdetr</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-<div class="admonition warning">
-<p class="admonition-title fa fa-exclamation-circle"><strong>Attention</strong></p>
-<p>All the parameters described explicitly will replace the ones in the <strong>args</strong> variable.</p>
 </div>
 <div class="admonition note">
 <p class="admonition-title fa fa-exclamation-circle"><strong>See also</strong></p>
-<p>Since <a class="reference internal" href="../alonet/detr_training.html#alonet.detr.train.LitDetr"><span class="std std-ref">LitDetr</span></a> is a pytorch lig based module, all functionalities could be implemented by inheriting <a class="reference internal" href="../alonet/detr_training.html#alonet.detr.train.LitDetr"><span class="std std-ref">LitDetr</span></a> as a parent class. See the information in <a class="reference external" href="https://pytorch-lightning.readthedocs.io/en/latest/common/lightning_module.html">Pytorch Lightning Module</a>.</p>
+<p><a class="reference internal" href="finetuning_detr.html"><span class="doc">detr finetune</span></a> and <a class="reference internal" href="finetuning_deformable_detr.html"><span class="doc">deformable detr finetune</span></a> tutorials.</p>
 </div>
 </div>
 <div class="section" id="2.-Train-process">
@@ -574,7 +592,8 @@ div.rendered_html tbody tr:hover {
 <span></span><span class="kn">from</span> <span class="nn">argparse</span> <span class="kn">import</span> <span class="n">ArgumentParser</span>
 
 <span class="kn">import</span> <span class="nn">alonet</span>
-<span class="kn">from</span> <span class="nn">alonet.detr</span> <span class="kn">import</span> <span class="n">CocoDetection2Detr</span><span class="p">,</span> <span class="n">LitDetr</span>
+<span class="kn">from</span> <span class="nn">alonet.detr_panoptic</span> <span class="kn">import</span> <span class="n">LitPanopticDetr</span>
+<span class="kn">from</span> <span class="nn">alonet.detr</span> <span class="kn">import</span> <span class="n">CocoPanoptic2Detr</span>
 
 <span class="kn">import</span> <span class="nn">torch</span>
 
@@ -583,22 +602,23 @@ div.rendered_html tbody tr:hover {
 <span class="c1"># Parameters definition</span>
 <span class="c1"># Build parser (concatenates arguments to modify the entire project)</span>
 <span class="n">parser</span> <span class="o">=</span> <span class="n">ArgumentParser</span><span class="p">(</span><span class="n">conflict_handler</span><span class="o">=</span><span class="s2">&quot;resolve&quot;</span><span class="p">)</span>
-<span class="n">parser</span> <span class="o">=</span> <span class="n">CocoDetection2Detr</span><span class="o">.</span><span class="n">add_argparse_args</span><span class="p">(</span><span class="n">parser</span><span class="p">)</span>
-<span class="n">parser</span> <span class="o">=</span> <span class="n">LitDetr</span><span class="o">.</span><span class="n">add_argparse_args</span><span class="p">(</span><span class="n">parser</span><span class="p">)</span>
+<span class="n">parser</span> <span class="o">=</span> <span class="n">CocoPanoptic2Detr</span><span class="o">.</span><span class="n">add_argparse_args</span><span class="p">(</span><span class="n">parser</span><span class="p">)</span>
+<span class="n">parser</span> <span class="o">=</span> <span class="n">LitPanopticDetr</span><span class="o">.</span><span class="n">add_argparse_args</span><span class="p">(</span><span class="n">parser</span><span class="p">)</span>
 <span class="n">parser</span> <span class="o">=</span> <span class="n">alonet</span><span class="o">.</span><span class="n">common</span><span class="o">.</span><span class="n">add_argparse_args</span><span class="p">(</span><span class="n">parser</span><span class="p">)</span>  <span class="c1"># Add common arguments in train process</span>
 <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">([])</span>
 
 <span class="c1"># Dataset use to train</span>
-<span class="n">coco_loader</span> <span class="o">=</span> <span class="n">CocoDetection2Detr</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
-<span class="n">lit_detr</span> <span class="o">=</span> <span class="n">LitDetr</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+<span class="n">args</span><span class="o">.</span><span class="n">batch_size</span> <span class="o">=</span> <span class="mi">1</span> <span class="c1"># The training has a high computational memory cost. Recommended use this</span>
+<span class="n">coco_loader</span> <span class="o">=</span> <span class="n">CocoPanoptic2Detr</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+<span class="n">lit_panoptic</span> <span class="o">=</span> <span class="n">LitPanopticDetr</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
 
 <span class="c1"># Train process</span>
 <span class="c1"># args.save = True # Uncomment this line to store trained weights</span>
-<span class="n">lit_detr</span><span class="o">.</span><span class="n">run_train</span><span class="p">(</span>
+<span class="n">lit_panoptic</span><span class="o">.</span><span class="n">run_train</span><span class="p">(</span>
     <span class="n">data_loader</span><span class="o">=</span><span class="n">coco_loader</span><span class="p">,</span>
     <span class="n">args</span><span class="o">=</span><span class="n">args</span><span class="p">,</span>
-    <span class="n">project</span><span class="o">=</span><span class="s2">&quot;detr&quot;</span><span class="p">,</span>
-    <span class="n">expe_name</span><span class="o">=</span><span class="s2">&quot;coco_detr&quot;</span><span class="p">,</span>
+    <span class="n">project</span><span class="o">=</span><span class="s2">&quot;panoptic&quot;</span><span class="p">,</span>
+    <span class="n">expe_name</span><span class="o">=</span><span class="s2">&quot;coco&quot;</span><span class="p">,</span>
 <span class="p">)</span>
 </pre></div>
 </div>
@@ -615,16 +635,16 @@ div.rendered_html tbody tr:hover {
 <span class="kn">from</span> <span class="nn">alonet.common</span> <span class="kn">import</span> <span class="n">load_training</span>
 
 <span class="n">args</span> <span class="o">=</span> <span class="n">Namespace</span><span class="p">(</span><span class="n">project_run_id</span> <span class="o">=</span> <span class="s2">&quot;project_run_id&quot;</span><span class="p">,</span> <span class="n">run_id</span> <span class="o">=</span> <span class="s2">&quot;run_id&quot;</span><span class="p">)</span>
-<span class="n">lit_detr</span> <span class="o">=</span> <span class="n">load_training</span><span class="p">(</span><span class="n">LitDetr</span><span class="p">,</span> <span class="n">args</span> <span class="o">=</span> <span class="n">args</span><span class="p">)</span>
+<span class="n">lit_panoptic</span> <span class="o">=</span> <span class="n">load_training</span><span class="p">(</span><span class="n">LitPanopticDetr</span><span class="p">,</span> <span class="n">args</span> <span class="o">=</span> <span class="n">args</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>Moreover, <a class="reference internal" href="../alonet/detr_training.html#alonet.detr.train.LitDetr"><span class="std std-ref">LitDetr</span></a> allows download and load pre-trained weights for use. This is achieved by using the <code class="docutils literal notranslate"><span class="pre">weights</span></code> attribute:</p>
+<p>Moreover, <a class="reference internal" href="../alonet/panoptic_training.html#alonet.detr_panoptic.train.LitPanopticDetr"><span class="std std-ref">LitPanopticDetr</span></a> allows download and load pre-trained weights for use. This is achieved by using the <code class="docutils literal notranslate"><span class="pre">weights</span></code> attribute:</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="n">lit_detr</span> <span class="o">=</span> <span class="n">LitDetr</span><span class="p">(</span><span class="n">weights</span> <span class="o">=</span> <span class="s2">&quot;detr-r50&quot;</span><span class="p">)</span>
+<span></span><span class="n">lit_detr</span> <span class="o">=</span> <span class="n">LitPanopticDetr</span><span class="p">(</span><span class="n">weights</span> <span class="o">=</span> <span class="s2">&quot;detr-r50-panoptic&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -635,35 +655,43 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="o">%</span><span class="k">matplotlib</span> inline
-<span class="kn">from</span> <span class="nn">alonet.detr</span> <span class="kn">import</span> <span class="n">CocoDetection2Detr</span><span class="p">,</span> <span class="n">LitDetr</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pylab</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s1">&#39;figure.dpi&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">120</span>
+
+<span class="kn">from</span> <span class="nn">alonet.detr_panoptic</span> <span class="kn">import</span> <span class="n">LitPanopticDetr</span>
+<span class="kn">from</span> <span class="nn">alonet.detr</span> <span class="kn">import</span> <span class="n">CocoPanoptic2Detr</span>
 
 <span class="kn">import</span> <span class="nn">torch</span>
 
 <span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&quot;cuda:0&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&quot;cpu&quot;</span><span class="p">)</span>
 
 <span class="c1"># Dataset use to train</span>
-<span class="n">coco_loader</span> <span class="o">=</span> <span class="n">CocoDetection2Detr</span><span class="p">()</span>
-<span class="n">lit_detr</span> <span class="o">=</span> <span class="n">LitDetr</span><span class="p">(</span><span class="n">weights</span> <span class="o">=</span> <span class="s2">&quot;detr-r50&quot;</span><span class="p">)</span>
-<span class="n">lit_detr</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">lit_detr</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+<span class="n">coco_loader</span> <span class="o">=</span> <span class="n">CocoPanoptic2Detr</span><span class="p">(</span><span class="n">batch_size</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">lit_panoptic</span> <span class="o">=</span> <span class="n">LitPanopticDetr</span><span class="p">(</span><span class="n">weights</span> <span class="o">=</span> <span class="s2">&quot;detr-r50-panoptic&quot;</span><span class="p">)</span>
+<span class="n">lit_panoptic</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">lit_panoptic</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
 
 <span class="c1"># Check a random result</span>
 <span class="n">frame</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">coco_loader</span><span class="o">.</span><span class="n">val_dataloader</span><span class="p">()))</span>
 <span class="n">frame</span> <span class="o">=</span> <span class="n">frame</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">batch_list</span><span class="p">(</span><span class="n">frame</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
-<span class="n">pred_boxes</span> <span class="o">=</span> <span class="n">lit_detr</span><span class="o">.</span><span class="n">inference</span><span class="p">(</span><span class="n">lit_detr</span><span class="p">(</span><span class="n">frame</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>  <span class="c1"># Inference from forward result</span>
+<span class="n">pred_boxes</span><span class="p">,</span> <span class="n">pred_masks</span> <span class="o">=</span> <span class="n">lit_panoptic</span><span class="o">.</span><span class="n">inference</span><span class="p">(</span><span class="n">lit_panoptic</span><span class="p">(</span><span class="n">frame</span><span class="p">))</span>
+<span class="n">pred_boxes</span><span class="p">,</span> <span class="n">pred_masks</span> <span class="o">=</span> <span class="n">pred_boxes</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">pred_masks</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 <span class="n">gt_boxes</span> <span class="o">=</span> <span class="n">frame</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">boxes2d</span>
+<span class="n">gt_masks</span> <span class="o">=</span> <span class="n">frame</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">segmentation</span>
 
 <span class="n">frame</span><span class="o">.</span><span class="n">get_view</span><span class="p">(</span>
     <span class="p">[</span>
         <span class="n">gt_boxes</span><span class="o">.</span><span class="n">get_view</span><span class="p">(</span><span class="n">frame</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Ground truth boxes&quot;</span><span class="p">),</span>
         <span class="n">pred_boxes</span><span class="o">.</span><span class="n">get_view</span><span class="p">(</span><span class="n">frame</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Predicted boxes&quot;</span><span class="p">),</span>
-    <span class="p">],</span> <span class="n">size</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1920</span><span class="p">,</span><span class="mi">1080</span><span class="p">)</span>
+        <span class="n">gt_masks</span><span class="o">.</span><span class="n">get_view</span><span class="p">(</span><span class="n">frame</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Ground truth masks&quot;</span><span class="p">),</span>
+        <span class="n">pred_masks</span><span class="o">.</span><span class="n">get_view</span><span class="p">(</span><span class="n">frame</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Predicted masks&quot;</span><span class="p">),</span>
+    <span class="p">]</span>
 <span class="p">)</span><span class="o">.</span><span class="n">render</span><span class="p">()</span>
 </pre></div>
 </div>
 </div>
 <div class="admonition note">
 <p class="admonition-title fa fa-exclamation-circle"><strong>What is next?</strong></p>
-<p>Learn how to train a custom architecture in <a class="reference internal" href="finetuning_detr.html"><span class="doc">Finetuning DETR</span></a> tutorial. Also, know about a complex model based on <em>deformable attention module</em> in <a class="reference internal" href="training_deformable_detr.html"><span class="doc">Training Deformable</span></a> tutorial.</p>
+<p>Know about a complex model based on <em>deformable attention module</em> in <a class="reference internal" href="training_deformable_detr.html"><span class="doc">Training Deformable</span></a> tutorial.</p>
 </div>
 </div>
 </div>
@@ -674,8 +702,8 @@ div.rendered_html tbody tr:hover {
           </div>
           <footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-        <a href="finetuning_detr.html" class="btn btn-neutral float-right" title="Finetuning DETR" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
-        <a href="data_setup.html" class="btn btn-neutral float-left" title="How to setup your data?" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="training_deformable_detr.html" class="btn btn-neutral float-right" title="Training Deformable DETR" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="finetuning_detr.html" class="btn btn-neutral float-left" title="Finetuning DETR" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
     </div>
 
   <hr/>

@@ -99,6 +99,7 @@
 <li class="toctree-l1"><a class="reference internal" href="tutorials/data_setup.html">How to setup your data?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorials/training_detr.html">Training Detr</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorials/finetuning_detr.html">Finetuning DETR</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/training_panoptic.html">Training Panoptic Head module</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorials/training_deformable_detr.html">Training Deformable DETR</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorials/finetuning_deformable_detr.html">Finetuning Deformanble DETR</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorials/tensort_inference.html">Exporting DETR / Deformable-DETR to TensorRT</a></li>
@@ -226,9 +227,11 @@
       <li><a href="alonet/deformable_training.html#alonet.deformable_detr.train.LitDeformableDetr.add_argparse_args">add_argparse_args() (alonet.deformable_detr.train.LitDeformableDetr static method)</a>
 
       <ul>
-        <li><a href="alonet/detr_connectors.html#alonet.detr.coco_data_modules.CocoDetection2Detr.add_argparse_args">(alonet.detr.coco_data_modules.CocoDetection2Detr static method)</a>
+        <li><a href="alonet/detr_connectors.html#alonet.detr.data_modules.data2detr.Data2Detr.add_argparse_args">(alonet.detr.data_modules.data2detr.Data2Detr static method)</a>
 </li>
         <li><a href="alonet/detr_training.html#alonet.detr.train.LitDetr.add_argparse_args">(alonet.detr.train.LitDetr static method)</a>
+</li>
+        <li><a href="alonet/panoptic_training.html#alonet.detr_panoptic.train.LitPanopticDetr.add_argparse_args">(alonet.detr_panoptic.train.LitPanopticDetr static method)</a>
 </li>
       </ul></li>
       <li><a href="alonet/alonet.metrics.html#alonet.metrics.compute_map.APDataObject.add_gt_positives">add_gt_positives() (alonet.metrics.compute_map.APDataObject method)</a>
@@ -237,10 +240,14 @@
 </li>
       <li><a href="aloscene/augmented_tensor.html#aloscene.tensors.augmented_tensor.AugmentedTensor.add_property">add_property() (aloscene.tensors.augmented_tensor.AugmentedTensor method)</a>
 </li>
-      <li><a href="alonet/alonet.callbacks.html#alonet.callbacks.map_metrics_callback.ApMetricsCallback.add_sample">add_sample() (alonet.callbacks.map_metrics_callback.ApMetricsCallback method)</a>
+      <li><a href="alonet/alonet.callbacks.html#alonet.callbacks.base_metrics_callback.InstancesBaseMetricsCallback.add_sample">add_sample() (alonet.callbacks.base_metrics_callback.InstancesBaseMetricsCallback method)</a>
 
       <ul>
+        <li><a href="alonet/panoptic_training.html#alonet.detr_panoptic.callbacks.PanopticApMetricsCallbacks.add_sample">(alonet.detr_panoptic.callbacks.PanopticApMetricsCallbacks method)</a>
+</li>
         <li><a href="alonet/alonet.metrics.html#alonet.metrics.compute_map.ApMetrics.add_sample">(alonet.metrics.compute_map.ApMetrics method)</a>
+</li>
+        <li><a href="alonet/alonet.metrics.html#alonet.metrics.compute_pq.PQMetrics.add_sample">(alonet.metrics.compute_pq.PQMetrics method)</a>
 </li>
       </ul></li>
       <li>
@@ -335,6 +342,13 @@
 </li>
       </ul></li>
       <li>
+    alonet.callbacks.base_metrics_callback
+
+      <ul>
+        <li><a href="alonet/alonet.callbacks.html#module-alonet.callbacks.base_metrics_callback">module</a>
+</li>
+      </ul></li>
+      <li>
     alonet.callbacks.map_metrics_callback
 
       <ul>
@@ -353,6 +367,13 @@
 
       <ul>
         <li><a href="alonet/alonet.callbacks.html#module-alonet.callbacks.object_detector_callback">module</a>
+</li>
+      </ul></li>
+      <li>
+    alonet.callbacks.pq_metrics_callback
+
+      <ul>
+        <li><a href="alonet/alonet.callbacks.html#module-alonet.callbacks.pq_metrics_callback">module</a>
 </li>
       </ul></li>
       <li>
@@ -440,17 +461,31 @@
 </li>
       </ul></li>
       <li>
-    alonet.detr.coco_data_modules
-
-      <ul>
-        <li><a href="alonet/detr_connectors.html#module-alonet.detr.coco_data_modules">module</a>
-</li>
-      </ul></li>
-      <li>
     alonet.detr.criterion
 
       <ul>
         <li><a href="alonet/detr_training.html#module-alonet.detr.criterion">module</a>
+</li>
+      </ul></li>
+      <li>
+    alonet.detr.data_modules.coco_detection2detr
+
+      <ul>
+        <li><a href="alonet/detr_connectors.html#module-alonet.detr.data_modules.coco_detection2detr">module</a>
+</li>
+      </ul></li>
+      <li>
+    alonet.detr.data_modules.coco_panoptic2detr
+
+      <ul>
+        <li><a href="alonet/detr_connectors.html#module-alonet.detr.data_modules.coco_panoptic2detr">module</a>
+</li>
+      </ul></li>
+      <li>
+    alonet.detr.data_modules.data2detr
+
+      <ul>
+        <li><a href="alonet/detr_connectors.html#module-alonet.detr.data_modules.data2detr">module</a>
 </li>
       </ul></li>
       <li>
@@ -467,6 +502,8 @@
         <li><a href="alonet/detr_models.html#module-alonet.detr.detr_r50">module</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     alonet.detr.detr_r50_finetune
 
@@ -474,8 +511,6 @@
         <li><a href="alonet/detr_models.html#module-alonet.detr.detr_r50_finetune">module</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     alonet.detr.matcher
 
@@ -498,10 +533,45 @@
 </li>
       </ul></li>
       <li>
+    alonet.detr_panoptic.callbacks
+
+      <ul>
+        <li><a href="alonet/panoptic_training.html#module-alonet.detr_panoptic.callbacks">module</a>
+</li>
+      </ul></li>
+      <li>
+    alonet.detr_panoptic.detr_panoptic
+
+      <ul>
+        <li><a href="alonet/panoptic_models.html#module-alonet.detr_panoptic.detr_panoptic">module</a>
+</li>
+      </ul></li>
+      <li>
+    alonet.detr_panoptic.detr_r50_panoptic_finetune
+
+      <ul>
+        <li><a href="alonet/panoptic_models.html#module-alonet.detr_panoptic.detr_r50_panoptic_finetune">module</a>
+</li>
+      </ul></li>
+      <li>
+    alonet.detr_panoptic.train
+
+      <ul>
+        <li><a href="alonet/panoptic_training.html#module-alonet.detr_panoptic.train">module</a>
+</li>
+      </ul></li>
+      <li>
     alonet.metrics.compute_map
 
       <ul>
         <li><a href="alonet/alonet.metrics.html#module-alonet.metrics.compute_map">module</a>
+</li>
+      </ul></li>
+      <li>
+    alonet.metrics.compute_pq
+
+      <ul>
+        <li><a href="alonet/alonet.metrics.html#module-alonet.metrics.compute_pq">module</a>
 </li>
       </ul></li>
       <li>
@@ -762,6 +832,8 @@
       <ul>
         <li><a href="alonet/detr_training.html#alonet.detr.train.LitDetr.build_criterion">(alonet.detr.train.LitDetr method)</a>
 </li>
+        <li><a href="alonet/panoptic_training.html#alonet.detr_panoptic.train.LitPanopticDetr.build_criterion">(alonet.detr_panoptic.train.LitPanopticDetr method)</a>
+</li>
       </ul></li>
       <li><a href="alonet/deformable_models.html#alonet.deformable_detr.deformable_detr.DeformableDETR.build_decoder">build_decoder() (alonet.deformable_detr.deformable_detr.DeformableDETR method)</a>
 
@@ -792,6 +864,8 @@
       <ul>
         <li><a href="alonet/detr_training.html#alonet.detr.train.LitDetr.build_model">(alonet.detr.train.LitDetr method)</a>
 </li>
+        <li><a href="alonet/panoptic_training.html#alonet.detr_panoptic.train.LitPanopticDetr.build_model">(alonet.detr_panoptic.train.LitPanopticDetr method)</a>
+</li>
       </ul></li>
       <li><a href="alonet/alonet.transformers.html#alonet.transformers.position_encoding.build_position_encoding">build_position_encoding() (in module alonet.transformers.position_encoding)</a>
 </li>
@@ -816,9 +890,17 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="alonet/alonet.metrics.html#alonet.metrics.compute_map.ApMetrics.calc_map">calc_map() (alonet.metrics.compute_map.ApMetrics method)</a>
+
+      <ul>
+        <li><a href="alonet/alonet.metrics.html#alonet.metrics.compute_pq.PQMetrics.calc_map">(alonet.metrics.compute_pq.PQMetrics method)</a>
 </li>
+      </ul></li>
       <li><a href="alonet/detr_training.html#alonet.detr.train.LitDetr.callbacks">callbacks() (alonet.detr.train.LitDetr method)</a>
+
+      <ul>
+        <li><a href="alonet/panoptic_training.html#alonet.detr_panoptic.train.LitPanopticDetr.callbacks">(alonet.detr_panoptic.train.LitPanopticDetr method)</a>
 </li>
+      </ul></li>
       <li><a href="aloscene/camera_calib.html#aloscene.camera_calib.CameraExtrinsic">CameraExtrinsic (class in aloscene.camera_calib)</a>
 </li>
       <li><a href="aloscene/camera_calib.html#aloscene.camera_calib.CameraIntrinsic">CameraIntrinsic (class in aloscene.camera_calib)</a>
@@ -843,9 +925,11 @@
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="alonet/detr_connectors.html#alonet.detr.coco_data_modules.CocoDetection2Detr">CocoDetection2Detr (class in alonet.detr.coco_data_modules)</a>
+      <li><a href="alonet/detr_connectors.html#alonet.detr.data_modules.coco_detection2detr.CocoDetection2Detr">CocoDetection2Detr (class in alonet.detr.data_modules.coco_detection2detr)</a>
 </li>
       <li><a href="alodataset/coco_detection_dataset.html#alodataset.coco_detection_dataset.CocoDetectionDataset">CocoDetectionDataset (class in alodataset.coco_detection_dataset)</a>
+</li>
+      <li><a href="alonet/detr_connectors.html#alonet.detr.data_modules.coco_panoptic2detr.CocoPanoptic2Detr">CocoPanoptic2Detr (class in alonet.detr.data_modules.coco_panoptic2detr)</a>
 </li>
       <li><a href="alodataset/transform.html#alodataset.transforms.ColorJitter">ColorJitter (class in alodataset.transforms)</a>
 </li>
@@ -877,6 +961,8 @@
 <h2 id="D">D</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="alonet/detr_connectors.html#alonet.detr.data_modules.data2detr.Data2Detr">Data2Detr (class in alonet.detr.data_modules.data2detr)</a>
+</li>
       <li><a href="alonet/deformable_architecture.html#alonet.deformable_detr.deformable_transformer.DeformableTransformerDecoder.decoder_forward">decoder_forward() (alonet.deformable_detr.deformable_transformer.DeformableTransformerDecoder method)</a>
 
       <ul>
@@ -926,6 +1012,8 @@
       <li><a href="alonet/detr_models.html#alonet.detr.detr_r50.DetrR50">DetrR50 (class in alonet.detr.detr_r50)</a>
 </li>
       <li><a href="alonet/detr_models.html#alonet.detr.detr_r50_finetune.DetrR50Finetune">DetrR50Finetune (class in alonet.detr.detr_r50_finetune)</a>
+</li>
+      <li><a href="alonet/panoptic_models.html#alonet.detr_panoptic.detr_r50_panoptic_finetune.DetrR50PanopticFinetune">DetrR50PanopticFinetune (class in alonet.detr_panoptic.detr_r50_panoptic_finetune)</a>
 </li>
       <li><a href="alodataset/sintel_multi_dataset.html#alodataset.sintel_multi_dataset.SintelMultiDataset.DISP_LABELS">DISP_LABELS (alodataset.sintel_multi_dataset.SintelMultiDataset attribute)</a>
 </li>
@@ -999,6 +1087,8 @@
         <li><a href="alonet/detr_architecture.html#alonet.detr.transformer.TransformerEncoder.forward">(alonet.detr.transformer.TransformerEncoder method)</a>
 </li>
         <li><a href="alonet/detr_architecture.html#alonet.detr.transformer.TransformerEncoderLayer.forward">(alonet.detr.transformer.TransformerEncoderLayer method)</a>
+</li>
+        <li><a href="alonet/panoptic_models.html#alonet.detr_panoptic.detr_panoptic.PanopticHead.forward">(alonet.detr_panoptic.detr_panoptic.PanopticHead method)</a>
 </li>
         <li><a href="alonet/alonet.transformers.html#alonet.transformers.mlp.MLP.forward">(alonet.transformers.mlp.MLP method)</a>
 </li>
@@ -1129,10 +1219,10 @@
 </li>
       <li><a href="aloscene/augmented_tensor.html#aloscene.tensors.augmented_tensor.AugmentedTensor.get_slices">get_slices() (aloscene.tensors.augmented_tensor.AugmentedTensor method)</a>
 </li>
-      <li><a href="alonet/detr_training.html#alonet.detr.criterion.DetrCriterion.get_statistical_metrics">get_statistical_metrics() (alonet.detr.criterion.DetrCriterion method)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="alonet/detr_training.html#alonet.detr.criterion.DetrCriterion.get_statistical_metrics">get_statistical_metrics() (alonet.detr.criterion.DetrCriterion method)</a>
+</li>
       <li><a href="alonet/deformable_architecture.html#alonet.deformable_detr.deformable_transformer.DeformableTransformer.get_valid_ratio">get_valid_ratio() (alonet.deformable_detr.deformable_transformer.DeformableTransformer method)</a>
 </li>
       <li><a href="aloscene/bounding_boxes_3d.html#aloscene.bounding_boxes_3d.BoundingBoxes3D.get_vertices_3d">get_vertices_3d() (aloscene.bounding_boxes_3d.BoundingBoxes3D static method)</a>
@@ -1200,8 +1290,6 @@
       <li><a href="aloscene/bounding_boxes_2d.html#aloscene.bounding_boxes_2d.BoundingBoxes2D.GLOBAL_COLOR_SET">GLOBAL_COLOR_SET (aloscene.bounding_boxes_2d.BoundingBoxes2D attribute)</a>
 
       <ul>
-        <li><a href="aloscene/mask.html#aloscene.mask.Mask.GLOBAL_COLOR_SET">(aloscene.mask.Mask attribute)</a>
-</li>
         <li><a href="aloscene/oriented_boxes_2d.html#aloscene.oriented_boxes_2d.OrientedBoxes2D.GLOBAL_COLOR_SET">(aloscene.oriented_boxes_2d.OrientedBoxes2D attribute)</a>
 </li>
       </ul></li>
@@ -1239,12 +1327,16 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="alodataset/flyingthings3D_subset_dataset.html#alodataset.flyingthings3D_subset_dataset.FlyingThings3DSubsetDataset.id_sf_path">id_sf_path() (alodataset.flyingthings3D_subset_dataset.FlyingThings3DSubsetDataset static method)</a>
 </li>
-      <li><a href="alonet/deformable_models.html#alonet.deformable_detr.deformable_detr.DeformableDETR.inference">inference() (alonet.deformable_detr.deformable_detr.DeformableDETR method)</a>
+      <li><a href="alonet/alonet.callbacks.html#alonet.callbacks.base_metrics_callback.InstancesBaseMetricsCallback.inference">inference() (alonet.callbacks.base_metrics_callback.InstancesBaseMetricsCallback method)</a>
 
       <ul>
+        <li><a href="alonet/deformable_models.html#alonet.deformable_detr.deformable_detr.DeformableDETR.inference">(alonet.deformable_detr.deformable_detr.DeformableDETR method)</a>
+</li>
         <li><a href="alonet/detr_models.html#alonet.detr.detr.Detr.inference">(alonet.detr.detr.Detr method)</a>
 </li>
         <li><a href="alonet/detr_training.html#alonet.detr.train.LitDetr.inference">(alonet.detr.train.LitDetr method)</a>
+</li>
+        <li><a href="alonet/panoptic_models.html#alonet.detr_panoptic.detr_panoptic.PanopticHead.inference">(alonet.detr_panoptic.detr_panoptic.PanopticHead method)</a>
 </li>
       </ul></li>
       <li><a href="alonet/alonet.metrics.html#alonet.metrics.compute_map.ApMetrics.init_data_objects">init_data_objects() (alonet.metrics.compute_map.ApMetrics method)</a>
@@ -1254,9 +1346,13 @@
       <ul>
         <li><a href="alonet/detr_models.html#alonet.detr.detr.Detr.INPUT_MEAN_STD">(alonet.detr.detr.Detr attribute)</a>
 </li>
+        <li><a href="alonet/panoptic_models.html#alonet.detr_panoptic.detr_panoptic.PanopticHead.INPUT_MEAN_STD">(alonet.detr_panoptic.detr_panoptic.PanopticHead attribute)</a>
+</li>
       </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="alonet/alonet.callbacks.html#alonet.callbacks.base_metrics_callback.InstancesBaseMetricsCallback">InstancesBaseMetricsCallback (class in alonet.callbacks.base_metrics_callback)</a>
+</li>
       <li><a href="aloscene/bounding_boxes_2d.html#aloscene.bounding_boxes_2d.BoundingBoxes2D.iou">iou() (aloscene.bounding_boxes_2d.BoundingBoxes2D static method)</a>
 </li>
       <li><a href="aloscene/bounding_boxes_3d.html#aloscene.bounding_boxes_3d.BoundingBoxes3D.iou3d">iou3d() (aloscene.bounding_boxes_3d.BoundingBoxes3D static method)</a>
@@ -1264,7 +1360,11 @@
       <li><a href="aloscene/bounding_boxes_3d.html#aloscene.bounding_boxes_3d.BoundingBoxes3D.iou3d_with">iou3d_with() (aloscene.bounding_boxes_3d.BoundingBoxes3D method)</a>
 </li>
       <li><a href="aloscene/bounding_boxes_2d.html#aloscene.bounding_boxes_2d.BoundingBoxes2D.iou_with">iou_with() (aloscene.bounding_boxes_2d.BoundingBoxes2D method)</a>
+
+      <ul>
+        <li><a href="aloscene/mask.html#aloscene.mask.Mask.iou_with">(aloscene.mask.Mask method)</a>
 </li>
+      </ul></li>
       <li><a href="alonet/alonet.callbacks.html#alonet.callbacks.metrics_callback.is_dist_avail_and_initialized">is_dist_avail_and_initialized() (in module alonet.callbacks.metrics_callback)</a>
 
       <ul>
@@ -1309,9 +1409,11 @@
 </li>
       <li><a href="alonet/deformable_training.html#alonet.deformable_detr.train.LitDeformableDetr">LitDeformableDetr (class in alonet.deformable_detr.train)</a>
 </li>
+      <li><a href="alonet/detr_training.html#alonet.detr.train.LitDetr">LitDetr (class in alonet.detr.train)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="alonet/detr_training.html#alonet.detr.train.LitDetr">LitDetr (class in alonet.detr.train)</a>
+      <li><a href="alonet/panoptic_training.html#alonet.detr_panoptic.train.LitPanopticDetr">LitPanopticDetr (class in alonet.detr_panoptic.train)</a>
 </li>
       <li><a href="alodataset/crowd_human_dataset.html#alodataset.crowd_human_dataset.CrowdHumanDataset.load_gt">load_gt() (alodataset.crowd_human_dataset.CrowdHumanDataset method)</a>
 </li>
@@ -1320,6 +1422,8 @@
       <li><a href="alonet/alonet.callbacks.html#alonet.callbacks.object_detector_callback.ObjectDetectorCallback.log_boxes_2d">log_boxes_2d() (alonet.callbacks.object_detector_callback.ObjectDetectorCallback method)</a>
 </li>
       <li><a href="alonet/alonet.callbacks.html#alonet.callbacks.object_detector_callback.ObjectDetectorCallback.log_boxes_3d">log_boxes_3d() (alonet.callbacks.object_detector_callback.ObjectDetectorCallback method)</a>
+</li>
+      <li><a href="alonet/alonet.callbacks.html#alonet.callbacks.object_detector_callback.ObjectDetectorCallback.log_masks">log_masks() (alonet.callbacks.object_detector_callback.ObjectDetectorCallback method)</a>
 </li>
       <li><a href="alonet/detr_training.html#alonet.detr.criterion.DetrCriterion.loss_boxes">loss_boxes() (alonet.detr.criterion.DetrCriterion method)</a>
 </li>
@@ -1344,8 +1448,12 @@
 </li>
         <li><a href="alonet/detr_models.html#alonet.detr.detr_r50.main">(in module alonet.detr.detr_r50)</a>
 </li>
+        <li><a href="alonet/panoptic_models.html#alonet.detr_panoptic.detr_panoptic.main">(in module alonet.detr_panoptic.detr_panoptic)</a>
+</li>
       </ul></li>
       <li><a href="aloscene/mask.html#aloscene.mask.Mask">Mask (class in aloscene.mask)</a>
+</li>
+      <li><a href="aloscene/mask.html#aloscene.mask.Mask.mask2id">mask2id() (aloscene.mask.Mask method)</a>
 </li>
       <li><a href="aloscene/frame.html#aloscene.frame.Frame.mean_std_norm">mean_std_norm() (aloscene.frame.Frame method)</a>
 </li>
@@ -1385,11 +1493,15 @@
 </li>
         <li><a href="alodataset/waymo_dataset.html#module-alodataset.waymo_dataset">alodataset.waymo_dataset</a>
 </li>
+        <li><a href="alonet/alonet.callbacks.html#module-alonet.callbacks.base_metrics_callback">alonet.callbacks.base_metrics_callback</a>
+</li>
         <li><a href="alonet/alonet.callbacks.html#module-alonet.callbacks.map_metrics_callback">alonet.callbacks.map_metrics_callback</a>
 </li>
         <li><a href="alonet/alonet.callbacks.html#module-alonet.callbacks.metrics_callback">alonet.callbacks.metrics_callback</a>
 </li>
         <li><a href="alonet/alonet.callbacks.html#module-alonet.callbacks.object_detector_callback">alonet.callbacks.object_detector_callback</a>
+</li>
+        <li><a href="alonet/alonet.callbacks.html#module-alonet.callbacks.pq_metrics_callback">alonet.callbacks.pq_metrics_callback</a>
 </li>
         <li><a href="alonet/deformable_architecture.html#module-alonet.deformable_detr.backbone">alonet.deformable_detr.backbone</a>
 </li>
@@ -1415,9 +1527,13 @@
 </li>
         <li><a href="alonet/detr_training.html#module-alonet.detr.callbacks">alonet.detr.callbacks</a>
 </li>
-        <li><a href="alonet/detr_connectors.html#module-alonet.detr.coco_data_modules">alonet.detr.coco_data_modules</a>
-</li>
         <li><a href="alonet/detr_training.html#module-alonet.detr.criterion">alonet.detr.criterion</a>
+</li>
+        <li><a href="alonet/detr_connectors.html#module-alonet.detr.data_modules.coco_detection2detr">alonet.detr.data_modules.coco_detection2detr</a>
+</li>
+        <li><a href="alonet/detr_connectors.html#module-alonet.detr.data_modules.coco_panoptic2detr">alonet.detr.data_modules.coco_panoptic2detr</a>
+</li>
+        <li><a href="alonet/detr_connectors.html#module-alonet.detr.data_modules.data2detr">alonet.detr.data_modules.data2detr</a>
 </li>
         <li><a href="alonet/detr_models.html#module-alonet.detr.detr">alonet.detr.detr</a>
 </li>
@@ -1431,7 +1547,17 @@
 </li>
         <li><a href="alonet/detr_architecture.html#module-alonet.detr.transformer">alonet.detr.transformer</a>
 </li>
+        <li><a href="alonet/panoptic_training.html#module-alonet.detr_panoptic.callbacks">alonet.detr_panoptic.callbacks</a>
+</li>
+        <li><a href="alonet/panoptic_models.html#module-alonet.detr_panoptic.detr_panoptic">alonet.detr_panoptic.detr_panoptic</a>
+</li>
+        <li><a href="alonet/panoptic_models.html#module-alonet.detr_panoptic.detr_r50_panoptic_finetune">alonet.detr_panoptic.detr_r50_panoptic_finetune</a>
+</li>
+        <li><a href="alonet/panoptic_training.html#module-alonet.detr_panoptic.train">alonet.detr_panoptic.train</a>
+</li>
         <li><a href="alonet/alonet.metrics.html#module-alonet.metrics.compute_map">alonet.metrics.compute_map</a>
+</li>
+        <li><a href="alonet/alonet.metrics.html#module-alonet.metrics.compute_pq">alonet.metrics.compute_pq</a>
 </li>
         <li><a href="alonet/alonet.transformers.html#module-alonet.transformers">alonet.transformers</a>
 </li>
@@ -1505,10 +1631,12 @@
 </li>
         <li><a href="alonet/detr_training.html#alonet.detr.callbacks.DetrObjectDetectorCallback.on_train_batch_end">(alonet.detr.callbacks.DetrObjectDetectorCallback method)</a>
 </li>
+        <li><a href="alonet/panoptic_training.html#alonet.detr_panoptic.callbacks.PanopticObjectDetectorCallback.on_train_batch_end">(alonet.detr_panoptic.callbacks.PanopticObjectDetectorCallback method)</a>
+</li>
       </ul></li>
       <li><a href="alonet/alonet.callbacks.html#alonet.callbacks.metrics_callback.MetricsCallback.on_train_epoch_end">on_train_epoch_end() (alonet.callbacks.metrics_callback.MetricsCallback method)</a>
 </li>
-      <li><a href="alonet/alonet.callbacks.html#alonet.callbacks.map_metrics_callback.ApMetricsCallback.on_validation_batch_end">on_validation_batch_end() (alonet.callbacks.map_metrics_callback.ApMetricsCallback method)</a>
+      <li><a href="alonet/alonet.callbacks.html#alonet.callbacks.base_metrics_callback.InstancesBaseMetricsCallback.on_validation_batch_end">on_validation_batch_end() (alonet.callbacks.base_metrics_callback.InstancesBaseMetricsCallback method)</a>
 
       <ul>
         <li><a href="alonet/alonet.callbacks.html#alonet.callbacks.metrics_callback.MetricsCallback.on_validation_batch_end">(alonet.callbacks.metrics_callback.MetricsCallback method)</a>
@@ -1516,14 +1644,22 @@
       </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="alonet/alonet.callbacks.html#alonet.callbacks.map_metrics_callback.ApMetricsCallback.on_validation_end">on_validation_end() (alonet.callbacks.map_metrics_callback.ApMetricsCallback method)</a>
+      <li><a href="alonet/alonet.callbacks.html#alonet.callbacks.base_metrics_callback.InstancesBaseMetricsCallback.on_validation_end">on_validation_end() (alonet.callbacks.base_metrics_callback.InstancesBaseMetricsCallback method)</a>
+
+      <ul>
+        <li><a href="alonet/alonet.callbacks.html#alonet.callbacks.map_metrics_callback.ApMetricsCallback.on_validation_end">(alonet.callbacks.map_metrics_callback.ApMetricsCallback method)</a>
 </li>
+        <li><a href="alonet/alonet.callbacks.html#alonet.callbacks.pq_metrics_callback.PQMetricsCallback.on_validation_end">(alonet.callbacks.pq_metrics_callback.PQMetricsCallback method)</a>
+</li>
+      </ul></li>
       <li><a href="alonet/alonet.callbacks.html#alonet.callbacks.metrics_callback.MetricsCallback.on_validation_epoch_end">on_validation_epoch_end() (alonet.callbacks.metrics_callback.MetricsCallback method)</a>
 
       <ul>
         <li><a href="alonet/alonet.callbacks.html#alonet.callbacks.object_detector_callback.ObjectDetectorCallback.on_validation_epoch_end">(alonet.callbacks.object_detector_callback.ObjectDetectorCallback method)</a>
 </li>
         <li><a href="alonet/detr_training.html#alonet.detr.callbacks.DetrObjectDetectorCallback.on_validation_epoch_end">(alonet.detr.callbacks.DetrObjectDetectorCallback method)</a>
+</li>
+        <li><a href="alonet/panoptic_training.html#alonet.detr_panoptic.callbacks.PanopticObjectDetectorCallback.on_validation_epoch_end">(alonet.detr_panoptic.callbacks.PanopticObjectDetectorCallback method)</a>
 </li>
       </ul></li>
       <li><a href="aloscene/oriented_boxes_2d.html#aloscene.oriented_boxes_2d.OrientedBoxes2D">OrientedBoxes2D (class in aloscene.oriented_boxes_2d)</a>
@@ -1535,6 +1671,12 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="aloscene/augmented_tensor.html#aloscene.tensors.augmented_tensor.AugmentedTensor.pad">pad() (aloscene.tensors.augmented_tensor.AugmentedTensor method)</a>
+</li>
+      <li><a href="alonet/panoptic_training.html#alonet.detr_panoptic.callbacks.PanopticApMetricsCallbacks">PanopticApMetricsCallbacks (class in alonet.detr_panoptic.callbacks)</a>
+</li>
+      <li><a href="alonet/panoptic_models.html#alonet.detr_panoptic.detr_panoptic.PanopticHead">PanopticHead (class in alonet.detr_panoptic.detr_panoptic)</a>
+</li>
+      <li><a href="alonet/panoptic_training.html#alonet.detr_panoptic.callbacks.PanopticObjectDetectorCallback">PanopticObjectDetectorCallback (class in alonet.detr_panoptic.callbacks)</a>
 </li>
       <li><a href="alodataset/sintel_disparity_dataset.html#alodataset.sintel_disparity_dataset.SintelDisparityDataset.PASSES">PASSES (alodataset.sintel_disparity_dataset.SintelDisparityDataset attribute)</a>
 
@@ -1548,6 +1690,16 @@
 </li>
       <li><a href="alonet/alonet.transformers.html#alonet.transformers.position_encoding.PositionEmbeddingSine">PositionEmbeddingSine (class in alonet.transformers.position_encoding)</a>
 </li>
+      <li><a href="alonet/alonet.metrics.html#alonet.metrics.compute_pq.PQMetrics.pq_average">pq_average() (alonet.metrics.compute_pq.PQMetrics method)</a>
+</li>
+      <li><a href="alonet/alonet.metrics.html#alonet.metrics.compute_pq.PQMetrics">PQMetrics (class in alonet.metrics.compute_pq)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="alonet/alonet.callbacks.html#alonet.callbacks.pq_metrics_callback.PQMetricsCallback">PQMetricsCallback (class in alonet.callbacks.pq_metrics_callback)</a>
+</li>
+      <li><a href="alonet/alonet.metrics.html#alonet.metrics.compute_pq.PQStatCat">PQStatCat (class in alonet.metrics.compute_pq)</a>
+</li>
       <li><a href="alonet/deformable_architecture.html#alonet.deformable_detr.deformable_transformer.DeformableTransformerDecoder.pre_process_tgt">pre_process_tgt() (alonet.deformable_detr.deformable_transformer.DeformableTransformerDecoder method)</a>
 
       <ul>
@@ -1558,8 +1710,8 @@
         <li><a href="alonet/detr_architecture.html#alonet.detr.transformer.TransformerDecoderLayer.pre_process_tgt">(alonet.detr.transformer.TransformerDecoderLayer method)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="alonet/panoptic_training.html#alonet.detr_panoptic.train.LitPanopticDetr.precision">precision (alonet.detr_panoptic.train.LitPanopticDetr attribute)</a>
+</li>
       <li><a href="alodataset/base_dataset.html#alodataset.base_dataset.BaseDataset.prepare">prepare() (alodataset.base_dataset.BaseDataset method)</a>
 
       <ul>
@@ -1568,8 +1720,6 @@
         <li><a href="alodataset/waymo_dataset.html#alodataset.waymo_dataset.WaymoDataset.prepare">(alodataset.waymo_dataset.WaymoDataset method)</a>
 </li>
       </ul></li>
-      <li><a href="alonet/alonet.metrics.html#alonet.metrics.compute_map.print_maps">print_maps() (in module alonet.metrics.compute_map)</a>
-</li>
       <li><a href="alonet/alonet.metrics.html#alonet.metrics.compute_map.APDataObject.push">push() (alonet.metrics.compute_map.APDataObject method)</a>
 </li>
   </ul></td>
@@ -1581,8 +1731,6 @@
       <li><a href="alodataset/transform.html#alodataset.transforms.RandomCrop">RandomCrop (class in alodataset.transforms)</a>
 </li>
       <li><a href="alodataset/transform.html#alodataset.transforms.RandomHorizontalFlip">RandomHorizontalFlip (class in alodataset.transforms)</a>
-</li>
-      <li><a href="alodataset/transform.html#alodataset.transforms.RandomPad">RandomPad (class in alodataset.transforms)</a>
 </li>
       <li><a href="alodataset/transform.html#alodataset.transforms.RandomResizeWithAspectRatio">RandomResizeWithAspectRatio (class in alodataset.transforms)</a>
 </li>
@@ -1606,10 +1754,10 @@
         <li><a href="aloscene/points2d.html#aloscene.points_2d.Points2D.rel_pos">(aloscene.points_2d.Points2D method)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="aloscene/spatial_augmented_tensor.html#aloscene.tensors.spatial_augmented_tensor.SpatialAugmentedTensor.relative_to_absolute">relative_to_absolute() (aloscene.tensors.spatial_augmented_tensor.SpatialAugmentedTensor method)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="aloscene/bounding_boxes_2d.html#aloscene.bounding_boxes_2d.BoundingBoxes2D.remove_padding">remove_padding() (aloscene.bounding_boxes_2d.BoundingBoxes2D method)</a>
 
       <ul>
@@ -1637,7 +1785,11 @@
       <li><a href="aloscene/oriented_boxes_2d.html#aloscene.oriented_boxes_2d.OrientedBoxes2D.rotated_iou_with">rotated_iou_with() (aloscene.oriented_boxes_2d.OrientedBoxes2D method)</a>
 </li>
       <li><a href="alonet/detr_training.html#alonet.detr.train.LitDetr.run_train">run_train() (alonet.detr.train.LitDetr method)</a>
+
+      <ul>
+        <li><a href="alonet/panoptic_training.html#alonet.detr_panoptic.train.LitPanopticDetr.run_train">(alonet.detr_panoptic.train.LitPanopticDetr method)</a>
 </li>
+      </ul></li>
   </ul></td>
 </tr></table>
 
@@ -1656,8 +1808,6 @@
         <li><a href="alodataset/transform.html#alodataset.transforms.RandomCrop.sample_params">(alodataset.transforms.RandomCrop method)</a>
 </li>
         <li><a href="alodataset/transform.html#alodataset.transforms.RandomHorizontalFlip.sample_params">(alodataset.transforms.RandomHorizontalFlip method)</a>
-</li>
-        <li><a href="alodataset/transform.html#alodataset.transforms.RandomPad.sample_params">(alodataset.transforms.RandomPad method)</a>
 </li>
         <li><a href="alodataset/transform.html#alodataset.transforms.RandomResizeWithAspectRatio.sample_params">(alodataset.transforms.RandomResizeWithAspectRatio method)</a>
 </li>
@@ -1697,8 +1847,6 @@
 </li>
         <li><a href="alodataset/transform.html#alodataset.transforms.RandomHorizontalFlip.set_params">(alodataset.transforms.RandomHorizontalFlip method)</a>
 </li>
-        <li><a href="alodataset/transform.html#alodataset.transforms.RandomPad.set_params">(alodataset.transforms.RandomPad method)</a>
-</li>
         <li><a href="alodataset/transform.html#alodataset.transforms.RandomResizeWithAspectRatio.set_params">(alodataset.transforms.RandomResizeWithAspectRatio method)</a>
 </li>
         <li><a href="alodataset/transform.html#alodataset.transforms.RandomSelect.set_params">(alodataset.transforms.RandomSelect method)</a>
@@ -1714,8 +1862,14 @@
       </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="alonet/detr_connectors.html#alonet.detr.coco_data_modules.CocoDetection2Detr.setup">setup() (alonet.detr.coco_data_modules.CocoDetection2Detr method)</a>
+      <li><a href="alonet/detr_connectors.html#alonet.detr.data_modules.coco_detection2detr.CocoDetection2Detr.setup">setup() (alonet.detr.data_modules.coco_detection2detr.CocoDetection2Detr method)</a>
+
+      <ul>
+        <li><a href="alonet/detr_connectors.html#alonet.detr.data_modules.coco_panoptic2detr.CocoPanoptic2Detr.setup">(alonet.detr.data_modules.coco_panoptic2detr.CocoPanoptic2Detr method)</a>
 </li>
+        <li><a href="alonet/detr_connectors.html#alonet.detr.data_modules.data2detr.Data2Detr.setup">(alonet.detr.data_modules.data2detr.Data2Detr method)</a>
+</li>
+      </ul></li>
       <li><a href="alonet/deformable_training.html#alonet.deformable_detr.criterion.sigmoid_focal_loss">sigmoid_focal_loss() (in module alonet.deformable_detr.criterion)</a>
 </li>
       <li><a href="aloscene/disparity.html#aloscene.disparity.Disparity.signed">signed() (aloscene.disparity.Disparity method)</a>
@@ -1768,7 +1922,7 @@
 </li>
       <li><a href="alodataset/base_dataset.html#alodataset.base_dataset.Split.TRAIN">TRAIN (alodataset.base_dataset.Split attribute)</a>
 </li>
-      <li><a href="alonet/detr_connectors.html#alonet.detr.coco_data_modules.CocoDetection2Detr.train_dataloader">train_dataloader() (alonet.detr.coco_data_modules.CocoDetection2Detr method)</a>
+      <li><a href="alonet/detr_connectors.html#alonet.detr.data_modules.data2detr.Data2Detr.train_dataloader">train_dataloader() (alonet.detr.data_modules.data2detr.Data2Detr method)</a>
 </li>
       <li><a href="alodataset/base_dataset.html#alodataset.base_dataset.BaseDataset.train_loader">train_loader() (alodataset.base_dataset.BaseDataset method)</a>
 
@@ -1778,7 +1932,7 @@
         <li><a href="alodataset/base_dataset.html#alodataset.base_dataset.train_loader">(in module alodataset.base_dataset)</a>
 </li>
       </ul></li>
-      <li><a href="alonet/detr_connectors.html#alonet.detr.coco_data_modules.CocoDetection2Detr.train_transform">train_transform() (alonet.detr.coco_data_modules.CocoDetection2Detr method)</a>
+      <li><a href="alonet/detr_connectors.html#alonet.detr.data_modules.data2detr.Data2Detr.train_transform">train_transform() (alonet.detr.data_modules.data2detr.Data2Detr method)</a>
 </li>
       <li><a href="alodataset/transform.html#alodataset.transforms.ColorJitter.training">training (alodataset.transforms.ColorJitter attribute)</a>
 
@@ -1845,6 +1999,12 @@
 </li>
         <li><a href="alonet/detr_architecture.html#alonet.detr.transformer.TransformerEncoderLayer.training">(alonet.detr.transformer.TransformerEncoderLayer attribute)</a>
 </li>
+        <li><a href="alonet/panoptic_models.html#alonet.detr_panoptic.detr_panoptic.PanopticHead.training">(alonet.detr_panoptic.detr_panoptic.PanopticHead attribute)</a>
+</li>
+        <li><a href="alonet/panoptic_models.html#alonet.detr_panoptic.detr_r50_panoptic_finetune.DetrR50PanopticFinetune.training">(alonet.detr_panoptic.detr_r50_panoptic_finetune.DetrR50PanopticFinetune attribute)</a>
+</li>
+        <li><a href="alonet/panoptic_training.html#alonet.detr_panoptic.train.LitPanopticDetr.training">(alonet.detr_panoptic.train.LitPanopticDetr attribute)</a>
+</li>
         <li><a href="alonet/alonet.transformers.html#alonet.transformers.mlp.MLP.training">(alonet.transformers.mlp.MLP attribute)</a>
 </li>
         <li><a href="alonet/alonet.transformers.html#alonet.transformers.position_encoding.PositionEmbeddingSine.training">(alonet.transformers.position_encoding.PositionEmbeddingSine attribute)</a>
@@ -1853,7 +2013,11 @@
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="alonet/detr_training.html#alonet.detr.train.LitDetr.training_step">training_step() (alonet.detr.train.LitDetr method)</a>
+
+      <ul>
+        <li><a href="alonet/panoptic_training.html#alonet.detr_panoptic.train.LitPanopticDetr.training_step">(alonet.detr_panoptic.train.LitPanopticDetr method)</a>
 </li>
+      </ul></li>
       <li><a href="alonet/detr_architecture.html#alonet.detr.transformer.Transformer">Transformer (class in alonet.detr.transformer)</a>
 </li>
       <li><a href="alonet/detr_architecture.html#alonet.detr.transformer.TransformerDecoder">TransformerDecoder (class in alonet.detr.transformer)</a>
@@ -1875,6 +2039,12 @@
       <li><a href="aloscene/disparity.html#aloscene.disparity.Disparity.unsigned">unsigned() (aloscene.disparity.Disparity method)</a>
 </li>
   </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="alonet/alonet.metrics.html#alonet.metrics.compute_pq.PQMetrics.update_data_objects">update_data_objects() (alonet.metrics.compute_pq.PQMetrics method)</a>
+</li>
+      <li><a href="alonet/panoptic_training.html#alonet.detr_panoptic.train.LitPanopticDetr.use_amp">use_amp (alonet.detr_panoptic.train.LitPanopticDetr attribute)</a>
+</li>
+  </ul></td>
 </tr></table>
 
 <h2 id="V">V</h2>
@@ -1882,16 +2052,18 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="alodataset/base_dataset.html#alodataset.base_dataset.Split.VAL">VAL (alodataset.base_dataset.Split attribute)</a>
 </li>
-      <li><a href="alonet/detr_connectors.html#alonet.detr.coco_data_modules.CocoDetection2Detr.val_check">val_check() (alonet.detr.coco_data_modules.CocoDetection2Detr method)</a>
+      <li><a href="alonet/detr_connectors.html#alonet.detr.data_modules.data2detr.Data2Detr.val_dataloader">val_dataloader() (alonet.detr.data_modules.data2detr.Data2Detr method)</a>
 </li>
-      <li><a href="alonet/detr_connectors.html#alonet.detr.coco_data_modules.CocoDetection2Detr.val_dataloader">val_dataloader() (alonet.detr.coco_data_modules.CocoDetection2Detr method)</a>
+      <li><a href="alonet/detr_connectors.html#alonet.detr.data_modules.data2detr.Data2Detr.val_transform">val_transform() (alonet.detr.data_modules.data2detr.Data2Detr method)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="alonet/detr_connectors.html#alonet.detr.coco_data_modules.CocoDetection2Detr.val_transform">val_transform() (alonet.detr.coco_data_modules.CocoDetection2Detr method)</a>
-</li>
       <li><a href="alonet/detr_training.html#alonet.detr.train.LitDetr.validation_step">validation_step() (alonet.detr.train.LitDetr method)</a>
+
+      <ul>
+        <li><a href="alonet/panoptic_training.html#alonet.detr_panoptic.train.LitPanopticDetr.validation_step">(alonet.detr_panoptic.train.LitPanopticDetr method)</a>
 </li>
+      </ul></li>
       <li><a href="alodataset/base_dataset.html#alodataset.base_dataset.BaseDataset.vb_folder">vb_folder (alodataset.base_dataset.BaseDataset property)</a>
 </li>
       <li><a href="aloscene/augmented_tensor.html#aloscene.tensors.augmented_tensor.AugmentedTensor.vflip">vflip() (aloscene.tensors.augmented_tensor.AugmentedTensor method)</a>

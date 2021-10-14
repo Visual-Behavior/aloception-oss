@@ -163,7 +163,7 @@ class Detr(nn.Module):
         Returns
         -------
         torch.Tensor
-            Output of shpae [batch_size x num_queries x 4]
+            Output of shape [batch_size x num_queries x 4]
         """
         hs = transformer_outptus["hs"]
         return self.bbox_embed(hs).sigmoid()
@@ -179,7 +179,7 @@ class Detr(nn.Module):
         Returns
         -------
         torch.Tensor
-            Output of shpae [batch_size x num_queries x (num_classes + 1)]
+            Output of shape [batch_size x num_queries x (num_classes + 1)]
         """
         hs = transformer_outptus["hs"]
         outputs_class = self.class_embed(hs)

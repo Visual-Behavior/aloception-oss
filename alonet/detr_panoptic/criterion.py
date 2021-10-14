@@ -6,8 +6,12 @@ in two steps:
 """
 
 import torch
-from alonet.detr import DetrCriterion
+import torch.nn as nn
 import torch.nn.functional as F
+
+from alonet.detr import DetrCriterion
+from alonet.deformable_detr import DeformableCriterion
+
 import aloscene
 
 
@@ -73,34 +77,21 @@ def sigmoid_focal_loss(
     return loss.mean(1).sum() / num_boxes
 
 
-class PanopticCriterion(DetrCriterion):
+class PanopticCriterion(nn.Module):
     """Create the criterion.
 
     Parameters
     ----------
-    num_classes: int
-        number of object categories, omitting the special no-object category
-    matcher: nn.Module
-        module able to compute a matching between targets and proposed boxes
-    loss_ce_weight: float
-        Cross entropy class weight
-    loss_boxes_weight: float
-        Boxes loss l1 weight
-    loss_giou_weight: float
-        Boxes loss GIOU
     loss_dice_weight: float
         DICE/F-1 loss weight use in masks_loss
     loss_focal_weight: float
         Focal loss weight use in masks_loss
-    eos_coef: float
-        relative classification weight applied to the no-object category
-    aux_loss_stage:
-        Number of auxialiry stage
-    losses: list
-        list of all the losses to be applied. See get_loss for list of available losses.
+    focal_alpha : float, optional
+        This parameter is used only when the model use sigmoid activation function.
+        Weighting factor in range (0,1) to balance positive vs negative examples. -1 for no weighting, by default 0.25
     """
 
-    def __init__(self, loss_dice_weight: float, loss_focal_weight: float, **kwargs):
+    def __init__(self, loss_dice_weight: float, loss_focal_weight: float, focal_alpha: float = 0.25, **kwargs):
         super().__init__(**kwargs)
 
         # Define the weight dict
@@ -110,6 +101,8 @@ class PanopticCriterion(DetrCriterion):
             for i in range(kwargs["aux_loss_stage"] - 1):
                 self.loss_weights.update({f"loss_focal_{i}": loss_focal_weight})
                 self.loss_weights.update({f"loss_DICE_{i}": loss_dice_weight})
+
+        self.focal_alpha = focal_alpha
 
     def loss_masks(self, outputs: dict, frames: aloscene.Frame, indices: list, num_boxes: torch.Tensor, **kwargs):
         """Compute the losses related to the masks, used sigmoid focal and DICE/F-1 losses
@@ -170,9 +163,73 @@ class PanopticCriterion(DetrCriterion):
         losses["loss_DICE"] = dice_loss(pred_masks, target_masks, num_boxes)
 
         # Sigmoid focal loss
-        losses["loss_focal"] = sigmoid_focal_loss(pred_masks, target_masks, num_boxes, **kwargs)
+        losses["loss_focal"] = sigmoid_focal_loss(
+            pred_masks, target_masks, num_boxes, alpha=self.focal_alpha, **kwargs
+        )
 
         return losses
 
     def get_loss(self, *args, **kwargs):
         return super().get_loss(*args, {"masks": self.loss_masks}, **kwargs)
+
+
+class DetrPanopticCriterion(PanopticCriterion, DetrCriterion):
+    """Create the criterion.
+
+    Parameters
+    ----------
+    num_classes: int
+        number of object categories, omitting the special no-object category
+    matcher: nn.Module
+        module able to compute a matching between targets and proposed boxes
+    loss_ce_weight: float
+        Cross entropy class weight
+    loss_boxes_weight: float
+        Boxes loss l1 weight
+    loss_giou_weight: float
+        Boxes loss GIOU
+    loss_dice_weight: float
+        DICE/F-1 loss weight use in masks_loss
+    loss_focal_weight: float
+        Focal loss weight use in masks_loss
+    eos_coef: float
+        relative classification weight applied to the no-object category
+    focal_alpha : float, optional
+        This parameter is used only when the model use sigmoid activation function.
+        Weighting factor in range (0,1) to balance positive vs negative examples. -1 for no weighting, by default 0.25
+    aux_loss_stage:
+        Number of auxialiry stage
+    losses: list
+        list of all the losses to be applied. See get_loss for list of available losses.
+    """
+
+
+class DeformablePanopticCriterion(PanopticCriterion, DeformableCriterion):
+    """Create the criterion.
+
+    Parameters
+    ----------
+    num_classes: int
+        number of object categories, omitting the special no-object category
+    matcher: nn.Module
+        module able to compute a matching between targets and proposed boxes
+    loss_label_weight : float
+        Label class weight, to use in CE or sigmoid focal (default) loss (depends of network configuration)
+    loss_boxes_weight: float
+        Boxes loss l1 weight
+    loss_giou_weight: float
+        Boxes loss GIOU
+    loss_dice_weight: float
+        DICE/F-1 loss weight use in masks_loss
+    loss_focal_weight: float
+        Focal loss weight use in masks_loss
+    eos_coef: float
+        relative classification weight applied to the no-object category
+    focal_alpha : float, optional
+        This parameter is used only when the model use sigmoid activation function.
+        Weighting factor in range (0,1) to balance positive vs negative examples. -1 for no weighting, by default 0.25
+    aux_loss_stage:
+        Number of auxialiry stage
+    losses: list
+        list of all the losses to be applied. See get_loss for list of available losses.
+    """

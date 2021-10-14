@@ -249,7 +249,20 @@ class DeformableDETR(nn.Module):
             features[-1] = (srcs[-2], features[-1][1])
         return self.forward_heads(transformer_outptus, bb_outputs=(features, pos[:-1]))
 
-    def forward_position_heads(self, transformer_outptus):
+    def forward_position_heads(self, transformer_outptus: dict):
+        """Forward from transformer decoder output into positional (boxes)
+
+        Parameters
+        ----------
+        transformer_outptus : dict
+            Output of transformer layer
+
+        Returns
+        -------
+        torch.Tensor
+            Output of shape [batch_size x num_queries x 4]
+        """
+
         hs = transformer_outptus["hs"]
         init_reference = transformer_outptus["init_reference_out"]
         inter_references = transformer_outptus["inter_references_out"]
@@ -280,6 +293,18 @@ class DeformableDETR(nn.Module):
         return outputs_coords
 
     def forward_class_heads(self, transformer_outptus):
+        """Forward from transformer decoder output into class_embed layer to get class predictions
+
+        Parameters
+        ----------
+        transformer_outptus : dict
+            Output of transformer layer
+
+        Returns
+        -------
+        torch.Tensor
+            Output of shape [batch_size x num_queries x (num_classes + 1)]
+        """
         hs = transformer_outptus["hs"]
         # init_reference = transformer_outptus["init_reference_out"]
         # inter_references = transformer_outptus["inter_references_out"]
@@ -294,7 +319,20 @@ class DeformableDETR(nn.Module):
         return outputs_class
 
     def forward_heads(self, transformer_outptus: dict, bb_outputs: list = None, **kwargs):
-        """Apply Deformable heads"""
+        """Apply Deformable heads and make the final dictionnary output.
+
+        Parameters
+        ----------
+        transformer_outptus : dict
+            Output of transformer layer
+        bb_outputs : torch.Tensor, optional
+            Backbone output to append in output, by default None
+
+        Returns
+        -------
+        dict
+            Output describe in :func:`forward` function
+        """
         outputs_class = self.forward_class_heads(transformer_outptus)
         outputs_coord = self.forward_position_heads(transformer_outptus)
 
@@ -336,9 +374,10 @@ class DeformableDETR(nn.Module):
         threshold : float, optional
             Score threshold if sigmoid activation is used. By default 0.2
         activation_fn : str, optional
-            Either "sigmoid" or "softmax". By default None.
-            If "sigmoid" is used, filter is based on score threshold.
-            If "softmax" is used, filter is based on non-background classes.
+            Either ``sigmoid`` or ``softmax``. By default None.
+
+            - If ``sigmoid`` is used, filter is based on score threshold.
+            - If ``softmax`` is used, filter is based on non-background classes.
 
         Returns
         -------
@@ -365,10 +404,10 @@ class DeformableDETR(nn.Module):
         threshold=None,
         activation_fn: str = None,
     ) -> List[torch.Tensor]:
-        """Given the model outs_scores and the model outs_labels,
-        return a list of filter for each output. If `out_scores` and `outs_labels` are not provided,
-        the method will rely on the model forward outputs `m_outputs` to extract the `outs_scores`
-        and the `outs_labels` on its own.
+        """Given the model ``outs_scores`` and the model ``outs_labels``,
+        return a list of filter for each output. If ``out_scores`` and ``outs_labels`` are not provided,
+        the method will rely on the model forward outputs ``m_outputs`` to extract the ``outs_scores``
+        and the ``outs_labels`` on its own.
 
 
         Parameters
@@ -384,9 +423,10 @@ class DeformableDETR(nn.Module):
         softmax_threshold: float, optinal
             Score threshold if softmax activation is used. None by default.
         activation_fn : str, optional
-            Either "sigmoid" or "softmax". By default None.
-            If "sigmoid" is used, filter is based on score threshold.
-            If "softmax" is used, filter is based on non-background classes.
+            Either ``sigmoid`` or ``softmax``. By default None.
+
+            - If ``sigmoid`` is used, filter is based on score threshold.
+            - If ``softmax`` is used, filter is based on non-background classes.
 
         Returns
         -------
@@ -413,7 +453,22 @@ class DeformableDETR(nn.Module):
 
     @torch.no_grad()
     def inference(self, forward_out: dict, threshold=0.2, filters=None, **kwargs):
-        """Get model outptus as returned by the the forward method"""
+        """Given the model forward outputs, this method will return an
+        :mod:`BoundingBoxes2D <aloscene.bounding_boxes_2d>` tensor.
+
+        Parameters
+        ----------
+        forward_out : dict
+            Dict with the model forward outptus
+        filters : list
+            list of torch.Tensor will a filter on which prediction to select to create the set
+            of :mod:`BoundingBoxes2D <aloscene.bounding_boxes_2d>`.
+
+        Returns
+        -------
+        boxes : :mod:`BoundingBoxes2D <aloscene.bounding_boxes_2d>`
+            Boxes filtered and predicted by forward outputs
+        """
         outs_logits, outs_boxes = forward_out["pred_logits"], forward_out["pred_boxes"]
 
         if "activation_fn" not in forward_out:
@@ -449,6 +504,18 @@ class DeformableDETR(nn.Module):
         return preds_boxes
 
     def build_positional_encoding(self, hidden_dim=256):
+        """Build the positinal encoding layer to combine input values with respect to theirs position
+
+        Parameters
+        ----------
+        hidden_dim : int, optional
+            Hidden dimension size, by default 256
+
+        Returns
+        -------
+        torch.nn
+            Default architecture to encode input with values and theirs position
+        """
         N_steps = hidden_dim // 2
         position_embed = alonet.transformers.PositionEmbeddingSine(N_steps, normalize=True, center=True)
         return position_embed
@@ -491,7 +558,28 @@ class DeformableDETR(nn.Module):
         num_feature_levels: int = 4,
         dec_n_points: int = 4,
     ):
+        """Build decoder layer
 
+        Parameters
+        ----------
+        hidden_dim : int, optional
+            Hidden dimension size, by default 256
+        dropout : float, optional
+            Dropout value, by default 0.1
+        nheads : int, optional
+            Number of heads, by default 8
+        dim_feedforward : int, optional
+            Feedfoward dimension size, by default 2048
+        normalize_before : bool, optional
+            Use normalize before each layer, by default False
+        dec_n_points : int, optional
+            Number of points use in deformable layer, by default 4
+
+        Returns
+        -------
+        :class:`~alonet.deformable.deformable_transformer.DeformableTransformerDecoderLayer`
+            Transformer decoder layer
+        """
         return DeformableTransformerDecoderLayer(
             d_model=hidden_dim,
             dim_feedforward=dim_feedforward,
@@ -505,7 +593,20 @@ class DeformableDETR(nn.Module):
     def build_decoder(
         self, dec_layers: int = 6, return_intermediate_dec=True,
     ):
+        """Build decoder layer
 
+        Parameters
+        ----------
+        dec_layers : int, optional
+            Number of decoder layers, by default 6
+        return_intermediate_dec : bool, optional
+            Return intermediate decoder outputs, by default True
+
+        Returns
+        -------
+        :class:`~alonet.deformable.deformable_transformer.DeformableTransformerDecoder`
+            Transformer decoder
+        """
         decoder_layer = self.build_decoder_layer()
 
         return DeformableTransformerDecoder(decoder_layer, dec_layers, return_intermediate_dec)
@@ -523,7 +624,36 @@ class DeformableDETR(nn.Module):
         enc_n_points: int = 4,
         return_intermediate_dec=True,
     ):
+        """Build transformer
 
+        Parameters
+        ----------
+        hidden_dim : int, optional
+            Hidden dimension size, by default 256
+        dropout : float, optional
+            Dropout value, by default 0.1
+        nheads : int, optional
+            Number of heads, by default 8
+        dim_feedforward : int, optional
+            Feedfoward dimension size, by default 2048
+        enc_layers : int, optional
+            Number of encoder layers, by default 6
+        dec_layers : int, optional
+            Number of decoder layers, by default 6
+        num_feature_levels : int, optional
+            Number of feature map levels will be sampled by multiscale deformable attention. By default 4
+        dec_n_points : int, optional
+            Number of points use in deformable decoder layer, by default 4
+        enc_n_points : int, optional
+            Number of points use in deformable encoder layer, by default 4
+        return_intermediate_dec : bool, optional
+            Return intermediate decoder outputs, by default True
+
+        Returns
+        -------
+        :mod:`Transformer <alonet.detr.transformer>`
+            Transformer module
+        """
         decoder = self.build_decoder()
 
         return DeformableTransformer(
@@ -544,7 +674,7 @@ class DeformableDETR(nn.Module):
 def build_deformable_detr_r50(
     num_classes=91, box_refinement=True, weights=None, device=torch.device("cuda")
 ) -> DeformableDETR:
-    """[summary]
+    """Build a deformable DETR architecture, based on RESNET50
 
     Parameters
     ----------

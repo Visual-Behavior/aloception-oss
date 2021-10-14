@@ -174,7 +174,9 @@ def run_pl_training(
         logger = None
 
     if args.save:
-        checkpoint_callback = ModelCheckpoint(dirpath=expe_dir, verbose=True, save_last=True, save_top_k=3)
+        checkpoint_callback = ModelCheckpoint(
+            dirpath=expe_dir, verbose=True, save_last=True, save_top_k=3, monitor="val_loss"
+        )
         callbacks.append(checkpoint_callback)
 
     # Init trainer and run training

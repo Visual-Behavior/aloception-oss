@@ -292,7 +292,7 @@ class DeformableDETR(nn.Module):
 
         return outputs_coords
 
-    def forward_class_heads(self, transformer_outptus):
+    def forward_class_heads(self, transformer_outptus: dict):
         """Forward from transformer decoder output into class_embed layer to get class predictions
 
         Parameters
@@ -503,7 +503,7 @@ class DeformableDETR(nn.Module):
 
         return preds_boxes
 
-    def build_positional_encoding(self, hidden_dim=256):
+    def build_positional_encoding(self, hidden_dim: int = 256):
         """Build the positinal encoding layer to combine input values with respect to theirs position
 
         Parameters
@@ -591,7 +591,7 @@ class DeformableDETR(nn.Module):
         )
 
     def build_decoder(
-        self, dec_layers: int = 6, return_intermediate_dec=True,
+        self, dec_layers: int = 6, return_intermediate_dec: bool = True,
     ):
         """Build decoder layer
 
@@ -622,7 +622,7 @@ class DeformableDETR(nn.Module):
         num_feature_levels: int = 4,
         dec_n_points: int = 4,
         enc_n_points: int = 4,
-        return_intermediate_dec=True,
+        return_intermediate_dec: bool = True,
     ):
         """Build transformer
 
@@ -672,7 +672,7 @@ class DeformableDETR(nn.Module):
 
 
 def build_deformable_detr_r50(
-    num_classes=91, box_refinement=True, weights=None, device=torch.device("cuda")
+    num_classes: int = 91, box_refinement: bool = True, weights: bool = None, device=torch.device("cuda")
 ) -> DeformableDETR:
     """Build a deformable DETR architecture, based on RESNET50
 

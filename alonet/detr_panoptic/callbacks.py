@@ -10,11 +10,11 @@ from alonet.detr_panoptic.utils import get_base_model_frame
 class PanopticObjectDetectorCallback(ObjectDetectorCallback):
     """Panoptic Detr Callback for object detection training that use alonet.Frames as GT."""
 
-    def __init__(self, val_frames: Union[list, aloscene.Frame]):
+    def __init__(self, val_frames: Union[list, aloscene.Frame], **kwargs):
         # Batch list of frame if needed
         if isinstance(val_frames, list):
             val_frames = aloscene.Frame.batch_list(val_frames)
-        super().__init__(val_frames=get_base_model_frame(val_frames))
+        super().__init__(val_frames=get_base_model_frame(val_frames), **kwargs)
 
     @rank_zero_only
     def on_train_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx):

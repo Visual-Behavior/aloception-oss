@@ -145,7 +145,11 @@ class Disparity(aloscene.tensors.SpatialAugmentedTensor):
         return disp
 
     def as_depth(
-        self, baseline: float = None, focal_length: float = None, camera_side: float = None, plane_size: tuple = None
+        self,
+        baseline: float = None,
+        focal_length: float = None,
+        camera_side: float = None,
+        camera_intrinsic: aloscene.CameraIntrinsic = None,
     ):
         """Return a Depth augmented tensor based on the given `baseline` & `focal_length`.
 
@@ -154,43 +158,45 @@ class Disparity(aloscene.tensors.SpatialAugmentedTensor):
         baseline: float | None
             The `baseline` must be known to convert this disp tensor into a depth tensor.
             The `baseline` must be given either from from the current disp tensor or from this parameter.
-        focal_length: float | None
-            The `focal_length` must be known to convert this depth tensor into a disparity tensor. The `focal_length`
-            must be given either from this current disp tensor or from this parameter.
-        plane_size float | None
-            In case the disparity size is different from the plane size, the `plane_size` will be used to recaled the
-            disparity values before to convert it to depth. If plane_size is None, the plane size will be assume to
-            be the size of the disparity map (In some cases, this might not be true) .
+        camera_intrinsic: aloscene.CameraIntrinsic
+            CameraIntrinsic use to transform the disp map into depth map using the intrinsic focal
+            length.
         """
         baseline = baseline if baseline is not None else self.baseline
-        focal_length = focal_length if focal_length is not None else self.focal_length
         camera_side = camera_side if camera_side is not None else self.camera_side
-        plane_size = plane_size if plane_size is not None else self.plane_size
+        intrinsic = camera_intrinsic if camera_intrinsic is not None else self.cam_intrinsic
 
         if baseline is None:
             raise Exception(
                 "Can't convert to disparity. The `baseline` must be given either from the current depth tensor or from the as_depth(baseline=...) method."
             )
-        if focal_length is None:
-            raise Exception(
-                "The `focal_length` must be given either from the current depth tensor or from the as_depth(focal_length=...) method."
-            )
+        if intrinsic is None:
+            err_msg = "The `camera_intrinsic` must be given either from the current disp tensor or from "
+            err_msg += "the as_depth(camera_intrinsic=...) method."
+            raise Exception(err_msg)
 
-        disparity = self.unsigned()
+        disparity = self.unsigned().as_tensor()
 
-        if plane_size is not None and self.HW != plane_size:
-            disparity = (disparity * plane_size[1] / self.W).as_tensor()
-        else:
-            disparity = disparity.as_tensor()
+        # if plane_size is not None and self.HW != plane_size:
+        #    disparity = (disparity * plane_size[1] / self.W).as_tensor()
+        # else:
+        #    disparity = disparity.as_tensor()
+
+        # unsqueeze on the Spatial H,W Dimension. On the dimension before "C", the focal_length is already supposed
+        # to be aligned properly.
+        focal_length = intrinsic.focal_length[..., 0:1].unsqueeze(-1).unsqueeze(-1)
+
         zero_filter = disparity == 0
+
         disparity[zero_filter] = 1
-        depth = self.baseline * self.focal_length / disparity
+        depth = baseline * focal_length / disparity
         depth[zero_filter] = np.inf
         return aloscene.Depth(
             depth,
             baseline=self.baseline,
-            focal_length=self.focal_length,
             camera_side=camera_side,
-            plane_size=plane_size,
+            cam_intrinsic=intrinsic,
+            cam_extrinsic=self.cam_extrinsic,
             names=self.names,
+            device=self.device,
         )

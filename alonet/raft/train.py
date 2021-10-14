@@ -67,8 +67,8 @@ class LitRAFT(pl.LightningModule):
     def build_criterion(self):
         return RAFTCriterion()
 
-    def build_model(self, alternate_corr=False, weights=None, device="cpu", dropout=0):
-        return alonet.raft.RAFT(alternate_corr=alternate_corr, weights=weights, device=device, dropout=dropout)
+    def build_model(self, weights=None, device="cpu", dropout=0):
+        return alonet.raft.RAFT(weights=weights, device=device, dropout=dropout)
 
     def configure_optimizers(self, lr=4e-4, weight_decay=1e-4, epsilon=1e-8, numsteps=100000):
         params = self.model.parameters()

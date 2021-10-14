@@ -11,32 +11,33 @@ class RAFTCriterion(nn.Module):
 
     # loss from RAFT implementation
     @staticmethod
-    def sequence_loss(flow_preds, flow_gt, valid=None, gamma=0.8, max_flow=400, compute_per_iter=False):
+    def sequence_loss(m_outputs, flow_gt, valid=None, gamma=0.8, max_flow=400, compute_per_iter=False):
         """Loss function defined over sequence of flow predictions"""
-        n_predictions = len(flow_preds)
+        n_predictions = len(m_outputs)
         flow_loss = 0.0
 
         # exlude invalid pixels and extremely large diplacements
-        mag = torch.sum(flow_gt ** 2, dim=1).sqrt()
+        mag = torch.sum(flow_gt ** 2, dim=1, keepdim=True).sqrt()
         if valid is None:
             valid = torch.ones_like(mag, dtype=torch.bool)
         else:
             valid = (valid >= 0.5) & (mag < max_flow)
         for i in range(n_predictions):
+            m_dict = m_outputs[i]
             i_weight = gamma ** (n_predictions - i - 1)
-            i_loss = (flow_preds[i] - flow_gt).abs()
+            i_loss = (m_dict["up_flow"] - flow_gt).abs()
             flow_loss += i_weight * (valid[:, None] * i_loss).mean()
 
         if compute_per_iter:
             epe_per_iter = []
-            for flow_p in flow_preds:
-                epe = torch.sum((flow_p - flow_gt) ** 2, dim=1).sqrt()
+            for i in range(n_predictions):
+                m_dict = m_outputs[i]                
+                epe = torch.sum((m_dict["up_flow"] - flow_gt) ** 2, dim=1).sqrt()
                 epe = epe.view(-1)[valid.view(-1)]
                 epe_per_iter.append(epe)
         else:
             epe_per_iter = None
-
-        epe = torch.sum((flow_preds[-1] - flow_gt) ** 2, dim=1).sqrt()
+        epe = torch.sum((m_outputs[-1]["up_flow"] - flow_gt) ** 2, dim=1).sqrt()
         epe = epe.view(-1)[valid.view(-1)]
 
         metrics = {
@@ -50,7 +51,6 @@ class RAFTCriterion(nn.Module):
 
     def forward(self, m_outputs, frame1, use_valid=True, compute_per_iter=False):
         assert isinstance(frame1, aloscene.Frame)
-        flow_preds = m_outputs
         flow_gt = [f.batch() for f in frame1.flow["flow_forward"]]
         flow_gt = torch.cat(flow_gt, dim=0)
         # occlusion mask -- not used in raft original repo
@@ -65,6 +65,6 @@ class RAFTCriterion(nn.Module):
         else:
             valid = None
         flow_loss, metrics, epe_per_iter = RAFTCriterion.sequence_loss(
-            flow_preds, flow_gt, valid, compute_per_iter=compute_per_iter
+            m_outputs, flow_gt, valid, compute_per_iter=compute_per_iter
         )
         return flow_loss, metrics, epe_per_iter

@@ -274,10 +274,9 @@ class DeformableTransformer(nn.Module):
         # Memory by layer
         memory_split = []
         init_pos = torch.tensor(0)
-        memory.transpose_(1, 2)
         for spatial_shape in spatial_shapes:
             pos = init_pos + spatial_shape.prod().item()
-            memory_split.append(memory[..., init_pos:pos].view(bs, c, *spatial_shape))
+            memory_split.append(memory.transpose(1, 2)[..., init_pos:pos].view(bs, c, *spatial_shape))
             init_pos = pos
         transformer_outputs["memory"] = memory_split
 

@@ -74,14 +74,6 @@ class CameraIntrinsic(AugmentedTensor):
             x[1][2] = principal_point[0]
 
         tensor = super().__new__(cls, x, *args, names=names, **kwargs)
-
-        # Add camera parameters as labels
-        # tensor.add_property("_focal_length", focal_length)
-        # plane_size = plane_size if plane_size is not None else (tensor.H, tensor.W)
-        # tensor.add_property("_plane_size", plane_size)
-        # tensor.add_property("_principal_point", principal_point)
-        # tensor.add_property("_skew", skew)
-
         return tensor
 
     def __init__(self, x=None, *args, **kwargs):

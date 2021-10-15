@@ -155,6 +155,10 @@ class Disparity(aloscene.tensors.SpatialAugmentedTensor):
 
         Parameters
         ----------
+        camera_side : str | None
+            If created from a stereo camera, this information can optionally be used to convert
+            this depth tensor into a disparity tensor. The `camera_side` is necessary to switch from unsigned to signed
+            format once using a disparity tensor.
         baseline: float | None
             The `baseline` must be known to convert this disp tensor into a depth tensor.
             The `baseline` must be given either from from the current disp tensor or from this parameter.
@@ -176,11 +180,6 @@ class Disparity(aloscene.tensors.SpatialAugmentedTensor):
             raise Exception(err_msg)
 
         disparity = self.unsigned().as_tensor()
-
-        # if plane_size is not None and self.HW != plane_size:
-        #    disparity = (disparity * plane_size[1] / self.W).as_tensor()
-        # else:
-        #    disparity = disparity.as_tensor()
 
         # unsqueeze on the Spatial H,W Dimension. On the dimension before "C", the focal_length is already supposed
         # to be aligned properly.

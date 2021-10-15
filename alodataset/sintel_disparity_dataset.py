@@ -105,12 +105,8 @@ class SintelDisparityDataset(SintelBaseDataset):
 
 
 if __name__ == "__main__":
-    # dataset = SintelDisparityDataset(sample=True)
-    dataset = SintelDisparityDataset(cameras=["left"], sequence_size=2)
-    # cameras
+    dataset = SintelDisparityDataset(sample=True)
 
     for f, frames in enumerate(dataset.train_loader(batch_size=2)):
-        print(frames[0]["left"].shape)
-        # frames = Frame.batch_list(frames)
-        # frames["left"].get_view().render()
-        #
+        frames = Frame.batch_list(frames)
+        frames["left"].get_view().render()

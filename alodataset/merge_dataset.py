@@ -50,17 +50,20 @@ class MergeDataset(torch.utils.data.Dataset):
         return batch_data
 
     def stream_loader(self, num_workers=2):
-        """Get a stream loader from the dataset. Compared to the `train_loader`
-        the `stream_loader` remove the batch dimension and do not shuffle the dataset.
+        """Get a stream loader from the dataset. Compared to the :func:`train_loader`
+        the :func:`stream_loader` do not have batch dimension and do not shuffle the dataset.
 
         Parameters
         ----------
-        num_workers: (int)
-            2 by default.
+        dataset : torch.utils.data.Dataset
+            Dataset to make dataloader
+        num_workers : int
+            Number of workers, by default 2
 
-        Return:
+        Returns
         -------
-        a generator
+        torch.utils.data.DataLoader
+            A generator
         """
         return stream_loader(self, num_workers=num_workers)
 

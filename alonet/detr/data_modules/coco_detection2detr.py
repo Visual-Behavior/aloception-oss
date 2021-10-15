@@ -8,6 +8,11 @@ import alodataset
 class CocoDetection2Detr(Data2Detr):
     """LightningDataModule to use coco dataset in Detr models
 
+    Attributes
+    ----------
+    label_names : list
+        List of labels names use to encode the classes by index
+
     Parameters
     ----------
     classes : list, optional
@@ -22,10 +27,6 @@ class CocoDetection2Detr(Data2Detr):
         Image folder to valid, by default "val2017"
     val_ann : str, optional
         Json annotation file to valid, by default "annotations/instances_val2017.json"
-    stuff_train_ann : str, optional
-        Json annotation file to stuff objects for train set, by default None
-    stuff_val_ann : str, optional
-        Json annotation file to stuff objects for val set, by default None
     return_masks : bool, optional
         For each frame return masks in segmentation attribute, by default False
     args : Namespace, optional
@@ -43,8 +44,6 @@ class CocoDetection2Detr(Data2Detr):
         train_ann: str = "annotations/instances_train2017.json",
         val_folder: str = "val2017",
         val_ann: str = "annotations/instances_val2017.json",
-        stuff_train_ann: str = None,
-        stuff_val_ann: str = None,
         return_masks: bool = False,
         **kwargs
     ):
@@ -55,7 +54,6 @@ class CocoDetection2Detr(Data2Detr):
             # Split=Split.TRAIN if not self.train_on_val else Split.VAL,
             classes=classes,
             name=name,
-            stuff_ann_file=stuff_train_ann,
             return_masks=return_masks,
         )
         self.val_loader_kwargs = dict(
@@ -64,7 +62,6 @@ class CocoDetection2Detr(Data2Detr):
             # split=Split.VAL,
             classes=classes,
             name=name,
-            stuff_ann_file=stuff_val_ann,
             return_masks=return_masks,
         )
 
@@ -75,6 +72,14 @@ class CocoDetection2Detr(Data2Detr):
             self.train_loader_kwargs["ann_file"] = val_ann
 
     def setup(self, stage: Optional[str] = None):
+        """:attr:`train_dataset` and :attr:`val_dataset` datasets setup, follow the parameters used
+        in class declaration. Also, set :attr:`label_names` attribute.
+
+        Parameters
+        ----------
+        stage : str, optional
+            Stage either `fit`, `validate`, `test` or `predict`, by default None
+        """
         if stage == "fit" or stage is None:
             # Setup train/val loaders
             self.train_dataset = alodataset.CocoDetectionDataset(

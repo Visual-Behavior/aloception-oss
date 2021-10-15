@@ -1,30 +1,22 @@
-import torch
-import pytorch_lightning as pl
-import wandb
-from typing import *
+"""Detr Callback for object detection training that use :mod:`~aloscene.frame` as GT."""
 import aloscene
-import alonet
 
 from alonet.callbacks import ObjectDetectorCallback
 from pytorch_lightning.utilities import rank_zero_only
-import alodataset
 
 
 class DetrObjectDetectorCallback(ObjectDetectorCallback):
-    """Detr Callback for object detection training that use
-    alonet.Frames as GT.
-    """
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
     @rank_zero_only
     def on_train_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx):
-        """ """
         if trainer.logger is None:
             return
         if trainer.fit_loop.should_accumulate() or (trainer.global_step + 1) % (trainer.log_every_n_steps * 10) != 0:
-            return
+            # Draw boxes for last batch
+            if (trainer.fit_loop.total_batch_idx + 1) % trainer.num_training_batches != 0:
+                return
 
         assert isinstance(outputs, dict)
         assert "m_outputs" in outputs

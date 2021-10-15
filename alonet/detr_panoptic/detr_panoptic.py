@@ -1,10 +1,12 @@
 # Inspired by the official DETR repository and adapted for aloception
 # https://github.com/facebookresearch/detr/blob/eb9f7e03ed8e2ed2cd55528989fe7df890bc3fc0/models/detr.py
 """
-Panoptic module to predict object segmentation.
+Panoptic module to use in object detection/segmentation tasks.
 """
 import os
 from typing import Callable, Dict
+import argparse
+import time
 
 import torch
 import torch.nn.functional as F
@@ -21,18 +23,18 @@ import alonet
 
 
 class PanopticHead(nn.Module):
-    """Head Pytorch module to predict segmentation masks from previous boxes detection task.
+    """Pytorch head module to predict segmentation masks from previous boxes detection task.
 
     Parameters
     ----------
-    DETR_module : alonet.detr.Detr
-        Object detection module based on DETR architecture
+    DETR_module : :mod:`alonet.detr.detr`
+        Object detection module based on :mod:`DETR <alonet.detr.detr>` architecture
     freeze_detr : bool, optional
-        Freeze DETR_module weights in train procedure, by default True
+        Freeze :attr:`DETR_module` weights in train procedure, by default True
     aux_loss: bool, optional
-        Return aux outputs in forward step (if required), by default use DETR_module.aux_loss attribute value
+        Return aux outputs in forward step (if required), by default use :attr:`DETR_module.aux_loss` attribute value
     device : torch.device, optional
-        Configure module in CPU or GPU, by default torch.device("cpu")
+        Configure module in CPU or GPU, by default :attr:`torch.device("cpu")`
     weights : str, optional
         Load weights from name project, by default None
     strict_load_weights : bool
@@ -87,7 +89,7 @@ class PanopticHead(nn.Module):
 
         Parameters
         ----------
-        frames : aloscene.frame
+        frames : :mod:`Frames <aloscene.frame>`
             Input frame to network
         get_filter_fn : Callable
             Function that returns two parameters: the :attr:`dec_outputs` tensor filtered by a boolean mask per
@@ -97,22 +99,23 @@ class PanopticHead(nn.Module):
 
         Returns
         -------
-        Dict
+        dict
             It outputs a dict with the following elements:
-                - "pred_logits": The classification logits (including no-object) for all queries.
-                                Shape = [batch_size x num_queries x (num_classes + 1)]
-                - "pred_boxes": The normalized boxes coordinates for all queries, represented as
-                                (center_x, center_y, height, width). These values are normalized in [0, 1],
-                                relative to the size of each individual image (disregarding possible padding).
-                                See PostProcess for information on how to retrieve the unnormalized bounding box.
-                - "pred_masks": Binary masks, each one to assign to predicted boxes.
-                                Shape = [batch_size x num_queries x H // 4 x W // 4]
-                - "bb_outputs": Backbone outputs, requered in this forward
-                - "enc_outputs": Transformer encoder outputs, requered on this forward
-                - "dec_outputs": Transformer decoder outputs, requered on this forward
-                - "pred_masks_info": Parameters to use in inference procedure
-                - "aux_outputs": Optional, only returned when auxilary losses are activated. It is a list of
-                                dictionnaries containing the two above keys for each decoder layer.
+
+            - :attr:`pred_logits`: The classification logits (including no-object) for all queries.
+              Shape = [batch_size x num_queries x (num_classes + 1)]
+            - :attr:`pred_boxes`: The normalized boxes coordinates for all queries, represented as
+              (center_x, center_y, height, width). These values are normalized in [0, 1], relative to the size of
+              each individual image (disregarding possible padding). See PostProcess for information on how to
+              retrieve the unnormalized bounding box.
+            - :attr:`pred_masks`: Binary masks, each one to assign to predicted boxes.
+              Shape = [batch_size x num_queries x H // 4 x W // 4]
+            - :attr:`bb_outputs`: Backbone outputs, requered in this forward
+            - :attr:`enc_outputs`: Transformer encoder outputs, requered on this forward
+            - :attr:`dec_outputs`: Transformer decoder outputs, requered on this forward
+            - :attr:`pred_masks_info`: Parameters to use in inference procedure
+            - :attr:`aux_outputs`: Optional, only returned when auxilary losses are activated. It is a list of
+              dictionnaries containing the two above keys for each decoder layer.
         """
         # DETR model forward to obtain box embeddings
         out = self.detr(frames, **kwargs)
@@ -136,24 +139,25 @@ class PanopticHead(nn.Module):
 
     @torch.no_grad()
     def inference(self, forward_out: Dict, maskth: float = 0.5, filters: list = None, **kwargs):
-        """Given the model forward outputs, this method will return an aloscene.Mask tensor with binary
-        mask with its corresponding label per object detected.
+        """Given the model forward outputs, this method will return a set of
+        :mod:`BoundingBoxes2D <aloscene.bounding_boxes_2d>` and :mod:`Mask <aloscene.mask>`, with its corresponding
+        :mod:`Labels <aloscene.labels>` per object detected.
 
         Parameters
         ----------
-        forward_out : dict, optinal
-            Dict with the model forward outptus
-        maskth : float
+        forward_out : dict
+            Dict with the model forward outputs
+        maskth : float, optional
             Threshold value to binarize the masks, by default 0.5
         filters : list, optional
-            List of filter to select the query predicting an object.
+            List of filter to select the query predicting an object, by default None
 
         Returns
         -------
-        aloscene.BoundingBoxes2D
+        :mod:`BoundingBoxes2D <aloscene.bounding_boxes_2d>`
             Boxes from DETR model
-        aloscene.Maks
-            Binary mask of PanopticHead
+        :mod:`Mask <aloscene.mask>`
+            Binary masks from PanopticHead, one for each box.
         """
         # Get boxes from detr inference
         filters = filters or forward_out["pred_masks_info"]["filters"]
@@ -205,7 +209,7 @@ class PanopticHead(nn.Module):
         return preds_boxes, preds_masks
 
 
-if __name__ == "__main__":
+def main(image_path):
     device = torch.device("cuda")
 
     # Load model
@@ -213,17 +217,32 @@ if __name__ == "__main__":
     model = PanopticHead(DetrR50(num_classes=250), weights=weights)
     model.to(device)
 
-    # Random frame
-    # frame = aloscene.Frame(torch.rand((3, 250, 250)), names=("C", "H", "W")).norm_resnet().to(device)
-    frame = aloscene.Frame("./images/aloception.png", names=("C", "H", "W")).norm_resnet().to(device)
-    frame = frame.resize((300, 300))
-    frame = frame.batch_list([frame])
-    # frame.get_view().render()
+    # Open and prepare a batch for the model
+    frame = aloscene.Frame(image_path).norm_resnet()
+    frames = aloscene.Frame.batch_list([frame])
+    frames = frames.to(device)
 
     # Pred of size (B, NQ, H//4, W//4)
-    foutputs = model(frame, threshold=0.5, background_class=250)
-    print(foutputs["pred_masks"].shape)
-    boxes, pred = model.inference(foutputs)
-    print("size of each pred:", [len(p) for p in pred])
+    with torch.no_grad():
+        # Measure inference time
+        tic = time.time()
+        [model(frames) for _ in range(20)]
+        toc = time.time()
+        print(f"{(toc - tic)/20*1000} ms")
 
-    frame.get_view([boxes[0].get_view(frame[0]), pred[0].get_view(frame[0])]).render()
+        # Predict boxes
+        m_outputs = model(frames, threshold=0.5, background_class=250)
+
+    pred_boxes, pred_masks = model.inference(m_outputs)
+
+    # Add and display the boxes/masks predicted
+    frame.append_boxes2d(pred_boxes[0], "pred_boxes")
+    frame.append_segmentation(pred_masks[0], "pred_masks")
+    frame.get_view().render()
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Detr R50 Panoptic inference on image")
+    parser.add_argument("image_path", type=str, help="Path to the image for inference")
+    args = parser.parse_args()
+    main(args.image_path)

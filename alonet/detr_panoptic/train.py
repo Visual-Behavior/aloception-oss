@@ -1,10 +1,14 @@
+"""`Pytorch Lightning Module <https://pytorch-lightning.readthedocs.io/en/latest/common/lightning_module.html>`_ to
+train models based on :mod:`~alonet.detr_panoptic.detr_panoptic` module
+"""
+
 from alonet.detr_panoptic.utils import get_mask_queries, get_base_model_frame
 import alonet
+import torch
 
 
 class LitPanopticDetr(alonet.detr.LitDetr):
-    """LightningModule to train Detr models
-
+    """
     Parameters
     ----------
     args : Namespace, optional
@@ -27,7 +31,6 @@ class LitPanopticDetr(alonet.detr.LitDetr):
 
     @staticmethod
     def add_argparse_args(parent_parser, parser=None):
-        """Add arguments to parent parser with default values"""
         parser = parent_parser.add_argument_group("LitPanoptic") if parser is None else parser
         parser.add_argument(
             "--weights", type=str, default=None, help="One of (detr-r50-panoptic). Default: None",
@@ -67,7 +70,27 @@ class LitPanopticDetr(alonet.detr.LitDetr):
         return super().validation_step(frames, batch_idx)
 
     def build_model(self, num_classes=250, aux_loss=True, weights=None):
-        """Build model with default parameters"""
+        """Build the default model
+
+        Parameters
+        ----------
+        num_classes : int, optional
+            Number of classes in embed layer, by default 250
+        aux_loss : bool, optional
+            Return auxiliar outputs in forward output, by default True
+        weights : str, optional
+            Path or id to load weights, by default None
+
+        Returns
+        -------
+        :mod:`~alonet.detr_panoptic.detr_panoptic`
+            Pytorch model
+
+        Raises
+        ------
+        Exception
+            Only :attr:`detr-r50-panoptic` and :attr:`deformable-detr-r50-panoptic` models are supported yet.
+        """
         if self.model_name == "detr-r50-panoptic":
             detr_model = alonet.detr.DetrR50(num_classes=num_classes, aux_loss=aux_loss, background_class=250)
         elif self.model_name == "deformable-detr-r50-panoptic":
@@ -80,7 +103,7 @@ class LitPanopticDetr(alonet.detr.LitDetr):
 
     def build_criterion(
         self,
-        matcher=None,
+        matcher: torch.nn = None,
         loss_dice_weight=2,
         loss_focal_weight=2,
         loss_ce_weight=1,
@@ -90,7 +113,35 @@ class LitPanopticDetr(alonet.detr.LitDetr):
         losses=["masks", "boxes", "labels"],
         aux_loss_stage=6,
     ):
-        """Build default criterion"""
+        """Build the default criterion
+
+        Parameters
+        ----------
+        matcher : torch.nn, optional
+            One specfic matcher to use in criterion process, by default the output of :func:`build_matcher`
+        loss_ce_weight : float, optional
+            Weight of cross entropy loss in total loss, by default 1
+        loss_boxes_weight : float, optional
+            Weight of boxes loss in total loss, by default 5
+        loss_giou_weight : float, optional
+            Weight of GIoU loss in total loss, by default 2
+        loss_dice_weight : float, optional
+            Weight of DICE/F-1 loss in total loss, by default 2
+        loss_focal_weight : float, optional
+            Weight of sigmoid focal loss in total loss, by default 2
+        eos_coef : float, optional
+            Background/End of the Sequence (EOS) coefficient, by default 0.1
+        losses : list, optional
+            List of losses to take into account in total loss, by default ["labels", "boxes", "masks"].
+            Possible values: ["labels", "boxes", "masks"] (use the latest in segmentation tasks)
+        aux_loss_stage : int, optional
+            Size of stages from :attr:`aux_outputs` key in forward ouputs, by default 6
+
+        Returns
+        -------
+        :mod:`DetrCriterion <alonet.detr.criterion>`
+            Criterion use to train the model
+        """
         return alonet.detr_panoptic.PanopticCriterion(
             matcher=matcher or self.matcher,
             loss_ce_weight=loss_ce_weight,
@@ -104,7 +155,6 @@ class LitPanopticDetr(alonet.detr.LitDetr):
         )
 
     def callbacks(self, data_loader):
-        """Default callbacks"""
         obj_detection_callback = alonet.detr_panoptic.PanopticObjectDetectorCallback(
             val_frames=next(iter(data_loader.val_dataloader()))
         )

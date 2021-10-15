@@ -1,3 +1,12 @@
+"""LightningDataModule base to use dataset in Detr trainer models.
+
+See Also
+--------
+`LightningDataModule <https://pytorch-lightning.readthedocs.io/en/latest/extensions/datamodules.html>`_ for more
+information about to create data modules from
+`Dataset and Dataloader <https://pytorch.org/tutorials/beginner/basics/data_tutorial.html>`_
+"""
+
 import torch
 from argparse import Namespace, ArgumentParser
 from typing import Optional
@@ -10,8 +19,7 @@ import aloscene
 
 
 class Data2Detr(pl.LightningDataModule):
-    """LightningDataModule to use dataset in Detr trainer models
-
+    """
     Parameters
     ----------
     batch_size : int, optional
@@ -101,7 +109,7 @@ class Data2Detr(pl.LightningDataModule):
 
         Parameters
         ----------
-        frame : :mod:`aloscene.Frame`
+        frame : :mod:`~aloscene.frame`
             Input frame to transform
         same_on_sequence : bool, optional
             Use same data augmentation size of each sequence, by default True
@@ -110,7 +118,7 @@ class Data2Detr(pl.LightningDataModule):
 
         Returns
         -------
-        :mod:`aloscene.Frame`
+        :mod:`~aloscene.frame`
             Frame with respective changes by transform function
         """
         if self.no_augmentation:
@@ -142,11 +150,11 @@ class Data2Detr(pl.LightningDataModule):
     def val_transform(
         self, frame: aloscene.Frame, same_on_sequence: bool = True, same_on_frames: bool = False,
     ):
-        """Transorm requered to valid on each frame
+        """Transform requered to valid on each frame
 
         Parameters
         ----------
-        frame : :mod:`aloscene.Frame`
+        frame : :mod:`~aloscene.frame`
             Input frame to transform
         same_on_sequence : bool, optional
             Use same data augmentation size of each sequence, by default True
@@ -155,7 +163,7 @@ class Data2Detr(pl.LightningDataModule):
 
         Returns
         -------
-        :mod:`aloscene.Frame`
+        :mod:`~aloscene.frame`
             Frame with respective changes by transform function
         """
         if self.no_augmentation:
@@ -177,8 +185,13 @@ class Data2Detr(pl.LightningDataModule):
 
         Parameters
         ----------
-        stage : Optional[str], optional
+        stage : str, optional
             Stage either `fit`, `validate`, `test` or `predict`, by default None
+
+        Raises
+        ------
+        Exception
+            This class must be inhert and set :attr:`train_dataset` and :attr:`val_dataset` attributes
         """
         raise Exception("This class must be inhert and set self.train_dataset and self.val_dataset attributes")
 

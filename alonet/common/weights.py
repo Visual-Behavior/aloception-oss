@@ -53,12 +53,12 @@ def load_weights(model, weights, device, strict_load_weights=True):
         checkpoint = torch.load(weights, map_location=device)
         if "model" in checkpoint:
             checkpoint = checkpoint["model"]
-        model.load_state_dict(checkpoint)
+        model.load_state_dict(checkpoint, strict=strict_load_weights)
         print(f"Weights loaded from {weights}")
     elif ".ckpt" in weights:
         checkpoint = torch.load(weights, map_location=device)["state_dict"]
         checkpoint = {k.replace("model.", "") if "model." in k else k: v for k, v in checkpoint.items()}
-        model.load_state_dict(checkpoint)
+        model.load_state_dict(checkpoint, strict=strict_load_weights)
         print(f"Weights loaded from {weights}")
     elif weights in WEIGHT_NAME_TO_FILES:
         weights_dir = os.path.join(weights_dir, weights)

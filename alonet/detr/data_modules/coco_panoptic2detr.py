@@ -1,10 +1,3 @@
-"""`Pytorch Lightning Data Module <https://pytorch-lightning.readthedocs.io/en/latest/extensions/datamodules.html>`_
-connector between dataset and model. Load train/val/test sets and make the preprocessing required for use by the
-architecture. Make the connection between :mod:`~alodataset.CocoPanopticDataset` and
-:mod:`~alonet.panoptic.LitPanopticDetr` modules. See :mod:`~alonet.detr.Data2Detr` to see all information
-about the methods.
-"""
-
 from typing import Optional
 
 from alonet.detr.data_modules import Data2Detr
@@ -12,17 +5,31 @@ import alodataset
 
 
 class CocoPanoptic2Detr(Data2Detr):
-    def setup(self, stage: Optional[str] = None):
+    def setup(self, stage: Optional[str] = None, fix_classes_len: int = 250):
+        """:attr:`train_dataset` and :attr:`val_dataset` datasets setup, follow the parameters used
+        in class declaration. Also, set :attr:`label_names` attribute.
+
+        Parameters
+        ----------
+        stage : str, optional
+            Stage either `fit`, `validate`, `test` or `predict`, by default None
+        fix_classes_len : int, optional
+            Fix datasets to a specific number the number of classes, filling the rest with "N/A" value.
+        """
         if stage == "fit" or stage is None:
             # Setup train/val loaders
             self.train_dataset = alodataset.CocoPanopticDataset(
                 transform_fn=self.val_transform if self.train_on_val else self.train_transform,
                 sample=self.sample,
                 split=alodataset.Split.VAL if self.train_on_val else alodataset.Split.TRAIN,
+                fix_classes_len=fix_classes_len,
             )
             self.sample = self.train_dataset.sample or self.sample  # Update sample if user prompt is given
             self.val_dataset = alodataset.CocoPanopticDataset(
-                transform_fn=self.val_transform, sample=self.sample, split=alodataset.Split.VAL,
+                transform_fn=self.val_transform,
+                sample=self.sample,
+                split=alodataset.Split.VAL,
+                fix_classes_len=fix_classes_len,
             )
             self.sample = self.val_dataset.sample or self.sample  # Update sample if user prompt is given
             self.label_names = self.val_dataset.label_names if hasattr(self.val_dataset, "label_names") else None

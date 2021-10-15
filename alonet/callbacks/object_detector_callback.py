@@ -27,7 +27,7 @@ class ObjectDetectorCallback(pl.Callback):
 
         Parameters
         ----------
-        val_frames: list | alonet.Frame
+        val_frames: list of :mod:`~aloscene.frame`
             List of sample from the validation set to use to load the validation progress
         one_color_per_class
             Set same segmentation-color for all objects with same category ID, by default True

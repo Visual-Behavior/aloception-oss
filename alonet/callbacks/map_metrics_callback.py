@@ -1,3 +1,9 @@
+"""Callback that stores samples in each step to calculate the AP for one IoU and one class
+
+See Also
+--------
+    :mod:`ApMetrics <alonet.metrics.compute_map>`, the specific metric implement in this callback
+"""
 import matplotlib.pyplot as plt
 from pytorch_lightning.utilities import rank_zero_only
 from alonet.common.logger import log_figure, log_scalar

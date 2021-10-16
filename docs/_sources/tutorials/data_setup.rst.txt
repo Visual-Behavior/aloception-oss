@@ -313,8 +313,8 @@ With this pre-set up, the reading of the directory will be done automatically ac
 .. admonition:: What is next ?
     :class: note
 
-    Learn how to train a model using your custom data in :doc:`training_detr`, :doc:`training_deformable_detr` and
-    :doc:`training_raft` tutorials.
+    Learn how to train a model using your custom data in :doc:`training_detr` and :doc:`training_deformable_detr`
+    tutorials.
 
 .. Hyperlinks
 .. |coco| replace:: COCO 2017 detection dataset

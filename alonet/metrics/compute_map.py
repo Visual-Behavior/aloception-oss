@@ -7,26 +7,46 @@ import aloscene
 
 
 class APDataObject:
-    """Stores all the information necessary to calculate the AP for one IoU and one class."""
-
     def __init__(self):
         self.data_points = []
         self.areas = []
         self.num_gt_positives = 0
 
     def push(self, score: float, is_true: bool):
+        """Append score and classification result to calculate AP
+
+        Parameters
+        ----------
+        score : float
+            Score of one element
+        is_true : bool
+            Correctly predicted class category
+        """
         self.data_points.append((score, is_true))
 
     def add_gt_positives(self, num_positives: int):
-        """Call this once per image."""
+        """Call this once per image
+
+        Parameters
+        ----------
+        num_positives : int
+            Number of positives categories
+        """
         self.num_gt_positives += num_positives
         # self.areas = areas
 
     def is_empty(self) -> bool:
+        """Check if :attr:`data_points` is empty"""
         return len(self.data_points) == 0 and self.num_gt_positives == 0
 
     def get_metrics(self) -> float:
-        """Warning: result not cached."""
+        """Get metrics from samples stored
+
+        Notes
+        -----
+        .. warning::
+            Result not cached yet.
+        """
 
         if self.num_gt_positives == 0:
             return {"ap": 0, "precision": 0, "recall": 0, "precisions": [], "recalls": [], "confidences": []}
@@ -94,16 +114,25 @@ class APDataObject:
 
 
 class ApMetrics(object):
-    def __init__(self, iou_thresholds=[x / 100.0 for x in range(50, 100, 5)], compute_per_size_ap=False):
-        """Compute AP Metrics.
+    """Compute AP Metrics.
 
-        Parameters
-        ----------
-        iou_thresholds: list
-            List of thresholds to use. Default: [0.5, 0.55, .... 0.9, 0.95]
-        compute_per_size_ap: bool
-            False by default. If True, will compute the IOU per boxes area/size.
-        """
+    Attributes
+    ----------
+        class_names : list
+            List of classes
+
+    Parameters
+    ----------
+    iou_thresholds : list
+        List of thresholds to use. Default: [0.5, 0.55, .... 0.9, 0.95]
+    compute_per_size_ap : bool
+        If True, will compute the IOU per boxes area/size,  by default False
+    """
+
+    def __init__(
+        self, iou_thresholds: list = [x / 100.0 for x in range(50, 100, 5)], compute_per_size_ap: bool = False
+    ):
+
         self.iou_thresholds = iou_thresholds
         self.class_names = None
         self.compute_per_size_ap = compute_per_size_ap
@@ -151,13 +180,13 @@ class ApMetrics(object):
 
         Parameters
         ----------
-        p_bbox: `aloscene.BoundingBoxes2D`
+        p_bbox : :mod:`BoundingBoxes2D <aloscene.bounding_boxes_2d>`
             predicted boxes
-        t_bbox: `aloscene.BoundingBoxes2D`
-            Target boxes with `aloscene.labels` with the `labels_names` property set.
-        p_mask: `aloscene.Mask`
+        t_bbox : :mod:`BoundingBoxes2D <aloscene.bounding_boxes_2d>`
+            Target boxes with :mod:`~aloscene.labels` with the :attr:`labels_names` property set.
+        p_mask : :mod:`Mask <aloscene.mask>`
             Apply APmask metric
-        t_mask: `aloscene.Mask`
+        t_mask : :mod:`Mask <aloscene.mask>`
             Apply APmask metric
         """
         assert isinstance(p_bbox, aloscene.BoundingBoxes2D)
@@ -329,7 +358,22 @@ class ApMetrics(object):
                                 ap_obj.push(score_func(i), False)
 
     def calc_map(self, print_result=False):
+        """Calcule mAP maps
 
+        Parameters
+        ----------
+        print_result : bool, optional
+            Print results, by default False
+
+        Returns
+        -------
+        Tuple[Dict,Dict,Dict,Dict,Dict]
+            - Summary with all maps result
+            - Summary with all maps result per class
+            - Size off all maps
+            - Cross classification AP50
+            - Cross classification AP50 per class
+        """
         # AP across class
         aps = [{"box": [], "precision": [], "recall": [], "mask": [], "box_ct": []} for _ in self.iou_thresholds]
         # AP 50 per size
@@ -515,9 +559,9 @@ class ApMetrics(object):
         if print_result:
             print("AP50,Size:")
             if self.compute_per_size_ap:
-                print_maps(all_maps_per_size)
+                _print_maps(all_maps_per_size)
             print("All")
-            print_maps(all_maps)
+            _print_maps(all_maps)
 
             # Per class bbox map50
             per_class_data = []
@@ -566,7 +610,7 @@ class ApMetrics(object):
         return all_maps, per_class_all_maps, all_maps_per_size, cross_clas_ap50_metrics, per_class_ap50_metrics
 
 
-def print_maps(all_maps, name=""):
+def _print_maps(all_maps, name=""):
     # Warning: hacky
     make_row = lambda vals: (" %5s |" * len(vals)) % tuple(vals)
     make_sep = lambda n: ("-------+" * (n + 1))

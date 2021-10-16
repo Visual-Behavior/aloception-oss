@@ -1,3 +1,4 @@
+"""Callback for any object detection training that use :mod:`Frame <aloscene.frame>` as GT. """
 import torch
 import pytorch_lightning as pl
 import wandb
@@ -11,35 +12,43 @@ from alodataset.utils.panoptic_utils import VOID_CLASS_ID
 
 
 class ObjectDetectorCallback(pl.Callback):
-    """Callback for any object detection training that use
-    alonet.Frames as GT.
+    """The callback load frames every x training step as well as once every validation step on the given
+    :attr:`val_frames` and log the different objects predicted
+
+    Parameters
+    ----------
+    val_frames : Union[list, :mod:`Frames <aloscene.frame>`]
+        List of sample from the validation set to use to load the validation progress
     """
 
-    def __init__(self, val_frames: Union[list, aloscene.Frame]):
+    def __init__(self, val_frames: Union[list, aloscene.Frame], one_color_per_class: bool = True):
         """The callback load frames every x training step as well as once
         every validation step on the given `val_frames`
 
         Parameters
         ----------
-        val_frames: list | alonet.Frame
+        val_frames: list of :mod:`~aloscene.frame`
             List of sample from the validation set to use to load the validation progress
+        one_color_per_class
+            Set same segmentation-color for all objects with same category ID, by default True
         """
         super().__init__()
         # Batch list of frame if needed
         if isinstance(val_frames, list):
             val_frames = aloscene.Frame.batch_list(val_frames)
         self.val_frames = val_frames
+        self.one_color_per_class = one_color_per_class
 
     def log_boxes_2d(self, frames: list, preds_boxes: list, trainer: pl.trainer.trainer.Trainer, name: str):
         """Given a frames and predicted boxes2d, this method will log the images into wandb
 
         Parameters
         ----------
-        frames: list of aloscene.Frame
+        frames : list of :mod:`~aloscene.frame`
             Frame with GT boxes2d attached
-        preds_boxes: list of aloscene.BoundingBoxes2D
+        preds_boxes : list of :mod:`BoundingBoxes2D <aloscene.bounding_boxes_2d>`
             A set of predicted boxes2d
-        trainer: pl.trainer.trainer.Trainer
+        trainer : pl.trainer.trainer.Trainer
             Lightning trainer
         """
         images = []
@@ -92,11 +101,11 @@ class ObjectDetectorCallback(pl.Callback):
     ):
         """Given a frames and predicted boxes3d, this method will log the images into wandb
 
-        Parameter:
+        Parameters
         ----------
-        frames: aloscene.Frame
+        frames : :mod:`~aloscene.frame`
             Frame with GT boxes2d attached
-        preds_boxes: aloscene.BoundingBoxes3D
+        preds_boxes : :mod:`BoundingBoxes3D <aloscene.bounding_boxes_3d>`
             A set of predicted boxes3d
         trainer: pl.trainer.trainer.Trainer
             Lightning trainer
@@ -124,18 +133,17 @@ class ObjectDetectorCallback(pl.Callback):
 
         Parameters
         ----------
-        frames: list of aloscene.Frame
+        frames : list of :mod:`~aloscene.frame`
             Frame with GT masks attached
-        preds_masks: list of aloscene.Mask
+        preds_masks : list of :mod:`Mask <aloscene.mask>`
             A set of predicted segmentation masks
-        trainer: pl.trainer.trainer.Trainer
+        trainer : pl.trainer.trainer.Trainer
             Lightning trainer
         name : str
             Name to show in wandb
         """
         images = []
         # Show categories with same color if there are many categories
-        color_by_cat = len(frames[0].segmentation.labels.labels_names) > 20
         for b, p_mask in enumerate(pred_masks):
             # 1. Get view of segmentation: More efficient but does not allow filtering classes in wandb
             # frame = frames[b]
@@ -150,7 +158,7 @@ class ObjectDetectorCallback(pl.Callback):
             target_masks = frames.segmentation[b]
             labels_names = target_masks.labels.labels_names
             if labels_names is not None:
-                if color_by_cat:
+                if self.one_color_per_class:
                     labels_gt = {i: name for i, name in enumerate(labels_names)}
                     labels_pred = labels_gt
                 else:  # TODO: synchronize colors by matcher (?)
@@ -171,10 +179,16 @@ class ObjectDetectorCallback(pl.Callback):
             frame = frame.permute([1, 2, 0]).contiguous().numpy()
 
             # Get panoptic view
-            target_masks = target_masks.mask2id(return_cats=color_by_cat)
-            p_mask = p_mask.mask2id(return_cats=color_by_cat)
+            target_masks = target_masks.mask2id(return_cats=self.one_color_per_class)
+            p_mask = p_mask.mask2id(return_cats=self.one_color_per_class)
             if VOID_CLASS_ID < 0:
-                bg_val = max(max(labels_gt.keys()), max(labels_pred.keys())) + 1
+                bg_val = (
+                    max(
+                        max(labels_gt.keys() if len(labels_gt) > 0 else [0]),
+                        max(labels_pred.keys() if len(labels_pred) > 0 else [0]),
+                    )
+                    + 1
+                )
                 target_masks[target_masks == VOID_CLASS_ID] = bg_val  # Background N/A
                 p_mask[p_mask == VOID_CLASS_ID] = bg_val  # Background N/A
             target_masks = target_masks.astype(np.uint8)
@@ -191,11 +205,9 @@ class ObjectDetectorCallback(pl.Callback):
         log_image(trainer, name, images)
 
     def on_train_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx):
-        """ """
         if trainer.logger is None:
             return
         raise Exception("To inhert in a child class")
-        pass
 
     @rank_zero_only
     def on_validation_epoch_end(self, trainer, pl_module):

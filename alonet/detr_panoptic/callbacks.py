@@ -1,3 +1,4 @@
+"""Detr callbacks adapted to use in training."""
 import aloscene
 from typing import Union
 
@@ -8,17 +9,23 @@ from alonet.detr_panoptic.utils import get_base_model_frame
 
 
 class PanopticObjectDetectorCallback(ObjectDetectorCallback):
-    """Panoptic Detr Callback for object detection training that use alonet.Frames as GT."""
+    """The callback load frames every x training step as well as once every validation step on the given
+    :attr:`val_frames` and log the different objects predicted
 
-    def __init__(self, val_frames: Union[list, aloscene.Frame]):
+    Parameters
+    ----------
+    val_frames : Union[list, :mod:`Frames <aloscene.frame>`]
+        List of sample from the validation set to use to load the validation progress
+    """
+
+    def __init__(self, val_frames: Union[list, aloscene.Frame], **kwargs):
         # Batch list of frame if needed
         if isinstance(val_frames, list):
             val_frames = aloscene.Frame.batch_list(val_frames)
-        super().__init__(val_frames=get_base_model_frame(val_frames))
+        super().__init__(val_frames=get_base_model_frame(val_frames), **kwargs)
 
     @rank_zero_only
     def on_train_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx):
-        """ """
         if trainer.logger is None:
             return
         if trainer.fit_loop.should_accumulate() or (trainer.global_step + 1) % (trainer.log_every_n_steps * 10) != 0:
@@ -36,7 +43,6 @@ class PanopticObjectDetectorCallback(ObjectDetectorCallback):
 
     @rank_zero_only
     def on_validation_epoch_end(self, trainer, pl_module):
-        """ """
         if trainer.logger is None:
             return
 
@@ -52,6 +58,8 @@ class PanopticObjectDetectorCallback(ObjectDetectorCallback):
 
 
 class PanopticApMetricsCallbacks(ApMetricsCallback):
+    """Callback that stores samples in each step to calculate the AP for one IoU and one class"""
+
     def add_sample(
         self,
         base_metric: metrics,

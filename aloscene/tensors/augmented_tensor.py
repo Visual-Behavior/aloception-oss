@@ -53,7 +53,10 @@ class AugmentedTensor(torch.Tensor):
         """
         labels = {}
         for name in self._childs_list:
-            labels[name] = getattr(self, name)
+            labels[name] = {
+                "value": getattr(self, name),
+                "property": self._child_property[name]
+            }
             setattr(self, name, None)
         return labels
 
@@ -64,7 +67,10 @@ class AugmentedTensor(torch.Tensor):
         for name in self._childs_list:
             # Use apply to return the same label but with a new structure
             # so that if the returned structure is changed, this will not impact the current one
-            labels[name] = self.apply_on_child(getattr(self, name), lambda l: l)
+            labels[name] = {
+                "value": self.apply_on_child(getattr(self, name), lambda l: l),
+                "property": self._child_property[name]
+            }
         return labels
 
     def set_childs(self, labels):
@@ -72,8 +78,10 @@ class AugmentedTensor(torch.Tensor):
         """
         for name in labels:
             if name not in self._childs_list:
-                raise Exception(f"Try to add an unregistred label {name}")
-            setattr(self, name, labels[name])
+                self.add_child(name, labels[name]["value"], **labels[name]["property"])
+            else:
+                setattr(self, name, labels[name]["value"])
+                self._child_property[name] = labels[name]["property"]
         return labels
 
     @staticmethod

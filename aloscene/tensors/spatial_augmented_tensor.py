@@ -265,24 +265,11 @@ class SpatialAugmentedTensor(AugmentedTensor):
         dtype = sa_tensors[0].dtype
         device = sa_tensors[0].device
 
-        if (
-            "N" in sa_tensors[0].names
-            or "C" not in sa_tensors[0].names
-            or "H" not in sa_tensors[0].names
-            or "W" not in sa_tensors[0].names
-        ):
-            raise Exception(
-                "{} (with names: {}) as it is, does not seem to be mergeable using batch_list.".format(
-                    type(sa_tensors[0]), sa_tensors[0].names
-                )
-            )
-
         # Retrieve the target size
         for i, frame in enumerate(sa_tensors):
             if frame is not None:
                 max_h, max_w = max(frame.H, max_h), max(frame.W, max_w)
 
-        saved_frame_labels = {}
         n_sa_tensors = []
         for i, n_frame in enumerate(sa_tensors):
             if n_frame is None:
@@ -290,44 +277,6 @@ class SpatialAugmentedTensor(AugmentedTensor):
             # Add the batch dimension and drop the labels
             n_sa_tensors.append(n_frame.batch())
             frame = n_frame
-            labels = n_sa_tensors[i].get_childs()
-
-            # Merge labels on the first dim (TODO, move on an appropriate method)
-            # The following can be merge into an other method in the augmented_tensor class that do roughly the same thing
-            for label_name in labels:
-                if labels[label_name] is None:
-                    continue
-                if label_name not in saved_frame_labels:
-                    saved_frame_labels[label_name] = (
-                        {key: [] for key in labels[label_name]} if isinstance(labels[label_name], dict) else []
-                    )
-                if isinstance(labels[label_name], dict):
-                    for key in labels[label_name]:
-                        saved_frame_labels[label_name] = frame._merge_child(
-                            labels[label_name][key],
-                            label_name,
-                            key,
-                            saved_frame_labels[label_name],
-                            {"dim": 0},
-                            check_dim=False,
-                        )
-                else:
-                    saved_frame_labels = frame._merge_child(
-                        labels[label_name], label_name, label_name, saved_frame_labels, {"dim": 0}, check_dim=False
-                    )
-
-        # Merge all aligned tensors on the batch dimension
-        # Same thing that above, the following code should directlt use an other method
-        # that roughly do the same thing
-        # TODO: Test the following code since I don't have access ot mergeable label right now
-        for label_name in saved_frame_labels:
-            if not frame._child_property[label_name]["mergeable"]:
-                continue
-            if isinstance(saved_frame_labels[label_name], dict):
-                for key in saved_frame_labels[label_name]:
-                    saved_frame_labels[label_name][key] = torch.cat(saved_frame_labels[label_name][key], dim=0)
-            else:
-                saved_frame_labels[label_name] = torch.cat(saved_frame_labels[label_name], dim=0)
 
         batch_size = len(n_sa_tensors)
         # Retrieve the new shapes and dim names

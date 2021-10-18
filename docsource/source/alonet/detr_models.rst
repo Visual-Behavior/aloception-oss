@@ -11,19 +11,25 @@ To instantiate a DETR R50 (resnet50 backbone):
       from alonet.detr import DetrR50
       model = DetrR50()
 
-If you want to finetune from the model pretrained on COCO dataset:
+To load pretrained weights on COCO dataset:
+
+   .. code-block:: python
+
+      model = DetrR50(num_classes=NUM_CLASS, weights='detr-r50')
+
+Or from trained-models:
+
+   .. code-block:: python
+
+      model = DetrR50(num_classes=NUM_CLASS, weights='path/to/weights.pth' or 'path/to/weights.ckpt')
+
+If you want to finetune from the model pretrained on COCO dataset (by default):
 
    .. code-block:: python
 
       from alonet.detr import DetrR50Finetune
       # NUM_CLASS is the desired number of classes in the new model
       model = DetrR50Finetune(num_classes=NUM_CLASS)
-
-To load weights from trained-models:
-
-   .. code-block:: python
-
-      model = DetrR50Finetune(num_classes=NUM_CLASS, weights='path/to/weights.pth' or 'path/to/weights.ckpt')
 
 To run inference:
 

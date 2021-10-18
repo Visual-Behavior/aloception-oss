@@ -72,7 +72,7 @@ class AugmentedTensor(torch.Tensor):
         """
         for name in labels:
             if name not in self._nodes_list:
-                raise Exception(f"Try to ad an unregistred label {name}")
+                raise Exception(f"Try to add an unregistred label {name}")
             setattr(self, name, labels[name])
         return labels
 

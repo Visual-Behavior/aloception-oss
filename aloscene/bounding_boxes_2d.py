@@ -297,18 +297,6 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
                     )
                 )
 
-            if tensor.padded_size is not None:
-
-                tensor.padded_size = (
-                    (
-                        tensor.padded_size[0][0] / tensor.frame_size[0],
-                        tensor.padded_size[0][1] / tensor.frame_size[0],
-                    ),
-                    (
-                        tensor.padded_size[1][0] / tensor.frame_size[1],
-                        tensor.padded_size[1][1] / tensor.frame_size[1],
-                    ),
-                )
             tensor.absolute = False
 
         if not tensor.absolute:
@@ -322,18 +310,6 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
                 )
             tensor.frame_size = frame_size
             tensor.absolute = True
-            if tensor.padded_size is not None:
-
-                tensor.padded_size = (
-                    (
-                        tensor.padded_size[0][0] * tensor.frame_size[0],
-                        tensor.padded_size[0][1] * tensor.frame_size[0],
-                    ),
-                    (
-                        tensor.padded_size[1][0] * tensor.frame_size[1],
-                        tensor.padded_size[1][1] * tensor.frame_size[1],
-                    ),
-                )
 
         elif tensor.absolute and frame_size == tensor.frame_size:
             pass
@@ -366,19 +342,6 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
                         [tensor.frame_size[0], tensor.frame_size[1], tensor.frame_size[0], tensor.frame_size[1]],
                         device=tensor.device,
                     )
-                )
-
-            if tensor.padded_size is not None:
-
-                tensor.padded_size = (
-                    (
-                        tensor.padded_size[0][0] / tensor.frame_size[0],
-                        tensor.padded_size[0][1] / tensor.frame_size[0],
-                    ),
-                    (
-                        tensor.padded_size[1][0] / tensor.frame_size[1],
-                        tensor.padded_size[1][1] / tensor.frame_size[1],
-                    ),
                 )
 
         elif not tensor.absolute:
@@ -781,12 +744,14 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
         if self.padded_size is None:
             raise Exception("Trying to fit to padded size without any previous stored padded_size.")
 
-        if not self.absolute:
-            offset_y = (self.padded_size[0][0], self.padded_size[0][1])
-            offset_x = (self.padded_size[1][0], self.padded_size[1][1])
-        else:
-            offset_y = (self.padded_size[0][0] / self.frame_size[0], self.padded_size[0][1] / self.frame_size[0])
-            offset_x = (self.padded_size[1][0] / self.frame_size[1], self.padded_size[1][1] / self.frame_size[1])
+        #if not self.absolute:
+        offset_y = (self.padded_size[0][0], self.padded_size[0][1])
+        offset_x = (self.padded_size[1][0], self.padded_size[1][1])
+        #else:
+        #    offset_y = (self.padded_size[0][0] / self.frame_size[0], self.padded_size[0][1] / self.frame_size[0])
+        #    offset_x = (self.padded_size[1][0] / self.frame_size[1], self.padded_size[1][1] / self.frame_size[1])
+
+        #print("fit_to_padded_size:offset_y,offset_x", offset_y, offset_x)
 
         if not self.absolute:
             boxes = self.abs_pos((100, 100)).xcyc()
@@ -835,8 +800,6 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
         if not pad_boxes:
             n_boxes = self.clone()
 
-
-
             if n_boxes.padded_size is not None:
 
                 if n_boxes.absolute:
@@ -844,27 +807,41 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
                 else:
                     pr_frame_size = (1, 1)
 
+                padded_size = n_boxes.padded_size
+
+                prev_padded_size = (
+                (
+                    (padded_size[0][0] * pr_frame_size[0]),
+                    (padded_size[0][1] * pr_frame_size[0])
+                ),
+                (
+                    (padded_size[1][0] * pr_frame_size[1]),
+                    (padded_size[1][1] * pr_frame_size[1])
+                )
+                )
+
                 n_padded_size = (
                     (
-                        offset_y[0] * (pr_frame_size[0] + n_boxes.padded_size[0][0] + n_boxes.padded_size[0][1]),
-                        offset_y[1] * (pr_frame_size[0] + n_boxes.padded_size[0][0] + n_boxes.padded_size[0][1]),
+                        prev_padded_size[0][0] + offset_y[0] * (prev_padded_size[0][0] + prev_padded_size[0][1] + pr_frame_size[0]),
+                        prev_padded_size[0][1] + offset_y[1] * (prev_padded_size[0][0] + prev_padded_size[0][1] + pr_frame_size[0]),
                     ),
                     (
-                        offset_x[0] * (pr_frame_size[1] + n_boxes.padded_size[1][0] + n_boxes.padded_size[1][1]),
-                        offset_x[1] * (pr_frame_size[1] + n_boxes.padded_size[1][0] + n_boxes.padded_size[1][1]),
+                        prev_padded_size[1][0] + offset_x[0] * (prev_padded_size[1][0] + prev_padded_size[1][1] + pr_frame_size[1]),
+                        prev_padded_size[1][1] + offset_x[1] * (prev_padded_size[1][0] + prev_padded_size[1][1] + pr_frame_size[1]),
                     ),
                 )
 
                 n_padded_size = (
                     (
-                        n_boxes.padded_size[0][0] + n_padded_size[0][0],
-                        n_boxes.padded_size[0][1] + n_padded_size[0][1],
+                        (n_padded_size[0][0]) / pr_frame_size[0],
+                        (n_padded_size[0][1]) / pr_frame_size[0],
                     ),
                     (
-                        n_boxes.padded_size[1][0] + n_padded_size[1][0],
-                        n_boxes.padded_size[1][1] + n_padded_size[1][1],
+                        (n_padded_size[1][0]) / pr_frame_size[1],
+                        (n_padded_size[1][1]) / pr_frame_size[1],
                     ),
                 )
+
             else:
                 n_padded_size = (
                     (offset_y[0], offset_y[1]),

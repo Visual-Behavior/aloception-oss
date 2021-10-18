@@ -231,7 +231,7 @@ class SpatialAugmentedTensor(AugmentedTensor):
         return tensor
 
     @staticmethod
-    def batch_list(sa_tensors: list, pad_boxes: bool = False):
+    def batch_list(sa_tensors: list, pad_boxes: bool = False, pad_points2d: bool = False):
         """Given a list of Spatial Augmeted tensor of potentially different size (otherwise cat is enough) this method
         will create a new set of frame of same size (the max size across the frames)
         and add to each frame a mask with 1. on the padded area.
@@ -346,7 +346,7 @@ class SpatialAugmentedTensor(AugmentedTensor):
         for spatial_tensor in n_sa_tensors:
             h_pad = (0, max_h - spatial_tensor.H)
             w_pad = (0, max_w - spatial_tensor.W)
-            padded_spatial_tensor = spatial_tensor.pad(h_pad, w_pad, pad_boxes=pad_boxes)
+            padded_spatial_tensor = spatial_tensor.pad(h_pad, w_pad, pad_boxes=pad_boxes, pad_points2d=pad_points2d)
             n_padded_list.append(padded_spatial_tensor)
 
         n_augmented_tensors = torch.cat(n_padded_list, dim=0)

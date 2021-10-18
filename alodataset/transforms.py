@@ -336,6 +336,84 @@ class RandomSizeCrop(AloTransform):
         return frame
 
 
+class RandomSizePad(AloTransform):
+    def __init__(self, max_size, frame_size, **kwargs):
+        if isinstance(max_size, int):
+            max_size = (max_size, max_size)
+        self.frame_size = frame_size
+        self.max_size = max_size
+        self.set_params(*self.sample_params())
+        super().__init__(**kwargs)
+
+    def sample_params(self):
+        """ """
+        h, w = self.frame_size
+        # print("hw", h, w, self.max_size)
+        pad_width = random.randint(0, max(self.max_size[1] - w, 0))
+        pad_height = random.randint(0, max(self.max_size[0] - h, 0))
+        # print("pad_width, pad_height", pad_width, pad_height)
+        pad_left = random.randint(0, pad_width)
+        pad_right = pad_width - pad_left
+        print("pad_left", pad_left)
+        print("pad_right", pad_right)
+        pad_top = random.randint(0, pad_height)
+        pad_bottom = pad_height - pad_top
+        print("pad_top", pad_top)
+        print("pad_bottom", pad_bottom)
+        return (pad_left, pad_right, pad_top, pad_bottom)
+
+    def set_params(self, pad_left, pad_right, pad_top, pad_bottom):
+        """ """
+        self._pad_left = pad_left
+        self._pad_right = pad_right
+        self._pad_top = pad_top
+        self._pad_bottom = pad_bottom
+
+    def __call__(self, frame):
+
+        print((self._pad_top, self._pad_bottom), (self._pad_left, self._pad_right))
+
+        return frame.pad(
+            offset_y=(self._pad_top, self._pad_bottom), offset_x=(self._pad_left, self._pad_right), pad_boxes=True
+        )
+
+
+class RandomPad(AloTransform):
+    def __init__(self, max_size, frame_size, **kwargs):
+        if isinstance(max_size, int):
+            max_size = (max_size, max_size)
+        self.frame_size = frame_size
+        self.max_size = max_size
+        self.set_params(*self.sample_params())
+        super().__init__(**kwargs)
+
+    def sample_params(self):
+        """ """
+        h, w = self.frame_size
+        pad_width = max(self.max_size[1] - w, 0)
+        pad_height = max(self.max_size[0] - h, 0)
+
+        pad_left = random.randint(0, pad_width)
+        pad_right = pad_width - pad_left
+
+        pad_top = random.randint(0, pad_height)
+        pad_bottom = pad_height - pad_top
+
+        return (pad_left, pad_right, pad_top, pad_bottom)
+
+    def set_params(self, pad_left, pad_right, pad_top, pad_bottom):
+        """ """
+        self._pad_left = pad_left
+        self._pad_right = pad_right
+        self._pad_top = pad_top
+        self._pad_bottom = pad_bottom
+
+    def __call__(self, frame):
+        return frame.pad(
+            offset_y=(self._pad_top, self._pad_bottom), offset_x=(self._pad_left, self._pad_right), pad_boxes=True
+        )
+
+
 class RandomCrop(AloTransform):
     def __init__(self, size, *args, **kwargs):
         """Randomly crop the frame.

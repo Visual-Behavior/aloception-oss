@@ -106,9 +106,9 @@ def load_training(
         print(f"Loading ckpt from {run_id} at {ckpt_path}")
         lit_model = lit_model_class.load_from_checkpoint(ckpt_path, strict=strict, args=args, **kwargs)
     elif weights_path is not None:
-        if ".pth" in weights_path:
+        if os.path.splitext(weights_path.lower())[1] == ".pth":
             lit_model = lit_model_class(args=args, **kwargs)
-        elif ".ckpt" in weights_path:
+        elif os.path.splitext(weights_path.lower())[1] == ".ckpt":
             lit_model = lit_model_class.load_from_checkpoint(weights_path, strict=strict, args=args, **kwargs)
         else:
             raise Exception(f"Impossible to load the weights at the following destination:{weights_path}")

@@ -97,13 +97,13 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         tensor = super().__new__(cls, x, *args, names=names, **kwargs)
 
         # Add label
-        tensor.add_node("points2d", points2d, align_dim=["B", "T"], mergeable=False)
-        tensor.add_node("boxes2d", boxes2d, align_dim=["B", "T"], mergeable=False)
-        tensor.add_node("boxes3d", boxes3d, align_dim=["B", "T"], mergeable=False)
-        tensor.add_node("flow", flow, align_dim=["B", "T"], mergeable=False)
-        tensor.add_node("disparity", disparity, align_dim=["B", "T"], mergeable=True)
-        tensor.add_node("segmentation", segmentation, align_dim=["B", "T"], mergeable=False)
-        tensor.add_node("labels", labels, align_dim=["B", "T"], mergeable=True)
+        tensor.add_child("points2d", points2d, align_dim=["B", "T"], mergeable=False)
+        tensor.add_child("boxes2d", boxes2d, align_dim=["B", "T"], mergeable=False)
+        tensor.add_child("boxes3d", boxes3d, align_dim=["B", "T"], mergeable=False)
+        tensor.add_child("flow", flow, align_dim=["B", "T"], mergeable=False)
+        tensor.add_child("disparity", disparity, align_dim=["B", "T"], mergeable=True)
+        tensor.add_child("segmentation", segmentation, align_dim=["B", "T"], mergeable=False)
+        tensor.add_child("labels", labels, align_dim=["B", "T"], mergeable=True)
 
         # Add other tensor property
         tensor.add_property("normalization", normalization)
@@ -147,7 +147,7 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         >> labels = aloscene.Labels([42])
         >> frame.append_labels(labels)
         """
-        self._append_node("labels", labels, name)
+        self._append_child("labels", labels, name)
 
     def append_boxes2d(self, boxes: BoundingBoxes2D, name: str = None):
         """Attach a set of BoundingBoxes2D to the frame.
@@ -172,7 +172,7 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         >>> boxes2d = aloscene.BoundingBoxes2D([[0.5, 0.5, 0.5, 0.5]], boxes_format="xcyc", absolute=False)
         >>> frame.append_boxes2d(boxes2d, "boxes_set")
         """
-        self._append_node("boxes2d", boxes, name)
+        self._append_child("boxes2d", boxes, name)
 
     def append_points2d(self, points: Points2D, name: str = None):
         """Attach a set of points to the frame.
@@ -185,7 +185,7 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
             If None, the points will be attached without name (if possible). Otherwise if no other unnamed
             points are attached to the frame, the points will be added to the set of points.
         """
-        self._append_node("points2d", points, name)
+        self._append_child("points2d", points, name)
 
     def append_boxes3d(self, boxes_3d: BoundingBoxes3D, name: str = None):
         """Attach BoundingBoxes3D to the frame
@@ -209,7 +209,7 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         >>> We append to boxes3D twice because the frame has a temporal dimension (T=2)
         >>> frame.append_boxes3d([boxes3d, boxes3d], "my_set")
         """
-        self._append_node("boxes3d", boxes_3d, name)
+        self._append_child("boxes3d", boxes_3d, name)
 
     def append_flow(self, flow, name=None):
         """Attach a flow to the frame.
@@ -228,7 +228,7 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         >>> flow = aloscene.Flow(np.zeros((2, frame.H, frame.W)))
         >>> frame.append_flow(flow)
         """
-        self._append_node("flow", flow, name)
+        self._append_child("flow", flow, name)
 
     def append_disparity(self, disparity, name=None):
         """Attach a disparity map to the frame.
@@ -247,7 +247,7 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         >>> disparity = aloscene.Disparity(np.zeros((1, frame.H, frame.W)))
         >>> frame.append_disparity(disparity)
         """
-        self._append_node("disparity", disparity, name)
+        self._append_child("disparity", disparity, name)
 
     def append_segmentation(self, segmentation: Mask, name: str = None):
         """Attach a segmentation to the frame.
@@ -261,7 +261,7 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
             If none, the mask will be attached without name (if possible). Otherwise if no other unnamed
             mask are attached to the frame, the mask will be added to the set of mask.
         """
-        self._append_node("segmentation", segmentation, name)
+        self._append_child("segmentation", segmentation, name)
 
     @staticmethod
     def _get_mean_std_tensor(shape, names, mean_std: tuple, device="cpu"):
@@ -485,7 +485,7 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
 
             # Create a new frame with the same parameters and set back a copy of the previous labels
             n_tensor = type(self)(n_tensor, normalization=self.normalization, mean_std=self.mean_std, names=self.names)
-            n_tensor.set_nodes(self.clone().get_nodes())
+            n_tensor.set_childs(self.clone().get_childs())
             return n_tensor
         else:
             raise Exception("This normalziation {} is not handle by the frame _pad method".format(self.normalization))

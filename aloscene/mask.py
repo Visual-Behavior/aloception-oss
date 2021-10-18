@@ -27,7 +27,7 @@ class Mask(aloscene.tensors.SpatialAugmentedTensor):
             x = load_mask(x)
             kwargs["names"] = ("N", "H", "W")
         tensor = super().__new__(cls, x, *args, **kwargs)
-        tensor.add_node("labels", labels, align_dim=["N"], mergeable=True)
+        tensor.add_child("labels", labels, align_dim=["N"], mergeable=True)
         return tensor
 
     def append_labels(self, labels: Labels, name: str = None):
@@ -41,7 +41,7 @@ class Mask(aloscene.tensors.SpatialAugmentedTensor):
             If none, the label will be attached without name (if possible). Otherwise if no other unnamed
             labels are attached to the frame, the labels will be added to the set of labels.
         """
-        self._append_node("labels", labels, name)
+        self._append_child("labels", labels, name)
 
     def iou_with(self, mask2) -> torch.Tensor:
         """ IoU calculation between mask2 and itself
@@ -165,7 +165,7 @@ class Mask(aloscene.tensors.SpatialAugmentedTensor):
         frame = self.cpu().rename(None).permute([1, 2, 0]).detach().contiguous().numpy()
 
         # Try to retrieve the associated label ID (if any)
-        labels = self._get_set_nodes(labels_set=labels_set)
+        labels = self._get_set_childs(labels_set=labels_set)
         annotations = []
         if hasattr(self, "labels") and self.labels is not None and len(labels) > 0:
             assert len(labels) == len(self)  # Required to make panoptic view
@@ -194,7 +194,7 @@ class Mask(aloscene.tensors.SpatialAugmentedTensor):
             return frame, annotations
         return frame
 
-    def _get_set_nodes(self, labels_set: str = None):
+    def _get_set_childs(self, labels_set: str = None):
         if not (labels_set is None or isinstance(self.labels, dict)):
             raise Exception(
                 f"Trying to display a set of labels ({labels_set}) while masks do not have multiple set of labels"

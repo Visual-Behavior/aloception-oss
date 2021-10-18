@@ -246,7 +246,7 @@ class DeformableDETR(nn.Module):
 
         # Feature reconstruction with features[-1][0] = input_proj(features[-1][0])
         if self.return_bb_outputs:
-            features[-1] = (srcs[-2], features[-1][1])
+            features[-1] = (srcs[-2], masks[-2])
         return self.forward_heads(transformer_outptus, bb_outputs=(features, pos[:-1]))
 
     def forward_position_heads(self, transformer_outptus: dict):

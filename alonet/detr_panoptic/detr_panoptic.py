@@ -123,8 +123,7 @@ class PanopticHead(nn.Module):
         # DETR model forward to obtain box embeddings
         out = self.detr(frames, **kwargs)
         features, _ = out["bb_outputs"]
-        proj_src, mask = features[-1][0], features[-1][1].to(torch.float32)
-        mask = mask[:, 0].to(torch.bool)
+        proj_src, mask = features[-1][0], features[-1][1]
         bs = proj_src.shape[0]
 
         # Filter boxes and get mask indices from them

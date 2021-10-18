@@ -149,7 +149,7 @@ class Detr(nn.Module):
 
         # Feature reconstruction with features[-1][0] = input_proj(features[-1][0])
         if self.return_bb_outputs:
-            features[-1] = (input_proj, features[-1][1])
+            features[-1] = (input_proj, mask)
         return self.forward_heads(transformer_outptus, bb_outputs=(features, pos))
 
     def forward_position_heads(self, transformer_outptus: dict):

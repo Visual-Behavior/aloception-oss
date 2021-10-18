@@ -43,7 +43,7 @@ class BoundingBoxes3D(aloscene.tensors.AugmentedTensor):
     def __new__(cls, x, labels: Union[dict, Labels] = None, names=("N", None), *args, **kwargs):
         tensor = super().__new__(cls, x, *args, names=names, **kwargs)
         assert tensor.shape[-1] == 7
-        tensor.add_label("labels", labels, align_dim=["N"], mergeable=True)
+        tensor.add_node("labels", labels, align_dim=["N"], mergeable=True)
         return tensor
 
     def __init__(self, x, *args, **kwargs):

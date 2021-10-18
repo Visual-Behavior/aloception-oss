@@ -23,7 +23,7 @@ class Flow(aloscene.tensors.SpatialAugmentedTensor):
             x = load_flow(x)
             names = ("C", "H", "W")
         tensor = super().__new__(cls, x, *args, names=names, **kwargs)
-        tensor.add_label("occlusion", occlusion, align_dim=["B", "T"], mergeable=True)
+        tensor.add_node("occlusion", occlusion, align_dim=["B", "T"], mergeable=True)
         return tensor
 
     def __init__(self, x, *args, **kwargs):
@@ -40,7 +40,7 @@ class Flow(aloscene.tensors.SpatialAugmentedTensor):
             If none, the occlusion mask will be attached without name (if possible). Otherwise if no other unnamed
             occlusion mask are attached to the frame, the mask will be added to the set of mask.
         """
-        self._append_label("occlusion", occlusion, name)
+        self._append_node("occlusion", occlusion, name)
 
     def __get_view__(self, clip_flow=None, convert_to_bgr=False, magnitude_max=None):
         assert all(dim not in self.names for dim in ["B", "T"]), "flow should not have batch or time dimension"
@@ -68,10 +68,10 @@ class Flow(aloscene.tensors.SpatialAugmentedTensor):
         # scale flow coordinates because they are expressed in pixel units
         sl_x = flow_resized.get_slices({"C": 0})  # slice for x coord. of flow vector
         sl_y = flow_resized.get_slices({"C": 1})  # slice for y coord. of flow vector
-        labels = flow_resized.drop_labels()
+        labels = flow_resized.drop_nodes()
         flow_resized[sl_x] = flow_resized[sl_x] * W_new / W_old
         flow_resized[sl_y] = flow_resized[sl_y] * H_new / H_old
-        flow_resized.set_labels(labels)
+        flow_resized.set_nodes(labels)
         return flow_resized
 
     def _hflip(self, **kwargs):
@@ -84,10 +84,10 @@ class Flow(aloscene.tensors.SpatialAugmentedTensor):
         """
         flow_flipped = super()._hflip(**kwargs)
         # invert x axis of flow vector
-        labels = flow_flipped.drop_labels()
+        labels = flow_flipped.drop_nodes()
         sl_x = flow_flipped.get_slices({"C": 0})
         flow_flipped[sl_x] = -1 * flow_flipped[sl_x]
-        flow_flipped.set_labels(labels)
+        flow_flipped.set_nodes(labels)
         return flow_flipped
 
     def _vflip(self, **kwargs):
@@ -100,8 +100,8 @@ class Flow(aloscene.tensors.SpatialAugmentedTensor):
         """
         flow_flipped = super()._vflip(**kwargs)
         # invert y axis of flow vector
-        labels = flow_flipped.drop_labels()
+        labels = flow_flipped.drop_nodes()
         sl_y = flow_flipped.get_slices({"C": 1})
         flow_flipped[sl_y] = -1 * flow_flipped[sl_y]
-        flow_flipped.set_labels(labels)
+        flow_flipped.set_nodes(labels)
         return flow_flipped

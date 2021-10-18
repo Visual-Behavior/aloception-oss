@@ -65,7 +65,7 @@ class Labels(aloscene.tensors.AugmentedTensor):
 
         if scores is not None:
             assert scores.shape == tensor.shape
-        tensor.add_label("scores", scores, align_dim=["N"], mergeable=True)
+        tensor.add_node("scores", scores, align_dim=["N"], mergeable=True)
 
         return tensor
 

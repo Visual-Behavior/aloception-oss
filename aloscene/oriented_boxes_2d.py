@@ -36,7 +36,7 @@ class OrientedBoxes2D(aloscene.tensors.AugmentedTensor):
 
         assert x.shape[-1] == 5, "The last dimension should be [x, y, w, h, theta]"
         # Add label
-        tensor.add_label("labels", labels, align_dim=["N"], mergeable=True)
+        tensor.add_node("labels", labels, align_dim=["N"], mergeable=True)
 
         tensor.add_property("absolute", absolute)
         tensor.add_property("frame_size", frame_size)
@@ -64,7 +64,7 @@ class OrientedBoxes2D(aloscene.tensors.AugmentedTensor):
             If none, the label will be attached without name (if possible). Otherwise if no other unnamed
             labels are attached to the frame, the labels will be added to the set of labels.
         """
-        self._append_label("labels", labels, name)
+        self._append_node("labels", labels, name)
 
     def corners(self) -> torch.Tensor:
         """Get corners in x, y coordinates

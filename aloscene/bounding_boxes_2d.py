@@ -32,7 +32,7 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
         tensor = super().__new__(cls, x, *args, names=names, **kwargs)
 
         # Add label
-        tensor.add_label("labels", labels, align_dim=["N"], mergeable=True)
+        tensor.add_node("labels", labels, align_dim=["N"], mergeable=True)
 
         if boxes_format not in BoundingBoxes2D.FORMATS:
             raise Exception(
@@ -65,7 +65,7 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
             If none, the label will be attached without name (if possible). Otherwise if no other unnamed
             labels are attached to the frame, the labels will be added to the set of labels.
         """
-        self._append_label("labels", labels, name)
+        self._append_node("labels", labels, name)
 
     @staticmethod
     def boxes2xcyc(tensor):
@@ -77,17 +77,17 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
             return tensor
         elif tensor.boxes_format == "xyxy":
             # Convert from xyxy to xcyc
-            labels = tensor.drop_labels()
+            labels = tensor.drop_nodes()
             xcyc_boxes = torch.cat(
                 [tensor[:, :2] + ((tensor[:, 2:] - tensor[:, :2]) / 2), (tensor[:, 2:] - tensor[:, :2])], dim=1
             )
             xcyc_boxes.boxes_format = "xcyc"
-            xcyc_boxes.set_labels(labels)
-            tensor.set_labels(labels)
+            xcyc_boxes.set_nodes(labels)
+            tensor.set_nodes(labels)
             return xcyc_boxes
         elif tensor.boxes_format == "yxyx":
             # Convert from yxyx to xcyc
-            labels = tensor.drop_labels()
+            labels = tensor.drop_nodes()
             tensor = tensor.rename_(None)
             xcyc_boxes = torch.cat(
                 [
@@ -99,8 +99,8 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
             tensor.reset_names()
             xcyc_boxes.reset_names()
             xcyc_boxes.boxes_format = "xcyc"
-            xcyc_boxes.set_labels(labels)
-            tensor.set_labels(labels)
+            xcyc_boxes.set_nodes(labels)
+            tensor.set_nodes(labels)
             return xcyc_boxes
         else:
             raise Exception(f"BoundingBoxes2D:Do not know mapping from {tensor.boxes_format} to xcyc")
@@ -115,24 +115,24 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
     @staticmethod
     def boxes2xyxy(tensor):
         if tensor.boxes_format == "xcyc":
-            labels = tensor.drop_labels()
+            labels = tensor.drop_nodes()
             # Convert from xcyc to xyxy
             n_tensor = torch.cat([tensor[:, :2] - (tensor[:, 2:] / 2), tensor[:, :2] + (tensor[:, 2:] / 2)], dim=1,)
             n_tensor.boxes_format = "xyxy"
-            n_tensor.set_labels(labels)
+            n_tensor.set_nodes(labels)
             return n_tensor
         elif tensor.boxes_format == "xyxy":
             return tensor
         elif tensor.boxes_format == "yxyx":
-            labels = tensor.drop_labels()
+            labels = tensor.drop_nodes()
             tensor.rename_(None)
             # Convert from yxyx to xyxy
             n_tensor = torch.cat([tensor[:, :2].flip([1]), tensor[:, 2:].flip([1])], dim=1,)
             tensor.reset_names()
             n_tensor.reset_names()
             n_tensor.boxes_format = "xyxy"
-            n_tensor.set_labels(labels)
-            tensor.set_labels(labels)
+            n_tensor.set_nodes(labels)
+            tensor.set_nodes(labels)
             return n_tensor
         else:
             raise Exception(f"BoundingBoxes2D:Do not know mapping from {tensor.boxes_format} to xyxy")
@@ -147,7 +147,7 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
     @staticmethod
     def boxes2yxyx(tensor):
         if tensor.boxes_format == "xcyc":
-            labels = tensor.drop_labels()
+            labels = tensor.drop_nodes()
             tensor.rename_(None)
             # Convert from xcyc to yxyx
             yxyx_boxes = torch.cat(
@@ -160,19 +160,19 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
             yxyx_boxes.reset_names()
             tensor.reset_names()
             yxyx_boxes.boxes_format = "yxyx"
-            yxyx_boxes.set_labels(labels)
-            tensor.set_labels(labels)
+            yxyx_boxes.set_nodes(labels)
+            tensor.set_nodes(labels)
             return yxyx_boxes
         elif tensor.boxes_format == "xyxy":
-            labels = tensor.drop_labels()
+            labels = tensor.drop_nodes()
             tensor.rename_(None)
             # Convert from xyxy to yxyx
             yxyx_boxes = torch.cat([tensor[:, :2].flip([1]), tensor[:, 2:].flip([1])], dim=1,)
             yxyx_boxes.reset_names()
             tensor.reset_names()
             yxyx_boxes.boxes_format = "yxyx"
-            yxyx_boxes.set_labels(labels)
-            tensor.set_labels(labels)
+            yxyx_boxes.set_nodes(labels)
+            tensor.set_nodes(labels)
             return yxyx_boxes
         elif tensor.boxes_format == "yxyx":
             return tensor

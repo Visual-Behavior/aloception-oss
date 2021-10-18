@@ -1,12 +1,22 @@
 import torch
 from torch import nn
 from torch.autograd import Function
-import sort_vertices
+try:
+    import sort_vertices
+    sort_vertices_error = None
+except Exception as sort_vertices_error:
+    sort_vertices= None
+    pass
 
 
 class SortVertices(Function):
     @staticmethod
     def forward(ctx, vertices, mask, num_valid):
+
+        if sort_vertices is None:
+            print(sort_vertices_error)
+            Exception("To install: cd aloception/aloscene/utils/rotated_iou/cuda_op; python setup.py install --user ")
+
         idx = sort_vertices.sort_vertices_forward(vertices, mask, num_valid)
         ctx.mark_non_differentiable(idx)
         return idx

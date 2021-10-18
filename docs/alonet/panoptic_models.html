@@ -1,0 +1,499 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Models &mdash; Aloception 0.0.1 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Training" href="panoptic_training.html" />
+    <link rel="prev" title="Detr panoptic" href="panoptic.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> Aloception
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption" role="heading"><span class="caption-text">Geting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/getting_started.html">Getting started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/aloscene.html">Aloscene: Computer vision with ease</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/alodataset.html">Alodataset: Loading your vision datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/alonet.html">Alonet : Training your models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/augmented_tensor.html">About augmented tensors</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Turorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/data_setup.html">How to setup your data?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/training_detr.html">Training Detr</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/finetuning_detr.html">Finetuning DETR</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/training_panoptic.html">Training Panoptic Head module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/training_deformable_detr.html">Training Deformable DETR</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/finetuning_deformable_detr.html">Finetuning Deformanble DETR</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/tensort_inference.html">Exporting DETR / Deformable-DETR to TensorRT</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Aloception API</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../aloscene/aloscene.html">Aloscene</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../alodataset/alodataset.html">Alodataset</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="alonet.html">Alonet</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="detr.html">Detr</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deformable.html">Deformable DETR</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="panoptic.html">Detr panoptic</a><ul class="current">
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Models</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#basic-usage">Basic usage</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-alonet.detr_panoptic.detr_panoptic">Panoptic head API</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-alonet.detr_panoptic.detr_r50_panoptic_finetune">DetrR50 Panoptic Finetune</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="panoptic_training.html">Training</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="alonet.callbacks.html">Callbacks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="alonet.metrics.html">Metrics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="alonet.transformers.html">Transformer</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Aloception</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="alonet.html">Alonet</a> &raquo;</li>
+        
+          <li><a href="panoptic.html">Detr panoptic</a> &raquo;</li>
+        
+      <li>Models</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../_sources/alonet/panoptic_models.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast.container,
+.nboutput.nblast.container {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast.container + .nbinput.container {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="models">
+<h1>Models<a class="headerlink" href="#models" title="Permalink to this headline">¶</a></h1>
+<p>Panoptic Head is a pytorch module that implements a network to connect with the output of a
+<a class="reference internal" href="detr_models.html"><span class="doc">Detr-based model</span></a>. This new module is able to predict a segmentation features, represented by
+a binary mask for each object predicted by <a class="reference internal" href="detr_models.html"><span class="doc">Detr model</span></a>.</p>
+<div class="figure align-default" id="id1">
+<a class="with-shadow reference internal image-reference" href="../_images/panoptic_head.png"><img alt="Panoptic Head model" class="with-shadow" src="../_images/panoptic_head.png" style="width: 100%;" /></a>
+<p class="caption"><span class="caption-text">Block diagram of panoptic head model, taken from
+<a class="reference external" href="https://arxiv.org/pdf/2005.12872.pdf">End-to-End Object Detection with Transformers</a> paper</span><a class="headerlink" href="#id1" title="Permalink to this image">¶</a></p>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="../aloscene/mask.html"><span class="doc">Mask</span></a> object to know the data representation of predictions.</p>
+</div>
+<div class="section" id="basic-usage">
+<h2>Basic usage<a class="headerlink" href="#basic-usage" title="Permalink to this headline">¶</a></h2>
+<p>Given that <a class="reference internal" href="#module-alonet.detr_panoptic.detr_panoptic" title="alonet.detr_panoptic.detr_panoptic"><code class="xref py py-mod docutils literal notranslate"><span class="pre">detr_panoptic</span></code></a> implements the Panoptic Head for a <a class="reference external" href="detr_models.html#module-alonet.detr.detr">Detr-based models</a>, first the module
+have to implement and be passed as <a class="reference internal" href="#alonet.detr_panoptic.detr_panoptic.PanopticHead" title="alonet.detr_panoptic.detr_panoptic.PanopticHead"><code class="xref py py-class docutils literal notranslate"><span class="pre">PanopticHead</span></code></a> parameter:</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">alonet.detr</span> <span class="kn">import</span> <span class="n">DetrR50</span>
+<span class="kn">from</span> <span class="nn">alonet.detr_panoptic</span> <span class="kn">import</span> <span class="n">PanopticHead</span>
+
+<span class="n">detr_model</span> <span class="o">=</span> <span class="n">DetrR50</span><span class="p">()</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">PanopticHead</span><span class="p">(</span><span class="n">DETR_module</span><span class="o">=</span><span class="n">detr_model</span><span class="p">)</span>
+</pre></div>
+</div>
+</div></blockquote>
+<p>If you want to finetune from the model pretrained on COCO dataset, a <a class="reference external" href="detr_models.html#module-alonet.detr.detr_r50_finetune">DetrFinetune models</a> must be used:</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">alonet.detr</span> <span class="kn">import</span> <span class="n">DetrR50Finetune</span>
+<span class="kn">from</span> <span class="nn">alonet.detr_panoptic</span> <span class="kn">import</span> <span class="n">PanopticHead</span>
+
+<span class="n">detr_model</span> <span class="o">=</span> <span class="n">DetrR50Finetune</span><span class="p">(</span><span class="n">num_classes</span><span class="o">=</span><span class="mi">250</span><span class="p">)</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">PanopticHead</span><span class="p">(</span><span class="n">DETR_module</span><span class="o">=</span><span class="n">detr_model</span><span class="p">)</span>
+</pre></div>
+</div>
+</div></blockquote>
+<p>To run an inference:</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">aloscene</span> <span class="kn">import</span> <span class="n">Frame</span>
+<span class="n">device</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">device</span> <span class="c1"># supposed that `model` is already defined as above</span>
+
+<span class="c1"># read image and preprocess image with Resnet normalization</span>
+<span class="n">frame</span> <span class="o">=</span> <span class="n">Frame</span><span class="p">(</span><span class="n">IMAGE_PATH</span><span class="p">)</span><span class="o">.</span><span class="n">norm_resnet</span><span class="p">()</span>
+<span class="c1"># create a batch from a list of images</span>
+<span class="n">frames</span> <span class="o">=</span> <span class="n">aloscene</span><span class="o">.</span><span class="n">Frame</span><span class="o">.</span><span class="n">batch_list</span><span class="p">([</span><span class="n">frame</span><span class="p">])</span>
+<span class="n">frames</span> <span class="o">=</span> <span class="n">frames</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+
+<span class="c1"># forward pass</span>
+<span class="n">m_outputs</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">frames</span><span class="p">)</span>
+<span class="c1"># get boxes and MASK as aloscene.BoundingBoxes2D and aloscene.Mask from forward outputs</span>
+<span class="n">pred_boxes</span><span class="p">,</span> <span class="n">pred_masks</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">inference</span><span class="p">(</span><span class="n">m_outputs</span><span class="p">)</span>
+
+<span class="c1"># Display the predicted boxes</span>
+<span class="n">frame</span><span class="o">.</span><span class="n">append_boxes2d</span><span class="p">(</span><span class="n">pred_boxes</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s2">&quot;pred_boxes&quot;</span><span class="p">)</span>
+<span class="n">frame</span><span class="o">.</span><span class="n">append_segmentation</span><span class="p">(</span><span class="n">pred_masks</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s2">&quot;pred_masks&quot;</span><span class="p">)</span>
+<span class="n">frame</span><span class="o">.</span><span class="n">get_view</span><span class="p">([</span><span class="n">frame</span><span class="o">.</span><span class="n">boxes2d</span><span class="p">,</span> <span class="n">frame</span><span class="o">.</span><span class="n">segmentation</span><span class="p">])</span><span class="o">.</span><span class="n">render</span><span class="p">()</span>
+</pre></div>
+</div>
+</div></blockquote>
+<div class="admonition important">
+<p class="admonition-title">Important</p>
+<p>PanopticHead network is able to predict the segmentation masks, follow by each box predicted for the
+<a class="reference external" href="detr_models.html#module-alonet.detr.detr">Detr-based models</a>. Is for this reason that inference function return a new output: <code class="xref py py-attr docutils literal notranslate"><span class="pre">pred_masks</span></code>.</p>
+</div>
+</div>
+<div class="section" id="module-alonet.detr_panoptic.detr_panoptic">
+<span id="panoptic-head-api"></span><h2>Panoptic head API<a class="headerlink" href="#module-alonet.detr_panoptic.detr_panoptic" title="Permalink to this headline">¶</a></h2>
+<p>Panoptic module to use in object detection/segmentation tasks.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="alonet.detr_panoptic.detr_panoptic.PanopticHead">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">alonet.detr_panoptic.detr_panoptic.</span></span><span class="sig-name descname"><span class="pre">PanopticHead</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">DETR_module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freeze_detr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aux_loss</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">device(type='cpu')</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weights</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">strict_load_weights</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.detr_panoptic.detr_panoptic.PanopticHead" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">torch.nn.modules.module.Module</span></code></p>
+<p>Pytorch head module to predict segmentation masks from previous boxes detection task.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl>
+<dt><strong>DETR_module</strong><span class="classifier"><a class="reference internal" href="detr_models.html#module-alonet.detr.detr" title="alonet.detr.detr"><code class="xref py py-mod docutils literal notranslate"><span class="pre">alonet.detr.detr</span></code></a></span></dt><dd><p>Object detection module based on <a class="reference internal" href="detr_models.html#module-alonet.detr.detr" title="alonet.detr.detr"><code class="xref py py-mod docutils literal notranslate"><span class="pre">DETR</span></code></a> architecture</p>
+</dd>
+<dt><strong>freeze_detr</strong><span class="classifier">bool, optional</span></dt><dd><p>Freeze <code class="xref py py-attr docutils literal notranslate"><span class="pre">DETR_module</span></code> weights in train procedure, by default True</p>
+</dd>
+<dt><strong>aux_loss: bool, optional</strong></dt><dd><p>Return aux outputs in forward step (if required), by default use <code class="xref py py-attr docutils literal notranslate"><span class="pre">DETR_module.aux_loss</span></code> attribute value</p>
+</dd>
+<dt><strong>device</strong><span class="classifier">torch.device, optional</span></dt><dd><p>Configure module in CPU or GPU, by default <code class="xref py py-attr docutils literal notranslate"><span class="pre">torch.device(&quot;cpu&quot;)</span></code></p>
+</dd>
+<dt><strong>weights</strong><span class="classifier">str, optional</span></dt><dd><p>Load weights from name project, by default None</p>
+</dd>
+<dt><strong>strict_load_weights</strong><span class="classifier">bool</span></dt><dd><p>Load the weights (if any given) with strict = <code class="docutils literal notranslate"><span class="pre">True</span></code> (by default).</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="alonet.detr_panoptic.detr_panoptic.PanopticHead.INPUT_MEAN_STD">
+<span class="sig-name descname"><span class="pre">INPUT_MEAN_STD</span></span><em class="property"> <span class="pre">=</span> <span class="pre">((0.485,</span> <span class="pre">0.456,</span> <span class="pre">0.406),</span> <span class="pre">(0.229,</span> <span class="pre">0.224,</span> <span class="pre">0.225))</span></em><a class="headerlink" href="#alonet.detr_panoptic.detr_panoptic.PanopticHead.INPUT_MEAN_STD" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alonet.detr_panoptic.detr_panoptic.PanopticHead.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">frames</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">get_filter_fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.detr_panoptic.detr_panoptic.PanopticHead.forward" title="Permalink to this definition">¶</a></dt>
+<dd><p>PanopticHead forward, that joint to the previous boxes predictions the new masks feature.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl>
+<dt><strong>frames</strong><span class="classifier"><a class="reference internal" href="../aloscene/frame.html#module-aloscene.frame" title="aloscene.frame"><code class="xref py py-mod docutils literal notranslate"><span class="pre">Frames</span></code></a></span></dt><dd><p>Input frame to network</p>
+</dd>
+<dt><strong>get_filter_fn</strong><span class="classifier">Callable</span></dt><dd><p>Function that returns two parameters: the <code class="xref py py-attr docutils literal notranslate"><span class="pre">dec_outputs</span></code> tensor filtered by a boolean mask per
+batch. It is expected that the function will at least receive <code class="xref py py-attr docutils literal notranslate"><span class="pre">frames</span></code> and <code class="xref py py-attr docutils literal notranslate"><span class="pre">m_outputs</span></code>
+parameters as input. By default the function used to this purpuse is <code class="xref py py-func docutils literal notranslate"><span class="pre">get_outs_filter()</span></code> from
+based model.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>dict</dt><dd><p>It outputs a dict with the following elements:</p>
+<ul class="simple">
+<li><p><code class="xref py py-attr docutils literal notranslate"><span class="pre">pred_logits</span></code>: The classification logits (including no-object) for all queries.
+Shape = [batch_size x num_queries x (num_classes + 1)]</p></li>
+<li><p><code class="xref py py-attr docutils literal notranslate"><span class="pre">pred_boxes</span></code>: The normalized boxes coordinates for all queries, represented as
+(center_x, center_y, height, width). These values are normalized in [0, 1], relative to the size of
+each individual image (disregarding possible padding). See PostProcess for information on how to
+retrieve the unnormalized bounding box.</p></li>
+<li><p><code class="xref py py-attr docutils literal notranslate"><span class="pre">pred_masks</span></code>: Binary masks, each one to assign to predicted boxes.
+Shape = [batch_size x num_queries x H // 4 x W // 4]</p></li>
+<li><p><code class="xref py py-attr docutils literal notranslate"><span class="pre">bb_outputs</span></code>: Backbone outputs, requered in this forward</p></li>
+<li><p><code class="xref py py-attr docutils literal notranslate"><span class="pre">enc_outputs</span></code>: Transformer encoder outputs, requered on this forward</p></li>
+<li><p><code class="xref py py-attr docutils literal notranslate"><span class="pre">dec_outputs</span></code>: Transformer decoder outputs, requered on this forward</p></li>
+<li><p><code class="xref py py-attr docutils literal notranslate"><span class="pre">pred_masks_info</span></code>: Parameters to use in inference procedure</p></li>
+<li><p><code class="xref py py-attr docutils literal notranslate"><span class="pre">aux_outputs</span></code>: Optional, only returned when auxilary losses are activated. It is a list of
+dictionnaries containing the two above keys for each decoder layer.</p></li>
+</ul>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alonet.detr_panoptic.detr_panoptic.PanopticHead.inference">
+<span class="sig-name descname"><span class="pre">inference</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">forward_out</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maskth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.detr_panoptic.detr_panoptic.PanopticHead.inference" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given the model forward outputs, this method will return a set of
+<a class="reference internal" href="../aloscene/bounding_boxes_2d.html#module-aloscene.bounding_boxes_2d" title="aloscene.bounding_boxes_2d"><code class="xref py py-mod docutils literal notranslate"><span class="pre">BoundingBoxes2D</span></code></a> and <a class="reference internal" href="../aloscene/mask.html#module-aloscene.mask" title="aloscene.mask"><code class="xref py py-mod docutils literal notranslate"><span class="pre">Mask</span></code></a>, with its corresponding
+<a class="reference internal" href="../aloscene/labels.html#module-aloscene.labels" title="aloscene.labels"><code class="xref py py-mod docutils literal notranslate"><span class="pre">Labels</span></code></a> per object detected.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>forward_out</strong><span class="classifier">dict</span></dt><dd><p>Dict with the model forward outputs</p>
+</dd>
+<dt><strong>maskth</strong><span class="classifier">float, optional</span></dt><dd><p>Threshold value to binarize the masks, by default 0.5</p>
+</dd>
+<dt><strong>filters</strong><span class="classifier">list, optional</span></dt><dd><p>List of filter to select the query predicting an object, by default None</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt><a class="reference internal" href="../aloscene/bounding_boxes_2d.html#module-aloscene.bounding_boxes_2d" title="aloscene.bounding_boxes_2d"><code class="xref py py-mod docutils literal notranslate"><span class="pre">BoundingBoxes2D</span></code></a></dt><dd><p>Boxes from DETR model</p>
+</dd>
+<dt><a class="reference internal" href="../aloscene/mask.html#module-aloscene.mask" title="aloscene.mask"><code class="xref py py-mod docutils literal notranslate"><span class="pre">Mask</span></code></a></dt><dd><p>Binary masks from PanopticHead, one for each box.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="alonet.detr_panoptic.detr_panoptic.PanopticHead.training">
+<span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="pre">:</span> <span class="pre">bool</span></em><a class="headerlink" href="#alonet.detr_panoptic.detr_panoptic.PanopticHead.training" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="alonet.detr_panoptic.detr_panoptic.main">
+<span class="sig-prename descclassname"><span class="pre">alonet.detr_panoptic.detr_panoptic.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image_path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.detr_panoptic.detr_panoptic.main" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-alonet.detr_panoptic.detr_r50_panoptic_finetune">
+<span id="detrr50-panoptic-finetune"></span><h2>DetrR50 Panoptic Finetune<a class="headerlink" href="#module-alonet.detr_panoptic.detr_r50_panoptic_finetune" title="Permalink to this headline">¶</a></h2>
+<p>Module to create a custom <a class="reference internal" href="#module-alonet.detr_panoptic.detr_panoptic" title="alonet.detr_panoptic.detr_panoptic"><code class="xref py py-mod docutils literal notranslate"><span class="pre">PanopticHead</span></code></a> model using
+<a class="reference internal" href="detr_models.html#module-alonet.detr.detr_r50" title="alonet.detr.detr_r50"><code class="xref py py-mod docutils literal notranslate"><span class="pre">DetrR50</span></code></a> as based model, which allows to upload a decided pretrained weights and
+change the number of outputs in <code class="xref py py-attr docutils literal notranslate"><span class="pre">class_embed</span></code> layer, in order to train custom classes.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="alonet.detr_panoptic.detr_r50_panoptic_finetune.DetrR50PanopticFinetune">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">alonet.detr_panoptic.detr_r50_panoptic_finetune.</span></span><span class="sig-name descname"><span class="pre">DetrR50PanopticFinetune</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_classes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">background_class</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_weights</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'detr-r50-panoptic'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freeze_detr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weights</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.detr_panoptic.detr_r50_panoptic_finetune.DetrR50PanopticFinetune" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#alonet.detr_panoptic.detr_panoptic.PanopticHead" title="alonet.detr_panoptic.detr_panoptic.PanopticHead"><code class="xref py py-class docutils literal notranslate"><span class="pre">alonet.detr_panoptic.detr_panoptic.PanopticHead</span></code></a></p>
+<p>Pre made helpfull class to finetune the <a class="reference internal" href="detr_models.html#module-alonet.detr.detr_r50" title="alonet.detr.detr_r50"><code class="xref py py-mod docutils literal notranslate"><span class="pre">DetrR50</span></code></a> and use a pretrained
+<a class="reference internal" href="#module-alonet.detr_panoptic.detr_panoptic" title="alonet.detr_panoptic.detr_panoptic"><code class="xref py py-mod docutils literal notranslate"><span class="pre">PanopticHead</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>num_classes</strong><span class="classifier">int</span></dt><dd><p>Number of classes in the <code class="xref py py-attr docutils literal notranslate"><span class="pre">class_embed</span></code> output layer</p>
+</dd>
+<dt><strong>background_class</strong><span class="classifier">int, optional</span></dt><dd><p>Background class, by default None</p>
+</dd>
+<dt><strong>base_model</strong><span class="classifier">torch.nn, optional</span></dt><dd><p>Base model to couple PanopticHead, by default <a class="reference internal" href="detr_models.html#module-alonet.detr.detr_r50" title="alonet.detr.detr_r50"><code class="xref py py-mod docutils literal notranslate"><span class="pre">DetrR50</span></code></a></p>
+</dd>
+<dt><strong>base_weights</strong><span class="classifier">str, optional</span></dt><dd><p>Load weights from original <a class="reference internal" href="detr_models.html#module-alonet.detr.detr_r50" title="alonet.detr.detr_r50"><code class="xref py py-mod docutils literal notranslate"><span class="pre">DetrR50</span></code></a> +
+<a class="reference internal" href="#module-alonet.detr_panoptic.detr_panoptic" title="alonet.detr_panoptic.detr_panoptic"><code class="xref py py-mod docutils literal notranslate"><span class="pre">PanopticHead</span></code></a>, by default “detr-r50-panoptic”</p>
+</dd>
+<dt><strong>freeze_detr</strong><span class="classifier">bool, optional</span></dt><dd><p>Freeze <a class="reference internal" href="detr_models.html#module-alonet.detr.detr_r50" title="alonet.detr.detr_r50"><code class="xref py py-mod docutils literal notranslate"><span class="pre">DetrR50</span></code></a> weights, by default False</p>
+</dd>
+<dt><strong>weights</strong><span class="classifier">str, optional</span></dt><dd><p>Weights for finetune model, by default None</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><dl class="simple">
+<dt>ValueError</dt><dd><p><code class="xref py py-attr docutils literal notranslate"><span class="pre">weights</span></code> must be a ‘.pth’ or ‘.ckpt’ file</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="alonet.detr_panoptic.detr_r50_panoptic_finetune.DetrR50PanopticFinetune.training">
+<span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="pre">:</span> <span class="pre">bool</span></em><a class="headerlink" href="#alonet.detr_panoptic.detr_r50_panoptic_finetune.DetrR50PanopticFinetune.training" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="panoptic_training.html" class="btn btn-neutral float-right" title="Training" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="panoptic.html" class="btn btn-neutral float-left" title="Detr panoptic" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2021, Visual Behavior.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

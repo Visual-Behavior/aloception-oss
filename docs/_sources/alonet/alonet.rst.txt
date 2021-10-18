@@ -7,6 +7,7 @@ Alonet
 
    detr
    deformable
+   panoptic
    alonet.callbacks
    alonet.metrics
    alonet.transformers

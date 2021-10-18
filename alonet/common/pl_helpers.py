@@ -93,7 +93,7 @@ def load_training(
     if "weights" in kwargs and kwargs["weights"] is not None:  # Highest priority
         weights_path = kwargs["weights"]
 
-    strict = True if "nostrict" in args else not args.nostrict
+    strict = True if "nostrict" not in args else not args.nostrict
     if run_id is not None and project_run_id is not None:
         run_id_project_dir = os.path.join(vb_folder(), f"project_{project_run_id}")
         ckpt_path = os.path.join(run_id_project_dir, run_id, "last.ckpt")
@@ -102,9 +102,9 @@ def load_training(
         print(f"Loading ckpt from {run_id} at {ckpt_path}")
         lit_model = lit_model_class.load_from_checkpoint(ckpt_path, strict=strict, args=args, **kwargs)
     elif weights_path is not None:
-        if ".pth" in weights_path:
+        if os.path.splitext(weights_path.lower())[1] == ".pth":
             lit_model = lit_model_class(args=args, **kwargs)
-        elif ".ckpt" in weights_path:
+        elif os.path.splitext(weights_path.lower())[1] == ".ckpt":
             lit_model = lit_model_class.load_from_checkpoint(weights_path, strict=strict, args=args, **kwargs)
         else:
             raise Exception(f"Impossible to load the weights at the following destination:{weights_path}")

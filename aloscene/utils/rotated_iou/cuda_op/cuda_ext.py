@@ -15,7 +15,7 @@ class SortVertices(Function):
 
         if sort_vertices is None:
             print(sort_vertices_error)
-            Exception("To install: cd aloception/aloscene/utils/rotated_iou/cuda_op; python setup.py install --user ")
+            raise Exception("To install: cd aloception/aloscene/utils/rotated_iou/cuda_op; python setup.py install --user ")
 
         idx = sort_vertices.sort_vertices_forward(vertices, mask, num_valid)
         ctx.mark_non_differentiable(idx)

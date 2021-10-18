@@ -526,6 +526,7 @@ class AugmentedTensor(torch.Tensor):
             self_ref_tensor = self.rename_(*self._saved_names)
             self_ref_tensor._saved_names = None
             return self_ref_tensor
+        else:
             return self
 
     def rename_(self, *args, auto_restore_names=False, **kwargs):

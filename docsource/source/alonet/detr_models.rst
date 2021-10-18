@@ -16,8 +16,14 @@ If you want to finetune from the model pretrained on COCO dataset:
    .. code-block:: python
 
       from alonet.detr import DetrR50Finetune
-      # NUM_CLASS is the number of classes in your finetune
-      model = DetrR50Finetune(num_classes=NUM_CLASS, weights="detr-r50")
+      # NUM_CLASS is the desired number of classes in the new model
+      model = DetrR50Finetune(num_classes=NUM_CLASS)
+
+To load weights from trained-models:
+
+   .. code-block:: python
+
+      model = DetrR50Finetune(num_classes=NUM_CLASS, weights='path/to/weights.pth' or 'path/to/weights.ckpt')
 
 To run inference:
 

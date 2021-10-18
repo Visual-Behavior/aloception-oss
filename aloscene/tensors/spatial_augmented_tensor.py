@@ -124,7 +124,7 @@ class SpatialAugmentedTensor(AugmentedTensor):
                     view = sa_tensor.__get_view__(**__kwargs)
                     view.title = ",".join(f"{k}:{info[k]}" for k in info)
                     n_views.append(view)
-                for label, label_name, set_name in sa_tensor._flatten_childs():
+                for label, label_name, set_name in sa_tensor._flatten_children():
                     # Do not render this label ?
                     if not _is_include(label, set_name) or _is_exclude(label, set_name):
                         continue
@@ -177,7 +177,7 @@ class SpatialAugmentedTensor(AugmentedTensor):
         def batch_label(tensor, label, name):
             if tensor._child_property[name]["mergeable"]:
                 label.rename_(*tuple(["T"] + list(label._saved_names)))
-                for sub_name in label._childs_list:
+                for sub_name in label._children_list:
                     sub_label = getattr(label, sub_name)
                     if sub_label is not None:
                         self.apply_on_child(sub_label, lambda l: batch_label(label, l, sub_name), on_list=False)
@@ -185,7 +185,7 @@ class SpatialAugmentedTensor(AugmentedTensor):
                 self.apply_on_child(label, lambda l: l.reset_names(), on_list=True)
 
         # Add a batch dimension on the
-        for name in tensor._childs_list:
+        for name in tensor._children_list:
             label = getattr(tensor, name)
             if label is not None:
                 self.apply_on_child(label, lambda l: batch_label(tensor, l, name), on_list=False)
@@ -215,7 +215,7 @@ class SpatialAugmentedTensor(AugmentedTensor):
             """
             if tensor._child_property[name]["mergeable"]:
                 label.rename_(*tuple(["B"] + list(label._saved_names)))
-                for sub_name in label._childs_list:
+                for sub_name in label._children_list:
                     sub_label = getattr(label, sub_name)
                     if sub_label is not None:
                         self.apply_on_child(sub_label, lambda l: batch_label(label, l, sub_name), on_list=False)
@@ -223,7 +223,7 @@ class SpatialAugmentedTensor(AugmentedTensor):
                 self.apply_on_child(label, lambda l: l.reset_names(), on_list=True)
 
         # Add a batch dimension on the label
-        for name in tensor._childs_list:
+        for name in tensor._children_list:
             label = getattr(tensor, name)
             if label is not None:
                 self.apply_on_child(label, lambda l: batch_label(tensor, l, name), on_list=False)

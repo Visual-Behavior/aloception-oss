@@ -68,10 +68,10 @@ class Flow(aloscene.tensors.SpatialAugmentedTensor):
         # scale flow coordinates because they are expressed in pixel units
         sl_x = flow_resized.get_slices({"C": 0})  # slice for x coord. of flow vector
         sl_y = flow_resized.get_slices({"C": 1})  # slice for y coord. of flow vector
-        labels = flow_resized.drop_childs()
+        labels = flow_resized.drop_children()
         flow_resized[sl_x] = flow_resized[sl_x] * W_new / W_old
         flow_resized[sl_y] = flow_resized[sl_y] * H_new / H_old
-        flow_resized.set_childs(labels)
+        flow_resized.set_children(labels)
         return flow_resized
 
     def _hflip(self, **kwargs):
@@ -84,10 +84,10 @@ class Flow(aloscene.tensors.SpatialAugmentedTensor):
         """
         flow_flipped = super()._hflip(**kwargs)
         # invert x axis of flow vector
-        labels = flow_flipped.drop_childs()
+        labels = flow_flipped.drop_children()
         sl_x = flow_flipped.get_slices({"C": 0})
         flow_flipped[sl_x] = -1 * flow_flipped[sl_x]
-        flow_flipped.set_childs(labels)
+        flow_flipped.set_children(labels)
         return flow_flipped
 
     def _vflip(self, **kwargs):
@@ -100,8 +100,8 @@ class Flow(aloscene.tensors.SpatialAugmentedTensor):
         """
         flow_flipped = super()._vflip(**kwargs)
         # invert y axis of flow vector
-        labels = flow_flipped.drop_childs()
+        labels = flow_flipped.drop_children()
         sl_y = flow_flipped.get_slices({"C": 1})
         flow_flipped[sl_y] = -1 * flow_flipped[sl_y]
-        flow_flipped.set_childs(labels)
+        flow_flipped.set_children(labels)
         return flow_flipped

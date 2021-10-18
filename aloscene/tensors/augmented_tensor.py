@@ -24,7 +24,7 @@ class AugmentedTensor(torch.Tensor):
         else:
             tensor = super().__new__(cls, x, *args, **kwargs)
 
-        tensor._childs_list = []
+        tensor._children_list = []
         tensor._child_property = {}
         tensor._property_list = []
         tensor.add_property("_saved_names", None)
@@ -47,12 +47,12 @@ class AugmentedTensor(torch.Tensor):
     def __init__(self, x, **kwargs):
         super().__init__()
 
-    def drop_childs(self):
-        """ Remove all childs from this augmented tensor and return
-        the removed childs.
+    def drop_children(self):
+        """ Remove all children from this augmented tensor and return
+        the removed children.
         """
         labels = {}
-        for name in self._childs_list:
+        for name in self._children_list:
             labels[name] = {
                 "value": getattr(self, name),
                 "property": self._child_property[name]
@@ -60,11 +60,11 @@ class AugmentedTensor(torch.Tensor):
             setattr(self, name, None)
         return labels
 
-    def get_childs(self):
-        """ Get all childs attached from this augmented tensor
+    def get_children(self):
+        """ Get all children attached from this augmented tensor
         """
         labels = {}
-        for name in self._childs_list:
+        for name in self._children_list:
             # Use apply to return the same label but with a new structure
             # so that if the returned structure is changed, this will not impact the current one
             labels[name] = {
@@ -73,11 +73,11 @@ class AugmentedTensor(torch.Tensor):
             }
         return labels
 
-    def set_childs(self, labels):
-        """ Set childs on this augmented tensor
+    def set_children(self, labels):
+        """ Set children on this augmented tensor
         """
         for name in labels:
-            if name not in self._childs_list:
+            if name not in self._children_list:
                 self.add_child(name, labels[name]["value"], **labels[name]["property"])
             else:
                 setattr(self, name, labels[name]["value"])
@@ -120,7 +120,7 @@ class AugmentedTensor(torch.Tensor):
             flatten_list += [(label, label_name, set_name)]
         return flatten_list
 
-    def _flatten_childs(self):
+    def _flatten_children(self):
         """This method go through all label of the augmented tensor
         and return a flatten list of the labels.
 
@@ -133,7 +133,7 @@ class AugmentedTensor(torch.Tensor):
             List of `Augmented Tensor`
         """
         labels = []
-        for name in self._childs_list:
+        for name in self._children_list:
             label = getattr(self, name)
             if label is not None:
                 labels += self._flatten_child(label, label_name=name)
@@ -180,18 +180,18 @@ class AugmentedTensor(torch.Tensor):
             data structure.
         mergeable: bool
             True by default. In some cases, if one want to merge parents, an appropriate stategy for the chils
-            child must be choosen. If all child are guarentee to be the same size, theses childs are set to be
+            child must be choosen. If all child are guarentee to be the same size, theses children are set to be
             mergeable and wll be merged together within a new dimension.
-            However, for some childs, it might not be true. For instance, one frame can have a variable
-            number of boxes ber frame. Therefore, merging frame with boxes childs could not be possible. If this is the
-            case, mergeable=False must be set. The childs will then be merged within a list (instead of being merged
+            However, for some children, it might not be true. For instance, one frame can have a variable
+            number of boxes ber frame. Therefore, merging frame with boxes children could not be possible. If this is the
+            case, mergeable=False must be set. The children will then be merged within a list (instead of being merged
             as a new tensor.)
         """
         if child is not None:
             self._check_child_name_alignment(child)
 
-        if child_name not in self._childs_list:
-            self._childs_list.append(child_name)
+        if child_name not in self._children_list:
+            self._children_list.append(child_name)
             kwargs["align_dim"] = align_dim
             kwargs["mergeable"] = mergeable
             self._child_property[child_name] = kwargs
@@ -299,7 +299,7 @@ class AugmentedTensor(torch.Tensor):
     def __getitem__(self, idx):
 
         name_to_n_label = {}
-        for name in self._childs_list:
+        for name in self._children_list:
             label = getattr(self, name)
             if label is not None:
                 name_to_n_label[name] = self.apply_on_child(
@@ -317,7 +317,7 @@ class AugmentedTensor(torch.Tensor):
         return tensor
 
     def __setattr__(self, key, value):
-        # if hasattr(self, "_childs_list") and  key in self._childs_list and check:
+        # if hasattr(self, "_children_list") and  key in self._children_list and check:
         #    self._check_child_name_alignment(value)
         super().__setattr__(key, value)
         pass
@@ -325,12 +325,12 @@ class AugmentedTensor(torch.Tensor):
     def clone(self, *args, **kwargs):
         n_frame = super().clone(*args, **kwargs)
         n_frame._property_list = self._property_list
-        n_frame._childs_list = self._childs_list
+        n_frame._children_list = self._children_list
         n_frame._child_property = self._child_property
 
         for name in self._property_list:
             setattr(n_frame, name, getattr(self, name))
-        for name in self._childs_list:
+        for name in self._children_list:
             setattr(n_frame, name, self.apply_on_child(getattr(self, name), lambda l: l.clone()))
 
         return n_frame
@@ -340,12 +340,12 @@ class AugmentedTensor(torch.Tensor):
 
         n_frame = super().to(*args, **kwargs)
         n_frame._property_list = self._property_list
-        n_frame._childs_list = self._childs_list
+        n_frame._children_list = self._children_list
         n_frame._child_property = self._child_property
 
         for name in self._property_list:
             setattr(n_frame, name, getattr(self, name))
-        for name in self._childs_list:
+        for name in self._children_list:
 
             device = None
             if len(args) >= 1:
@@ -372,12 +372,12 @@ class AugmentedTensor(torch.Tensor):
         # Send the frame on the cpu and set back the property
         n_frame = super().cpu(*args, **kwargs)
         n_frame._property_list = self._property_list
-        n_frame._childs_list = self._childs_list
+        n_frame._children_list = self._children_list
         n_frame._child_property = self._child_property
         for name in self._property_list:
             setattr(n_frame, name, getattr(self, name))
         # Set back the labels
-        for name in self._childs_list:
+        for name in self._children_list:
             label = getattr(self, name)
             if label is not None:
                 setattr(n_frame, name, self.apply_on_child(label, lambda l: l.cpu(*args, **kwargs)))
@@ -390,12 +390,12 @@ class AugmentedTensor(torch.Tensor):
         # Send the frame on cuda and set back the property
         n_frame = super().cuda(*args, **kwargs)
         n_frame._property_list = self._property_list
-        n_frame._childs_list = self._childs_list
+        n_frame._children_list = self._children_list
         n_frame._child_property = self._child_property
         for name in self._property_list:
             setattr(n_frame, name, getattr(self, name))
         # Set back the labels
-        for name in self._childs_list:
+        for name in self._children_list:
             label = getattr(self, name)
             if label is not None:
                 setattr(n_frame, name, self.apply_on_child(label, lambda l: l.cuda(*args, **kwargs)))
@@ -463,7 +463,7 @@ class AugmentedTensor(torch.Tensor):
                     ), f"Trying to merge augmented tensor with different property: {prop}, {prop_name_to_value[prop]}, {getattr(tensor, prop)}"
                 prop_name_to_value[prop] = getattr(tensor, prop)
 
-            for label_name in tensor._childs_list:
+            for label_name in tensor._children_list:
                 label_value = getattr(tensor, label_name)
                 if label_value is not None and isinstance(label_value, dict):
                     labels_dict2list[label_name] = {}
@@ -472,7 +472,7 @@ class AugmentedTensor(torch.Tensor):
 
         for tensor in tensor_list:
             if isinstance(tensor, type(self)):
-                for label_name in tensor._childs_list:
+                for label_name in tensor._children_list:
                     label_value = getattr(tensor, label_name)
                     if label_name not in labels_dict2list:
                         continue
@@ -529,7 +529,7 @@ class AugmentedTensor(torch.Tensor):
             else:
                 return label[0]
 
-        for name in self._childs_list:
+        for name in self._children_list:
             label = getattr(tensor, name)
             if label is not None:
                 results = self.apply_on_child(label, lambda l: _handle_expand_on_label(l, name), on_list=False)
@@ -560,7 +560,7 @@ class AugmentedTensor(torch.Tensor):
         if isinstance(tensor, type(self)):
 
             tensor._property_list = self._property_list
-            tensor._childs_list = self._childs_list
+            tensor._children_list = self._children_list
             tensor._child_property = self._child_property
             for name in self._property_list:
                 setattr(tensor, name, getattr(self, name))
@@ -571,7 +571,7 @@ class AugmentedTensor(torch.Tensor):
             if _merging_frame(args):
                 self._merge_tensor(tensor, args[0], func, types, args=args, kwargs=kwargs)
 
-            for name in self._childs_list:
+            for name in self._children_list:
                 if not hasattr(
                     tensor, name
                 ):  # Set what is not already set (some could have been set by the merge function above)
@@ -597,7 +597,7 @@ class AugmentedTensor(torch.Tensor):
             else:
                 return l.reset_names()
 
-        for name in self._childs_list:
+        for name in self._children_list:
             label = getattr(self, name)
             if label is not None:
                 self.apply_on_child(label, _reset_names)
@@ -630,7 +630,7 @@ class AugmentedTensor(torch.Tensor):
                 return v.rename_(None)
 
         if args[0] is None:
-            for name in self._childs_list:
+            for name in self._children_list:
                 label = getattr(self, name)
                 if label is not None:
                     self.apply_on_child(label, _rename)
@@ -666,7 +666,7 @@ class AugmentedTensor(torch.Tensor):
         tensor = super().rename(*args, **kwargs)
 
         if args[0] is None:
-            for name in self._childs_list:
+            for name in self._children_list:
                 label = getattr(self, name)
                 if label is not None:
                     setattr(tensor, name, self.apply_on_child(label, _rename))
@@ -700,7 +700,7 @@ class AugmentedTensor(torch.Tensor):
             n_str += f"{name}={v}, "
         n_str += "\n\t"
 
-        for name in self._childs_list:
+        for name in self._children_list:
             values = getattr(self, name)
             if values is None:
                 continue
@@ -759,7 +759,7 @@ class AugmentedTensor(torch.Tensor):
             slices.append(sl)
         return slices
 
-    def recursive_apply_on_childs_(self, func):
+    def recursive_apply_on_children_(self, func):
         """
         Recursively apply function on labels to modify tensor inplace
         """
@@ -767,11 +767,11 @@ class AugmentedTensor(torch.Tensor):
         #    if isinstance(l, torch.Tensor):
         #        return l
         #    else:
-        #        return func(l).recursive_apply_on_childs_(func)
+        #        return func(l).recursive_apply_on_children_(func)
 
-        for name in self._childs_list:
+        for name in self._children_list:
             label = getattr(self, name)
-            modified_label = self.apply_on_child(label, lambda l: func(l).recursive_apply_on_childs_(func))
+            modified_label = self.apply_on_child(label, lambda l: func(l).recursive_apply_on_children_(func))
             setattr(self, name, modified_label)
         return self
 
@@ -797,7 +797,7 @@ class AugmentedTensor(torch.Tensor):
         """
 
         flipped = self._hflip(**kwargs)
-        flipped.recursive_apply_on_childs_(lambda label: self._hflip_label(label, **kwargs))
+        flipped.recursive_apply_on_children_(lambda label: self._hflip_label(label, **kwargs))
         return flipped
 
     def _hflip(self, *args, **kwargs):
@@ -814,7 +814,7 @@ class AugmentedTensor(torch.Tensor):
         """
 
         flipped = self._vflip(**kwargs)
-        flipped.recursive_apply_on_childs_(lambda label: self._vflip_label(label, **kwargs))
+        flipped.recursive_apply_on_children_(lambda label: self._vflip_label(label, **kwargs))
         return flipped
 
     def _vflip(self, *args, **kwargs):
@@ -846,7 +846,7 @@ class AugmentedTensor(torch.Tensor):
                 return label
 
         resized = self._resize(size01, **kwargs)
-        resized.recursive_apply_on_childs_(resize_func)
+        resized.recursive_apply_on_children_(resize_func)
 
         return resized
 
@@ -881,7 +881,7 @@ class AugmentedTensor(torch.Tensor):
         elif W_crop[0] < 0.0 or W_crop[1] > 1.0:
             raise Exception("W_crop is expected to be between 0 and 1 but found {}".format(W_crop))
         croped = self._crop(H_crop, W_crop, **kwargs)
-        croped.recursive_apply_on_childs_(lambda l: self._crop_label(l, H_crop, W_crop, **kwargs))
+        croped.recursive_apply_on_children_(lambda l: self._crop_label(l, H_crop, W_crop, **kwargs))
 
         return croped
 
@@ -919,7 +919,7 @@ class AugmentedTensor(torch.Tensor):
             offset_x = (offset_x[0] / self.W, offset_x[1] / self.W)
 
         padded = self._pad(offset_y, offset_x, **kwargs)
-        padded.recursive_apply_on_childs_(lambda label: self._pad_label(label, offset_y, offset_x, **kwargs))
+        padded.recursive_apply_on_children_(lambda label: self._pad_label(label, offset_y, offset_x, **kwargs))
         return padded
 
 
@@ -947,7 +947,7 @@ class AugmentedTensor(torch.Tensor):
             shifted tensor
         """
         shifted = self._spatial_shift(shift_y, shift_x, **kwargs)
-        shifted.recursive_apply_on_childs_(lambda label: self._spatial_shift_label(label, shift_y, shift_x, **kwargs))
+        shifted.recursive_apply_on_children_(lambda label: self._spatial_shift_label(label, shift_y, shift_x, **kwargs))
         return shifted
 
     def _spatial_shift(self, shift_y, shift_x, **kwargs):

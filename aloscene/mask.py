@@ -165,7 +165,7 @@ class Mask(aloscene.tensors.SpatialAugmentedTensor):
         frame = self.cpu().rename(None).permute([1, 2, 0]).detach().contiguous().numpy()
 
         # Try to retrieve the associated label ID (if any)
-        labels = self._get_set_childs(labels_set=labels_set)
+        labels = self._get_set_children(labels_set=labels_set)
         annotations = []
         if hasattr(self, "labels") and self.labels is not None and len(labels) > 0:
             assert len(labels) == len(self)  # Required to make panoptic view
@@ -194,7 +194,7 @@ class Mask(aloscene.tensors.SpatialAugmentedTensor):
             return frame, annotations
         return frame
 
-    def _get_set_childs(self, labels_set: str = None):
+    def _get_set_children(self, labels_set: str = None):
         if not (labels_set is None or isinstance(self.labels, dict)):
             raise Exception(
                 f"Trying to display a set of labels ({labels_set}) while masks do not have multiple set of labels"

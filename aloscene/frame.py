@@ -7,7 +7,6 @@ from typing import TypeVar, Union
 import aloscene
 from aloscene.renderer import View
 from aloscene.disparity import Disparity
-from aloscene.depth import Depth
 from aloscene import BoundingBoxes2D, BoundingBoxes3D, Flow, Mask, Labels, Points2D
 
 # from aloscene.camera_calib import CameraExtrinsic, CameraIntrinsic
@@ -82,7 +81,6 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         flow: Union[dict, Flow] = None,
         segmentation: Union[dict, Mask] = None,
         disparity: Union[dict, Disparity] = None,
-        depth: Union[dict, Depth] = None,
         points2d: Union[dict, Points2D] = None,
         normalization="255",
         mean_std=None,
@@ -106,7 +104,6 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         tensor.add_child("disparity", disparity, align_dim=["B", "T"], mergeable=True)
         tensor.add_child("segmentation", segmentation, align_dim=["B", "T"], mergeable=False)
         tensor.add_child("labels", labels, align_dim=["B", "T"], mergeable=True)
-        tensor.add_child("depth", depth, align_dim=["B", "T"], mergeable=True)
 
         # Add other tensor property
         tensor.add_property("normalization", normalization)
@@ -251,25 +248,6 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         >>> frame.append_disparity(disparity)
         """
         self._append_child("disparity", disparity, name)
-
-    def append_depth(self, depth, name=None):
-        """Attach a disparity map to the frame.
-
-        Parameters
-        ----------
-        depth: aloscene.depth
-            Depth to attach to the Frame
-        name: str
-            If none, the depth will be attached without name (if possible). Otherwise if no other unnamed
-            depth are attached to the frame, the depth will be added to the set of flow.
-
-        Examples
-        --------
-        >>> frame = aloscene.Frame("/path/to/image.jpeg")
-        >>> depth = aloscene.Depth(np.zeros((1, frame.H, frame.W)))
-        >>> frame.append_depth(depth)
-        """
-        self._append_label("depth", depth, name)
 
     def append_segmentation(self, segmentation: Mask, name: str = None):
         """Attach a segmentation to the frame.
@@ -507,7 +485,7 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
 
             # Create a new frame with the same parameters and set back a copy of the previous labels
             n_tensor = type(self)(n_tensor, normalization=self.normalization, mean_std=self.mean_std, names=self.names)
-            n_tensor.set_childs(self.clone().get_childs())
+            n_tensor.set_children(self.clone().get_children())
             return n_tensor
         else:
             raise Exception("This normalziation {} is not handle by the frame _pad method".format(self.normalization))

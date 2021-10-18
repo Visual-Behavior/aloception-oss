@@ -99,9 +99,9 @@ class Disparity(aloscene.tensors.SpatialAugmentedTensor):
         W_new = disp_resized.W
         # rescale disparity
         sl_x = disp_resized.get_slices({"C": 0})
-        labels = disp_resized.drop_childs()
+        labels = disp_resized.drop_children()
         disp_resized[sl_x] = disp_resized[sl_x] * W_new / W_old
-        disp_resized.set_childs(labels)
+        disp_resized.set_children(labels)
         return disp_resized
 
     def _hflip(self, **kwargs):

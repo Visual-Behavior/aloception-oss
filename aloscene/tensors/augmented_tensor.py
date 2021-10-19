@@ -763,15 +763,16 @@ class AugmentedTensor(torch.Tensor):
         """
         Recursively apply function on labels to modify tensor inplace
         """
-        # def __apply(l):
-        #    if isinstance(l, torch.Tensor):
-        #        return l
-        #    else:
-        #        return func(l).recursive_apply_on_children_(func)
+
+        def __apply(l):
+            if isinstance(l, torch.Tensor):
+                return l
+            else:
+                return func(l).recursive_apply_on_children_(func)
 
         for name in self._children_list:
             label = getattr(self, name)
-            modified_label = self.apply_on_child(label, lambda l: func(l).recursive_apply_on_children_(func))
+            modified_label = self.apply_on_child(label, __apply)
             setattr(self, name, modified_label)
         return self
 

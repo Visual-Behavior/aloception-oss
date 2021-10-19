@@ -18,11 +18,11 @@ class PanopticObjectDetectorCallback(ObjectDetectorCallback):
         List of sample from the validation set to use to load the validation progress
     """
 
-    def __init__(self, val_frames: Union[list, aloscene.Frame], **kwargs):
+    def __init__(self, val_frames: Union[list, aloscene.Frame]):
         # Batch list of frame if needed
         if isinstance(val_frames, list):
             val_frames = aloscene.Frame.batch_list(val_frames)
-        super().__init__(val_frames=get_base_model_frame(val_frames), **kwargs)
+        super().__init__(val_frames=get_base_model_frame(val_frames))
 
     @rank_zero_only
     def on_train_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx):

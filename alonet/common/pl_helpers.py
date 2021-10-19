@@ -106,14 +106,12 @@ def load_training(
         print(f"Loading ckpt from {run_id} at {ckpt_path}")
         lit_model = lit_model_class.load_from_checkpoint(ckpt_path, strict=strict, args=args, **kwargs)
     elif weights_path is not None:
-        if os.path.splitext(weights_path.lower())[1] == ".pth":
+        if ".pth" in weights_path:
             lit_model = lit_model_class(args=args, **kwargs)
-        elif os.path.splitext(weights_path.lower())[1] == ".ckpt":
+        elif ".ckpt" in weights_path:
             lit_model = lit_model_class.load_from_checkpoint(weights_path, strict=strict, args=args, **kwargs)
         else:
             raise Exception(f"Impossible to load the weights at the following destination:{weights_path}")
-    elif args.no_run_id:
-        lit_model = lit_model_class(args=args, **kwargs)
     else:
         raise Exception("--run_id (optionally --project_run_id) must be given to load the experiment.")
 

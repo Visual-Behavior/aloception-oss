@@ -2,7 +2,7 @@
   <img src="images/aloception.png" style="text-align:center; width: 50%;" alt="Logo aloception" />
 </p>
 
-<a href="https://visual-behavior.github.io/aloception/">Documentation</a>
+<a href="https://visual-behavior.github.io/aloception/">Documenation</a>
 
 # Aloception
 

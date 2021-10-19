@@ -7,8 +7,6 @@ import numpy as np
 import os
 import json
 
-from typing import Union
-
 from alodataset import BaseDataset
 from alodataset.io import fs
 from aloscene import BoundingBoxes2D, Frame, Labels
@@ -17,10 +15,8 @@ from shutil import copyfile
 
 
 class CrowdHumanDataset(BaseDataset):
-    def __init__(
-        self, img_folder: Union[str, list] = None, ann_file: Union[str, list] = None, boxes_limit=None, **kwargs
-    ):
-        """Init the Crowd Human dataset.
+    def __init__(self, img_folder: str = None, ann_file: str = None, boxes_limit=None, **kwargs):
+        """ Init the Crowd Human dataset.
 
         Parameters
         ----------
@@ -38,52 +34,32 @@ class CrowdHumanDataset(BaseDataset):
             assert img_folder is not None, "When sample = False, img_folder must be given."
             assert ann_file is not None, "When sample = False, ann_file must be given."
 
-        assert type(img_folder) == type(ann_file), "img_folder & ann_file must be the same type."
-
         self._img_folder = img_folder
         self._ann_file = ann_file
 
-        if isinstance(img_folder, list):
-            self.img_folder = [os.path.join(self.dataset_dir, p, "Images") for p in img_folder]
-            self.ann_file = [os.path.join(self.dataset_dir, p) for p in ann_file]
-        else:
-            self.img_folder = os.path.join(self.dataset_dir, img_folder, "Images")
-            self.ann_file = os.path.join(self.dataset_dir, ann_file)
+        self.img_folder = os.path.join(self.dataset_dir, img_folder, "Images")
+        self.ann_file = os.path.join(self.dataset_dir, ann_file)
         # If the current ann file do not exists and we're using a prepared
         # dataset, we'll try to set back the directory based on the original
         # folder
-        if isinstance(ann_file, str) and not os.path.exists(self.ann_file):
+        if not os.path.exists(self.ann_file):
             self.dataset_dir = self.dataset_dir.replace("_prepared", "")
             self.img_folder = os.path.join(self.dataset_dir, img_folder, "Images")
             self.ann_file = os.path.join(self.dataset_dir, ann_file)
 
-        if isinstance(self.img_folder, str):
-            self.img_folder = [self.img_folder]
-            self.ann_file = [self.ann_file]
-
         # Setup the class names and the background class ID
         self.labels_names = ["person"]
 
-        self.items = []
-        for a, ann_file in enumerate(self.ann_file):
-            line = self.load_json_lines(ann_file, a)
-            self.items += line
+        self.items = self.load_json_lines(self.ann_file)
 
         self.bbox_types = ["vbox", "fbox", "hbox"]
         self.boxes_limit = boxes_limit
 
-    def load_json_lines(self, fpath, ann_id):
+    def load_json_lines(self, fpath):
         assert os.path.exists(fpath)
         with open(fpath, "r") as fid:
             lines = fid.readlines()
-
-        items = []
-        for line in lines:
-            content = json.loads(line.strip("\n"))
-            if len(content["gtboxes"]) <= 50 and len(content["gtboxes"]) >= 2:
-                content["ann_id"] = ann_id
-                items.append(content)
-
+        items = [json.loads(line.strip("\n")) for line in lines]
         return items
 
     def load_gt(self, dict_input):
@@ -119,12 +95,12 @@ class CrowdHumanDataset(BaseDataset):
     def getitem(self, idx):
         if self.sample:
             return BaseDataset.__getitem__(self, idx)
-
+        
         record = self.items[idx]
-        ann_id = record["ann_id"]
+
         image_id = record["ID"]
 
-        image_path = os.path.join(self.img_folder[ann_id], image_id + ".jpg")
+        image_path = os.path.join(self.img_folder, image_id + ".jpg")
 
         frame = Frame(image_path)
 
@@ -278,7 +254,8 @@ class CrowdHumanDataset(BaseDataset):
 
 
 def main():
-    """Main"""
+    """ Main
+    """
     crowd_human_dataset = CrowdHumanDataset(sample=True)
 
     crowd_human_dataset.prepare()

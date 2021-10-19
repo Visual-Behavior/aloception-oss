@@ -76,7 +76,7 @@ def main(image_path):
 
     # Add and display the predicted boxes
     frame.append_boxes2d(pred_boxes[0], "pred_boxes")
-    frame.get_view().render()
+    frame.get_view([frame.boxes2d]).add(frame.get_view([frame])).render()
 
 
 if __name__ == "__main__":

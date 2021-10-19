@@ -99,7 +99,7 @@ class Points2D(aloscene.tensors.AugmentedTensor):
         tensor = super().__new__(cls, x, *args, names=names, **kwargs)
 
         # Add label
-        tensor.add_child("labels", labels, align_dim=["N"], mergeable=True)
+        tensor.add_label("labels", labels, align_dim=["N"], mergeable=True)
 
         tensor.add_property("points_format", points_format)
         tensor.add_property("absolute", absolute)
@@ -143,7 +143,7 @@ class Points2D(aloscene.tensors.AugmentedTensor):
         >>> pts2d.labels["set1"]
         >>> pts2d.labels["set2"]
         """
-        self._append_child("labels", labels, name)
+        self._append_label("labels", labels, name)
 
     def xy(self) -> Points2D:
         """Get a new Point2d Tensor with points following this format:
@@ -207,20 +207,6 @@ class Points2D(aloscene.tensors.AugmentedTensor):
             tensor.frame_size = frame_size
             tensor.absolute = True
 
-            if tensor.padded_size is not None:
-
-                tensor.padded_size = (
-                    (
-                        tensor.padded_size[0][0] / tensor.frame_size[0],
-                        tensor.padded_size[0][1] / tensor.frame_size[0],
-                    ),
-                    (
-                        tensor.padded_size[1][0] / tensor.frame_size[1],
-                        tensor.padded_size[1][1] / tensor.frame_size[1],
-                    ),
-                )
-
-            return tensor
         elif tensor.absolute and frame_size == tensor.frame_size:
             return tensor
         else:
@@ -233,19 +219,6 @@ class Points2D(aloscene.tensors.AugmentedTensor):
             tensor = tensor.mul(mul_tensor)
             tensor.frame_size = frame_size
             tensor.absolute = True
-
-            if tensor.padded_size is not None:
-
-                tensor.padded_size = (
-                    (
-                        tensor.padded_size[0][0] * tensor.frame_size[0],
-                        tensor.padded_size[0][1] * tensor.frame_size[0],
-                    ),
-                    (
-                        tensor.padded_size[1][0] * tensor.frame_size[1],
-                        tensor.padded_size[1][1] * tensor.frame_size[1],
-                    ),
-                )
 
             return tensor
 
@@ -267,20 +240,6 @@ class Points2D(aloscene.tensors.AugmentedTensor):
                 div_tensor = torch.tensor([[self.frame_size[0], self.frame_size[1]]], device=self.device)
             tensor = tensor.div(div_tensor)
             tensor.absolute = False
-
-            if tensor.padded_size is not None:
-
-                tensor.padded_size = (
-                    (
-                        tensor.padded_size[0][0] / tensor.frame_size[0],
-                        tensor.padded_size[0][1] / tensor.frame_size[0],
-                    ),
-                    (
-                        tensor.padded_size[1][0] / tensor.frame_size[1],
-                        tensor.padded_size[1][1] / tensor.frame_size[1],
-                    ),
-                )
-
             return tensor
         else:
             return tensor
@@ -439,9 +398,6 @@ class Points2D(aloscene.tensors.AugmentedTensor):
         W_crop: tuple
             (start, end) between 0 and 1
         """
-        if self.padded_size is not None:
-            raise Exception("Can't crop when padded size is not Note. Call fit_to_padded_size() first")
-
         absolute = self.absolute
         frame_size = self.frame_size
         points_format = self.points_format
@@ -487,36 +443,29 @@ class Points2D(aloscene.tensors.AugmentedTensor):
             raise Exception("Trying to fit to padded size without any previous stored padded_size.")
 
         if not self.absolute:
-            offset_y = (self.padded_size[0][0], self.padded_size[0][1])
-            offset_x = (self.padded_size[1][0], self.padded_size[1][1])
+            frame_size = (100, 100)  # Virtual frame size
         else:
-            offset_y = (self.padded_size[0][0] / self.frame_size[0], self.padded_size[0][1] / self.frame_size[0])
-            offset_x = (self.padded_size[1][0] / self.frame_size[1], self.padded_size[1][1] / self.frame_size[1])
+            frame_size = self.frame_size
+
+        offset_x = (0, self.padded_size[1] / frame_size[1])
+        offset_y = (0, self.padded_size[0] / frame_size[0])
 
         if not self.absolute:
-            points = self.abs_pos((100, 100)).xy()
-            h_shift = points.frame_size[0] * offset_y[0]
-            w_shift = points.frame_size[1] * offset_x[0]
-            points = points + torch.as_tensor([[w_shift, h_shift]], device=points.device)
-            points.frame_size = (100 * (1.0 + offset_y[0] + offset_y[1]), 100 * (1.0 + offset_x[0] + offset_x[1]))
-            points = points.get_with_format(self.points_format)
+            points = self.abs_pos((100, 100))
+            points.frame_size = (100 * offset_y[1], 100 * offset_x[1])
             points = points.rel_pos()
         else:
-            points = self.xy()
-            h_shift = points.frame_size[0] * offset_y[0]
-            w_shift = points.frame_size[1] * offset_x[0]
-            points = points + torch.as_tensor([[w_shift, h_shift]], device=points.device)
+            points = self.clone()
             points.frame_size = (
-                points.frame_size[0] * (1.0 + offset_y[0] + offset_y[1]),
-                points.frame_size[1] * (1.0 + offset_x[0] + offset_x[1]),
+                round(points.frame_size[0] * (offset_y[1])),
+                round(points.frame_size[1] * (offset_x[1])),
             )
-            points = points.get_with_format(self.points_format)
 
         points.padded_size = None
 
         return points
 
-    def _pad(self, offset_y: tuple, offset_x: tuple, pad_points2d: bool = True, **kwargs) -> Points2D:
+    def _pad(self, offset_y: tuple, offset_x: tuple, pad_boxes: bool = False, **kwargs) -> Points2D:
         """Pad the set of points based on the given offset
 
         Parameters
@@ -531,51 +480,36 @@ class Points2D(aloscene.tensors.AugmentedTensor):
             cases, like in transformer architecture where the padded ares are masked. Therefore, the transformer
             do not "see" the padded part of the frames.
         """
+        # TODO: pad_boxes. Must find a more generic approached for this
+        assert offset_y[0] == 0 and offset_x[0] == 0, "Not handle yet"
 
-        if not pad_points2d:
+        if not pad_boxes:
 
             n_points = self.clone()
 
-            if n_points.absolute:
+            if n_points.padded_size is not None:
+                pr_frame_size = n_points.padded_size
+            elif n_points.padded_size is None and n_points.absolute:
                 pr_frame_size = self.frame_size
             else:
-                pr_frame_size = (1, 1)
+                pr_frame_size = (100, 100)
 
-            n_padded_size = (
-                (pr_frame_size[0] * offset_y[0], pr_frame_size[0] * offset_y[1]),
-                (pr_frame_size[1] * offset_x[0], pr_frame_size[1] * offset_x[1]),
-            )
-
-            if n_points.padded_size is not None:
-                raise Exception(
-                    "Padding twice using pad_points False is not supported Yet. Call fit_to_padded_size() first."
-                )
-
-            n_points.padded_size = n_padded_size
-
+            n_points.padded_size = (pr_frame_size[0] * (1.0 + offset_y[1]), pr_frame_size[1] * (1.0 + offset_x[1]))
             return n_points
 
         if self.padded_size is not None:
-            raise Exception("Padding with pad_points True while padded_size is not None is not supported Yet.")
+            raise Exception("Padding with pad_boxes True while padded_size is not None is not supported Yet.")
 
         if not self.absolute:
-            points = self.abs_pos((100, 100)).xy()
-            h_shift = points.frame_size[0] * offset_y[0]
-            w_shift = points.frame_size[1] * offset_x[0]
-            points = points + torch.as_tensor([[w_shift, h_shift]], device=points.device)
-            points.frame_size = (100 * (1.0 + offset_y[0] + offset_y[1]), 100 * (1.0 + offset_x[0] + offset_x[1]))
-            points = points.get_with_format(self.points_format)
+            points = self.abs_pos((100, 100))
+            points.frame_size = (100 * (1.0 + offset_y[1]), 100 * (1.0 + offset_x[1]))
             points = points.rel_pos()
         else:
-            points = self.xy()
-            h_shift = points.frame_size[0] * offset_y[0]
-            w_shift = points.frame_size[1] * offset_x[0]
-            points = points + torch.as_tensor([[w_shift, h_shift]], device=points.device)
+            points = self.clone()
             points.frame_size = (
-                points.frame_size[0] * (1.0 + offset_y[0] + offset_y[1]),
-                points.frame_size[1] * (1.0 + offset_x[0] + offset_x[1]),
+                points.frame_size[0] * (offset_y[1] + 1.0),
+                points.frame_size[1] * (offset_x[1] + 1.0),
             )
-            points = points.get_with_format(self.points_format)
 
         return points
 

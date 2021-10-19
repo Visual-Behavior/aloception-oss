@@ -55,7 +55,6 @@ class Mot17(BaseDataset, SequenceMixin, SplitMixin):
         detections_set=["DPM", "SDP", "FRCNN"],
         all_gt: bool = False,
         random_step: int = None,
-        visibility_threshold=0.0,
         **kwargs
     ):
         """Mot17 Dataset
@@ -88,7 +87,6 @@ class Mot17(BaseDataset, SequenceMixin, SplitMixin):
 
         self.random_step = random_step
         self.mot_folder = os.path.join(self.dataset_dir, "train" if self.split is not Split.TEST else "test")
-        self.visibility_threshold = visibility_threshold
 
         self.mot_sequences = {}
         self.items = {}
@@ -136,9 +134,10 @@ class Mot17(BaseDataset, SequenceMixin, SplitMixin):
         if sequence not in self.mot_sequences:
             self.mot_sequences[sequence] = {}
 
-        # print(line)
-
-        frame_id, object_id, box_left, box_top, box_width, box_height, conf, aa, visible = line.split(",")
+        frame_id, object_id, box_left, box_top, box_width, box_height, conf, _, _ = line.split(",")
+        conf = float(conf)
+        if conf != 1:
+            return
 
         frame_id = int(frame_id)
         object_id = int(object_id)
@@ -148,13 +147,6 @@ class Mot17(BaseDataset, SequenceMixin, SplitMixin):
         except:
             self.mot_sequences[sequence][frame_id] = []
 
-        if float(visible) <= self.visibility_threshold:
-            return
-
-        conf = float(conf)
-        if conf != 1:
-            return
-
         # Boxes coordinates
         box_left = float(box_left)
         box_top = float(box_top)
@@ -163,11 +155,11 @@ class Mot17(BaseDataset, SequenceMixin, SplitMixin):
 
         self.mot_sequences[sequence][frame_id].append(
             {
-                "xc": (box_left + (box_width / 2)) / float(config["Sequence"]["imWidth"]),
-                "yc": (box_top + (box_height / 2)) / float(config["Sequence"]["imHeight"]),
-                "width": box_width / float(config["Sequence"]["imWidth"]),
-                "height": box_height / float(config["Sequence"]["imHeight"]),
-                # "frame_size": (int(), int(config["Sequence"]["imWidth"])),
+                "xc": box_left + (box_width / 2),
+                "yc": box_top + (box_height / 2),
+                "width": box_width,
+                "height": box_height,
+                "frame_size": (int(config["Sequence"]["imHeight"]), int(config["Sequence"]["imWidth"])),
                 "object_id": object_id,
             }
         )
@@ -204,16 +196,17 @@ class Mot17(BaseDataset, SequenceMixin, SplitMixin):
             boxes = []
             objects_id = []  # Object Id
             objects_class = []  # Always 1 (Human)
+            frame_size = None
 
             for data in self.mot_sequences[sequence_name][s]:
                 boxes.append([data["xc"], data["yc"], data["width"], data["height"]])
                 objects_id.append(data["object_id"])
                 objects_class.append(0)  # Human label (Only one label in this dataset)
+                assert frame_size is None or frame_size == data["frame_size"]
+                frame_size = data["frame_size"]
 
             # Setup boxes
-            if len(boxes) == 0:
-                boxes = np.zeros((0, 4))
-            boxes = aloscene.BoundingBoxes2D(boxes, boxes_format="xcyc", absolute=False)
+            boxes = aloscene.BoundingBoxes2D(boxes, boxes_format="xcyc", absolute=True, frame_size=frame_size)
             # Setup boxes labels
             objects_class = aloscene.Labels(objects_class, labels_names=["person"], encoding="id", names=("N"))
             objects_id = aloscene.Labels(objects_id, encoding="id", names=("N"))

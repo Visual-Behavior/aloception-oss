@@ -99,7 +99,7 @@ class Points2D(aloscene.tensors.AugmentedTensor):
         tensor = super().__new__(cls, x, *args, names=names, **kwargs)
 
         # Add label
-        tensor.add_label("labels", labels, align_dim=["N"], mergeable=True)
+        tensor.add_child("labels", labels, align_dim=["N"], mergeable=True)
 
         tensor.add_property("points_format", points_format)
         tensor.add_property("absolute", absolute)
@@ -143,7 +143,7 @@ class Points2D(aloscene.tensors.AugmentedTensor):
         >>> pts2d.labels["set1"]
         >>> pts2d.labels["set2"]
         """
-        self._append_label("labels", labels, name)
+        self._append_child("labels", labels, name)
 
     def xy(self) -> Points2D:
         """Get a new Point2d Tensor with points following this format:

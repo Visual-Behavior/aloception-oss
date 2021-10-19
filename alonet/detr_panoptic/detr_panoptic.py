@@ -81,7 +81,7 @@ class PanopticHead(nn.Module):
 
         # Load weights
         if weights is not None:
-            if ".pth" in weights or ".ckpt" in weights:
+            if ".pth" in weights or ".ckpt" in weights or weights in ["detr-r50-panoptic"]:
                 alonet.common.load_weights(self, weights, device, strict_load_weights=strict_load_weights)
             else:
                 raise ValueError(f"Unknown weights: '{weights}'")
@@ -215,8 +215,7 @@ def main(image_path):
     device = torch.device("cuda")
 
     # Load model
-    weights = os.path.expanduser("~/.aloception/weights/detr-r50-panoptic/detr-r50-panoptic.pth")
-    model = PanopticHead(DetrR50(num_classes=250), weights=weights)
+    model = PanopticHead(DetrR50(num_classes=250), weights="detr-r50-panoptic")
     model.to(device)
 
     # Open and prepare a batch for the model

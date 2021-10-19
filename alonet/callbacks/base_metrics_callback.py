@@ -110,9 +110,11 @@ class InstancesBaseMetricsCallback(pl.Callback):
             if not is_temporal:
                 t_gt_boxes = [t_gt_boxes]
                 t_gt_masks = [t_gt_masks]
+            elif t_gt_masks is None:
+                t_gt_masks = [None] * len(outputs["m_outputs"])
 
             if t_pred_masks is None:
-                t_pred_masks = [None] * len(t_gt_masks)
+                t_pred_masks = [None] if not is_temporal else [None] * len(outputs["m_outputs"])
 
             # Add the samples to metrics for each batch of the current sequence
             for t, (gt_boxes, pred_boxes, gt_masks, pred_masks) in enumerate(

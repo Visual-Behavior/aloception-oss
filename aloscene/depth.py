@@ -72,12 +72,9 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         """
         intrinsic = camera_intrinsic if camera_intrinsic is not None else self.cam_intrinsic
 
-        y_points, x_points = torch.meshgrid(torch.arange(self.H), torch.arange(self.W))
-        y_points = y_points.to(self.device)
-        x_points = x_points.to(self.device)
-        # if plane_size is not None and self.HW != plane_size:
-        #    y_points = y_points * plane_size[0] / self.H
-        #    x_points = x_points * plane_size[1] / self.W
+        y_points, x_points = torch.meshgrid(
+            torch.arange(self.H, device=self.device), torch.arange(self.W, device=self.device)
+        )
 
         z_points = self.as_tensor().view((-1, self.H * self.W))
 

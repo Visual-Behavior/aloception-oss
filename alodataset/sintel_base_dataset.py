@@ -5,7 +5,7 @@ import os
 from aloscene.io.disparity import load_disp_png
 from aloscene import Frame, Flow, Mask, Disparity
 from aloscene.utils.data_utils import DLtoLD
-from alodataset import BaseDataset, SequenceMixin, sequence_mixin
+from alodataset import BaseDataset, SequenceMixin
 
 
 class SintelBaseDataset(BaseDataset, SequenceMixin):

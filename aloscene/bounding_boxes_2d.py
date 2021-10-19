@@ -18,24 +18,16 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
     """BoundingBoxes2D Augmented Tensor. Used to represents 2D boxes in space encoded as `xcyc` (xc, yc, width, height
     ), `yxyx` (y_min, x_min, y_max, x_max) or `xyxy` (x_min, y_min, x_max, y_max). The data must be
     at least 2 dimensional (N, None) where N is the number of boxes. The last dimension is supposed to be 4.
-
     If your're data is more than 2 dimensional you might need to set the `names` to ("B", "N", None) for batch
     dimension or ("T", "N", None) for the temporal dimension, or even ("B", "T", "N", None) for batch and temporal
     dimension.
-
     .. warning:: It is important to note that on `Frame`, BoundingBoxes2D are not mergeable by default\
         . Indeed, one `Frame` is likely to get more or less boxes than an other one. Therefore, if you want to create\
             BoundingBoxes2D with batch dimension, it is recommded to create BoundingBoxes2D tensors as part of a list \
             that enclose the batch dimension (same for the temporal dimension).
-
     >>> [BoundingBoxes2D(...), BoundingBoxes2D(...), BoundingBoxes2D(...)].
-
     Finally, batch & temporal dimension could also be stored like this:
-
     >>> [[BoundingBoxes2D(...), BoundingBoxes2D(...)], [BoundingBoxes2D(...), BoundingBoxes2D(...)]]
-
-
-
     Parameters
     ----------
     x: list | torch.Tensor | np.array
@@ -50,18 +42,15 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
         (Height & Width) of the relative frame.
     names: tuple
         Names of the dimensions : ("N", None) by default. See explanation above for more details.
-
     Notes
     -----
     Note on dimension:
-
     - C refers to the channel dimension
     - N refers to a dimension with a dynamic number of element.
     - H refers to the height of a `SpatialAugmentedTensor`
     - W refers to the width of a `SpatialAugmentedTensor`
     - B refers to the batch dimension
     - T refers to the temporal dimension
-
     Examples
     --------
     >>> boxes2d = aloscene.BoundingBoxes2D(
@@ -116,7 +105,6 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
     def append_labels(self, labels: Labels, name: str = None):
         """Attach a set of labels to the boxes. The attached set of labels are supposed to be equal to the
         number of points. In other words, the N dimensions must match in both tensor.
-
         Parameters
         ----------
         labels: aloscene.Labels
@@ -124,7 +112,6 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
         name: str
             If none, the label will be attached without name (if possible). Otherwise if no other unnamed
             labels are attached to the frame, the labels will be added to the set of labels.
-
         Examples
         --------
         >>> boxes2d = aloscene.BoundingBoxes2D([[0.5, 0.5, 0.1, 0.1], [0.2, 0.1, 0.05, 0.05]], "xcyc", False)
@@ -147,7 +134,6 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
         """Get a new BoundingBoxes2D Tensor with boxes following this format:
         [x_center, y_center, width, height]. Could be relative value (betwen 0 and 1)
         or absolute value based on the current Tensor representation.
-
         Examples
         --------
         >>> boxes_xcyc = boxes.xcyc()
@@ -190,7 +176,6 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
         """Get a new BoundingBoxes2D Tensor with boxes following this format:
         [x1, y1, x2, y2]. Could be relative value (betwen 0 and 1)
         or absolute value based on the current Tensor representation.
-
         Examples
         --------
         >>> boxes_xyxy = boxes.xyxy()
@@ -224,7 +209,6 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
         """Get a new BoundingBoxes2D Tensor with boxes following this format:
         [y1, x1, y1, x1]. Could be relative value (betwen 0 and 1)
         or absolute value based on the current Tensor representation.
-
         Examples
         --------
         >>> boxes_yxyx = boxes.yxyx()
@@ -267,12 +251,10 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
     def abs_pos(self, frame_size) -> BoundingBoxes2D:
         """Get a new BoundingBoxes2D Tensor with absolute position
         relative to the given `frame_size`.
-
         Parameters
         ----------
         frame_size: tuple
             Used to know the frame size of the absolute boxes 2D.
-
         Examples
         --------
         >>> n_boxes = boxes.abs_pos((height, width))
@@ -299,18 +281,6 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
                     )
                 )
 
-            if tensor.padded_size is not None:
-
-                tensor.padded_size = (
-                    (
-                        tensor.padded_size[0][0] / tensor.frame_size[0],
-                        tensor.padded_size[0][1] / tensor.frame_size[0],
-                    ),
-                    (
-                        tensor.padded_size[1][0] / tensor.frame_size[1],
-                        tensor.padded_size[1][1] / tensor.frame_size[1],
-                    ),
-                )
             tensor.absolute = False
 
         if not tensor.absolute:
@@ -324,18 +294,6 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
                 )
             tensor.frame_size = frame_size
             tensor.absolute = True
-            if tensor.padded_size is not None:
-
-                tensor.padded_size = (
-                    (
-                        tensor.padded_size[0][0] * tensor.frame_size[0],
-                        tensor.padded_size[0][1] * tensor.frame_size[0],
-                    ),
-                    (
-                        tensor.padded_size[1][0] * tensor.frame_size[1],
-                        tensor.padded_size[1][1] * tensor.frame_size[1],
-                    ),
-                )
 
         elif tensor.absolute and frame_size == tensor.frame_size:
             pass
@@ -347,7 +305,6 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
     def rel_pos(self) -> BoundingBoxes2D:
         """Get a new BoundingBoxes2D Tensor with absolute position
         relative to the given `frame_size`.
-
         Examples
         --------
         >>> n_boxes = boxes.rel_pos()
@@ -370,19 +327,6 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
                     )
                 )
 
-            if tensor.padded_size is not None:
-
-                tensor.padded_size = (
-                    (
-                        tensor.padded_size[0][0] / tensor.frame_size[0],
-                        tensor.padded_size[0][1] / tensor.frame_size[0],
-                    ),
-                    (
-                        tensor.padded_size[1][0] / tensor.frame_size[1],
-                        tensor.padded_size[1][1] / tensor.frame_size[1],
-                    ),
-                )
-
         elif not tensor.absolute:
             pass
         tensor.absolute = False
@@ -391,13 +335,11 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
 
     def get_with_format(self, boxes_format: str) -> BoundingBoxes2D:
         """Set boxes into the desired format (Inplace operation)
-
         Parameters
         ----------
         boxes_format: str
             One of `xyxy` (y_min, x_min, y_max, x_max), `yxyx` (x_min, y_min, x_max, y_max) or `xcyc` (xc, yc, width,
             height)
-
         Examples
         --------
         >>> boxes_xcyc = boxes.get_with_format("xcyc")
@@ -429,13 +371,11 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
 
     def abs_area(self, frame_size: Union[tuple, None]) -> torch.Tensor:
         """Get the absolute area of the current boxes.
-
         Parameters
         ----------
         frame_size: tuple | None
             If the current boxes are already absolute, will simply compute the area based on the current frame_size.
             Otherwise, for relative boxes, one must give the reference `frame_size`.
-
         Examples
         --------
         >>> # With relative boxes
@@ -452,8 +392,6 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
 
     def rel_area(self) -> torch.Tensor:
         """Get the relative area of the current boxes.
-
-
         Examples
         --------
         >>> area = boxes.rel_area()
@@ -467,7 +405,6 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
         """Get the current boxes area. The area
         will be relative to the frame size if the boxes are in a relative
         state. Otherwise, the area will be absolute.
-
         Examples
         --------
         >>> area = boxes.area()
@@ -481,7 +418,6 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
 
     def get_view(self, frame: Tensor = None, size: tuple = None, labels_set: str = None, **kwargs):
         """Create a view of the boxes a frame
-
         Parameters
         ----------
         frame: aloscene.Frame
@@ -545,12 +481,10 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
 
     def iou_with(self, boxes2, ret_union=False) -> torch.Tensor:
         """Compute the IOU between the two set of boxes
-
         Parameters
         ----------
         boxes2: aloscene.BoundingBoxes2D
             Set of boxes to compute the IOU with
-
         Examples
         --------
         >>> # Compute the IOU between each boxe of the current set and the `boxes2d` boxes.
@@ -601,12 +535,10 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
         The boxes should be in [x0, y0, x1, y1] format
         Returns a [N, M] pairwise matrix, where N = len(boxes1)
         and M = len(boxes2)
-
         Parameters
         ----------
         boxes2: aloscene.BoundingBoxes2D
             Set of boxes to compute the giou with
-
         Examples
         --------
         >>> # Compute the GIOU between each boxe of the current set and the `boxes2d` boxes.
@@ -655,19 +587,16 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
     def nms(self, scores: torch.Tensor, iou_threshold: float = 0.5) -> torch.Tensor:
         """Perform NMS on the set of boxes. To be performed, the boxes one must passed
         a `scores` tensor.
-
         Parameters
         ----------
         scores: torch.Tensor
             Scores of each boxes to perform the NMS computation.
         iou_threshold: float
             NMS iou threshold
-
         Examples
         --------
         >>> # indices kept by the NMS
         >>> indices = boxes.nms(scores, iou_threshold=0.5)
-
         Returns
         -------
             int64 tensor
@@ -699,12 +628,10 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
 
     def _resize(self, size, **kwargs):
         """Resize BoundingBoxes2D, but not their labels
-
         Parameters
         ----------
         size : tuple of float
             target size (H, W) in relative coordinates between 0 and 1
-
         Returns
         -------
         boxes : aloscene.BoundingBoxes2D
@@ -720,14 +647,12 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
 
     def _crop(self, H_crop: tuple, W_crop: tuple, **kwargs):
         """Crop Boxes with the given relative crop
-
         Parameters
         ----------
         H_crop: tuple
             (start, end) between 0 and 1
         W_crop: tuple
             (start, end) between 0 and 1
-
         Returns
         -------
         cropped_boxes2d sa_tensor: aloscene.BoundingBoxes2D
@@ -773,10 +698,8 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
     def fit_to_padded_size(self):
         """This method can be usefull when one use a padded Frame but only want to learn on the non-padded area.
         Thefore the target boxes will remain unpadded while keeping information about the real padded size.
-
         Therefore. If the set of boxes did not get padded yet by the pad operation, this method wil pad the boxes to
         the real padded size.
-
         Examples
         --------
         >>> padded_boxes = boxes.fit_to_padded_size()
@@ -784,12 +707,9 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
         if self.padded_size is None:
             raise Exception("Trying to fit to padded size without any previous stored padded_size.")
 
-        if not self.absolute:
-            offset_y = (self.padded_size[0][0], self.padded_size[0][1])
-            offset_x = (self.padded_size[1][0], self.padded_size[1][1])
-        else:
-            offset_y = (self.padded_size[0][0] / self.frame_size[0], self.padded_size[0][1] / self.frame_size[0])
-            offset_x = (self.padded_size[1][0] / self.frame_size[1], self.padded_size[1][1] / self.frame_size[1])
+        offset_y = (self.padded_size[0][0], self.padded_size[0][1])
+        offset_x = (self.padded_size[1][0], self.padded_size[1][1])
+
 
         if not self.absolute:
             boxes = self.abs_pos((100, 100)).xcyc()
@@ -816,7 +736,6 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
 
     def _pad(self, offset_y: tuple, offset_x: tuple, pad_boxes: bool = True, **kwargs):
         """Pad the set of boxes based on the given offset
-
         Parameters
         ----------
         offset_y: tuple
@@ -828,7 +747,6 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
             encode the position of the boxes based on the frame before the padding. This is usefull in some
             cases, like in transformer architecture where the padded ares are masked. Therefore, the transformer
             do not "see" the padded part of the frames.
-
         Returns
         -------
         boxes2d: aloscene.BoundingBoxes2D
@@ -838,8 +756,6 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
         if not pad_boxes:
             n_boxes = self.clone()
 
-
-
             if n_boxes.padded_size is not None:
 
                 if n_boxes.absolute:
@@ -847,27 +763,41 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
                 else:
                     pr_frame_size = (1, 1)
 
+                padded_size = n_boxes.padded_size
+
+                prev_padded_size = (
+                (
+                    (padded_size[0][0] * pr_frame_size[0]),
+                    (padded_size[0][1] * pr_frame_size[0])
+                ),
+                (
+                    (padded_size[1][0] * pr_frame_size[1]),
+                    (padded_size[1][1] * pr_frame_size[1])
+                )
+                )
+
                 n_padded_size = (
                     (
-                        offset_y[0] * (pr_frame_size[0] + n_boxes.padded_size[0][0] + n_boxes.padded_size[0][1]),
-                        offset_y[1] * (pr_frame_size[0] + n_boxes.padded_size[0][0] + n_boxes.padded_size[0][1]),
+                        prev_padded_size[0][0] + offset_y[0] * (prev_padded_size[0][0] + prev_padded_size[0][1] + pr_frame_size[0]),
+                        prev_padded_size[0][1] + offset_y[1] * (prev_padded_size[0][0] + prev_padded_size[0][1] + pr_frame_size[0]),
                     ),
                     (
-                        offset_x[0] * (pr_frame_size[1] + n_boxes.padded_size[1][0] + n_boxes.padded_size[1][1]),
-                        offset_x[1] * (pr_frame_size[1] + n_boxes.padded_size[1][0] + n_boxes.padded_size[1][1]),
+                        prev_padded_size[1][0] + offset_x[0] * (prev_padded_size[1][0] + prev_padded_size[1][1] + pr_frame_size[1]),
+                        prev_padded_size[1][1] + offset_x[1] * (prev_padded_size[1][0] + prev_padded_size[1][1] + pr_frame_size[1]),
                     ),
                 )
 
                 n_padded_size = (
                     (
-                        n_boxes.padded_size[0][0] + n_padded_size[0][0],
-                        n_boxes.padded_size[0][1] + n_padded_size[0][1],
+                        (n_padded_size[0][0]) / pr_frame_size[0],
+                        (n_padded_size[0][1]) / pr_frame_size[0],
                     ),
                     (
-                        n_boxes.padded_size[1][0] + n_padded_size[1][0],
-                        n_boxes.padded_size[1][1] + n_padded_size[1][1],
+                        (n_padded_size[1][0]) / pr_frame_size[1],
+                        (n_padded_size[1][1]) / pr_frame_size[1],
                     ),
                 )
+
             else:
                 n_padded_size = (
                     (offset_y[0], offset_y[1]),
@@ -907,14 +837,12 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
     def _spatial_shift(self, shift_y: float, shift_x: float, **kwargs):
         """
         Spatially shift the Boxes
-
         Parameters
         ----------
         shift_y: float
             Shift percentage on the y axis. Could be negative or positive
         shift_x: float
             Shift percentage on the x axis. Could ne negative or positive.
-
         Returns
         -------
         shifted_tensor: aloscene.AugmentedTensor
@@ -952,12 +880,10 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
     def as_boxes(self, boxes: BoundingBoxes2D) -> BoundingBoxes2D:
         """Convert the current boxes state into the given `boxes` state, following the same `boxes_format`, the same
         `frame_size` (if any) and the same `padded_size` (if any).
-
         Parameters
         ----------
         boxes: aloscene.BoundingBoxes2D
             Boxes to match the format.
-
         Examples
         --------
         >>> n_boxes = boxes.as_boxes(other_boxes)
@@ -979,9 +905,7 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
     def remove_padding(self) -> BoundingBoxes2D:
         """This method can be usefull when one use a padded Frame but only want to learn on the non-padded area.
         Thefore the target points will remain unpadded while keeping information about the real padded size.
-
         Thus, this method will simply remove the memorized padded information.
-
         Examples
         --------
         >>> n_boxes = boxes.remove_padding()

@@ -125,7 +125,6 @@ class SintelBaseDataset(BaseDataset, SequenceMixin):
         # Iterate over all passes
         for sintel_pass in self.passes:
             for sintel_seq in self.sintel_sequences:
-
                 # Create sequences
                 for st_id in range(1, self._sintel_seq_len(sintel_seq) + 1 - self.sequence_size):
 
@@ -160,4 +159,5 @@ class SintelBaseDataset(BaseDataset, SequenceMixin):
         if self.sample:
             return BaseDataset.__getitem__(self, idx)
         sequence_data = self.items[idx]
+        assert len(sequence_data["left"]["image"]) == self.sequence_size
         return self._get_frames(sequence_data)

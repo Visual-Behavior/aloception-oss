@@ -93,7 +93,7 @@ def load_training(
     """Load training"""
     run_id = args.run_id if run_id is None and "run_id" in args else run_id
     project_run_id = args.project_run_id if project_run_id is None and "project_run_id" in args else project_run_id
-    weights_path = getattr(args, "weights", None)
+    weights_path = getattr(args, "weights", None) if args is not None else None
     if "weights" in kwargs and kwargs["weights"] is not None:  # Highest priority
         weights_path = kwargs["weights"]
 

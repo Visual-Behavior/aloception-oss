@@ -110,4 +110,3 @@ if __name__ == "__main__":
     for f, frames in enumerate(dataset.train_loader(batch_size=2)):
         frames = Frame.batch_list(frames)
         frames["left"].get_view().render()
-        break

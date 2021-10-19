@@ -602,9 +602,12 @@ class AugmentedTensor(torch.Tensor):
             if label is not None:
                 self.apply_on_child(label, _reset_names)
 
-        self_ref_tensor = self.rename_(*self._saved_names)
-        # self_ref_tensor._saved_names = None
-        return self_ref_tensor
+        if self._saved_names is not None and any(v is not None for v in self._saved_names):
+            self_ref_tensor = self.rename_(*self._saved_names)
+            self_ref_tensor._saved_names = None
+            return self_ref_tensor
+        else:
+            return self
 
     def rename_(self, *args, auto_restore_names=False, **kwargs):
         """Rename the dimensions of your augmented Tensor.
@@ -763,12 +766,8 @@ class AugmentedTensor(torch.Tensor):
         """
         Recursively apply function on labels to modify tensor inplace
         """
-
         def __apply(l):
-            if isinstance(l, torch.Tensor):
-                return l
-            else:
-                return func(l).recursive_apply_on_children_(func)
+            return func(l).recursive_apply_on_children_(func)
 
         for name in self._children_list:
             label = getattr(self, name)

@@ -22,9 +22,6 @@ class Disparity(aloscene.tensors.SpatialAugmentedTensor):
     disp_format : {'signed'|'unsigned'}
         If unsigned, disparity is interpreted as a distance (positive value) in pixels.
         If signed, disparity is interpreted as a relative offset (values can be negative).
-    camera_side : {'left', 'right', None}
-        side of the camera. Default None.
-        Necessary to switch from unsigned to signed format.
     png_negate: bool
         if true, the sign of disparity is reversed when loaded from file.
         this parameter should be explicitely set every time a .png file is used.
@@ -36,8 +33,7 @@ class Disparity(aloscene.tensors.SpatialAugmentedTensor):
         x,
         occlusion: Mask = None,
         disp_format="unsigned",
-        camera_side=None,
-        png_negate=None,
+        png_negate: bool = None,
         *args,
         names=("C", "H", "W"),
         **kwargs,
@@ -48,7 +44,6 @@ class Disparity(aloscene.tensors.SpatialAugmentedTensor):
         tensor = super().__new__(cls, x, *args, names=names, **kwargs)
         tensor.add_child("occlusion", occlusion, align_dim=["B", "T"], mergeable=True)
         tensor.add_property("disp_format", disp_format)
-        tensor.add_property("camera_side", camera_side)
         return tensor
 
     def __init__(self, x, *args, **kwargs):
@@ -132,16 +127,74 @@ class Disparity(aloscene.tensors.SpatialAugmentedTensor):
         disp = torch.absolute(disp)
         return disp
 
-    def signed(self):
+    def signed(self, camera_side: str = None):
         """
         Returns a copy of disparity map in signed disparity format
         """
         disp = self.clone()
         if disp.disp_format == "signed":
             return disp
-        if disp.camera_side is None:
+        camera_side = camera_side if camera_side is not None else disp.camera_side
+        if camera_side is None:
             raise ValueError("Cannot convert disparity to signed format if `camera side` is None.")
         disp.disp_format = "signed"
-        if disp.camera_side == "left":
+        if camera_side == "left":
             disp = -1 * disp
+        disp.camera_side = camera_side
         return disp
+
+    def as_depth(
+        self,
+        baseline: float = None,
+        focal_length: float = None,
+        camera_side: float = None,
+        camera_intrinsic: aloscene.CameraIntrinsic = None,
+    ):
+        """Return a Depth augmented tensor based on the given `baseline` & `focal_length`.
+
+        Parameters
+        ----------
+        camera_side : str | None
+            If created from a stereo camera, this information can optionally be used to convert
+            this depth tensor into a disparity tensor. The `camera_side` is necessary to switch from unsigned to signed
+            format once using a disparity tensor.
+        baseline: float | None
+            The `baseline` must be known to convert this disp tensor into a depth tensor.
+            The `baseline` must be given either from from the current disp tensor or from this parameter.
+        camera_intrinsic: aloscene.CameraIntrinsic
+            CameraIntrinsic use to transform the disp map into depth map using the intrinsic focal
+            length.
+        """
+        baseline = baseline if baseline is not None else self.baseline
+        camera_side = camera_side if camera_side is not None else self.camera_side
+        intrinsic = camera_intrinsic if camera_intrinsic is not None else self.cam_intrinsic
+
+        if baseline is None:
+            raise Exception(
+                "Can't convert to disparity. The `baseline` must be given either from the current depth tensor or from the as_depth(baseline=...) method."
+            )
+        if intrinsic is None:
+            err_msg = "The `camera_intrinsic` must be given either from the current disp tensor or from "
+            err_msg += "the as_depth(camera_intrinsic=...) method."
+            raise Exception(err_msg)
+
+        disparity = self.unsigned().as_tensor()
+
+        # unsqueeze on the Spatial H,W Dimension. On the dimension before "C", the focal_length is already supposed
+        # to be aligned properly.
+        focal_length = intrinsic.focal_length[..., 0:1].unsqueeze(-1).unsqueeze(-1)
+
+        zero_filter = disparity == 0
+
+        disparity[zero_filter] = 1
+        depth = baseline * focal_length / disparity
+        depth[zero_filter] = np.inf
+        return aloscene.Depth(
+            depth,
+            baseline=self.baseline,
+            camera_side=camera_side,
+            cam_intrinsic=intrinsic,
+            cam_extrinsic=self.cam_extrinsic,
+            names=self.names,
+            device=self.device,
+        )

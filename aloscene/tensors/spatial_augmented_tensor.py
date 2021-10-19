@@ -12,6 +12,22 @@ from aloscene.utils.data_utils import LDtoDL
 
 
 class SpatialAugmentedTensor(AugmentedTensor):
+    """Spatial Augmented Tensor. Used to represets any 2D data. The spatial augmented tensor can be used as a
+    basis for images, depth or and spatially related data. Moreover, for stereo setup, the augmented tensor
+    can encode data about the baseline and/or the side of the current plane ("left" or "right").
+
+    cam_intrinsic: CameraIntrinsic
+        Camera Intrinsic. If provided, the focal_length, plane_size, principal_point, camera_side & baseline will not
+        be used. An error will be raised if theses parameters are provided since using the `cam_intrinsic` and theses
+        parameters could be ambigious.
+    cam_extrinsic: CameraExtrinsic
+        Camera extrinsic parameters as an homogenious transformation matrix.
+    camera_side : {'left', 'right', None}
+        If part of a stereo setup, will encode the side of the camere "left" or "right" or None.
+    baseline: float | None
+        If part of a stereo setup, the `baseline` is the distance between the two cameras.
+    """
+
     @staticmethod
     def __new__(
         cls,
@@ -19,14 +35,25 @@ class SpatialAugmentedTensor(AugmentedTensor):
         *args,
         cam_intrinsic: CameraIntrinsic = None,
         cam_extrinsic: CameraExtrinsic = None,
+        # For stereo setups
+        camera_side: str = None,
+        baseline: float = None,
         mask=None,
         **kwargs,
     ):
         tensor = super().__new__(cls, x, *args, **kwargs)
-        # Add camera parameters as labels
+
+        tensor.add_child("mask", mask, align_dim=["B", "T"], mergeable=True)
+        tensor.add_property("baseline", baseline)
+        tensor.add_property("camera_side", camera_side)
+
+        # Intrisic and extrinsic parameters are cloned by default, to prevent having multiple reference
+        # of the same intrisic/extrinsic across nodes.
+        cam_intrinsic = cam_intrinsic.clone() if cam_intrinsic is not None else cam_intrinsic
+        cam_extrinsic = cam_extrinsic.clone() if cam_extrinsic is not None else cam_extrinsic
         tensor.add_child("cam_intrinsic", cam_intrinsic, align_dim=["B", "T"], mergeable=True)
         tensor.add_child("cam_extrinsic", cam_extrinsic, align_dim=["B", "T"], mergeable=True)
-        tensor.add_child("mask", mask, align_dim=["B", "T"], mergeable=True)
+
         return tensor
 
     def __init__(self, x, *args, **kwargs):

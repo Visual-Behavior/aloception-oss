@@ -11,6 +11,8 @@ from aloscene.renderer import View
 from aloscene.labels import Labels
 from torchvision.ops.boxes import nms
 
+from aloscene.renderer import View, put_adapative_cv2_text
+
 
 class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
     """BoundingBoxes2D Augmented Tensor. Used to represents 2D boxes in space encoded as `xcyc` (xc, yc, width, height
@@ -78,7 +80,7 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
         tensor = super().__new__(cls, x, *args, names=names, **kwargs)
 
         # Add label
-        tensor.add_label("labels", labels, align_dim=["N"], mergeable=True)
+        tensor.add_child("labels", labels, align_dim=["N"], mergeable=True)
 
         if boxes_format not in BoundingBoxes2D.FORMATS:
             raise Exception(
@@ -126,7 +128,7 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
         >>> boxes2d.labels["set1"]
         >>> boxes2d.labels["set2"]
         """
-        self._append_label("labels", labels, name)
+        self._append_child("labels", labels, name)
 
     def xcyc(self) -> BoundingBoxes2D:
         """Get a new BoundingBoxes2D Tensor with boxes following this format:
@@ -142,17 +144,17 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
             return tensor
         elif tensor.boxes_format == "xyxy":
             # Convert from xyxy to xcyc
-            labels = tensor.drop_labels()
+            labels = tensor.drop_children()
             xcyc_boxes = torch.cat(
                 [tensor[:, :2] + ((tensor[:, 2:] - tensor[:, :2]) / 2), (tensor[:, 2:] - tensor[:, :2])], dim=1
             )
             xcyc_boxes.boxes_format = "xcyc"
-            xcyc_boxes.set_labels(labels)
-            tensor.set_labels(labels)
+            xcyc_boxes.set_children(labels)
+            tensor.set_children(labels)
             return xcyc_boxes
         elif tensor.boxes_format == "yxyx":
             # Convert from yxyx to xcyc
-            labels = tensor.drop_labels()
+            labels = tensor.drop_children()
             tensor = tensor.rename_(None)
             xcyc_boxes = torch.cat(
                 [
@@ -164,8 +166,8 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
             tensor.reset_names()
             xcyc_boxes.reset_names()
             xcyc_boxes.boxes_format = "xcyc"
-            xcyc_boxes.set_labels(labels)
-            tensor.set_labels(labels)
+            xcyc_boxes.set_children(labels)
+            tensor.set_children(labels)
             return xcyc_boxes
         else:
             raise Exception(f"BoundingBoxes2D:Do not know mapping from {tensor.boxes_format} to xcyc")
@@ -181,24 +183,24 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
         tensor = self.clone()
 
         if tensor.boxes_format == "xcyc":
-            labels = tensor.drop_labels()
+            labels = tensor.drop_children()
             # Convert from xcyc to xyxy
             n_tensor = torch.cat([tensor[:, :2] - (tensor[:, 2:] / 2), tensor[:, :2] + (tensor[:, 2:] / 2)], dim=1,)
             n_tensor.boxes_format = "xyxy"
-            n_tensor.set_labels(labels)
+            n_tensor.set_children(labels)
             return n_tensor
         elif tensor.boxes_format == "xyxy":
             return tensor
         elif tensor.boxes_format == "yxyx":
-            labels = tensor.drop_labels()
+            labels = tensor.drop_children()
             tensor.rename_(None)
             # Convert from yxyx to xyxy
             n_tensor = torch.cat([tensor[:, :2].flip([1]), tensor[:, 2:].flip([1])], dim=1,)
             tensor.reset_names()
             n_tensor.reset_names()
             n_tensor.boxes_format = "xyxy"
-            n_tensor.set_labels(labels)
-            tensor.set_labels(labels)
+            n_tensor.set_children(labels)
+            tensor.set_children(labels)
             return n_tensor
         else:
             raise Exception(f"BoundingBoxes2D:Do not know mapping from {tensor.boxes_format} to xyxy")
@@ -214,7 +216,7 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
         tensor = self.clone()
 
         if tensor.boxes_format == "xcyc":
-            labels = tensor.drop_labels()
+            labels = tensor.drop_children()
             tensor.rename_(None)
             # Convert from xcyc to yxyx
             yxyx_boxes = torch.cat(
@@ -227,19 +229,19 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
             yxyx_boxes.reset_names()
             tensor.reset_names()
             yxyx_boxes.boxes_format = "yxyx"
-            yxyx_boxes.set_labels(labels)
-            tensor.set_labels(labels)
+            yxyx_boxes.set_children(labels)
+            tensor.set_children(labels)
             return yxyx_boxes
         elif tensor.boxes_format == "xyxy":
-            labels = tensor.drop_labels()
+            labels = tensor.drop_children()
             tensor.rename_(None)
             # Convert from xyxy to yxyx
             yxyx_boxes = torch.cat([tensor[:, :2].flip([1]), tensor[:, 2:].flip([1])], dim=1,)
             yxyx_boxes.reset_names()
             tensor.reset_names()
             yxyx_boxes.boxes_format = "yxyx"
-            yxyx_boxes.set_labels(labels)
-            tensor.set_labels(labels)
+            yxyx_boxes.set_children(labels)
+            tensor.set_children(labels)
             return yxyx_boxes
         elif tensor.boxes_format == "yxyx":
             return tensor
@@ -444,6 +446,7 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
             boxes_abs = self.xyxy().abs_pos(frame.HW)
 
         # Get an imave with values between 0 and 1
+        frame_size = frame.HW
         frame = frame.norm01().cpu().rename(None).permute([1, 2, 0]).detach().contiguous().numpy()
         # Draw bouding boxes
 
@@ -467,12 +470,12 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
             box = box.round()
             x1, y1, x2, y2 = box.as_tensor()
             color = (0, 1, 0)
+            cv2.rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), color, 3)
             if label is not None:
                 color = self._GLOBAL_COLOR_SET[int(label) % len(self._GLOBAL_COLOR_SET)]
                 cv2.putText(
                     frame, str(int(label)), (int(x2), int(y1)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1, cv2.LINE_AA
                 )
-            cv2.rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), color, 3)
         # Return the view to display
         return View(frame, **kwargs)
 

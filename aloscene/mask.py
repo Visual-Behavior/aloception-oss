@@ -1,3 +1,4 @@
+"""Binary or float Mask, use in oclussion, segmentation, crop and forward process"""
 import numpy as np
 import cv2
 import torch
@@ -12,12 +13,13 @@ from aloscene.labels import Labels
 
 
 class Mask(aloscene.tensors.SpatialAugmentedTensor):
-    """Binary or Float Mask
-
+    """
     Parameters
     ----------
-    x :
-        path to the mask file (png) or tensor (values between 0. and 1.)
+    x : Union[torch.Tensor, str]
+        Path to the mask file (png) or tensor (values between 0. and 1.)
+    labels : Union[dict, :mod:`Labels <aloscene.labels>`], optional
+        Labels for each mask, used for rendering segmentation maps
     """
 
     @staticmethod
@@ -27,7 +29,7 @@ class Mask(aloscene.tensors.SpatialAugmentedTensor):
             x = load_mask(x)
             kwargs["names"] = ("N", "H", "W")
         tensor = super().__new__(cls, x, *args, **kwargs)
-        tensor.add_label("labels", labels, align_dim=["N"], mergeable=True)
+        tensor.add_child("labels", labels, align_dim=["N"], mergeable=True)
         return tensor
 
     def append_labels(self, labels: Labels, name: str = None):
@@ -35,26 +37,31 @@ class Mask(aloscene.tensors.SpatialAugmentedTensor):
 
         Parameters
         ----------
-        labels: aloscene.Labels
+        labels : :mod:`Labels <aloscene.labels>`
             Set of labels to attached to the masks
-        name: str
+        name : str
             If none, the label will be attached without name (if possible). Otherwise if no other unnamed
             labels are attached to the frame, the labels will be added to the set of labels.
         """
-        self._append_label("labels", labels, name)
+        self._append_child("labels", labels, name)
 
     def iou_with(self, mask2) -> torch.Tensor:
         """ IoU calculation between mask2 and itself
 
         Parameters
         ----------
-        mask2 : aloscene.Mask
+        mask2 : :mod:`Mask <aloscene.mask>`
             Masks with size (M,H,W)
 
         Returns
         -------
         torch.Tensor
             IoU matrix of size (N,M)
+
+        Raises
+        ------
+        Exception
+            Features size (H,W) between masks have to be the same
         """
         if len(self) == 0 and len(mask2) == 0:
             return torch.rand(0, 0)
@@ -74,7 +81,7 @@ class Mask(aloscene.tensors.SpatialAugmentedTensor):
     def get_view(
         self, frame: Tensor = None, size: tuple = None, labels_set: str = None, color_by_cat: bool = False, **kwargs
     ):
-        """Get view of segmentation mask and used it in a input Frame
+        """Get view of segmentation mask and used it in a input :mod:`Frame <aloscene.frame>`
 
         Parameters
         ----------
@@ -90,12 +97,12 @@ class Mask(aloscene.tensors.SpatialAugmentedTensor):
         Returns
         -------
         Renderer.View
-            Frame view, ready to render
+            Frame view, ready to be rendered
 
         Raises
         ------
         Exception
-            Input frame must be a aloscene.Frame object
+            Input frame must be a :mod:`Frame <aloscene.frame>` object
         """
         from aloscene import Frame
 
@@ -165,7 +172,7 @@ class Mask(aloscene.tensors.SpatialAugmentedTensor):
         frame = self.cpu().rename(None).permute([1, 2, 0]).detach().contiguous().numpy()
 
         # Try to retrieve the associated label ID (if any)
-        labels = self._get_set_labels(labels_set=labels_set)
+        labels = self._get_set_children(labels_set=labels_set)
         annotations = []
         if hasattr(self, "labels") and self.labels is not None and len(labels) > 0:
             assert len(labels) == len(self)  # Required to make panoptic view
@@ -194,7 +201,7 @@ class Mask(aloscene.tensors.SpatialAugmentedTensor):
             return frame, annotations
         return frame
 
-    def _get_set_labels(self, labels_set: str = None):
+    def _get_set_children(self, labels_set: str = None):
         if not (labels_set is None or isinstance(self.labels, dict)):
             raise Exception(
                 f"Trying to display a set of labels ({labels_set}) while masks do not have multiple set of labels"

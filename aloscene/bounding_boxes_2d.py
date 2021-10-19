@@ -707,14 +707,9 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
         if self.padded_size is None:
             raise Exception("Trying to fit to padded size without any previous stored padded_size.")
 
-        #if not self.absolute:
         offset_y = (self.padded_size[0][0], self.padded_size[0][1])
         offset_x = (self.padded_size[1][0], self.padded_size[1][1])
-        #else:
-        #    offset_y = (self.padded_size[0][0] / self.frame_size[0], self.padded_size[0][1] / self.frame_size[0])
-        #    offset_x = (self.padded_size[1][0] / self.frame_size[1], self.padded_size[1][1] / self.frame_size[1])
 
-        #print("fit_to_padded_size:offset_y,offset_x", offset_y, offset_x)
 
         if not self.absolute:
             boxes = self.abs_pos((100, 100)).xcyc()

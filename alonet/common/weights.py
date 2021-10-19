@@ -18,6 +18,15 @@ WEIGHT_NAME_TO_FILES = {
     "trackformer-deformable-mot": [
         "https://storage.googleapis.com/visualbehavior-publicweights/trackformer-deformable-mot/trackformer-deformable-mot.pth"
     ],
+    "trackformer-crowdhuman-deformable-mot": [
+        "https://storage.googleapis.com/visualbehavior-publicweights/trackformer-crowdhuman-deformable-mot/trackformer-crowdhuman-deformable-mot.pth"
+    ],
+    "detr-r50-panoptic": [
+        "https://storage.googleapis.com/visualbehavior-publicweights/detr-r50-panoptic/detr-r50-panoptic.pth"
+    ],
+    "detr-r50-things-stuffs": [
+        "https://storage.googleapis.com/visualbehavior-publicweights/detr-r50-things-stuffs/detr-r50-things-stuffs.pth"
+    ]
 }
 
 
@@ -46,13 +55,13 @@ def load_weights(model, weights, device, strict_load_weights=True):
     if not os.path.exists(weights_dir):
         os.makedirs(weights_dir)
 
-    if "pth" in weights:
+    if os.path.splitext(weights.lower())[1] == ".pth":
         checkpoint = torch.load(weights, map_location=device)
         if "model" in checkpoint:
             checkpoint = checkpoint["model"]
         model.load_state_dict(checkpoint, strict=strict_load_weights)
         print(f"Weights loaded from {weights}")
-    elif ".ckpt" in weights:
+    elif os.path.splitext(weights.lower())[1] == ".ckpt":
         checkpoint = torch.load(weights, map_location=device)["state_dict"]
         checkpoint = {k.replace("model.", "") if "model." in k else k: v for k, v in checkpoint.items()}
         model.load_state_dict(checkpoint, strict=strict_load_weights)

@@ -21,12 +21,23 @@ class ObjectDetectorCallback(pl.Callback):
         List of sample from the validation set to use to load the validation progress
     """
 
-    def __init__(self, val_frames: Union[list, aloscene.Frame]):
+    def __init__(self, val_frames: Union[list, aloscene.Frame], one_color_per_class: bool = True):
+        """The callback load frames every x training step as well as once
+        every validation step on the given `val_frames`
+
+        Parameters
+        ----------
+        val_frames: list of :mod:`~aloscene.frame`
+            List of sample from the validation set to use to load the validation progress
+        one_color_per_class
+            Set same segmentation-color for all objects with same category ID, by default True
+        """
         super().__init__()
         # Batch list of frame if needed
         if isinstance(val_frames, list):
             val_frames = aloscene.Frame.batch_list(val_frames)
         self.val_frames = val_frames
+        self.one_color_per_class = one_color_per_class
 
     def log_boxes_2d(self, frames: list, preds_boxes: list, trainer: pl.trainer.trainer.Trainer, name: str):
         """Given a frames and predicted boxes2d, this method will log the images into wandb
@@ -133,7 +144,6 @@ class ObjectDetectorCallback(pl.Callback):
         """
         images = []
         # Show categories with same color if there are many categories
-        color_by_cat = len(frames[0].segmentation.labels.labels_names) > 20
         for b, p_mask in enumerate(pred_masks):
             # 1. Get view of segmentation: More efficient but does not allow filtering classes in wandb
             # frame = frames[b]
@@ -148,7 +158,7 @@ class ObjectDetectorCallback(pl.Callback):
             target_masks = frames.segmentation[b]
             labels_names = target_masks.labels.labels_names
             if labels_names is not None:
-                if color_by_cat:
+                if self.one_color_per_class:
                     labels_gt = {i: name for i, name in enumerate(labels_names)}
                     labels_pred = labels_gt
                 else:  # TODO: synchronize colors by matcher (?)
@@ -169,10 +179,16 @@ class ObjectDetectorCallback(pl.Callback):
             frame = frame.permute([1, 2, 0]).contiguous().numpy()
 
             # Get panoptic view
-            target_masks = target_masks.mask2id(return_cats=color_by_cat)
-            p_mask = p_mask.mask2id(return_cats=color_by_cat)
+            target_masks = target_masks.mask2id(return_cats=self.one_color_per_class)
+            p_mask = p_mask.mask2id(return_cats=self.one_color_per_class)
             if VOID_CLASS_ID < 0:
-                bg_val = max(max(labels_gt.keys()), max(labels_pred.keys())) + 1
+                bg_val = (
+                    max(
+                        max(labels_gt.keys() if len(labels_gt) > 0 else [0]),
+                        max(labels_pred.keys() if len(labels_pred) > 0 else [0]),
+                    )
+                    + 1
+                )
                 target_masks[target_masks == VOID_CLASS_ID] = bg_val  # Background N/A
                 p_mask[p_mask == VOID_CLASS_ID] = bg_val  # Background N/A
             target_masks = target_masks.astype(np.uint8)

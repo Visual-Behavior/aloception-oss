@@ -27,7 +27,7 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
             x = load_depth(x)
             names = ("C", "H", "W")
         tensor = super().__new__(cls, x, *args, names=names, **kwargs)
-        tensor.add_label("occlusion", occlusion, align_dim=["B", "T"], mergeable=True)
+        tensor.add_child("occlusion", occlusion, align_dim=["B", "T"], mergeable=True)
 
         return tensor
 

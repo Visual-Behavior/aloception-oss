@@ -772,7 +772,7 @@ class AugmentedTensor(torch.Tensor):
 
         for name in self._children_list:
             label = getattr(self, name)
-            modified_label = self.apply_on_label(label, __apply)
+            modified_label = self.apply_on_child(label, __apply)
             setattr(self, name, modified_label)
         return self
 

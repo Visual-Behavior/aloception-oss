@@ -18,6 +18,9 @@ WEIGHT_NAME_TO_FILES = {
     "trackformer-deformable-mot": [
         "https://storage.googleapis.com/visualbehavior-publicweights/trackformer-deformable-mot/trackformer-deformable-mot.pth"
     ],
+    "trackformer-crowdhuman-deformable-mot": [
+        "https://storage.googleapis.com/visualbehavior-publicweights/trackformer-crowdhuman-deformable-mot/trackformer-crowdhuman-deformable-mot.pth"   
+    ]
 }
 
 
@@ -46,12 +49,17 @@ def load_weights(model, weights, device, strict_load_weights=True):
     if not os.path.exists(weights_dir):
         os.makedirs(weights_dir)
 
-    if "pth" in weights:
+    if os.path.splitext(weights.lower())[1] == ".pth":
         checkpoint = torch.load(weights, map_location=device)
         if "model" in checkpoint:
             checkpoint = checkpoint["model"]
-        model.load_state_dict(checkpoint)
-
+        model.load_state_dict(checkpoint, strict=strict_load_weights)
+        print(f"Weights loaded from {weights}")
+    elif os.path.splitext(weights.lower())[1] == ".ckpt":
+        checkpoint = torch.load(weights, map_location=device)["state_dict"]
+        checkpoint = {k.replace("model.", "") if "model." in k else k: v for k, v in checkpoint.items()}
+        model.load_state_dict(checkpoint, strict=strict_load_weights)
+        print(f"Weights loaded from {weights}")
     elif weights in WEIGHT_NAME_TO_FILES:
         weights_dir = os.path.join(weights_dir, weights)
         if not os.path.exists(weights_dir):

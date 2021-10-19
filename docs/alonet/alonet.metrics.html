@@ -101,6 +101,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/data_setup.html">How to setup your data?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/training_detr.html">Training Detr</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/finetuning_detr.html">Finetuning DETR</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/training_panoptic.html">Training Panoptic Head module</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/training_deformable_detr.html">Training Deformable DETR</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/finetuning_deformable_detr.html">Finetuning Deformanble DETR</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/tensort_inference.html">Exporting DETR / Deformable-DETR to TensorRT</a></li>
@@ -112,9 +113,17 @@
 <li class="toctree-l1 current"><a class="reference internal" href="alonet.html">Alonet</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="detr.html">Detr</a></li>
 <li class="toctree-l2"><a class="reference internal" href="deformable.html">Deformable DETR</a></li>
+<li class="toctree-l2"><a class="reference internal" href="panoptic.html">Detr panoptic</a></li>
 <li class="toctree-l2"><a class="reference internal" href="alonet.callbacks.html">Callbacks</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Metrics</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#module-alonet.metrics.compute_map">AP Metrics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ap-metrics">AP Metrics</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#examples">Examples</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#pq-metrics">PQ Metrics</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#id1">Examples</a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="alonet.transformers.html">Transformer</a></li>
@@ -215,23 +224,118 @@
 </style>
 <div class="section" id="metrics">
 <h1>Metrics<a class="headerlink" href="#metrics" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="module-alonet.metrics.compute_map">
-<span id="ap-metrics"></span><h2>AP Metrics<a class="headerlink" href="#module-alonet.metrics.compute_map" title="Permalink to this headline">¶</a></h2>
-<dl class="py class">
+<div class="section" id="ap-metrics">
+<h2>AP Metrics<a class="headerlink" href="#ap-metrics" title="Permalink to this headline">¶</a></h2>
+<p>Stores all the information necessary to calculate the AP for one IoU and one class.</p>
+<div class="section" id="examples">
+<h3>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">torch</span>
+
+<span class="kn">from</span> <span class="nn">alodataset</span> <span class="kn">import</span> <span class="n">CocoDetectionDataset</span>
+<span class="kn">from</span> <span class="nn">alonet.detr</span> <span class="kn">import</span> <span class="n">DetrR50</span>
+<span class="kn">from</span> <span class="nn">alonet.metrics</span> <span class="kn">import</span> <span class="n">ApMetrics</span>
+
+<span class="kn">from</span> <span class="nn">aloscene</span> <span class="kn">import</span> <span class="n">Frame</span>
+
+<span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&quot;cuda:0&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&quot;cpu&quot;</span><span class="p">)</span>
+
+<span class="c1"># Model/Dataset definition to evaluate</span>
+<span class="n">dataset</span> <span class="o">=</span> <span class="n">CocoDetectionDataset</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">DetrR50</span><span class="p">(</span><span class="n">weights</span> <span class="o">=</span> <span class="s2">&quot;detr-r50&quot;</span><span class="p">)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+
+<span class="c1"># Metric to develop</span>
+<span class="n">metric</span> <span class="o">=</span> <span class="n">ApMetrics</span><span class="p">()</span>
+
+<span class="k">for</span> <span class="n">frame</span> <span class="ow">in</span> <span class="n">dataset</span><span class="o">.</span><span class="n">stream_loader</span><span class="p">():</span>
+    <span class="c1"># Frame to batch</span>
+    <span class="n">frame</span> <span class="o">=</span> <span class="n">Frame</span><span class="o">.</span><span class="n">batch_list</span><span class="p">([</span><span class="n">frame</span><span class="p">])</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+
+    <span class="c1"># Boxes inference and get GT from frame</span>
+    <span class="n">pred_boxes</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">inference</span><span class="p">(</span><span class="n">model</span><span class="p">(</span><span class="n">frame</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>  <span class="c1"># Predictions of the first batch</span>
+    <span class="n">gt_boxes</span> <span class="o">=</span> <span class="n">frame</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">boxes2d</span>  <span class="c1"># GT of first batch</span>
+
+    <span class="c1"># Add samples to evaluate metrics</span>
+    <span class="n">metric</span><span class="o">.</span><span class="n">add_sample</span><span class="p">(</span><span class="n">p_bbox</span><span class="o">=</span><span class="n">pred_boxes</span><span class="p">,</span> <span class="n">t_bbox</span><span class="o">=</span><span class="n">gt_boxes</span><span class="p">)</span>
+
+<span class="c1"># Print results</span>
+<span class="n">metric</span><span class="o">.</span><span class="n">calc_map</span><span class="p">(</span><span class="n">print_result</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<table class="docutils align-center" id="id2">
+<caption><span class="caption-text">Results obtained for AP in boxes</span><a class="headerlink" href="#id2" title="Permalink to this table">¶</a></caption>
+<colgroup>
+<col style="width: 8%" />
+<col style="width: 8%" />
+<col style="width: 8%" />
+<col style="width: 8%" />
+<col style="width: 8%" />
+<col style="width: 8%" />
+<col style="width: 8%" />
+<col style="width: 8%" />
+<col style="width: 8%" />
+<col style="width: 8%" />
+<col style="width: 8%" />
+<col style="width: 8%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"></th>
+<th class="head"><p>all</p></th>
+<th class="head"><p>.50</p></th>
+<th class="head"><p>.55</p></th>
+<th class="head"><p>.60</p></th>
+<th class="head"><p>.65</p></th>
+<th class="head"><p>.70</p></th>
+<th class="head"><p>.75</p></th>
+<th class="head"><p>.80</p></th>
+<th class="head"><p>.85</p></th>
+<th class="head"><p>.90</p></th>
+<th class="head"><p>.95</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>box</p></td>
+<td><p>40.21</p></td>
+<td><p>49.98</p></td>
+<td><p>49.12</p></td>
+<td><p>47.68</p></td>
+<td><p>46.66</p></td>
+<td><p>44.23</p></td>
+<td><p>43.89</p></td>
+<td><p>36.38</p></td>
+<td><p>33.78</p></td>
+<td><p>30.14</p></td>
+<td><p>20.20</p></td>
+</tr>
+</tbody>
+</table>
+<span class="target" id="module-alonet.metrics.compute_map"></span><dl class="py class">
 <dt class="sig sig-object py" id="alonet.metrics.compute_map.APDataObject">
 <em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">alonet.metrics.compute_map.</span></span><span class="sig-name descname"><span class="pre">APDataObject</span></span><a class="headerlink" href="#alonet.metrics.compute_map.APDataObject" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>Stores all the information necessary to calculate the AP for one IoU and one class.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="alonet.metrics.compute_map.APDataObject.add_gt_positives">
 <span class="sig-name descname"><span class="pre">add_gt_positives</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_positives</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.metrics.compute_map.APDataObject.add_gt_positives" title="Permalink to this definition">¶</a></dt>
-<dd><p>Call this once per image.</p>
+<dd><p>Call this once per image</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>num_positives</strong><span class="classifier">int</span></dt><dd><p>Number of positives categories</p>
+</dd>
+</dl>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="alonet.metrics.compute_map.APDataObject.get_metrics">
 <span class="sig-name descname"><span class="pre">get_metrics</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#alonet.metrics.compute_map.APDataObject.get_metrics" title="Permalink to this definition">¶</a></dt>
-<dd><p>Warning: result not cached.</p>
+<dd><p>Get metrics from samples stored</p>
+<p class="rubric">Notes</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Result not cached yet.</p>
+</div>
 <dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></p>
@@ -242,7 +346,8 @@
 <dl class="py method">
 <dt class="sig sig-object py" id="alonet.metrics.compute_map.APDataObject.is_empty">
 <span class="sig-name descname"><span class="pre">is_empty</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#alonet.metrics.compute_map.APDataObject.is_empty" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="field-list simple">
+<dd><p>Check if <code class="xref py py-attr docutils literal notranslate"><span class="pre">data_points</span></code> is empty</p>
+<dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></p>
 </dd>
@@ -252,7 +357,18 @@
 <dl class="py method">
 <dt class="sig sig-object py" id="alonet.metrics.compute_map.APDataObject.push">
 <span class="sig-name descname"><span class="pre">push</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">score</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_true</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.metrics.compute_map.APDataObject.push" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Append score and classification result to calculate AP</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>score</strong><span class="classifier">float</span></dt><dd><p>Score of one element</p>
+</dd>
+<dt><strong>is_true</strong><span class="classifier">bool</span></dt><dd><p>Correctly predicted class category</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
 
 </dd></dl>
 
@@ -260,20 +376,37 @@
 <dt class="sig sig-object py" id="alonet.metrics.compute_map.ApMetrics">
 <em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">alonet.metrics.compute_map.</span></span><span class="sig-name descname"><span class="pre">ApMetrics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">iou_thresholds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[0.5,</span> <span class="pre">0.55,</span> <span class="pre">0.6,</span> <span class="pre">0.65,</span> <span class="pre">0.7,</span> <span class="pre">0.75,</span> <span class="pre">0.8,</span> <span class="pre">0.85,</span> <span class="pre">0.9,</span> <span class="pre">0.95]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compute_per_size_ap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.metrics.compute_map.ApMetrics" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Compute AP Metrics.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>iou_thresholds</strong><span class="classifier">list</span></dt><dd><p>List of thresholds to use. Default: [0.5, 0.55, …. 0.9, 0.95]</p>
+</dd>
+<dt><strong>compute_per_size_ap</strong><span class="classifier">bool</span></dt><dd><p>If True, will compute the IOU per boxes area/size,  by default False</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Attributes</dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>class_names</strong><span class="classifier">list</span></dt><dd><p>List of classes</p>
+</dd>
+</dl>
+</dd>
+</dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="alonet.metrics.compute_map.ApMetrics.add_sample">
 <span class="sig-name descname"><span class="pre">add_sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p_bbox</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_bbox</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p_mask</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_mask</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.metrics.compute_map.ApMetrics.add_sample" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add sample to compute the AP.</p>
-<dl class="field-list simple">
+<dl class="field-list">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>p_bbox: `aloscene.BoundingBoxes2D`</strong></dt><dd><p>predicted boxes</p>
+<dd class="field-odd"><dl>
+<dt><strong>p_bbox</strong><span class="classifier"><a class="reference internal" href="../aloscene/bounding_boxes_2d.html#module-aloscene.bounding_boxes_2d" title="aloscene.bounding_boxes_2d"><code class="xref py py-mod docutils literal notranslate"><span class="pre">BoundingBoxes2D</span></code></a></span></dt><dd><p>predicted boxes</p>
 </dd>
-<dt><strong>t_bbox: `aloscene.BoundingBoxes2D`</strong></dt><dd><p>Target boxes with <cite>aloscene.labels</cite> with the <cite>labels_names</cite> property set.</p>
+<dt><strong>t_bbox</strong><span class="classifier"><a class="reference internal" href="../aloscene/bounding_boxes_2d.html#module-aloscene.bounding_boxes_2d" title="aloscene.bounding_boxes_2d"><code class="xref py py-mod docutils literal notranslate"><span class="pre">BoundingBoxes2D</span></code></a></span></dt><dd><p>Target boxes with <a class="reference internal" href="../aloscene/labels.html#module-aloscene.labels" title="aloscene.labels"><code class="xref py py-mod docutils literal notranslate"><span class="pre">labels</span></code></a> with the <code class="xref py py-attr docutils literal notranslate"><span class="pre">labels_names</span></code> property set.</p>
 </dd>
-<dt><strong>p_mask: any</strong></dt><dd><p>p_mask &amp; t_mask are not handle yet (TODO)</p>
+<dt><strong>p_mask</strong><span class="classifier"><a class="reference internal" href="../aloscene/mask.html#module-aloscene.mask" title="aloscene.mask"><code class="xref py py-mod docutils literal notranslate"><span class="pre">Mask</span></code></a></span></dt><dd><p>Apply APmask metric</p>
 </dd>
-<dt><strong>t_mask: any</strong></dt><dd><p>p_mask &amp; t_mask are not handle yet (TODO)</p>
+<dt><strong>t_mask</strong><span class="classifier"><a class="reference internal" href="../aloscene/mask.html#module-aloscene.mask" title="aloscene.mask"><code class="xref py py-mod docutils literal notranslate"><span class="pre">Mask</span></code></a></span></dt><dd><p>Apply APmask metric</p>
 </dd>
 </dl>
 </dd>
@@ -283,7 +416,28 @@
 <dl class="py method">
 <dt class="sig sig-object py" id="alonet.metrics.compute_map.ApMetrics.calc_map">
 <span class="sig-name descname"><span class="pre">calc_map</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">print_result</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.metrics.compute_map.ApMetrics.calc_map" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Calcule mAP maps</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>print_result</strong><span class="classifier">bool, optional</span></dt><dd><p>Print results, by default False</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>Tuple[Dict,Dict,Dict,Dict,Dict]</dt><dd><ul class="simple">
+<li><p>Summary with all maps result</p></li>
+<li><p>Summary with all maps result per class</p></li>
+<li><p>Size off all maps</p></li>
+<li><p>Cross classification AP50</p></li>
+<li><p>Cross classification AP50 per class</p></li>
+</ul>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="alonet.metrics.compute_map.ApMetrics.init_data_objects">
@@ -301,11 +455,185 @@
 
 </dd></dl>
 
-<dl class="py function">
-<dt class="sig sig-object py" id="alonet.metrics.compute_map.print_maps">
-<span class="sig-prename descclassname"><span class="pre">alonet.metrics.compute_map.</span></span><span class="sig-name descname"><span class="pre">print_maps</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">all_maps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.metrics.compute_map.print_maps" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+</div>
+</div>
+<div class="section" id="pq-metrics">
+<h2>PQ Metrics<a class="headerlink" href="#pq-metrics" title="Permalink to this headline">¶</a></h2>
+<p>Compute Panoptic, Segmentation and Recognition Qualities Metrics.</p>
+<div class="section" id="id1">
+<h3>Examples<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">torch</span>
 
+<span class="kn">from</span> <span class="nn">alodataset</span> <span class="kn">import</span> <span class="n">CocoPanopticDataset</span><span class="p">,</span> <span class="n">Split</span>
+<span class="kn">from</span> <span class="nn">alonet.detr_panoptic</span> <span class="kn">import</span> <span class="n">LitPanopticDetr</span>
+<span class="kn">from</span> <span class="nn">alonet.metrics</span> <span class="kn">import</span> <span class="n">PQMetrics</span>
+
+<span class="kn">from</span> <span class="nn">aloscene</span> <span class="kn">import</span> <span class="n">Frame</span>
+
+<span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&quot;cuda:0&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&quot;cpu&quot;</span><span class="p">)</span>
+
+<span class="c1"># Model/Dataset definition to evaluate</span>
+<span class="n">dataset</span> <span class="o">=</span> <span class="n">CocoPanopticDataset</span><span class="p">(</span><span class="n">split</span><span class="o">=</span><span class="n">Split</span><span class="o">.</span><span class="n">VAL</span><span class="p">)</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">LitPanopticDetr</span><span class="p">(</span><span class="n">weights</span> <span class="o">=</span> <span class="s2">&quot;detr-r50-panoptic&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">model</span>
+<span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+
+<span class="c1"># Metric to develop</span>
+<span class="n">metric</span> <span class="o">=</span> <span class="n">PQMetrics</span><span class="p">()</span>
+
+<span class="k">for</span> <span class="n">frame</span> <span class="ow">in</span> <span class="n">dataset</span><span class="o">.</span><span class="n">stream_loader</span><span class="p">():</span>
+    <span class="c1"># Frame to batch</span>
+    <span class="n">frame</span> <span class="o">=</span> <span class="n">Frame</span><span class="o">.</span><span class="n">batch_list</span><span class="p">([</span><span class="n">frame</span><span class="p">])</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+
+    <span class="c1"># Masks inference and get GT from frame</span>
+    <span class="n">_</span><span class="p">,</span> <span class="n">pred_masks</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">inference</span><span class="p">(</span><span class="n">model</span><span class="p">(</span><span class="n">frame</span><span class="p">))</span>
+    <span class="n">pred_masks</span> <span class="o">=</span> <span class="n">pred_masks</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="c1"># Predictions of the first batch</span>
+    <span class="n">gt_masks</span> <span class="o">=</span> <span class="n">frame</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">segmentation</span>  <span class="c1"># GT of first batch</span>
+
+    <span class="c1"># Add samples to evaluate metrics</span>
+    <span class="n">metric</span><span class="o">.</span><span class="n">add_sample</span><span class="p">(</span><span class="n">p_mask</span><span class="o">=</span><span class="n">pred_masks</span><span class="p">,</span> <span class="n">t_mask</span><span class="o">=</span><span class="n">gt_masks</span><span class="p">)</span>
+
+<span class="c1"># Print results</span>
+<span class="n">metric</span><span class="o">.</span><span class="n">calc_map</span><span class="p">(</span><span class="n">print_result</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<table class="colwidths-given docutils align-center" id="id3">
+<caption><span class="caption-text">Summary of expected result</span><a class="headerlink" href="#id3" title="Permalink to this table">¶</a></caption>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 17%" />
+<col style="width: 17%" />
+<col style="width: 17%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Category</p></th>
+<th class="head"><p>Total cat.</p></th>
+<th class="head"><p>PQ</p></th>
+<th class="head"><p>SQ</p></th>
+<th class="head"><p>RQ</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Things</p></td>
+<td><p>80</p></td>
+<td><p>0.481</p></td>
+<td><p>0.795</p></td>
+<td><p>0.595</p></td>
+</tr>
+<tr class="row-odd"><td><p>Stuff</p></td>
+<td><p>53</p></td>
+<td><p>0.358</p></td>
+<td><p>0.779</p></td>
+<td><p>0.449</p></td>
+</tr>
+<tr class="row-even"><td><p>All</p></td>
+<td><p>133</p></td>
+<td><p>0.432</p></td>
+<td><p>0.789</p></td>
+<td><p>0.537</p></td>
+</tr>
+</tbody>
+</table>
+<span class="target" id="module-alonet.metrics.compute_pq"></span><dl class="py class">
+<dt class="sig sig-object py" id="alonet.metrics.compute_pq.PQMetrics">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">alonet.metrics.compute_pq.</span></span><span class="sig-name descname"><span class="pre">PQMetrics</span></span><a class="headerlink" href="#alonet.metrics.compute_pq.PQMetrics" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="alonet.metrics.compute_pq.PQMetrics.add_sample">
+<span class="sig-name descname"><span class="pre">add_sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p_mask</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_mask</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.metrics.compute_pq.PQMetrics.add_sample" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a new prediction and target masks to PQ metrics estimation process</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl>
+<dt><strong>p_mask</strong><span class="classifier"><a class="reference internal" href="../aloscene/mask.html#module-aloscene.mask" title="aloscene.mask"><code class="xref py py-mod docutils literal notranslate"><span class="pre">Mask</span></code></a></span></dt><dd><p>Predicted masks by network inference</p>
+</dd>
+<dt><strong>t_mask</strong><span class="classifier"><a class="reference internal" href="../aloscene/mask.html#module-aloscene.mask" title="aloscene.mask"><code class="xref py py-mod docutils literal notranslate"><span class="pre">Mask</span></code></a></span></dt><dd><p>Target masks with labels and labels_names properties</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><dl class="simple">
+<dt>Exception</dt><dd><p><code class="xref py py-attr docutils literal notranslate"><span class="pre">p_mask</span></code> and <code class="xref py py-attr docutils literal notranslate"><span class="pre">t_mask</span></code> must be an <a class="reference internal" href="../aloscene/mask.html#module-aloscene.mask" title="aloscene.mask"><code class="xref py py-mod docutils literal notranslate"><span class="pre">Mask</span></code></a> object and have the same shapes,
+as well as must have labels attribute. Finally, <code class="xref py py-attr docutils literal notranslate"><span class="pre">t_mask</span></code> must have two minimal labels:
+<code class="xref py py-attr docutils literal notranslate"><span class="pre">category</span></code> and <code class="xref py py-attr docutils literal notranslate"><span class="pre">isthing</span></code></p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alonet.metrics.compute_pq.PQMetrics.calc_map">
+<span class="sig-name descname"><span class="pre">calc_map</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">print_result</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.metrics.compute_pq.PQMetrics.calc_map" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calcule PQ-RQ-SQ maps</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>print_result</strong><span class="classifier">bool, optional</span></dt><dd><p>Print results, by default False</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>Tuple[Dict,Dict]</dt><dd><ul class="simple">
+<li><p>Summary with all maps result (average)</p></li>
+<li><p>Summary with all maps result per class</p></li>
+</ul>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alonet.metrics.compute_pq.PQMetrics.pq_average">
+<span class="sig-name descname"><span class="pre">pq_average</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">isthing</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">print_result</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.metrics.compute_pq.PQMetrics.pq_average" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate SQ, RQ and PQ metrics from the categories, and thing/stuff/all if desired</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>isthing</strong><span class="classifier">bool</span></dt><dd><p>Calculate metrics for the ‘thing’ category (if it True) or ‘stuff’ category (if it False).
+By default the metric is executed over both</p>
+</dd>
+<dt><strong>print_result</strong><span class="classifier">bool</span></dt><dd><p>Print result in console, by default False</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>Tuple[Dict, Dict]</dt><dd><p>Dictionaries with general PQ average metrics and for each class, respectively</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alonet.metrics.compute_pq.PQMetrics.update_data_objects">
+<span class="sig-name descname"><span class="pre">update_data_objects</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cat_labels</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">isthing_labels</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.metrics.compute_pq.PQMetrics.update_data_objects" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update data objects categories, appending new categories from each sample</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl>
+<dt><strong>cat_labels</strong><span class="classifier"><a class="reference internal" href="../aloscene/labels.html#module-aloscene.labels" title="aloscene.labels"><code class="xref py py-mod docutils literal notranslate"><span class="pre">Labels</span></code></a></span></dt><dd><p>Categories labels to append</p>
+</dd>
+<dt><strong>isthing_labels</strong><span class="classifier"><a class="reference internal" href="../aloscene/labels.html#module-aloscene.labels" title="aloscene.labels"><code class="xref py py-mod docutils literal notranslate"><span class="pre">Labels</span></code></a></span></dt><dd><p>Description of thing/stuff labels to append</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="alonet.metrics.compute_pq.PQStatCat">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">alonet.metrics.compute_pq.</span></span><span class="sig-name descname"><span class="pre">PQStatCat</span></span><a class="headerlink" href="#alonet.metrics.compute_pq.PQStatCat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Keep TP, FP, FN and IoU metrics per class</p>
+</dd></dl>
+
+</div>
 </div>
 </div>
 

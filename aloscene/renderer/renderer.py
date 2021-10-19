@@ -13,7 +13,9 @@ def adapt_text_size_to_frame(size, frame_size):
     return base_size_h, base_size_w
 
 
-def put_adapative_cv2_text(frame: np.array, frame_size: tuple, text: str, pos_x: float, pos_y: float, bg_color=None):
+def put_adapative_cv2_text(
+    frame: np.array, frame_size: tuple, text: str, pos_x: float, pos_y: float, color=None, square_background=True
+):
     """Put Text on the given frame with adaptive size.
 
     Parameters
@@ -33,17 +35,14 @@ def put_adapative_cv2_text(frame: np.array, frame_size: tuple, text: str, pos_x:
 
     pos_x = int(pos_x)
     pos_y = int(pos_y)
-
-    bg_color = (1, 1, 1) if bg_color is None else bg_color
-    text_color = (0, 0, 0) if sum(bg_color) / 3 > 0.5 else (1, 1, 1)
-
-    cv2.rectangle(
-        frame,
-        (pos_x - 3, pos_y - c_size_h - c_size_h),
-        (pos_x + (w_size_w * (len(text) + 1)), pos_y + c_size_h),
-        bg_color,
-        -1,
-    )
+    if square_background:
+        cv2.rectangle(
+            frame,
+            (pos_x - 3, pos_y - c_size_h - c_size_h),
+            (pos_x + (w_size_w * (len(text) + 1)), pos_y + c_size_h),
+            (1, 1, 1),
+            -1,
+        )
 
     cv2.putText(
         frame,
@@ -51,7 +50,7 @@ def put_adapative_cv2_text(frame: np.array, frame_size: tuple, text: str, pos_x:
         (int(pos_x), int(pos_y)),
         cv2.FONT_HERSHEY_SIMPLEX,
         (size_h + size_w) / 2,
-        text_color,
+        (0, 0, 0) if color is None else color,
         1,
         cv2.LINE_AA,
     )

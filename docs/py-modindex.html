@@ -102,6 +102,7 @@
 <li class="toctree-l1"><a class="reference internal" href="tutorials/data_setup.html">How to setup your data?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorials/training_detr.html">Training Detr</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorials/finetuning_detr.html">Finetuning DETR</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/training_panoptic.html">Training Panoptic Head module</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorials/training_deformable_detr.html">Training Deformable DETR</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorials/finetuning_deformable_detr.html">Finetuning Deformanble DETR</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorials/tensort_inference.html">Exporting DETR / Deformable-DETR to TensorRT</a></li>
@@ -265,6 +266,11 @@
      <tr class="cg-2">
        <td></td>
        <td>&#160;&#160;&#160;
+       <a href="alonet/alonet.callbacks.html#module-alonet.callbacks.base_metrics_callback"><code class="xref">alonet.callbacks.base_metrics_callback</code></a></td><td>
+       <em></em></td></tr>
+     <tr class="cg-2">
+       <td></td>
+       <td>&#160;&#160;&#160;
        <a href="alonet/alonet.callbacks.html#module-alonet.callbacks.map_metrics_callback"><code class="xref">alonet.callbacks.map_metrics_callback</code></a></td><td>
        <em></em></td></tr>
      <tr class="cg-2">
@@ -276,6 +282,11 @@
        <td></td>
        <td>&#160;&#160;&#160;
        <a href="alonet/alonet.callbacks.html#module-alonet.callbacks.object_detector_callback"><code class="xref">alonet.callbacks.object_detector_callback</code></a></td><td>
+       <em></em></td></tr>
+     <tr class="cg-2">
+       <td></td>
+       <td>&#160;&#160;&#160;
+       <a href="alonet/alonet.callbacks.html#module-alonet.callbacks.pq_metrics_callback"><code class="xref">alonet.callbacks.pq_metrics_callback</code></a></td><td>
        <em></em></td></tr>
      <tr class="cg-2">
        <td></td>
@@ -340,12 +351,22 @@
      <tr class="cg-2">
        <td></td>
        <td>&#160;&#160;&#160;
-       <a href="alonet/detr_connectors.html#module-alonet.detr.coco_data_modules"><code class="xref">alonet.detr.coco_data_modules</code></a></td><td>
+       <a href="alonet/detr_training.html#module-alonet.detr.criterion"><code class="xref">alonet.detr.criterion</code></a></td><td>
        <em></em></td></tr>
      <tr class="cg-2">
        <td></td>
        <td>&#160;&#160;&#160;
-       <a href="alonet/detr_training.html#module-alonet.detr.criterion"><code class="xref">alonet.detr.criterion</code></a></td><td>
+       <a href="alonet/detr_connectors.html#module-alonet.detr.data_modules.coco_detection2detr"><code class="xref">alonet.detr.data_modules.coco_detection2detr</code></a></td><td>
+       <em></em></td></tr>
+     <tr class="cg-2">
+       <td></td>
+       <td>&#160;&#160;&#160;
+       <a href="alonet/detr_connectors.html#module-alonet.detr.data_modules.coco_panoptic2detr"><code class="xref">alonet.detr.data_modules.coco_panoptic2detr</code></a></td><td>
+       <em></em></td></tr>
+     <tr class="cg-2">
+       <td></td>
+       <td>&#160;&#160;&#160;
+       <a href="alonet/detr_connectors.html#module-alonet.detr.data_modules.data2detr"><code class="xref">alonet.detr.data_modules.data2detr</code></a></td><td>
        <em></em></td></tr>
      <tr class="cg-2">
        <td></td>
@@ -380,7 +401,32 @@
      <tr class="cg-2">
        <td></td>
        <td>&#160;&#160;&#160;
+       <a href="alonet/panoptic_training.html#module-alonet.detr_panoptic.callbacks"><code class="xref">alonet.detr_panoptic.callbacks</code></a></td><td>
+       <em></em></td></tr>
+     <tr class="cg-2">
+       <td></td>
+       <td>&#160;&#160;&#160;
+       <a href="alonet/panoptic_models.html#module-alonet.detr_panoptic.detr_panoptic"><code class="xref">alonet.detr_panoptic.detr_panoptic</code></a></td><td>
+       <em></em></td></tr>
+     <tr class="cg-2">
+       <td></td>
+       <td>&#160;&#160;&#160;
+       <a href="alonet/panoptic_models.html#module-alonet.detr_panoptic.detr_r50_panoptic_finetune"><code class="xref">alonet.detr_panoptic.detr_r50_panoptic_finetune</code></a></td><td>
+       <em></em></td></tr>
+     <tr class="cg-2">
+       <td></td>
+       <td>&#160;&#160;&#160;
+       <a href="alonet/panoptic_training.html#module-alonet.detr_panoptic.train"><code class="xref">alonet.detr_panoptic.train</code></a></td><td>
+       <em></em></td></tr>
+     <tr class="cg-2">
+       <td></td>
+       <td>&#160;&#160;&#160;
        <a href="alonet/alonet.metrics.html#module-alonet.metrics.compute_map"><code class="xref">alonet.metrics.compute_map</code></a></td><td>
+       <em></em></td></tr>
+     <tr class="cg-2">
+       <td></td>
+       <td>&#160;&#160;&#160;
+       <a href="alonet/alonet.metrics.html#module-alonet.metrics.compute_pq"><code class="xref">alonet.metrics.compute_pq</code></a></td><td>
        <em></em></td></tr>
      <tr class="cg-2">
        <td></td>
@@ -447,6 +493,11 @@
        <td></td>
        <td>&#160;&#160;&#160;
        <a href="aloscene/oriented_boxes_2d.html#module-aloscene.oriented_boxes_2d"><code class="xref">aloscene.oriented_boxes_2d</code></a></td><td>
+       <em></em></td></tr>
+     <tr class="cg-3">
+       <td></td>
+       <td>&#160;&#160;&#160;
+       <a href="aloscene/points2d.html#module-aloscene.points_2d"><code class="xref">aloscene.points_2d</code></a></td><td>
        <em></em></td></tr>
      <tr class="cg-3">
        <td></td>

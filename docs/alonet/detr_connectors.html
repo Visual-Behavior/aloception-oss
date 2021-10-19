@@ -101,6 +101,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/data_setup.html">How to setup your data?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/training_detr.html">Training Detr</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/finetuning_detr.html">Finetuning DETR</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/training_panoptic.html">Training Panoptic Head module</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/training_deformable_detr.html">Training Deformable DETR</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/finetuning_deformable_detr.html">Finetuning Deformanble DETR</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/tensort_inference.html">Exporting DETR / Deformable-DETR to TensorRT</a></li>
@@ -115,12 +116,15 @@
 <li class="toctree-l3"><a class="reference internal" href="detr_architecture.html">Architecture</a></li>
 <li class="toctree-l3"><a class="reference internal" href="detr_training.html">Training</a></li>
 <li class="toctree-l3 current"><a class="current reference internal" href="#">Detr: Data connectors</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#module-alonet.detr.coco_data_modules">CocoDetection2Detr</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-alonet.detr.data_modules.data2detr">Data2Detr</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#cocodetection2detr">CocoDetection2Detr</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#cocopanoptic2detr">CocoPanoptic2Detr</a></li>
 </ul>
 </li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="deformable.html">Deformable DETR</a></li>
+<li class="toctree-l2"><a class="reference internal" href="panoptic.html">Detr panoptic</a></li>
 <li class="toctree-l2"><a class="reference internal" href="alonet.callbacks.html">Callbacks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="alonet.metrics.html">Metrics</a></li>
 <li class="toctree-l2"><a class="reference internal" href="alonet.transformers.html">Transformer</a></li>
@@ -223,81 +227,293 @@
 </style>
 <div class="section" id="detr-data-connectors">
 <h1>Detr: Data connectors<a class="headerlink" href="#detr-data-connectors" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="module-alonet.detr.coco_data_modules">
-<span id="cocodetection2detr"></span><h2>CocoDetection2Detr<a class="headerlink" href="#module-alonet.detr.coco_data_modules" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference external" href="https://pytorch-lightning.readthedocs.io/en/latest/extensions/datamodules.html">Pytorch Lightning Data Module</a>
+connector between dataset and model. Load train/val/test sets and make the preprocessing required for use by the
+<a class="reference external" href="detr_models.html#module-alonet.detr.detr">Detr-based architectures</a>.</p>
+<div class="section" id="module-alonet.detr.data_modules.data2detr">
+<span id="data2detr"></span><h2>Data2Detr<a class="headerlink" href="#module-alonet.detr.data_modules.data2detr" title="Permalink to this headline">¶</a></h2>
+<p>LightningDataModule base to use dataset in Detr trainer models.</p>
+<div class="section" id="see-also">
+<h3>See Also<a class="headerlink" href="#see-also" title="Permalink to this headline">¶</a></h3>
+<p><a class="reference external" href="https://pytorch-lightning.readthedocs.io/en/latest/extensions/datamodules.html">LightningDataModule</a> for more
+information about to create data modules from
+<a class="reference external" href="https://pytorch.org/tutorials/beginner/basics/data_tutorial.html">Dataset and Dataloader</a></p>
 <dl class="py class">
-<dt class="sig sig-object py" id="alonet.detr.coco_data_modules.CocoDetection2Detr">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">alonet.detr.coco_data_modules.</span></span><span class="sig-name descname"><span class="pre">CocoDetection2Detr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'coco'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">classes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">train_folder</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'train2017'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">train_ann</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'annotations/instances_train2017.json'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">val_folder</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'val2017'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">val_ann</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'annotations/instances_val2017.json'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.detr.coco_data_modules.CocoDetection2Detr" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="alonet.detr.data_modules.data2detr.Data2Detr">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">alonet.detr.data_modules.data2detr.</span></span><span class="sig-name descname"><span class="pre">Data2Detr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.detr.data_modules.data2detr.Data2Detr" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pytorch_lightning.core.datamodule.LightningDataModule</span></code></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>batch_size</strong><span class="classifier">int, optional</span></dt><dd><p>Batch size to use</p>
+</dd>
+<dt><strong>train_on_val</strong><span class="classifier">bool, optional</span></dt><dd><p>Use train on validation</p>
+</dd>
+<dt><strong>num_workers</strong><span class="classifier">int, optional</span></dt><dd><p>Nummer of workers to use</p>
+</dd>
+<dt><strong>no_augmentation</strong><span class="classifier">bool, optional</span></dt><dd><p>Do not use augmentation to train the model</p>
+</dd>
+<dt><strong>size</strong><span class="classifier">tuple, optional</span></dt><dd><p>If no augmentation (–no_augmentation) is used, –size can be used to resize all the frame.</p>
+</dd>
+<dt><strong>sample</strong><span class="classifier">bool, optional</span></dt><dd><p>Use Sample instead of all dataset, by default False</p>
+</dd>
+<dt><strong>args</strong><span class="classifier">Namespace, optional</span></dt><dd><p>Attributes stored in specific Namespace, by default None</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><dl class="simple">
+<dt>Exception</dt><dd><p>Size argument must be one or two elements</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>Arguments entered by the user (kwargs) will replace those stored in args attribute</p>
 <dl class="py method">
-<dt class="sig sig-object py" id="alonet.detr.coco_data_modules.CocoDetection2Detr.add_argparse_args">
-<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">add_argparse_args</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parent_parser</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.detr.coco_data_modules.CocoDetection2Detr.add_argparse_args" title="Permalink to this definition">¶</a></dt>
-<dd><p>Extends existing argparse by default <cite>LightningDataModule</cite> attributes.</p>
+<dt class="sig sig-object py" id="alonet.detr.data_modules.data2detr.Data2Detr.add_argparse_args">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">add_argparse_args</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parent_parser</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.detr.data_modules.data2detr.Data2Detr.add_argparse_args" title="Permalink to this definition">¶</a></dt>
+<dd><p>Append the respect arguments to parser object</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>parent_parser</strong><span class="classifier">ArgumentParser</span></dt><dd><p>Object with previous arguments to append</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>ArgumentParser</dt><dd><p>Arguments updated</p>
+</dd>
+</dl>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="alonet.detr.coco_data_modules.CocoDetection2Detr.setup">
-<span class="sig-name descname"><span class="pre">setup</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">stage</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.detr.coco_data_modules.CocoDetection2Detr.setup" title="Permalink to this definition">¶</a></dt>
-<dd><p>Called at the beginning of fit (train + validate), validate, test, and predict.
-This is a good hook when you need to build models dynamically or adjust something about them.
-This hook is called on every process when using DDP.</p>
-<dl class="simple">
-<dt>Args:</dt><dd><p>stage: either <code class="docutils literal notranslate"><span class="pre">'fit'</span></code>, <code class="docutils literal notranslate"><span class="pre">'validate'</span></code>, <code class="docutils literal notranslate"><span class="pre">'test'</span></code>, or <code class="docutils literal notranslate"><span class="pre">'predict'</span></code></p>
+<dt class="sig sig-object py" id="alonet.detr.data_modules.data2detr.Data2Detr.setup">
+<span class="sig-name descname"><span class="pre">setup</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">stage</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.detr.data_modules.data2detr.Data2Detr.setup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called at the beginning of fit (train + validate), validate, test, and predict. This is a good hook when
+you need to build models dynamically or adjust something about them. This hook is called on every process when
+using DDP.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>stage</strong><span class="classifier">str, optional</span></dt><dd><p>Stage either <cite>fit</cite>, <cite>validate</cite>, <cite>test</cite> or <cite>predict</cite>, by default None</p>
 </dd>
 </dl>
-<p>Example:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">LitModel</span><span class="p">(</span><span class="o">...</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">l1</span> <span class="o">=</span> <span class="kc">None</span>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><dl class="simple">
+<dt>Exception</dt><dd><p>This class must be inhert and set <code class="xref py py-attr docutils literal notranslate"><span class="pre">train_dataset</span></code> and <code class="xref py py-attr docutils literal notranslate"><span class="pre">val_dataset</span></code> attributes</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
 
-    <span class="k">def</span> <span class="nf">prepare_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">download_data</span><span class="p">()</span>
-        <span class="n">tokenize</span><span class="p">()</span>
+<dl class="py method">
+<dt class="sig sig-object py" id="alonet.detr.data_modules.data2detr.Data2Detr.train_dataloader">
+<span class="sig-name descname"><span class="pre">train_dataloader</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#alonet.detr.data_modules.data2detr.Data2Detr.train_dataloader" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get train dataloader</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><dl class="simple">
+<dt>torch.utils.data.DataLoader</dt><dd><p>Dataloader for training process</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
 
-        <span class="c1"># don&#39;t do this</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">something</span> <span class="o">=</span> <span class="k">else</span>
+<dl class="py method">
+<dt class="sig sig-object py" id="alonet.detr.data_modules.data2detr.Data2Detr.train_transform">
+<span class="sig-name descname"><span class="pre">train_transform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">frame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">same_on_sequence</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">same_on_frames</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.detr.data_modules.data2detr.Data2Detr.train_transform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Transorm requered to train on each frame</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl>
+<dt><strong>frame</strong><span class="classifier"><a class="reference internal" href="../aloscene/frame.html#module-aloscene.frame" title="aloscene.frame"><code class="xref py py-mod docutils literal notranslate"><span class="pre">frame</span></code></a></span></dt><dd><p>Input frame to transform</p>
+</dd>
+<dt><strong>same_on_sequence</strong><span class="classifier">bool, optional</span></dt><dd><p>Use same data augmentation size of each sequence, by default True</p>
+</dd>
+<dt><strong>same_on_frames</strong><span class="classifier">bool, optional</span></dt><dd><p>Use same data augmentation size of each frame, by default False</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt><a class="reference internal" href="../aloscene/frame.html#module-aloscene.frame" title="aloscene.frame"><code class="xref py py-mod docutils literal notranslate"><span class="pre">frame</span></code></a></dt><dd><p>Frame with respective changes by transform function</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
 
-    <span class="k">def</span> <span class="nf">setup</span><span class="p">(</span><span class="n">stage</span><span class="p">):</span>
-        <span class="n">data</span> <span class="o">=</span> <span class="n">Load_data</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">l1</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">28</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">num_classes</span><span class="p">)</span>
+<dl class="py method">
+<dt class="sig sig-object py" id="alonet.detr.data_modules.data2detr.Data2Detr.val_dataloader">
+<span class="sig-name descname"><span class="pre">val_dataloader</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sampler</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.detr.data_modules.data2detr.Data2Detr.val_dataloader" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get val dataloader</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>sampler</strong><span class="classifier">torch.utils.data, optional</span></dt><dd><p>Sampler to load batches, by default None</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>torch.utils.data.DataLoader</dt><dd><p>Dataloader for validation process</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alonet.detr.data_modules.data2detr.Data2Detr.val_transform">
+<span class="sig-name descname"><span class="pre">val_transform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">frame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">same_on_sequence</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">same_on_frames</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.detr.data_modules.data2detr.Data2Detr.val_transform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Transform requered to valid on each frame</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl>
+<dt><strong>frame</strong><span class="classifier"><a class="reference internal" href="../aloscene/frame.html#module-aloscene.frame" title="aloscene.frame"><code class="xref py py-mod docutils literal notranslate"><span class="pre">frame</span></code></a></span></dt><dd><p>Input frame to transform</p>
+</dd>
+<dt><strong>same_on_sequence</strong><span class="classifier">bool, optional</span></dt><dd><p>Use same data augmentation size of each sequence, by default True</p>
+</dd>
+<dt><strong>same_on_frames</strong><span class="classifier">bool, optional</span></dt><dd><p>Use same data augmentation size of each frame, by default False</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt><a class="reference internal" href="../aloscene/frame.html#module-aloscene.frame" title="aloscene.frame"><code class="xref py py-mod docutils literal notranslate"><span class="pre">frame</span></code></a></dt><dd><p>Frame with respective changes by transform function</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="cocodetection2detr">
+<h2>CocoDetection2Detr<a class="headerlink" href="#cocodetection2detr" title="Permalink to this headline">¶</a></h2>
+<p>LightningDataModule that make the connection between <a class="reference internal" href="../alodataset/coco_detection_dataset.html#module-alodataset.coco_detection_dataset" title="alodataset.coco_detection_dataset"><code class="xref py py-mod docutils literal notranslate"><span class="pre">CocoDetectionDataset</span></code></a>
+and <a class="reference internal" href="detr_training.html#module-alonet.detr.train" title="alonet.detr.train"><code class="xref py py-mod docutils literal notranslate"><span class="pre">LitDetr</span></code></a> modules. See <a class="reference internal" href="#module-alonet.detr.data_modules.data2detr" title="alonet.detr.data_modules.data2detr"><code class="xref py py-mod docutils literal notranslate"><span class="pre">Data2Detr</span></code></a>
+to more information about the methods and configurations.</p>
+<div class="section" id="examples">
+<h3>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">alonet.detr</span> <span class="kn">import</span> <span class="n">CocoDetection2Detr</span>
+<span class="kn">from</span> <span class="nn">aloscene</span> <span class="kn">import</span> <span class="n">Frame</span>
+
+<span class="n">datamodule</span> <span class="o">=</span> <span class="n">CocoDetection2Detr</span><span class="p">(</span><span class="n">sample</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
+
+<span class="n">train_frame</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">datamodule</span><span class="o">.</span><span class="n">train_dataloader</span><span class="p">()))</span>
+<span class="n">train_frame</span> <span class="o">=</span> <span class="n">Frame</span><span class="o">.</span><span class="n">batch_list</span><span class="p">(</span><span class="n">train_frame</span><span class="p">)</span><span class="o">.</span><span class="n">get_view</span><span class="p">()</span><span class="o">.</span><span class="n">render</span><span class="p">()</span>
+
+<span class="n">val_frame</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">datamodule</span><span class="o">.</span><span class="n">val_dataloader</span><span class="p">()))</span>
+<span class="n">val_frame</span> <span class="o">=</span> <span class="n">Frame</span><span class="o">.</span><span class="n">batch_list</span><span class="p">(</span><span class="n">val_frame</span><span class="p">)</span><span class="o">.</span><span class="n">get_view</span><span class="p">()</span><span class="o">.</span><span class="n">render</span><span class="p">()</span>
 </pre></div>
 </div>
+<span class="target" id="module-alonet.detr.data_modules.coco_detection2detr"></span><dl class="py class">
+<dt class="sig sig-object py" id="alonet.detr.data_modules.coco_detection2detr.CocoDetection2Detr">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">alonet.detr.data_modules.coco_detection2detr.</span></span><span class="sig-name descname"><span class="pre">CocoDetection2Detr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'coco'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">classes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">train_folder</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'train2017'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">train_ann</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'annotations/instances_train2017.json'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">val_folder</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'val2017'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">val_ann</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'annotations/instances_val2017.json'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_masks</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.detr.data_modules.coco_detection2detr.CocoDetection2Detr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#alonet.detr.data_modules.data2detr.Data2Detr" title="alonet.detr.data_modules.data2detr.Data2Detr"><code class="xref py py-class docutils literal notranslate"><span class="pre">alonet.detr.data_modules.data2detr.Data2Detr</span></code></a></p>
+<p>LightningDataModule to use coco dataset in Detr models</p>
 <dl class="field-list simple">
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></p>
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>classes</strong><span class="classifier">list, optional</span></dt><dd><p>List to classes to be filtered in dataset, by default None</p>
+</dd>
+<dt><strong>name</strong><span class="classifier">str, optional</span></dt><dd><p>Database name, by default “coco”</p>
+</dd>
+<dt><strong>train_folder</strong><span class="classifier">str, optional</span></dt><dd><p>Image folder to train, by default “train2017”</p>
+</dd>
+<dt><strong>train_ann</strong><span class="classifier">str, optional</span></dt><dd><p>Json annotation file to train, by default “annotations/instances_train2017.json”</p>
+</dd>
+<dt><strong>val_folder</strong><span class="classifier">str, optional</span></dt><dd><p>Image folder to valid, by default “val2017”</p>
+</dd>
+<dt><strong>val_ann</strong><span class="classifier">str, optional</span></dt><dd><p>Json annotation file to valid, by default “annotations/instances_val2017.json”</p>
+</dd>
+<dt><strong>return_masks</strong><span class="classifier">bool, optional</span></dt><dd><p>For each frame return masks in segmentation attribute, by default False</p>
+</dd>
+<dt><strong>args</strong><span class="classifier">Namespace, optional</span></dt><dd><p>Attributes stored in specific Namespace, by default None</p>
+</dd>
+<dt><strong>**kwargs</strong></dt><dd><p><code class="xref py py-mod docutils literal notranslate"><span class="pre">Data2Detr</span></code> additional parameters</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Attributes</dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>label_names</strong><span class="classifier">list</span></dt><dd><p>List of labels names use to encode the classes by index</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="alonet.detr.data_modules.coco_detection2detr.CocoDetection2Detr.setup">
+<span class="sig-name descname"><span class="pre">setup</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">stage</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.detr.data_modules.coco_detection2detr.CocoDetection2Detr.setup" title="Permalink to this definition">¶</a></dt>
+<dd><p><code class="xref py py-attr docutils literal notranslate"><span class="pre">train_dataset</span></code> and <code class="xref py py-attr docutils literal notranslate"><span class="pre">val_dataset</span></code> datasets setup, follow the parameters used
+in class declaration. Also, set <code class="xref py py-attr docutils literal notranslate"><span class="pre">label_names</span></code> attribute.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>stage</strong><span class="classifier">str, optional</span></dt><dd><p>Stage either <cite>fit</cite>, <cite>validate</cite>, <cite>test</cite> or <cite>predict</cite>, by default None</p>
+</dd>
+</dl>
 </dd>
 </dl>
 </dd></dl>
 
-<dl class="py method">
-<dt class="sig sig-object py" id="alonet.detr.coco_data_modules.CocoDetection2Detr.train_dataloader">
-<span class="sig-name descname"><span class="pre">train_dataloader</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#alonet.detr.coco_data_modules.CocoDetection2Detr.train_dataloader" title="Permalink to this definition">¶</a></dt>
-<dd><p>Train dataloader</p>
 </dd></dl>
 
-<dl class="py method">
-<dt class="sig sig-object py" id="alonet.detr.coco_data_modules.CocoDetection2Detr.train_transform">
-<span class="sig-name descname"><span class="pre">train_transform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">frame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">same_on_sequence</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">same_on_frames</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.detr.coco_data_modules.CocoDetection2Detr.train_transform" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+</div>
+</div>
+<div class="section" id="cocopanoptic2detr">
+<h2>CocoPanoptic2Detr<a class="headerlink" href="#cocopanoptic2detr" title="Permalink to this headline">¶</a></h2>
+<p>LightningDataModule that make the connection between <code class="xref py py-mod docutils literal notranslate"><span class="pre">CocoPanopticDataset</span></code>
+and <a class="reference internal" href="panoptic_training.html#module-alonet.detr_panoptic.train" title="alonet.detr_panoptic.train"><code class="xref py py-mod docutils literal notranslate"><span class="pre">LitPanopticDetr</span></code></a> modules. See
+<a class="reference internal" href="#module-alonet.detr.data_modules.data2detr" title="alonet.detr.data_modules.data2detr"><code class="xref py py-mod docutils literal notranslate"><span class="pre">Data2Detr</span></code></a> to more information about the methods and configurations.</p>
+<div class="section" id="id1">
+<h3>Examples<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">alonet.detr</span> <span class="kn">import</span> <span class="n">CocoPanoptic2Detr</span>
+<span class="kn">from</span> <span class="nn">aloscene</span> <span class="kn">import</span> <span class="n">Frame</span>
 
-<dl class="py method">
-<dt class="sig sig-object py" id="alonet.detr.coco_data_modules.CocoDetection2Detr.val_check">
-<span class="sig-name descname"><span class="pre">val_check</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#alonet.detr.coco_data_modules.CocoDetection2Detr.val_check" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<span class="n">datamodule</span> <span class="o">=</span> <span class="n">CocoPanoptic2Detr</span><span class="p">(</span><span class="n">sample</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
 
+<span class="n">train_frame</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">datamodule</span><span class="o">.</span><span class="n">train_dataloader</span><span class="p">()))</span>
+<span class="n">train_frame</span> <span class="o">=</span> <span class="n">Frame</span><span class="o">.</span><span class="n">batch_list</span><span class="p">(</span><span class="n">train_frame</span><span class="p">)</span><span class="o">.</span><span class="n">get_view</span><span class="p">()</span><span class="o">.</span><span class="n">render</span><span class="p">()</span>
+
+<span class="n">val_frame</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">datamodule</span><span class="o">.</span><span class="n">val_dataloader</span><span class="p">()))</span>
+<span class="n">val_frame</span> <span class="o">=</span> <span class="n">Frame</span><span class="o">.</span><span class="n">batch_list</span><span class="p">(</span><span class="n">val_frame</span><span class="p">)</span><span class="o">.</span><span class="n">get_view</span><span class="p">()</span><span class="o">.</span><span class="n">render</span><span class="p">()</span>
+</pre></div>
+</div>
+<span class="target" id="module-alonet.detr.data_modules.coco_panoptic2detr"></span><dl class="py class">
+<dt class="sig sig-object py" id="alonet.detr.data_modules.coco_panoptic2detr.CocoPanoptic2Detr">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">alonet.detr.data_modules.coco_panoptic2detr.</span></span><span class="sig-name descname"><span class="pre">CocoPanoptic2Detr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.detr.data_modules.coco_panoptic2detr.CocoPanoptic2Detr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#alonet.detr.data_modules.data2detr.Data2Detr" title="alonet.detr.data_modules.data2detr.Data2Detr"><code class="xref py py-class docutils literal notranslate"><span class="pre">alonet.detr.data_modules.data2detr.Data2Detr</span></code></a></p>
 <dl class="py method">
-<dt class="sig sig-object py" id="alonet.detr.coco_data_modules.CocoDetection2Detr.val_dataloader">
-<span class="sig-name descname"><span class="pre">val_dataloader</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sampler</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.detr.coco_data_modules.CocoDetection2Detr.val_dataloader" title="Permalink to this definition">¶</a></dt>
-<dd><p>Val dataloader</p>
+<dt class="sig sig-object py" id="alonet.detr.data_modules.coco_panoptic2detr.CocoPanoptic2Detr.setup">
+<span class="sig-name descname"><span class="pre">setup</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">stage</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fix_classes_len</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">250</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.detr.data_modules.coco_panoptic2detr.CocoPanoptic2Detr.setup" title="Permalink to this definition">¶</a></dt>
+<dd><p><code class="xref py py-attr docutils literal notranslate"><span class="pre">train_dataset</span></code> and <code class="xref py py-attr docutils literal notranslate"><span class="pre">val_dataset</span></code> datasets setup, follow the parameters used
+in class declaration. Also, set <code class="xref py py-attr docutils literal notranslate"><span class="pre">label_names</span></code> attribute.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>stage</strong><span class="classifier">str, optional</span></dt><dd><p>Stage either <cite>fit</cite>, <cite>validate</cite>, <cite>test</cite> or <cite>predict</cite>, by default None</p>
+</dd>
+<dt><strong>fix_classes_len</strong><span class="classifier">int, optional</span></dt><dd><p>Fix datasets to a specific number the number of classes, filling the rest with “N/A” value.</p>
+</dd>
+</dl>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="py method">
-<dt class="sig sig-object py" id="alonet.detr.coco_data_modules.CocoDetection2Detr.val_transform">
-<span class="sig-name descname"><span class="pre">val_transform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">frame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">same_on_sequence</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">same_on_frames</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.detr.coco_data_modules.CocoDetection2Detr.val_transform" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
 </dd></dl>
 
+</div>
 </div>
 </div>
 

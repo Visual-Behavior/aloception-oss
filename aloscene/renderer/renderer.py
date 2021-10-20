@@ -61,7 +61,7 @@ class View(object):
     CV = "cv"
     MATPLOTLIB = "matplotlib"
 
-    def __init__(self, image, title=None):
+    def __init__(self, image, title=None, **kwargs):
         """ The view class is used to store the information about one view and set
         the parameters that could be automaticly changed during the scene rendering.
 

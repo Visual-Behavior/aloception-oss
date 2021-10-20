@@ -79,7 +79,7 @@ class Mask(aloscene.tensors.SpatialAugmentedTensor):
         return intersection / (union - intersection)
 
     def get_view(
-        self, frame: Tensor = None, size: tuple = None, labels_set: str = None, color_by_cat: bool = False, **kwargs
+        self, frame: Tensor = None, size: tuple = None, labels_set: str = None, color_by_cat: bool = True, **kwargs
     ):
         """Get view of segmentation mask and used it in a input :mod:`Frame <aloscene.frame>`
 
@@ -92,7 +92,7 @@ class Mask(aloscene.tensors.SpatialAugmentedTensor):
         labels_set : str, optional
             Set of labels to show in segmentation when multiple labels are defined, by default None
         color_by_cat : bool, optional
-            Set same color by category ID, by default False
+            Set same color by category ID, by default True
 
         Returns
         -------
@@ -125,7 +125,7 @@ class Mask(aloscene.tensors.SpatialAugmentedTensor):
             frame = 0.2 * frame + 0.8 * masks
         return View(frame, **kwargs)
 
-    def __get_view__(self, labels_set: str = None, title: str = None, color_by_cat: bool = False, **kwargs):
+    def __get_view__(self, labels_set: str = None, title: str = None, color_by_cat: bool = True, **kwargs):
         """Create a view of the frame"""
         from alodataset.utils.panoptic_utils import id2rgb
 

@@ -6,25 +6,15 @@ in a :mod:`Frame object <aloscene.frame>`. Ideal for object detection applicatio
 import torch
 import torch.utils.data
 from pycocotools import mask as coco_mask
+from pycocotools.coco import COCO
 import numpy as np
 import os
-
-# import detr.datasets.transforms as T
-
-from torchvision.datasets.coco import CocoDetection
 
 from alodataset import BaseDataset
 from aloscene import BoundingBoxes2D, Frame, Labels, Mask
 
 
-class CocoDetectionSample(CocoDetection):
-    def __init__(self, *args, **kwargs):
-        if self.sample:
-            return
-        super().__init__(*args, **kwargs)
-
-
-class CocoDetectionDataset(BaseDataset, CocoDetectionSample):
+class CocoDetectionDataset(BaseDataset):
     """
     Attributes
     ----------
@@ -80,27 +70,21 @@ class CocoDetectionDataset(BaseDataset, CocoDetectionSample):
         fix_classes_len: int = None,
         **kwargs,
     ):
-        if "sample" not in kwargs:
-            kwargs["sample"] = False
-
-        self.sample = kwargs["sample"]
-        if not self.sample:
+        super(CocoDetectionDataset, self).__init__(name=name, **kwargs)
+        if self.sample:
+            return
+        else:
             assert img_folder is not None, "When sample = False, img_folder must be given."
             assert ann_file is not None, "When sample = False, ann_file must be given."
 
-            self.name = name
-            dataset_dir = BaseDataset.get_dataset_dir(self)
-            img_folder = os.path.join(dataset_dir, img_folder)
-            ann_file = os.path.join(dataset_dir, ann_file)
-            kwargs["sample"] = self.sample
-
-        super(CocoDetectionDataset, self).__init__(name=name, root=img_folder, annFile=ann_file, **kwargs)
-        if self.sample:
-            return
-
-        cats = self.coco.loadCats(self.coco.getCatIds())
+        # Create properties
+        self.img_folder = os.path.join(self.dataset_dir, img_folder)
+        self.coco = COCO(os.path.join(self.dataset_dir, ann_file))
+        self.return_masks = return_masks
+        self.items = list(sorted(self.coco.imgs.keys()))
 
         # Setup the class names
+        cats = self.coco.loadCats(self.coco.getCatIds())
         nb_category = max(cat["id"] for cat in cats)
         label_names = ["N/A"] * (nb_category + 1)
         for cat in cats:
@@ -122,15 +106,13 @@ class CocoDetectionDataset(BaseDataset, CocoDetectionSample):
 
             # Check each annotation and keep only that have at least 1 box in classes list
             ids = []
-            for i in self.ids:
-                target = CocoDetectionSample._load_target(self, i)
+            for i in self.items:
+                target = self.coco.loadAnns(self.coco.getAnnIds(i))
                 if any([self._ids_renamed[bbox["category_id"]] >= 0 for bbox in target]):
                     ids.append(i)
-            self.ids = ids  # Remove images without bboxes with classes in classes list
+            self.items = ids  # Remove images without bboxes with classes in classes list
 
-        self.prepare = ConvertCocoPolysToMask(return_masks)
-        self.items = self.ids
-
+        # Fix lenght of label_names to a desired `fix_classes_len`
         if fix_classes_len is not None:
             if fix_classes_len > len(self.label_names):
                 self.label_names += ["N/A"] * (fix_classes_len - len(self.label_names))
@@ -138,6 +120,7 @@ class CocoDetectionDataset(BaseDataset, CocoDetectionSample):
                 raise ValueError(
                     f"fix_classes_len must be higher than the lenght of label_names ({len(self.label_names)})."
                 )
+        self.prepare = ConvertCocoPolysToMask(return_masks)
 
     def getitem(self, idx):
         """Get the :mod:`Frame <aloscene.frame>` corresponds to *idx* index
@@ -154,13 +137,12 @@ class CocoDetectionDataset(BaseDataset, CocoDetectionSample):
         """
         if self.sample:
             return BaseDataset.__getitem__(self, idx)
-        img, target = CocoDetectionSample.__getitem__(self, idx)
 
-        image_id = self.ids[idx]
+        image_id = self.items[idx]
+        frame = Frame(os.path.join(self.img_folder, self.coco.loadImgs(id)[0]["file_name"]))
+        target = self.coco.loadAnns(self.coco.getAnnIds(id))
         target = {"image_id": image_id, "annotations": target}
-
-        frame = Frame(np.transpose(np.array(img), [2, 0, 1]), names=("C", "H", "W"))
-        _, target = self.prepare(img, target)
+        _, target = self.prepare(frame, target)
 
         # Clean index by unique classes filtered
         if self._ids_renamed is not None:
@@ -231,7 +213,7 @@ class ConvertCocoPolysToMask(object):
 
     def __call__(self, image, target):
 
-        w, h = image.size[0], image.size[1]
+        w, h = image.shape[-1], image.shape[-2]
 
         image_id = target["image_id"]
         image_id = torch.tensor([image_id])
@@ -291,15 +273,10 @@ class ConvertCocoPolysToMask(object):
         return image, target
 
 
-def main():
-    """Main"""
+if __name__ == "__main__":
     coco_dataset = CocoDetectionDataset(sample=True)
     for f, frames in enumerate(coco_dataset.train_loader(batch_size=2)):
         frames = Frame.batch_list(frames)
         frames.get_view().render()
         if f > 1:
             break
-
-
-if __name__ == "__main__":
-    main()

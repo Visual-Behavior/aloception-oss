@@ -437,7 +437,7 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         view = View(frame, title=title)
         return view
 
-    def _pad(self, offset_y: tuple, offset_x: tuple, value=0, **kwargs):
+    def _pad(self, offset_y: tuple, offset_x: tuple, value=0, padding_mask=False, **kwargs):
         """Pad the based on the given offset
 
         Parameters
@@ -446,6 +446,8 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
             (percentage top_offset, percentage bottom_offset) Percentage based on the previous size
         offset_x: tuple
             (percentage left_offset, percentage right_offset) Percentage based on the previous size
+        padding_mask: bool
+            If the padding_mask is True a mask will be stored on the frame to show the padded area.
 
         Returns
         -------
@@ -454,7 +456,7 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         pad_values = {"01": 0, "255": 0, "minmax_sym": -1}
         if self.normalization in pad_values:
             pad_value = pad_values[self.normalization]
-            return super()._pad(offset_y, offset_x, value=pad_value, **kwargs)
+            n_tensor = super()._pad(offset_y, offset_x, value=pad_value, padding_mask=padding_mask, **kwargs)
         elif self.mean_std is not None:
             # Set the new height and weight of the frame
             pad_top, pad_bottom, pad_left, pad_right = (
@@ -486,9 +488,15 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
             # Create a new frame with the same parameters and set back a copy of the previous labels
             n_tensor = type(self)(n_tensor, normalization=self.normalization, mean_std=self.mean_std, names=self.names)
             n_tensor.set_children(self.clone().get_children())
-            return n_tensor
+
+            if padding_mask and not isinstance(self, aloscene.Mask):
+                mask = self._get_paded_mask(offset_y, offset_x)
+                n_tensor.mask = mask
         else:
             raise Exception("This normalziation {} is not handle by the frame _pad method".format(self.normalization))
+
+        return n_tensor
+
 
     def _spatial_shift(self, shift_y: float, shift_x: float, **kwargs):
         """

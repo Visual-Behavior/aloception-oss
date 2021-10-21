@@ -73,6 +73,7 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
         absolute: bool,
         labels: Union[dict, Labels] = None,
         frame_size=None,
+        clip_on_crop=True,
         names=("N", None),
         *args,
         **kwargs,
@@ -91,6 +92,7 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
         tensor.add_property("boxes_format", boxes_format)
         tensor.add_property("absolute", absolute)
         tensor.add_property("padded_size", None)
+        tensor.add_property("clip_on_crop", True)
 
         if absolute and frame_size is None:
             raise Exception("If the boxes format are absolute, the `frame_size` must be set")
@@ -622,6 +624,13 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
         # Put back the instance into the same state as before
         if absolute:
             boxes = boxes.abs_pos(frame_size)
+
+        if boxes.padded_size is not None:
+            boxes.padded_size = (
+                (boxes.padded_size[0][0], boxes.padded_size[0][1]),
+                (boxes.padded_size[1][1], boxes.padded_size[1][0])
+            )
+
         boxes = boxes.get_with_format(boxes_format)
 
         return boxes
@@ -645,7 +654,7 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
             abs_size = tuple(s * fs for s, fs in zip(size, boxes.frame_size))
             return boxes.abs_pos(abs_size)
 
-    def _crop(self, H_crop: tuple, W_crop: tuple, **kwargs):
+    def _crop(self, H_crop: tuple, W_crop: tuple, clip_boxes2d=True, **kwargs):
         """Crop Boxes with the given relative crop
         Parameters
         ----------
@@ -660,6 +669,7 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
         """
         if self.padded_size is not None:
             raise Exception("Can't crop when padded size is not Note. Call fit_to_padded_size() first")
+
 
         absolute = self.absolute
         frame_size = self.frame_size
@@ -677,8 +687,9 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
         max_size = torch.as_tensor([w, h, w, h], dtype=torch.float32)
         cropped_boxes = n_boxes - torch.as_tensor([x, y, x, y])
 
-        cropped_boxes = torch.min(cropped_boxes.rename(None), max_size).reset_names()
-        cropped_boxes = cropped_boxes.clamp(min=0)
+        if cropped_boxes.clip_on_crop:
+            cropped_boxes = torch.min(cropped_boxes.rename(None), max_size).reset_names()
+            cropped_boxes = cropped_boxes.clamp(min=0)
 
         # Filter to keep only boxes with area > 0
         area = cropped_boxes.area()

@@ -322,24 +322,12 @@ class SpatialAugmentedTensor(AugmentedTensor):
         for spatial_tensor in n_sa_tensors:
             h_pad = (0, max_h - spatial_tensor.H)
             w_pad = (0, max_w - spatial_tensor.W)
-            padded_spatial_tensor = spatial_tensor.pad(h_pad, w_pad, pad_boxes=pad_boxes, pad_points2d=pad_points2d)
+            padded_spatial_tensor = spatial_tensor.pad(
+                h_pad, w_pad, pad_boxes=pad_boxes, pad_points2d=pad_points2d, padding_mask=True
+            )
             n_padded_list.append(padded_spatial_tensor)
 
         n_augmented_tensors = torch.cat(n_padded_list, dim=0)
-
-        # Set the new mask and tensor buffer filled up with zeros and ones
-        # Also, for normalized frames, the zero value is actually different based on the mean/std
-        n_tensor = torch.zeros(tuple(n_tensor_shape), dtype=dtype, device=device)
-
-        # Create the batch list mask
-        n_mask = torch.ones(tuple(n_mask_shape), dtype=torch.float, device=device)
-        for b, frame in enumerate(n_sa_tensors):
-            n_slice = frame.get_slices({"B": b, "H": slice(None, frame.H), "W": slice(None, frame.W)})
-            n_tensor[n_slice].copy_(frame[0])
-            n_mask[n_slice] = 0
-
-        # n_frame = instance(n_tensor, names=n_names, normalization=normalization, device=device, mean_std=mean_std)
-        n_augmented_tensors.append_mask(aloscene.Mask(n_mask, names=n_names))
 
         return n_augmented_tensors
 
@@ -478,7 +466,44 @@ class SpatialAugmentedTensor(AugmentedTensor):
         slices = self.get_slices({"H": slice(hmin, hmax), "W": slice(wmin, wmax)})
         return self[slices]
 
-    def _pad_label(self, label, offset_y, offset_x, **kwargs):
+
+    def _get_paded_mask(self, offset_y: tuple, offset_x: tuple):
+        """ Generate a mask to keep track of the padded part of the Spatial Tensor
+        """
+
+        # Set the new height and weight of the frame
+        pad_top, pad_bottom, pad_left, pad_right = (
+            round(offset_y[0] * self.H),
+            round(offset_y[1] * self.H),
+            round(offset_x[0] * self.W),
+            round(offset_x[1] * self.W),
+        )
+        n_H = self.H + pad_top + pad_bottom
+        n_W = self.W + pad_left + pad_right
+
+        # Define the new shape of the padded frame
+        n_mask_shape = list(self.shape)
+        n_mask_shape[self.names.index("C")] = 1
+        n_mask_shape[self.names.index("H")] = n_H
+        n_mask_shape[self.names.index("W")] = n_W
+
+        if self.mask is None:
+            mask = torch.zeros(*tuple(n_mask_shape), dtype=self.dtype, device=self.device) + 1
+            n_slice = self.get_slices({"H": slice(pad_top, n_H - pad_bottom), "W": slice(pad_left, n_W - pad_right)})
+            mask[n_slice] = 0
+        else:
+            n_slice = self.get_slices({"H": slice(pad_top, n_H - pad_bottom), "W": slice(pad_left, n_W - pad_right)})
+            mask = torch.zeros(*tuple(n_mask_shape), dtype=self.dtype, device=self.device) + 1
+            mask[n_slice] = self.mask.as_tensor()
+
+
+        mask = aloscene.Mask(mask, names=self.names)
+        return mask
+
+    def _pad_label(self, label, offset_y, offset_x, exception=None, **kwargs):
+        # One particular label will not be pad (the mask label. This is a special case handle differently)
+        if exception is not None and exception is label:
+            return label
         kwargs["frame_size"] = self.HW
         try:
             label_pad = label._pad(offset_y, offset_x, **kwargs)
@@ -486,7 +511,36 @@ class SpatialAugmentedTensor(AugmentedTensor):
         except AttributeError:
             return label
 
-    def _pad(self, offset_y: tuple, offset_x: tuple, value=0, **kwargs):
+    def pad(self, offset_y: tuple, offset_x: tuple, **kwargs):
+        """
+        Pad AugmentedTensor, and its labels recursively
+
+        Parameters
+        ----------
+        offset_y: tuple of float or tuple of int
+            (percentage top_offset, percentage bottom_offset) Percentage based on the previous size If tuple of int
+            the absolute value will be converted to float (percentahe) before to be applied.
+        offset_x: tuple of float or tuple of int
+            (percentage left_offset, percentage right_offset) Percentage based on the previous size. If tuple of int
+            the absolute value will be converted to float (percentage) before to be applied.
+
+        Returns
+        -------
+        croped : aloscene AugmentedTensor
+            croped tensor
+        """
+        if isinstance(offset_y[0], int) and isinstance(offset_y[1], int):
+            offset_y = (offset_y[0] / self.H, offset_y[1] / self.H)
+        if isinstance(offset_x[0], int) and isinstance(offset_x[1], int):
+            offset_x = (offset_x[0] / self.W, offset_x[1] / self.W)
+
+        padded = self._pad(offset_y, offset_x, **kwargs)
+        padded.recursive_apply_on_children_(lambda label: self._pad_label(
+            label, offset_y, offset_x, exception=padded.mask, **kwargs)
+        )
+        return padded
+
+    def _pad(self, offset_y: tuple, offset_x: tuple, value=0, padding_mask=False, **kwargs):
         """Pad the based on the given offset
 
         Parameters
@@ -495,6 +549,9 @@ class SpatialAugmentedTensor(AugmentedTensor):
             (percentage top_offset, percentage bottom_offset) Percentage based on the previous size
         offset_x: tuple
             (percentage left_offset, percentage right_offset) Percentage based on the previous size
+        padding_mask: bool
+            If the padding_mask is True a mask will be stored on the frame to show the padded area.
+
 
         Returns
         -------
@@ -507,6 +564,11 @@ class SpatialAugmentedTensor(AugmentedTensor):
 
         padding = [pad_left, pad_top, pad_right, pad_bottom]
         tensor_padded = F.pad(self.rename(None), padding, padding_mode="constant", fill=value).reset_names()
+
+        if padding_mask and not isinstance(self, aloscene.Mask):
+            mask = self._get_paded_mask(offset_y, offset_x)
+            tensor_padded.mask = mask
+
         return tensor_padded
 
     def _getitem_child(self, label, label_name, idx):

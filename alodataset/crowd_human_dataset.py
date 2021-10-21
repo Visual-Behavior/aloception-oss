@@ -49,6 +49,9 @@ class CrowdHumanDataset(BaseDataset):
         else:
             self.img_folder = os.path.join(self.dataset_dir, img_folder, "Images")
             self.ann_file = os.path.join(self.dataset_dir, ann_file)
+
+        print("img_folder", self.img_folder)
+
         # If the current ann file do not exists and we're using a prepared
         # dataset, we'll try to set back the directory based on the original
         # folder
@@ -66,24 +69,26 @@ class CrowdHumanDataset(BaseDataset):
 
         self.items = []
         for a, ann_file in enumerate(self.ann_file):
-            line = self.load_json_lines(ann_file, a)
+            line = self.load_json_lines(ann_file, a, boxes_limit)
             self.items += line
 
+        print("Number of items", len(self.items))
         self.bbox_types = ["vbox", "fbox", "hbox"]
         self.boxes_limit = boxes_limit
 
-    def load_json_lines(self, fpath, ann_id):
+    def load_json_lines(self, fpath, ann_id, boxes_limit):
         assert os.path.exists(fpath)
         with open(fpath, "r") as fid:
             lines = fid.readlines()
 
+        m = 100
         items = []
         for line in lines:
             content = json.loads(line.strip("\n"))
-            if len(content["gtboxes"]) <= 50 and len(content["gtboxes"]) >= 2:
+            nb = sum([1 for key in content["gtboxes"] if "ignore" not in key["extra"] or key["extra"]["ignore"] == 0])
+            if nb <= boxes_limit:
                 content["ann_id"] = ann_id
                 items.append(content)
-
         return items
 
     def load_gt(self, dict_input):

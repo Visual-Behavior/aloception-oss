@@ -369,12 +369,13 @@ class RandomSizePad(AloTransform):
         self._pad_top = pad_top
         self._pad_bottom = pad_bottom
 
-    def __call__(self, frame):
-
-        print((self._pad_top, self._pad_bottom), (self._pad_left, self._pad_right))
-
+    def __call__(self, frame, pad_boxes=True, pad_points2d=True, padding_mask=False):
         return frame.pad(
-            offset_y=(self._pad_top, self._pad_bottom), offset_x=(self._pad_left, self._pad_right), pad_boxes=True
+            offset_y=(self._pad_top, self._pad_bottom),
+            offset_x=(self._pad_left, self._pad_right),
+            pad_boxes=pad_boxes,
+            pad_points2=pad_points2d,
+            padding_mask=padding_mask
         )
 
 
@@ -408,14 +409,18 @@ class RandomPad(AloTransform):
         self._pad_top = pad_top
         self._pad_bottom = pad_bottom
 
-    def __call__(self, frame):
+    def __call__(self, frame, pad_boxes=True, pad_points2d=True, padding_mask=False):
         return frame.pad(
-            offset_y=(self._pad_top, self._pad_bottom), offset_x=(self._pad_left, self._pad_right), pad_boxes=True
+            offset_y=(self._pad_top, self._pad_bottom),
+            offset_x=(self._pad_left, self._pad_right),
+            pad_boxes=pad_boxes,
+            pad_points2d=pad_points2d,
+            padding_mask=padding_mask
         )
 
 
 class RandomCrop(AloTransform):
-    def __init__(self, size, *args, **kwargs):
+    def __init__(self, size, clip_boxes2d=True, *args, **kwargs):
         """Randomly crop the frame.
 
         Parameters
@@ -424,6 +429,7 @@ class RandomCrop(AloTransform):
             size (h, w) in pixels of the cropped region
         """
         self.size = size
+        self.clip_boxes2d = clip_boxes2d
         super().__init__(*args, **kwargs)
 
     def sample_params(self):

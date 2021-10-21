@@ -607,6 +607,7 @@ class AugmentedTensor(torch.Tensor):
             self_ref_tensor._saved_names = None
             return self_ref_tensor
         else:
+            self._saved_names = None
             return self
 
     def rename_(self, *args, auto_restore_names=False, **kwargs):
@@ -637,7 +638,11 @@ class AugmentedTensor(torch.Tensor):
                 label = getattr(self, name)
                 if label is not None:
                     self.apply_on_child(label, _rename)
-        self._saved_names = self.names
+        if any(v is not None for v in self.names):
+            self._saved_names = self.names
+        else:
+            self._saved_names = None
+
         super().rename_(*args, **kwargs)
         self._auto_restore_names = auto_restore_names
         return self

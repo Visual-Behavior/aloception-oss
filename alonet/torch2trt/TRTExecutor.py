@@ -38,6 +38,7 @@ class TRTExecutor:
         stream: pycuda.driver.Stream = None,
         sync_mode: bool = False,
         verbose_logger: bool = False,
+        profiling: bool = False,
     ):
         """
         Parameters
@@ -65,6 +66,8 @@ class TRTExecutor:
         else:
             self.engine = engine
         self.context = self.engine.create_execution_context()
+        if profiling:
+            self.context.profiler = trt.Profiler()
         # TODO: test this mode later with DETR segmentaion
         if not has_dynamic_shape:
             self.inputs, self.outputs, self.bindings, self.stream = allocate_buffers(

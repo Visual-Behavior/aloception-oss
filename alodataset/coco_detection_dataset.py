@@ -3,12 +3,13 @@
 in a :mod:`Frame object <aloscene.frame>`. Ideal for object detection applications.
 """
 
+import os
+import numpy as np
 import torch
-import torch.utils.data
+from collections import defaultdict
 from pycocotools import mask as coco_mask
 from pycocotools.coco import COCO
-import numpy as np
-import os
+from typing import Dict, Union
 
 from alodataset import BaseDataset
 from aloscene import BoundingBoxes2D, Frame, Labels, Mask
@@ -25,11 +26,11 @@ class CocoDetectionDataset(BaseDataset):
     Parameters
     ----------
     img_folder : str
-        Path to the image folder relative at `dataset_dir` (stored into the aloception config file)
+        Path to the image folder relative at :attr:`dataset_dir` (stored into the aloception config file)
     ann_file : str
-        Path to the annotation file relative at `dataset_dir` (stored into the aloception config file)
+        Path to the annotation file relative at :attr:`dataset_dir` (stored into the aloception config file)
     name : str, optional
-        Key of database name in `alodataset_config.json` file, by default *coco*
+        Key of database name in :attr:`alodataset_config.json` file, by default *coco*
     return_masks : bool, optional
         Include masks labels in the output, by default False
     classes : list, optional
@@ -38,22 +39,23 @@ class CocoDetectionDataset(BaseDataset):
         Fix to a specific number the number of classes, filling the rest with "N/A" value.
         Use when the number of model outputs does not match with the number of classes in the dataset,
         by default None
+    return_multiple_labels : bool, optional
+        Return Labels as a dictionary, with all posible categories found in annotations file, by default False
     **kwargs : dict
         :mod:`BaseDataset <base_dataset>` optional parameters
 
     Raises
     ------
     Exception
-        If a classes list is decided, each label must be inside of :attr:`label_names` list attribute
+        If a :attr:`classes` list is decided, each label must be inside of :attr:`label_names` list attribute
     ValueError
-        If fix_classes_len is desired, fix_classes_len > len(label_names)
+        If :attr:`fix_classes_len` is desired, :attr:`fix_classes_len` > len(:attr:`label_names`)
 
     Examples
     --------
         >>> coco_ds = CocoDetectionDataset(
         ... img_folder = "val2017",
         ... ann_file = "annotations/instances_val2017.json",
-        ... mode = "validation"
         )
         >>> frames = next(iter(coco_ds.train_loader()))
         >>> frames = frames[0].batch_list(frames)
@@ -68,6 +70,7 @@ class CocoDetectionDataset(BaseDataset):
         return_masks=False,
         classes: list = None,
         fix_classes_len: int = None,
+        return_multiple_labels: list = None,
         **kwargs,
     ):
         super(CocoDetectionDataset, self).__init__(name=name, **kwargs)
@@ -80,7 +83,6 @@ class CocoDetectionDataset(BaseDataset):
         # Create properties
         self.img_folder = os.path.join(self.dataset_dir, img_folder)
         self.coco = COCO(os.path.join(self.dataset_dir, ann_file))
-        self.return_masks = return_masks
         self.items = list(sorted(self.coco.imgs.keys()))
 
         # Setup the class names
@@ -91,10 +93,9 @@ class CocoDetectionDataset(BaseDataset):
             label_names[cat["id"]] = cat["name"]
 
         self._ids_renamed = classes
-        if classes is None:
-            self.label_names = label_names
-        else:
-            notclass = [label for label in classes if label not in label_names]
+        self.label_names = label_names
+        if classes is not None:
+            notclass = [label for label in classes if label not in self.label_names]
             if len(notclass) > 0:  # Ignore all labels not in classes
                 raise Exception(
                     f"The {notclass} classes dont match in label_names list. Possible values: {self.label_names}"
@@ -114,36 +115,75 @@ class CocoDetectionDataset(BaseDataset):
 
         # Fix lenght of label_names to a desired `fix_classes_len`
         if fix_classes_len is not None:
-            if fix_classes_len > len(self.label_names):
-                self.label_names += ["N/A"] * (fix_classes_len - len(self.label_names))
-            else:
-                raise ValueError(
-                    f"fix_classes_len must be higher than the lenght of label_names ({len(self.label_names)})."
-                )
+            self._fix_classes(fix_classes_len)
         self.prepare = ConvertCocoPolysToMask(return_masks)
 
-    def getitem(self, idx):
-        """Get the :mod:`Frame <aloscene.frame>` corresponds to *idx* index
+        # Process to return multiple labels : Create encoding objects
+        self.label_types, self.label_types_names = None, None
+        if return_multiple_labels:
+            dict_cats = {
+                lbl: self.coco.loadCats(self.coco.getCatIds(lbl))[0] if lbl != "N/A" else {}
+                for lbl in self.label_names
+            }
+            self.label_types, self.label_types_names = self._get_label_types(dict_cats)
 
-        Parameters
-        ----------
-        idx : int
-            Index of the frame to be returned
+    def _get_label_types(self, dict_cats: Dict[dict, list]):
+        label_types, label_types_names = defaultdict(list), defaultdict(list)
 
-        Returns
-        -------
-        aloscene.Frame
-            Frame with their corresponding boxes and labels
-        """
-        if self.sample:
-            return BaseDataset.__getitem__(self, idx)
+        # Get name list by each super-category
+        for cat in dict_cats.values():
+            for ltype, name in cat.items():
+                if ltype in ["id", "name"]:
+                    break
+                label_types_names[ltype].append(name)
 
-        image_id = self.items[idx]
-        frame = Frame(os.path.join(self.img_folder, self.coco.loadImgs(id)[0]["file_name"]))
-        target = self.coco.loadAnns(self.coco.getAnnIds(id))
-        target = {"image_id": image_id, "annotations": target}
-        _, target = self.prepare(frame, target)
+        # Remove duplicate types names and add N/A class
+        for ltype in label_types_names:
+            label_types_names[ltype] = sorted(list(set(label_types_names[ltype])))
+            label_types_names[ltype].append("N/A")
 
+        # Get encoding for each category
+        for lbl in self.label_names:
+            cat = dict_cats[lbl]
+            for ltype in label_types_names:
+                if len(cat) > 0:
+                    label_types[ltype].append(label_types_names[ltype].index(cat[ltype]))
+                else:
+                    label_types[ltype].append(label_types_names[ltype].index("N/A"))
+
+        return label_types, label_types_names
+
+    def _fix_classes(self, new_label_size):
+        if new_label_size > len(self.label_names):
+            self.label_names += ["N/A"] * (new_label_size - len(self.label_names))
+        else:
+            raise ValueError(
+                f"fix_classes_len must be higher than the lenght of label_names ({len(self.label_names)})."
+            )
+
+    def _append_labels(self, element: Union[BoundingBoxes2D, Mask], target):
+        def append_new_labels(element, ltensor, lnames, name):
+            label_2d = Labels(ltensor.to(torch.float32), labels_names=lnames, names=("N"), encoding="id")
+            element.append_labels(label_2d, name=name)
+
+        labels = target["labels"]
+        # Append main labels
+        if self.label_types is None:
+            append_new_labels(element, labels, self.label_names, None)
+            return
+        else:
+            append_new_labels(element, labels, self.label_names, "category")
+
+        # Append supercategory labels
+        for ktype in self.label_types:
+            append_new_labels(
+                element, torch.as_tensor(self.label_types[ktype])[labels], self.label_types_names[ktype], ktype
+            )
+
+        # Append specific labels
+        append_new_labels(element, target["iscrowd"].to(torch.float32), None, "iscrowd")
+
+    def _target2aloscene(self, target, frame):
         # Clean index by unique classes filtered
         if self._ids_renamed is not None:
             new_labels = target["labels"].numpy().astype(int)
@@ -157,23 +197,49 @@ class CocoDetectionDataset(BaseDataset):
             if self.prepare.return_masks:
                 target["masks"] = target["masks"][idxs]
 
-        labels_2d = Labels(
-            target["labels"].to(torch.float32), labels_names=self.label_names, names=("N"), encoding="id"
-        )
+            if self.label_types is not None:
+                target["iscrowd"] = target["iscrowd"][idxs]
+
+        # Create and append labels to boxes
         boxes = BoundingBoxes2D(
-            target["boxes"],
-            boxes_format="xyxy",
-            absolute=True,
-            frame_size=frame.HW,
-            names=("N", None),
-            labels=labels_2d,
+            target["boxes"], boxes_format="xyxy", absolute=True, frame_size=frame.HW, names=("N", None)
         )
-        frame.append_boxes2d(boxes)
+        self._append_labels(boxes, target)
 
+        # Create and append labels to masks
+        segmentation = None
         if self.prepare.return_masks:
-            segmentation = Mask(target["masks"], names=("N", "H", "W"), labels=labels_2d)
-            frame.append_segmentation(segmentation)
+            segmentation = Mask(target["masks"], names=("N", "H", "W"))
+            self._append_labels(segmentation, target)
 
+        return boxes, segmentation
+
+    def getitem(self, idx):
+        """Get the :mod:`Frame <aloscene.frame>` corresponds to *idx* index
+
+        Parameters
+        ----------
+        idx : int
+            Index of the frame to be returned
+
+        Returns
+        -------
+        :mod:`Frame <aloscene.frame>`
+            Frame with their corresponding boxes and labels
+        """
+        if self.sample:
+            return BaseDataset.__getitem__(self, idx)
+
+        image_id = self.items[idx]
+        frame = Frame(os.path.join(self.img_folder, self.coco.loadImgs(image_id)[0]["file_name"]))
+        target = self.coco.loadAnns(self.coco.getAnnIds(image_id))
+        target = {"image_id": image_id, "annotations": target}
+        _, target = self.prepare(frame, target)
+
+        # Append target into frame
+        boxes, segmentation = self._target2aloscene(target, frame)
+        frame.append_boxes2d(boxes)
+        frame.segmentation = segmentation
         return frame
 
 
@@ -197,6 +263,7 @@ class ConvertCocoPolysToMask(object):
     def convert_coco_poly_to_mask(self, segmentations, height, width):
         masks = []
         for polygons in segmentations:
+            assert len(polygons) > 0, "Annotations file has not info about segmentation"
             if isinstance(polygons, list):
                 polygons = coco_mask.frPyObjects(polygons, height, width)
             mask = coco_mask.decode(polygons)

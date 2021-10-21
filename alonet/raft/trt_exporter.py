@@ -88,18 +88,23 @@ if __name__ == "__main__":
         "--HW", type=int, nargs=2, default=[368, 496], help="Height and width of input image, default 368, 496"
     )
     parser.add_argument("--iters", type=int, default=12)
+    parser.add_argument("--name", default="raft-things")
+    parser.add_argument("--weights")
     # parser.add_argument("--precision", choices=["fp16", "fp32"], default="fp32")
     BaseTRTExporter.add_argparse_args(parser)
-    kwargs = vars(parser.parse_args())
-    kwargs["onnx_path"] = os.path.join(ALONET_ROOT, f"raft-things_iters{kwargs['iters']}.onnx")
+    args = parser.parse_args()
+    kwargs = vars(args)
+    kwargs["onnx_path"] = os.path.join(ALONET_ROOT, f"{args.name}_iters{args.iters}.onnx")
     kwargs["verbose"] = True
     shape = [1, 3] + kwargs.pop("HW")
     i_shapes = (shape, shape)
     i_names = ["frame1", "frame2"]
-    model = RAFT(weights="raft-things")
+    model = RAFT(weights=args.weights)
     model.eval()
 
-    exporter = RaftTRTExporter(model=model, input_shapes=i_shapes, input_names=i_names, **kwargs)
+    exporter = RaftTRTExporter(
+        model=model, input_shapes=i_shapes, input_names=i_names, do_constant_folding=False, **kwargs
+    )
     # exporter.export_engine()
     exporter._torch2onnx()
     exporter._onnx2engine()

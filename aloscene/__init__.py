@@ -9,6 +9,6 @@ from .mask import Mask
 from .flow import Flow
 from .points_2d import Points2D
 from .points_3d import Points3D
-from .frame import Frame
 from .disparity import Disparity
 from .depth import Depth
+from .frame import Frame

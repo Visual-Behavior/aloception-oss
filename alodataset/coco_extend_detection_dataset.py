@@ -76,9 +76,10 @@ class CocoExtendDetectionDataset(CocoDetectionDataset, SplitMixin):
         classes: list = None,
         include_stuff_cats: bool = False,
         fix_classes_len: int = None,
+        split=Split.TRAIN,
         **kwargs,
     ):
-        SplitMixin.__init__(self)
+        SplitMixin.__init__(self, split)
         super(CocoExtendDetectionDataset, self).__init__(
             name=name,
             img_folder=self.get_split_folder(),
@@ -218,8 +219,8 @@ if __name__ == "__main__":
         classes=["person", "cat", "dog", "horse", "grass", "sky-other", "snow", "tree", "wood"],
         return_multiple_labels=True,
         fix_classes_len=250,
+        split=Split.VAL,
     )
-    # params = dict(return_masks=True, return_multiple_labels=True)
     coco_dataset = CocoExtendDetectionDataset(**params)
     for f, frames in enumerate(coco_dataset.stream_loader(num_workers=0)):
         frames = Frame.batch_list([frames])

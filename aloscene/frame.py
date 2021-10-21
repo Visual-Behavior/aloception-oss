@@ -6,8 +6,7 @@ from typing import TypeVar, Union
 
 import aloscene
 from aloscene.renderer import View
-from aloscene.disparity import Disparity
-from aloscene import BoundingBoxes2D, BoundingBoxes3D, Flow, Mask, Labels, Points2D
+from aloscene import BoundingBoxes2D, BoundingBoxes3D, Depth, Disparity, Flow, Mask, Labels, Points2D, Points3D
 
 # from aloscene.camera_calib import CameraExtrinsic, CameraIntrinsic
 from aloscene.io.image import load_image
@@ -26,23 +25,29 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
 
     Parameters
     ----------
-    boxes2d: dict | aloscene.BoundingBoxes2D
-        Dict of boxes2d or an instance of aloscene.BoundingBoxes2D
-    boxes3d: dict | aloscene.BoundingBoxes3D
-        Dict of boxes3d or an instance of aloscene.BoundingBoxes3D
-    labels: dict | aloscene.Labels
-        Dict of labels or an instance of aloscene.Labels
-    flow: dict | aloscene.Flow
-        Dict of flow or an  instance of aloscene.Flow
-    segmentation: dict | aloscene.Mask
-        Dict of segmentation (aloscene.Mask) or an  instance of aloscene.Mask
-    segmentation: dict | aloscene.Disparity
-        Dict of Disparity  or an  instance of aloscene.Disparity
-
+    boxes2d : dict | :mod:`BoundingBoxes2D <aloscene.bounding_boxes_2d>`
+        Dict of boxes2d or an instance of :mod:`BoundingBoxes2D <aloscene.bounding_boxes_2d>`
+    boxes3d : dict | :mod:`BoundingBoxes3D <aloscene.bounding_boxes_3d>`
+        Dict of boxes3d or an instance of :mod:`BoundingBoxes3D <aloscene.bounding_boxes_3d>`
+    labels : dict | :mod:`Labels <aloscene.labels>`
+        Dict of labels or an instance of :mod:`Labels <aloscene.labels>`
+    flow : dict | :mod:`Flow <aloscene.flow>`
+        Dict of flow or an  instance of :mod:`Flow <aloscene.flow>`
+    segmentation : dict | :mod:`Mask <aloscene.mask>`
+        Dict of masks or an instance of :mod:`Mask <aloscene.mask>`
+    disparity : dict | :mod:`Disparity <aloscene.disparity>`
+        Dict of Disparity  or an instance of :mod:`Disparity <aloscene.disparity>`
+    points2d : dict | :mod:`Points2D <aloscene.points_2d>`
+        Dict of Points2D or an instance of :mod:`Points2D  <aloscene.points_2d>`
+    points3d : dict | :mod:`Points3D <aloscene.points_3d>`
+        Dict of Points3D or an instance of :mod:`Points3D  <aloscene.points_3d>`
+    depth : dict | :mod:`Depth <aloscene.depth>`
+        Dict of Depth or an instance of :mod:`Depth <aloscene.depth>`
     normalization: str
         One of ["255", "01", "minmax_sym"]
     mean_std: tuple
-        Tuple with the mean and std of the tensor. (mean, std). Example: ((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)))
+        Tuple with the mean and std of the tensor. (mean, std).
+        Example: ((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)))
 
 
     Notes
@@ -82,6 +87,8 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         segmentation: Union[dict, Mask] = None,
         disparity: Union[dict, Disparity] = None,
         points2d: Union[dict, Points2D] = None,
+        points3d: Union[dict, Points3D] = None,
+        depth: Union[dict, Depth] = None,
         normalization="255",
         mean_std=None,
         names=("C", "H", "W"),
@@ -98,10 +105,12 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
 
         # Add label
         tensor.add_child("points2d", points2d, align_dim=["B", "T"], mergeable=False)
+        tensor.add_child("points3d", points3d, align_dim=["B", "T"], mergeable=False)
         tensor.add_child("boxes2d", boxes2d, align_dim=["B", "T"], mergeable=False)
         tensor.add_child("boxes3d", boxes3d, align_dim=["B", "T"], mergeable=False)
         tensor.add_child("flow", flow, align_dim=["B", "T"], mergeable=False)
         tensor.add_child("disparity", disparity, align_dim=["B", "T"], mergeable=True)
+        tensor.add_child("depth", depth, align_dim=["B", "T"], mergeable=False)
         tensor.add_child("segmentation", segmentation, align_dim=["B", "T"], mergeable=False)
         tensor.add_child("labels", labels, align_dim=["B", "T"], mergeable=True)
 
@@ -135,9 +144,9 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
 
         Parameters
         ----------
-        labels: aloscene.Labels
+        labels : :mod:`Labels <aloscene.labels>`
             Set of labels to attached to the frame
-        name: str
+        name : str
             If none, the label will be attached without name (if possible). Otherwise if no other unnamed
             labels are attached to the frame, the labels will be added to the set of labels.
 
@@ -154,7 +163,7 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
 
         Parameters
         ----------
-        boxes: aloscene.BoundingBoxes2D
+        boxes : :mod:`BoundingBoxes2D <aloscene.bounding_boxes_2d>`
             Boxes to attached to the Frame
         name: str
             If none, the boxes will be attached without name (if possible). Otherwise if no other unnamed
@@ -179,22 +188,35 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
 
         Parameters
         ----------
-        boxes: Points2D
+        points : :mod:`Points2D <aloscene.points_2d>`
             Points to attach to the Frame
-        name: str
+        name : str
             If None, the points will be attached without name (if possible). Otherwise if no other unnamed
             points are attached to the frame, the points will be added to the set of points.
         """
         self._append_child("points2d", points, name)
+
+    def append_points3d(self, points_3d: Points3D, name: str = None):
+        """Attach a set of points to the frame.
+
+        Parameters
+        ----------
+        points_3d : :mod:`Points3D <aloscene.points_3d>`
+            Points to attach to the Frame
+        name : str
+            If None, the points will be attached without name (if possible). Otherwise if no other unnamed
+            points are attached to the frame, the points will be added to the set of points.
+        """
+        self._append_child("points3d", points_3d, name)
 
     def append_boxes3d(self, boxes_3d: BoundingBoxes3D, name: str = None):
         """Attach BoundingBoxes3D to the frame
 
         Parameters
         ----------
-        boxes: BoundingBoxes3D
+        boxes_3d : :mod:`BoundingBoxes3D <aloscene.bounding_boxes_3d>`
             Boxes to attached to the Frame
-        name: str
+        name : str
             If none, the boxes will be attached without name (if possible). Otherwise if no other unnamed
             boxes are attached to the frame, the boxes will be added to the set of boxes.
 
@@ -211,14 +233,14 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         """
         self._append_child("boxes3d", boxes_3d, name)
 
-    def append_flow(self, flow, name=None):
+    def append_flow(self, flow, name: str = None):
         """Attach a flow to the frame.
 
         Parameters
         ----------
-        flow: aloscene.Flow
+        flow : :mod:`Flow <aloscene.flow>`
             Flow to attach to the Frame
-        name: str
+        name : str
             If none, the flow will be attached without name (if possible). Otherwise if no other unnamed
             flow are attached to the frame, the flow will be added to the set of flow.
 
@@ -230,14 +252,14 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         """
         self._append_child("flow", flow, name)
 
-    def append_disparity(self, disparity, name=None):
+    def append_disparity(self, disparity, name: str = None):
         """Attach a disparity map to the frame.
 
         Parameters
         ----------
-        disparity: aloscene.Disparity
+        disparity : :mod:`Disparity <aloscene.disparity>`
             Disparity to attach to the Frame
-        name: str
+        name : str
             If none, the disparity will be attached without name (if possible). Otherwise if no other unnamed
             disparity are attached to the frame, the disparity will be added to the set of flow.
 
@@ -249,15 +271,34 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         """
         self._append_child("disparity", disparity, name)
 
+    def append_depth(self, depth, name: str = None):
+        """Attach a depth map to the frame.
+
+        Parameters
+        ----------
+        depth : :mod:`Depth <aloscene.depth>`
+            Depth to attach to the Frame
+        name : str
+            If none, the disparity will be attached without name (if possible). Otherwise if no other unnamed
+            disparity are attached to the frame, the disparity will be added to the set of flow.
+
+        Examples
+        --------
+        >>> frame = aloscene.Frame("/path/to/image.jpeg")
+        >>> depth = aloscene.Depth(np.random.rand((1, frame.H, frame.W)))
+        >>> frame.append_depth(depth)
+        """
+        self._append_child("depth", depth, name)
+
     def append_segmentation(self, segmentation: Mask, name: str = None):
         """Attach a segmentation to the frame.
 
         Parameters
         ----------
-        segmentation: aloscene.Mask
+        segmentation : :mod:`Mask <aloscene.mask>`
             Mask with size (N,H,W), where N is the features maps, each one for one object.
-            Each feature map must be a binary mask. For that, is a type of aloscene.Mask
-        name: str
+            Each feature map must be a binary mask. For that, is a type of :mod:`Mask <aloscene.mask>`
+        name : str
             If none, the mask will be attached without name (if possible). Otherwise if no other unnamed
             mask are attached to the frame, the mask will be added to the set of mask.
         """

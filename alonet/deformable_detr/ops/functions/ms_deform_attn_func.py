@@ -19,6 +19,13 @@ from torch.autograd.function import once_differentiable
 from alonet import ALONET_ROOT
 
 
+def load_ops():
+    ops_dir = os.path.join(ALONET_ROOT, "deformable_detr/ops/build/")
+    lib_dir = [dirname for dirname in os.listdir(ops_dir) if "lib" in dirname][0]
+    module_path = os.path.join(ops_dir, lib_dir, "MultiScaleDeformableAttention.so")
+    torch.ops.load_library(module_path)
+
+
 def load_MultiScaleDeformableAttention():
     """
     This function must be call once before using MSDeformAttnFunction.
@@ -30,19 +37,13 @@ def load_MultiScaleDeformableAttention():
     this function will execute the build script.
     """
 
-    def _load_ops():
-        ops_dir = os.path.join(ALONET_ROOT, "deformable_detr/ops/build/")
-        lib_dir = [dirname for dirname in os.listdir(ops_dir) if "lib" in dirname][0]
-        module_path = os.path.join(ops_dir, lib_dir, "MultiScaleDeformableAttention.so")
-        torch.ops.load_library(module_path)
-
     try:
-        _load_ops()
+        load_ops()
     except:
         print("Building ms_deform_attn operation for PyTorch ...")
         make_file = os.path.join(ALONET_ROOT, "deformable_detr/ops/make.sh")
         subprocess.call(["sh", make_file, ALONET_ROOT])
-        _load_ops()
+        load_ops()
 
 
 class MSDeformAttnFunction(Function):

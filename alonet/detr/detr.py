@@ -5,6 +5,7 @@ DETR model and criterion classes.
 import torch
 import torch.nn.functional as F
 from torch import nn
+from collections import namedtuple
 
 from alonet.detr.transformer import Transformer
 from alonet.transformers import MLP, PositionEmbeddingSine
@@ -33,6 +34,7 @@ class Detr(nn.Module):
         return_dec_outputs=False,
         device: torch.device = torch.device("cpu"),
         strict_load_weights=True,
+        tracing: bool = False,
     ):
         """Initializes the model.
 
@@ -63,6 +65,7 @@ class Detr(nn.Module):
         self.num_decoder_layers = transformer.decoder.num_layers
         self.num_classes = num_classes
         self.return_dec_outputs = return_dec_outputs
+        self.tracing = tracing
 
         # +1 on the num of class because Detr use softmax, and the background class
         # is by default assume to be the last element. (Except if background_class is set to be different.
@@ -128,7 +131,10 @@ class Detr(nn.Module):
 
         transformer_outptus = self.transformer(self.input_proj(src), mask, self.query_embed.weight, pos[-1], **kwargs)
 
-        return self.forward_heads(transformer_outptus)
+        forward_head = self.forward_heads(transformer_outptus)
+        if self.tracing:
+            forward_head = namedtuple("Forward", list(forward_head.keys()))(*forward_head.values())
+        return forward_head
 
     def forward_position_heads(self, transformer_outptus):
         hs = transformer_outptus["hs"]
@@ -309,9 +315,7 @@ class Detr(nn.Module):
         )
 
     def build_decoder(
-        self,
-        hidden_dim: int = 256,
-        num_decoder_layers: int = 6,
+        self, hidden_dim: int = 256, num_decoder_layers: int = 6,
     ):
 
         decoder_layer = self.build_decoder_layer()

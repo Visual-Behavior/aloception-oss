@@ -8,6 +8,7 @@
 # ------------------------------------------------------------------------
 
 import copy
+from tkinter import W
 from typing import Optional, List
 import math
 
@@ -208,11 +209,13 @@ class DeformableTransformer(nn.Module):
         src_flatten = []
         mask_flatten = []
         lvl_pos_embed_flatten = []
-        spatial_shapes = []
+        spatial_shapes = torch.zeros(len(srcs), 2, dtype=torch.long, device=srcs[0].device)
         for lvl, (src, mask, pos_embed) in enumerate(zip(srcs, masks, pos_embeds)):
             bs, c, h, w = src.shape
-            spatial_shape = torch.tensor([[h, w]], dtype=torch.long, device=srcs[0].device)
-            spatial_shapes.append(spatial_shape)
+            spatial_shapes[lvl][0] = h
+            spatial_shapes[lvl][1] = w
+            # spatial_shape = torch.tensor([[h, w]], dtype=torch.long, device=srcs[0].device)
+            # spatial_shapes.append(spatial_shape)
             src = src.flatten(2).transpose(1, 2)
             mask = mask.flatten(1)
             pos_embed = pos_embed.flatten(2).transpose(1, 2)
@@ -223,7 +226,7 @@ class DeformableTransformer(nn.Module):
         src_flatten = torch.cat(src_flatten, 1)
         mask_flatten = torch.cat(mask_flatten, 1)
         lvl_pos_embed_flatten = torch.cat(lvl_pos_embed_flatten, 1)
-        spatial_shapes = torch.cat(spatial_shapes, dim=0)
+        # spatial_shapes = torch.cat(spatial_shapes, dim=0)
         level_start_index = torch.cat((spatial_shapes.new_zeros((1,)), spatial_shapes.prod(1).cumsum(0)[:-1]))
         _valid_ratios = [self.get_valid_ratio(m) for m in masks]
         valid_ratios = torch.stack(_valid_ratios, 1)
@@ -350,14 +353,14 @@ class DeformableTransformerEncoder(nn.Module):
         """
         reference_points_list = []
         valid_ratios = torch.unsqueeze(valid_ratios, dim=1)  # (b, 4, 2) -> (b, 1, 4, 2)
-        for lvl, (H_, W_) in enumerate(spatial_shapes):
-
+        for lvl in range(spatial_shapes.shape[0]):
+            H_, W_ = spatial_shapes[lvl][0], spatial_shapes[lvl][1]
             # ref_y, ref_x = torch.meshgrid(torch.linspace(0.5, H_ - 0.5, H_, dtype=torch.float32, device=device),
             #                               torch.linspace(0.5, W_ - 0.5, W_, dtype=torch.float32, device=device))
             # Avoid using linspace because it's not supported in ONNX
             # arange in TensorRT use INT32 only
-            range_y = torch.arange(int(H_), dtype=torch.int32, device=device).float() + 0.5
-            range_x = torch.arange(int(W_), dtype=torch.int32, device=device).float() + 0.5
+            range_y = torch.arange(H_, dtype=torch.int32, device=device).float() + 0.5
+            range_x = torch.arange(W_, dtype=torch.int32, device=device).float() + 0.5
             ref_y, ref_x = torch.meshgrid(range_y, range_x)
             ref_y = ref_y.reshape((1, -1))  # (1, H_ * W_)
             ref_x = ref_x.reshape((1, -1))  # (1, H_ * W_)

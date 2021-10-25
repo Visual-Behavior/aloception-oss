@@ -9,6 +9,7 @@ import math
 import time
 import copy
 import matplotlib.pyplot as plt
+from collections import namedtuple
 
 from torchvision.io import image
 
@@ -119,8 +120,7 @@ class DeformableDETR(nn.Module):
                 in_channels = backbone.num_channels[i]
                 input_proj_list.append(
                     nn.Sequential(
-                        nn.Conv2d(in_channels, self.hidden_dim, kernel_size=1),
-                        nn.GroupNorm(32, self.hidden_dim),
+                        nn.Conv2d(in_channels, self.hidden_dim, kernel_size=1), nn.GroupNorm(32, self.hidden_dim),
                     )
                 )
             for _ in range(num_feature_levels - num_backbone_outs):
@@ -250,10 +250,10 @@ class DeformableDETR(nn.Module):
         transformer_outptus = self.transformer(srcs, masks, pos, query_embeds, **kwargs)
 
         forward_head = self.forward_heads(transformer_outptus)
-        if not self.tracing:
-            return forward_head
-        else:
-            return forward_head["pred_logits"], forward_head["pred_boxes"]
+        if self.tracing:
+            forward_head = namedtuple("Forward", list(forward_head.keys()))(*forward_head.values())
+
+        return forward_head
 
     def forward_position_heads(self, transformer_outptus):
         hs = transformer_outptus["hs"]
@@ -327,11 +327,7 @@ class DeformableDETR(nn.Module):
         # as a dict having both a Tensor and a list.
         return [{"pred_logits": a, "pred_boxes": b, **kwargs} for a, b in zip(outputs_class[:-1], outputs_coord[:-1])]
 
-    def get_outs_labels(
-        self,
-        m_outputs: dict = None,
-        activation_fn: str = None,
-    ) -> List[torch.Tensor]:
+    def get_outs_labels(self, m_outputs: dict = None, activation_fn: str = None,) -> List[torch.Tensor]:
         """Given the model outs_scores and the model outs_labels,
         return the labels and the associated scores.
 
@@ -509,9 +505,7 @@ class DeformableDETR(nn.Module):
         )
 
     def build_decoder(
-        self,
-        dec_layers: int = 6,
-        return_intermediate_dec=True,
+        self, dec_layers: int = 6, return_intermediate_dec=True,
     ):
 
         decoder_layer = self.build_decoder_layer()

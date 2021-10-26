@@ -8,5 +8,7 @@ from .oriented_boxes_2d import OrientedBoxes2D
 from .mask import Mask
 from .flow import Flow
 from .points_2d import Points2D
-from .frame import Frame
+from .points_3d import Points3D
 from .disparity import Disparity
+from .depth import Depth
+from .frame import Frame

@@ -275,7 +275,13 @@ class ApMetrics3D(object):
                             else:
                                 ap_obj.push(score_func(i), False)
 
-    def add_sample(self, p_bbox: BoundingBoxes3D, t_bbox: BoundingBoxes3D):
+    def add_sample(
+        self,
+        p_bbox: BoundingBoxes3D,
+        t_bbox: BoundingBoxes3D,
+        p_mask: aloscene.Mask = None,
+        t_mask: aloscene.Mask = None,
+    ):
         assert isinstance(p_bbox, BoundingBoxes3D)
         assert isinstance(t_bbox, BoundingBoxes3D)
         assert isinstance(p_bbox.labels, aloscene.Labels)

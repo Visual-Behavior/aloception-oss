@@ -101,6 +101,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/data_setup.html">How to setup your data?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/training_detr.html">Training Detr</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/finetuning_detr.html">Finetuning DETR</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/training_panoptic.html">Training Panoptic Head module</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/training_deformable_detr.html">Training Deformable DETR</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/finetuning_deformable_detr.html">Finetuning Deformanble DETR</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/tensort_inference.html">Exporting DETR / Deformable-DETR to TensorRT</a></li>
@@ -124,6 +125,7 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="deformable.html">Deformable DETR</a></li>
+<li class="toctree-l2"><a class="reference internal" href="panoptic.html">Detr panoptic</a></li>
 <li class="toctree-l2"><a class="reference internal" href="alonet.callbacks.html">Callbacks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="alonet.metrics.html">Metrics</a></li>
 <li class="toctree-l2"><a class="reference internal" href="alonet.transformers.html">Transformer</a></li>
@@ -228,56 +230,199 @@
 <h1>Training<a class="headerlink" href="#training" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="id1">
 <h2>Training<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
-<span class="target" id="module-alonet.detr.train"></span><dl class="py class">
+<span class="target" id="module-alonet.detr.train"></span><p><a class="reference external" href="https://pytorch-lightning.readthedocs.io/en/latest/common/lightning_module.html">Pytorch Lightning Module</a> to
+train models based on <a class="reference internal" href="detr_models.html#module-alonet.detr.detr" title="alonet.detr.detr"><code class="xref py py-mod docutils literal notranslate"><span class="pre">detr</span></code></a> module</p>
+<dl class="py class">
 <dt class="sig sig-object py" id="alonet.detr.train.LitDetr">
 <em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">alonet.detr.train.</span></span><span class="sig-name descname"><span class="pre">LitDetr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.detr.train.LitDetr" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pytorch_lightning.core.lightning.LightningModule</span></code></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>args</strong><span class="classifier">Namespace, optional</span></dt><dd><p>Attributes stored in specific Namespace, by default None</p>
+</dd>
+<dt><strong>weights</strong><span class="classifier">str, optional</span></dt><dd><p>Weights name to load, by default None</p>
+</dd>
+<dt><strong>gradient_clip_val</strong><span class="classifier">float, optional</span></dt><dd><p>pytorch_lightning.trainer.trainer parameter. 0 means don’t clip, by default 0.1</p>
+</dd>
+<dt><strong>accumulate_grad_batches</strong><span class="classifier">int, optional</span></dt><dd><p>Accumulates grads every k batches or as set up in the dict, by default 4</p>
+</dd>
+<dt><strong>model_name</strong><span class="classifier">str, optional</span></dt><dd><p>Name use to define the model, by default “detr-r50”</p>
+</dd>
+<dt><strong>model</strong><span class="classifier">torch.nn, optional</span></dt><dd><p>Custom model to train</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>Arguments entered by the user (kwargs) will replace those stored in args attribute</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="alonet.detr.train.LitDetr.add_argparse_args">
 <em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">add_argparse_args</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parent_parser</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parser</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.detr.train.LitDetr.add_argparse_args" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Add arguments to parent parser with default values</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>parent_parser</strong><span class="classifier">ArgumentParser</span></dt><dd><p>Object to append new arguments</p>
+</dd>
+<dt><strong>parser</strong><span class="classifier">ArgumentParser.argument_group, optional</span></dt><dd><p>Argument group to append the parameters, by default None</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>ArgumentParser</dt><dd><p>Object with new arguments concatenated</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="alonet.detr.train.LitDetr.assert_input">
 <span class="sig-name descname"><span class="pre">assert_input</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">frames</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inference</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.detr.train.LitDetr.assert_input" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Check if input-frames have the correct format</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl>
+<dt><strong>frames</strong><span class="classifier"><a class="reference internal" href="../aloscene/frame.html#module-aloscene.frame" title="aloscene.frame"><code class="xref py py-mod docutils literal notranslate"><span class="pre">Frames</span></code></a></span></dt><dd><p>Input frames</p>
+</dd>
+<dt><strong>inference</strong><span class="classifier">bool, optional</span></dt><dd><p>Check input from inference procedure, by default False</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="alonet.detr.train.LitDetr.build_criterion">
 <span class="sig-name descname"><span class="pre">build_criterion</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">matcher</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loss_ce_weight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loss_boxes_weight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loss_giou_weight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eos_coef</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">losses</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">['labels',</span> <span class="pre">'boxes']</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aux_loss_stage</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">6</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.detr.train.LitDetr.build_criterion" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Build the default criterion</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>matcher</strong><span class="classifier">torch.nn, optional</span></dt><dd><p>One specfic matcher to use in criterion process, by default the output of <a class="reference internal" href="#alonet.detr.train.LitDetr.build_matcher" title="alonet.detr.train.LitDetr.build_matcher"><code class="xref py py-func docutils literal notranslate"><span class="pre">build_matcher()</span></code></a></p>
+</dd>
+<dt><strong>loss_ce_weight</strong><span class="classifier">float, optional</span></dt><dd><p>Weight of cross entropy loss in total loss, by default 1</p>
+</dd>
+<dt><strong>loss_boxes_weight</strong><span class="classifier">float, optional</span></dt><dd><p>Weight of boxes loss in total loss, by default 5</p>
+</dd>
+<dt><strong>loss_giou_weight</strong><span class="classifier">float, optional</span></dt><dd><p>Weight of GIoU loss in total loss, by default 2</p>
+</dd>
+<dt><strong>eos_coef</strong><span class="classifier">float, optional</span></dt><dd><p>Background/End of the Sequence (EOS) coefficient, by default 0.1</p>
+</dd>
+<dt><strong>losses</strong><span class="classifier">list, optional</span></dt><dd><p>List of losses to take into account in total loss, by default [“labels”, “boxes”].
+Possible values: [“labels”, “boxes”, “masks”] (use the latest in segmentation tasks)</p>
+</dd>
+<dt><strong>aux_loss_stage</strong><span class="classifier">int, optional</span></dt><dd><p>Size of stages from <code class="xref py py-attr docutils literal notranslate"><span class="pre">aux_outputs</span></code> key in forward ouputs, by default 6</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt><a class="reference internal" href="#module-alonet.detr.criterion" title="alonet.detr.criterion"><code class="xref py py-mod docutils literal notranslate"><span class="pre">DetrCriterion</span></code></a></dt><dd><p>Criterion use to train the model</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="alonet.detr.train.LitDetr.build_matcher">
 <span class="sig-name descname"><span class="pre">build_matcher</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cost_class</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cost_boxes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cost_giou</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.detr.train.LitDetr.build_matcher" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Build the default matcher</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>cost_class</strong><span class="classifier">float, optional</span></dt><dd><p>Weight of class cost in Hungarian Matcher, by default 1</p>
+</dd>
+<dt><strong>cost_boxes</strong><span class="classifier">float, optional</span></dt><dd><p>Weight of boxes cost in Hungarian Matcher, by default 5</p>
+</dd>
+<dt><strong>cost_giou</strong><span class="classifier">float, optional</span></dt><dd><p>Weight of GIoU cost in Hungarian Matcher, by default 2</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt><a class="reference internal" href="#module-alonet.detr.matcher" title="alonet.detr.matcher"><code class="xref py py-mod docutils literal notranslate"><span class="pre">DetrHungarianMatcher</span></code></a></dt><dd><p>Hungarian Matcher, as a Pytorch model</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="alonet.detr.train.LitDetr.build_model">
 <span class="sig-name descname"><span class="pre">build_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_classes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">91</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aux_loss</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weights</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.detr.train.LitDetr.build_model" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Build the default model</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>num_classes</strong><span class="classifier">int, optional</span></dt><dd><p>Number of classes in embed layer, by default 91</p>
+</dd>
+<dt><strong>aux_loss</strong><span class="classifier">bool, optional</span></dt><dd><p>Return auxiliar outputs in forward output, by default True</p>
+</dd>
+<dt><strong>weights</strong><span class="classifier">str, optional</span></dt><dd><p>Path or id to load weights, by default None</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt><a class="reference internal" href="detr_models.html#module-alonet.detr.detr" title="alonet.detr.detr"><code class="xref py py-mod docutils literal notranslate"><span class="pre">detr</span></code></a></dt><dd><p>Pytorch model</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><dl class="simple">
+<dt>Exception</dt><dd><p>Only <code class="xref py py-attr docutils literal notranslate"><span class="pre">detr-r50</span></code> models are supported yet.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="alonet.detr.train.LitDetr.callbacks">
 <span class="sig-name descname"><span class="pre">callbacks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_loader</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.detr.train.LitDetr.callbacks" title="Permalink to this definition">¶</a></dt>
-<dd><p>Given a data loader, this method will return the default callbacks
-of the training loop.</p>
+<dd><p>Given a data loader, this method will return the default callbacks of the training loop.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>data_loader</strong><span class="classifier">torch.utils.data.DataLoader</span></dt><dd><p>Dataloader to get a sample to use on <a class="reference internal" href="alonet.callbacks.html#module-alonet.callbacks.object_detector_callback" title="alonet.callbacks.object_detector_callback"><code class="xref py py-mod docutils literal notranslate"><span class="pre">object_detector_callback</span></code></a></p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>List[<a class="reference internal" href="alonet.callbacks.html"><span class="doc">Callbacks</span></a>]</dt><dd><p>Callbacks use in train process</p>
+</dd>
+</dl>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="alonet.detr.train.LitDetr.configure_optimizers">
 <span class="sig-name descname"><span class="pre">configure_optimizers</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#alonet.detr.train.LitDetr.configure_optimizers" title="Permalink to this definition">¶</a></dt>
-<dd><p>Configure optimzier using AdamW</p>
+<dd><p>AdamW optimizer configuration, using different learning rates for backbone and others parameters</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><dl class="simple">
+<dt>torch.optim</dt><dd><p><a class="reference external" href="https://pytorch.org/docs/stable/generated/torch.optim.AdamW.html">AdamW</a> optimizer to update weights</p>
+</dd>
+</dl>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="alonet.detr.train.LitDetr.forward">
 <span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">frames</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.detr.train.LitDetr.forward" title="Permalink to this definition">¶</a></dt>
 <dd><p>Run a forward pass through the model.</p>
-<dl class="field-list simple">
+<dl class="field-list">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>frames: list | aloscene.Frame</strong></dt><dd><p>List of aloscene.Frame without batch dimension or a Frame with the batch dimension</p>
+<dd class="field-odd"><dl>
+<dt><strong>frames</strong><span class="classifier">Union[list, <a class="reference internal" href="../aloscene/frame.html#module-aloscene.frame" title="aloscene.frame"><code class="xref py py-mod docutils literal notranslate"><span class="pre">Frames</span></code></a>]</span></dt><dd><p>List of <a class="reference internal" href="../aloscene/frame.html#module-aloscene.frame" title="aloscene.frame"><code class="xref py py-mod docutils literal notranslate"><span class="pre">frame</span></code></a> without batch dimension or a Frame with the batch dimension</p>
 </dd>
 </dl>
 </dd>
@@ -293,8 +438,8 @@ of the training loop.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="alonet.detr.train.LitDetr.inference">
 <span class="sig-name descname"><span class="pre">inference</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">m_outputs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.detr.train.LitDetr.inference" title="Permalink to this definition">¶</a></dt>
-<dd><p>Given the model forward outputs, this method
-will retrun an aloscene.BoundingBoxes2D tensor.</p>
+<dd><p>Given the model forward outputs, this method will return an
+<a class="reference internal" href="../aloscene/bounding_boxes_2d.html#module-aloscene.bounding_boxes_2d" title="aloscene.bounding_boxes_2d"><code class="xref py py-mod docutils literal notranslate"><span class="pre">BoundingBoxes2D</span></code></a> tensor.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
@@ -304,7 +449,8 @@ will retrun an aloscene.BoundingBoxes2D tensor.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>boxes: aloscene.BoundingBoxes2D</dt><dd></dd>
+<dt>List[<a class="reference internal" href="../aloscene/bounding_boxes_2d.html#module-aloscene.bounding_boxes_2d" title="aloscene.bounding_boxes_2d"><code class="xref py py-mod docutils literal notranslate"><span class="pre">BoundingBoxes2D</span></code></a>]</dt><dd><p>Set of boxes for each batch</p>
+</dd>
 </dl>
 </dd>
 </dl>
@@ -314,6 +460,22 @@ will retrun an aloscene.BoundingBoxes2D tensor.</p>
 <dt class="sig sig-object py" id="alonet.detr.train.LitDetr.run_train">
 <span class="sig-name descname"><span class="pre">run_train</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_loader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">project</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'detr'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">expe_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'detr_50'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">callbacks</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.detr.train.LitDetr.run_train" title="Permalink to this definition">¶</a></dt>
 <dd><p>Train the model using pytorch lightning</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>data_loader</strong><span class="classifier">torch.utils.data.DataLoader</span></dt><dd><p>Dataloader use in <a class="reference internal" href="#alonet.detr.train.LitDetr.callbacks" title="alonet.detr.train.LitDetr.callbacks"><code class="xref py py-func docutils literal notranslate"><span class="pre">callbacks()</span></code></a> function</p>
+</dd>
+<dt><strong>project</strong><span class="classifier">str, optional</span></dt><dd><p>Project name using to save checkpoints, by default “detr”</p>
+</dd>
+<dt><strong>expe_name</strong><span class="classifier">str, optional</span></dt><dd><p>Specific experiment name to save checkpoints, by default “detr_50”</p>
+</dd>
+<dt><strong>callbacks</strong><span class="classifier">list, optional</span></dt><dd><p>List of callbacks to use, by default <a class="reference internal" href="#alonet.detr.train.LitDetr.callbacks" title="alonet.detr.train.LitDetr.callbacks"><code class="xref py py-func docutils literal notranslate"><span class="pre">callbacks()</span></code></a> output</p>
+</dd>
+<dt><strong>args</strong><span class="classifier">Namespace, optional</span></dt><dd><p>Additional arguments use in training process, by default None</p>
+</dd>
+</dl>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py attribute">
@@ -325,18 +487,18 @@ will retrun an aloscene.BoundingBoxes2D tensor.</p>
 <dt class="sig sig-object py" id="alonet.detr.train.LitDetr.training_step">
 <span class="sig-name descname"><span class="pre">training_step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">frames</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_idx</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.detr.train.LitDetr.training_step" title="Permalink to this definition">¶</a></dt>
 <dd><p>Train the model for one step</p>
-<dl class="field-list simple">
+<dl class="field-list">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>frames: list | aloscene.Frame</strong></dt><dd><p>List of aloscene.Frame without batch dimension or a Frame with the batch dimension</p>
+<dd class="field-odd"><dl>
+<dt><strong>frames</strong><span class="classifier">Union[list, <a class="reference internal" href="../aloscene/frame.html#module-aloscene.frame" title="aloscene.frame"><code class="xref py py-mod docutils literal notranslate"><span class="pre">Frames</span></code></a>]</span></dt><dd><p>List of <a class="reference internal" href="../aloscene/frame.html#module-aloscene.frame" title="aloscene.frame"><code class="xref py py-mod docutils literal notranslate"><span class="pre">frame</span></code></a> without batch dimension or a Frame with the batch dimension</p>
 </dd>
-<dt><strong>batch_idx: int</strong></dt><dd><p>Batch id given by Lightning</p>
+<dt><strong>batch_idx</strong><span class="classifier">int</span></dt><dd><p>Batch id given by Lightning</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>outptus: dict</dt><dd><p>dict with the <cite>loss</cite> to optimize and the <cite>metrics</cite> to log.</p>
+<dt>dict</dt><dd><p>Dictionary with the <code class="xref py py-attr docutils literal notranslate"><span class="pre">loss</span></code> to optimize, <code class="xref py py-attr docutils literal notranslate"><span class="pre">m_outputs</span></code> forward outputs and <code class="xref py py-attr docutils literal notranslate"><span class="pre">metrics</span></code> to log.</p>
 </dd>
 </dl>
 </dd>
@@ -347,18 +509,18 @@ will retrun an aloscene.BoundingBoxes2D tensor.</p>
 <dt class="sig sig-object py" id="alonet.detr.train.LitDetr.validation_step">
 <span class="sig-name descname"><span class="pre">validation_step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">frames</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_idx</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.detr.train.LitDetr.validation_step" title="Permalink to this definition">¶</a></dt>
 <dd><p>Run one step of validation</p>
-<dl class="field-list simple">
+<dl class="field-list">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>frames: list | aloscene.Frame</strong></dt><dd><p>List of aloscene.Frame without batch dimension or a Frame with the batch dimension</p>
+<dd class="field-odd"><dl>
+<dt><strong>frames</strong><span class="classifier">Union[list, <a class="reference internal" href="../aloscene/frame.html#module-aloscene.frame" title="aloscene.frame"><code class="xref py py-mod docutils literal notranslate"><span class="pre">Frames</span></code></a>]</span></dt><dd><p>List of <a class="reference internal" href="../aloscene/frame.html#module-aloscene.frame" title="aloscene.frame"><code class="xref py py-mod docutils literal notranslate"><span class="pre">frame</span></code></a> without batch dimension or a Frame with the batch dimension</p>
 </dd>
-<dt><strong>batch_idx: int</strong></dt><dd><p>Batch id given by Lightning</p>
+<dt><strong>batch_idx</strong><span class="classifier">int</span></dt><dd><p>Batch id given by Lightning</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>outptus: dict</dt><dd><p>dict with the <cite>val_loss</cite> and the metrics to log</p>
+<dt>dict</dt><dd><p>Dictionary with the <code class="xref py py-attr docutils literal notranslate"><span class="pre">loss</span></code> to optimize, <code class="xref py py-attr docutils literal notranslate"><span class="pre">m_outputs</span></code> forward outputs and <code class="xref py py-attr docutils literal notranslate"><span class="pre">metrics</span></code> to log.</p>
 </dd>
 </dl>
 </dd>
@@ -370,26 +532,58 @@ will retrun an aloscene.BoundingBoxes2D tensor.</p>
 </div>
 <div class="section" id="module-alonet.detr.criterion">
 <span id="criterion"></span><h2>Criterion<a class="headerlink" href="#module-alonet.detr.criterion" title="Permalink to this headline">¶</a></h2>
+<p>This class computes the loss for <a class="reference internal" href="detr_models.html#module-alonet.detr.detr" title="alonet.detr.detr"><code class="xref py py-mod docutils literal notranslate"><span class="pre">DETR</span></code></a>. The process happens in two steps:</p>
+<ol class="arabic simple">
+<li><p>We compute hungarian assignment between ground truth boxes and the outputs of the model</p></li>
+<li><p>We supervise each pair of matched ground-truth / prediction (supervise class and box).</p></li>
+</ol>
 <dl class="py class">
 <dt class="sig sig-object py" id="alonet.detr.criterion.DetrCriterion">
 <em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">alonet.detr.criterion.</span></span><span class="sig-name descname"><span class="pre">DetrCriterion</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">matcher</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loss_ce_weight</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loss_boxes_weight</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loss_giou_weight</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eos_coef</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aux_loss_stage</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">losses</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.detr.criterion.DetrCriterion" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">torch.nn.modules.module.Module</span></code></p>
-<p>This class computes the loss for DETR.
-The process happens in two steps:
-1) we compute hungarian assignment between ground truth boxes and the outputs of the model
-2) we supervise each pair of matched ground-truth / prediction (supervise class and box)</p>
+<p>Create the criterion.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>num_classes: int</strong></dt><dd><p>number of object categories, omitting the special no-object category</p>
+</dd>
+<dt><strong>matcher: nn.Module</strong></dt><dd><p>module able to compute a matching between targets and proposed boxes</p>
+</dd>
+<dt><strong>loss_ce_weight: float</strong></dt><dd><p>Cross entropy class weight</p>
+</dd>
+<dt><strong>loss_boxes_weight: float</strong></dt><dd><p>Boxes loss l1 weight</p>
+</dd>
+<dt><strong>loss_giou_weight: float</strong></dt><dd><p>Boxes loss GIOU</p>
+</dd>
+<dt><strong>eos_coef: float</strong></dt><dd><p>relative classification weight applied to the no-object category</p>
+</dd>
+<dt><strong>aux_loss_stage:</strong></dt><dd><p>Number of auxialiry stage</p>
+</dd>
+<dt><strong>losses: list</strong></dt><dd><p>list of all the losses to be applied. See <a class="reference internal" href="#alonet.detr.criterion.DetrCriterion.get_loss" title="alonet.detr.criterion.DetrCriterion.get_loss"><code class="xref py py-func docutils literal notranslate"><span class="pre">get_loss()</span></code></a> for list of available losses.</p>
+</dd>
+</dl>
+</dd>
+</dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="alonet.detr.criterion.DetrCriterion.forward">
 <span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">m_outputs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frames</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">matcher_frames</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compute_statistical_metrics</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.detr.criterion.DetrCriterion.forward" title="Permalink to this definition">¶</a></dt>
 <dd><p>This performs the loss computation.</p>
-<dl class="field-list simple">
+<dl class="field-list">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>outputs: dict</strong></dt><dd><p>Dict of tensors, see the output specification of the model for the format</p>
+<dd class="field-odd"><dl>
+<dt><strong>outputs</strong><span class="classifier">dict</span></dt><dd><p>Dict of tensors, see the output specification of the model for the format</p>
 </dd>
-<dt><strong>targets: aloscene.Frame</strong></dt><dd><p>…</p>
+<dt><strong>targets</strong><span class="classifier"><a class="reference internal" href="../aloscene/frame.html#module-aloscene.frame" title="aloscene.frame"><code class="xref py py-mod docutils literal notranslate"><span class="pre">Frames</span></code></a></span></dt><dd><p>Target frames</p>
 </dd>
-<dt><strong>compute_statistical_metrics: bool</strong></dt><dd><p>Whether to compute statistical data bout the model outputs/inputs. (False by default)</p>
+<dt><strong>compute_statistical_metrics</strong><span class="classifier">bool</span></dt><dd><p>Whether to compute statistical data bout the model outputs/inputs, by default False</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>torch.tensor</dt><dd><p>Total loss as weighting of losses</p>
+</dd>
+<dt>dict</dt><dd><p>Individual losses</p>
 </dd>
 </dl>
 </dd>
@@ -398,21 +592,29 @@ The process happens in two steps:
 
 <dl class="py method">
 <dt class="sig sig-object py" id="alonet.detr.criterion.DetrCriterion.get_loss">
-<span class="sig-name descname"><span class="pre">get_loss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">loss</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outputs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frames</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">indices</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_boxes</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.detr.criterion.DetrCriterion.get_loss" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">get_loss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">loss</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outputs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frames</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">indices</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_boxes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">update_loss_map</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.detr.criterion.DetrCriterion.get_loss" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compute a loss given the model outputs, the target frame, the results from the matcher
 and the number of total boxes accross the devices.</p>
-<dl class="field-list simple">
+<dl class="field-list">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>loss: str</strong></dt><dd><p>Name of the loss to compute</p>
+<dd class="field-odd"><dl>
+<dt><strong>loss</strong><span class="classifier">str</span></dt><dd><p>Name of the loss to compute</p>
 </dd>
-<dt><strong>outputs: dict</strong></dt><dd><p>Detr model forward outputs</p>
+<dt><strong>outputs</strong><span class="classifier">dict</span></dt><dd><p>Detr model forward outputs</p>
 </dd>
-<dt><strong>frames: aloscene.Frane</strong></dt><dd><p>Trgat frame with boxes2d and labels</p>
+<dt><strong>frames</strong><span class="classifier"><a class="reference internal" href="../aloscene/frame.html#module-aloscene.frame" title="aloscene.frame"><code class="xref py py-mod docutils literal notranslate"><span class="pre">Frames</span></code></a></span></dt><dd><p>Trgat frame with boxes2d and labels</p>
 </dd>
 <dt><strong>indices: list</strong></dt><dd><p>List of tuple with predicted indices and target indices</p>
 </dd>
 <dt><strong>num_boxes: torch.Tensor</strong></dt><dd><p>Number of total target boxes</p>
+</dd>
+<dt><strong>update_loss_map</strong><span class="classifier">dict</span></dt><dd><p>Append new loss function to take into account in total loss process, by default None</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>Dict</dt><dd><p>Losses of the loss procedure.</p>
 </dd>
 </dl>
 </dd>
@@ -423,16 +625,16 @@ and the number of total boxes accross the devices.</p>
 <dt class="sig sig-object py" id="alonet.detr.criterion.DetrCriterion.get_metrics">
 <span class="sig-name descname"><span class="pre">get_metrics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">outputs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frames</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">indices</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_boxes</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.detr.criterion.DetrCriterion.get_metrics" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compute some usefull metrics related to the model performance</p>
-<dl class="field-list simple">
+<dl class="field-list">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>outputs: dict</strong></dt><dd><p>Detr model forward outputs</p>
+<dd class="field-odd"><dl>
+<dt><strong>outputs</strong><span class="classifier">dict</span></dt><dd><p>Detr model forward outputs</p>
 </dd>
-<dt><strong>frames: aloscene.Frane</strong></dt><dd><p>Trgat frame with boxes2d and labels</p>
+<dt><strong>frames</strong><span class="classifier"><a class="reference internal" href="../aloscene/frame.html#module-aloscene.frame" title="aloscene.frame"><code class="xref py py-mod docutils literal notranslate"><span class="pre">Frames</span></code></a></span></dt><dd><p>Trgat frame with boxes2d and labels</p>
 </dd>
-<dt><strong>indices: list</strong></dt><dd><p>List of tuple with predicted indices and target indices</p>
+<dt><strong>indices</strong><span class="classifier">list</span></dt><dd><p>List of tuple with predicted indices and target indices</p>
 </dd>
-<dt><strong>num_boxes: torch.Tensor</strong></dt><dd><p>Number of total target boxes</p>
+<dt><strong>num_boxes</strong><span class="classifier">torch.Tensor</span></dt><dd><p>Number of total target boxes</p>
 </dd>
 </dl>
 </dd>
@@ -441,41 +643,47 @@ and the number of total boxes accross the devices.</p>
 <dt>metrics: dict</dt><dd><ul class="simple">
 <li><p>objectness_recall: Percentage of detect object among the GT object (class invariant)</p></li>
 <li><p>recall : Percentage of detect class among all the GT class</p></li>
-<li><p>objectness_true_pos: Among the positive prediction of the model. how much are really positive ? (class invariant)</p></li>
+<li><p>objectness_true_pos: Among the positive prediction of the model. how much are really positive ?
+(class invariant)</p></li>
 <li><p>precision: Among the positive prediction of the model. how much are well classify ?</p></li>
 <li><p>true_neg:  Among the negative predictions of the model, how much are really negative ?</p></li>
 <li><p>slot_true_neg: Among all the negative slot, how may are predicted as negative ? (class invariant)</p></li>
 </ul>
 </dd>
-<dt>One important thing: The metrics described above do not reflect directly the true performance of the model. The are only</dt><dd></dd>
-<dt>directly corredlated with the loss &amp; the hungarian used to train the model. Therefore, the computed recall, is NOT</dt><dd></dd>
-<dt>the recall, is not the true recall but the recall based on the SLOT &amp; the hungarian choice. That being said, it is still</dt><dd></dd>
-<dt>a usefull information to monitor the training progress.</dt><dd></dd>
 </dl>
 </dd>
 </dl>
+<p class="rubric">Notes</p>
+<div class="admonition important">
+<p class="admonition-title">Important</p>
+<p>The metrics described above do not reflect directly the true performance of the model.
+The are only directly corredlated with the loss &amp; the hungarian used to train the model. Therefore, the
+computed recall, is NOT the recall, is not the true recall but the recall based on the SLOT &amp; the hungarian
+choice. That being said, it is still a usefull information to monitor the training progress.</p>
+</div>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="alonet.detr.criterion.DetrCriterion.get_statistical_metrics">
 <span class="sig-name descname"><span class="pre">get_statistical_metrics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">outputs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frames</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">indices</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_boxes</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.detr.criterion.DetrCriterion.get_statistical_metrics" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compute some usefull statistical metrics about the model outputs and the inputs.</p>
-<dl class="field-list simple">
+<dl class="field-list">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>outputs: dict</strong></dt><dd><p>Detr model forward outputs</p>
+<dd class="field-odd"><dl>
+<dt><strong>outputs</strong><span class="classifier">dict</span></dt><dd><p>Detr model forward outputs</p>
 </dd>
-<dt><strong>frames: aloscene.Frane</strong></dt><dd><p>Trgat frame with boxes2d and labels</p>
+<dt><strong>frames</strong><span class="classifier"><a class="reference internal" href="../aloscene/frame.html#module-aloscene.frame" title="aloscene.frame"><code class="xref py py-mod docutils literal notranslate"><span class="pre">Frames</span></code></a></span></dt><dd><p>Target frame with boxes2d and labels</p>
 </dd>
-<dt><strong>indices: list</strong></dt><dd><p>List of tuple with predicted indices and target indices</p>
+<dt><strong>indices</strong><span class="classifier">list</span></dt><dd><p>List of tuple with predicted indices and target indices</p>
 </dd>
-<dt><strong>num_boxes: torch.Tensor</strong></dt><dd><p>Number of total target boxes</p>
+<dt><strong>num_boxes</strong><span class="classifier">torch.Tensor</span></dt><dd><p>Number of total target boxes</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>metrics: dict</dt><dd></dd>
+<dt>dict</dt><dd><p>Metrics</p>
+</dd>
 </dl>
 </dd>
 </dl>
@@ -485,16 +693,16 @@ and the number of total boxes accross the devices.</p>
 <dt class="sig sig-object py" id="alonet.detr.criterion.DetrCriterion.loss_boxes">
 <span class="sig-name descname"><span class="pre">loss_boxes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">outputs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frames</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">indices</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_boxes</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.detr.criterion.DetrCriterion.loss_boxes" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compute the losses related to the bounding boxes, the L1 regression loss and the GIoU loss</p>
-<dl class="field-list simple">
+<dl class="field-list">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>outputs: dict</strong></dt><dd><p>Detr model forward outputs</p>
+<dd class="field-odd"><dl>
+<dt><strong>outputs</strong><span class="classifier">dict</span></dt><dd><p>Detr model forward outputs</p>
 </dd>
-<dt><strong>frames: aloscene.Frane</strong></dt><dd><p>Trgat frame with boxes2d and labels</p>
+<dt><strong>frames</strong><span class="classifier"><a class="reference internal" href="../aloscene/frame.html#module-aloscene.frame" title="aloscene.frame"><code class="xref py py-mod docutils literal notranslate"><span class="pre">Frames</span></code></a></span></dt><dd><p>Target frame with boxes2d and labels</p>
 </dd>
-<dt><strong>indices: list</strong></dt><dd><p>List of tuple with predicted indices and target indices</p>
+<dt><strong>indices</strong><span class="classifier">list</span></dt><dd><p>List of tuple with predicted indices and target indices</p>
 </dd>
-<dt><strong>num_boxes: torch.Tensor</strong></dt><dd><p>Number of total target boxes</p>
+<dt><strong>num_boxes</strong><span class="classifier">torch.Tensor</span></dt><dd><p>Number of total target boxes</p>
 </dd>
 </dl>
 </dd>
@@ -505,16 +713,16 @@ and the number of total boxes accross the devices.</p>
 <dt class="sig sig-object py" id="alonet.detr.criterion.DetrCriterion.loss_labels">
 <span class="sig-name descname"><span class="pre">loss_labels</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">outputs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frames</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">indices</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_boxes</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.detr.criterion.DetrCriterion.loss_labels" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compute the clasification loss</p>
-<dl class="field-list simple">
+<dl class="field-list">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>outputs: dict</strong></dt><dd><p>Detr model forward outputs</p>
+<dd class="field-odd"><dl>
+<dt><strong>outputs</strong><span class="classifier">dict</span></dt><dd><p>Detr model forward outputs</p>
 </dd>
-<dt><strong>frames: aloscene.Frane</strong></dt><dd><p>Trgat frame with boxes2d and labels</p>
+<dt><strong>frames</strong><span class="classifier"><a class="reference internal" href="../aloscene/frame.html#module-aloscene.frame" title="aloscene.frame"><code class="xref py py-mod docutils literal notranslate"><span class="pre">Frames</span></code></a></span></dt><dd><p>Target frame with boxes2d and labels</p>
 </dd>
-<dt><strong>indices: list</strong></dt><dd><p>List of tuple with predicted indices and target indices</p>
+<dt><strong>indices</strong><span class="classifier">list</span></dt><dd><p>List of tuple with predicted indices and target indices</p>
 </dd>
-<dt><strong>num_boxes: torch.Tensor</strong></dt><dd><p>Number of total target boxes</p>
+<dt><strong>num_boxes</strong><span class="classifier">torch.Tensor</span></dt><dd><p>Number of total target boxes</p>
 </dd>
 </dl>
 </dd>
@@ -643,16 +851,16 @@ len(index_i) = len(index_j) = min(num_queries, num_target_boxes)</p>
 </div>
 <div class="section" id="module-alonet.detr.callbacks">
 <span id="callbacks"></span><h2>Callbacks<a class="headerlink" href="#module-alonet.detr.callbacks" title="Permalink to this headline">¶</a></h2>
+<p>Detr Callback for object detection training that use <a class="reference internal" href="../aloscene/frame.html#module-aloscene.frame" title="aloscene.frame"><code class="xref py py-mod docutils literal notranslate"><span class="pre">frame</span></code></a> as GT.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="alonet.detr.callbacks.DetrObjectDetectorCallback">
 <em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">alonet.detr.callbacks.</span></span><span class="sig-name descname"><span class="pre">DetrObjectDetectorCallback</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.detr.callbacks.DetrObjectDetectorCallback" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="alonet.callbacks.html#alonet.callbacks.object_detector_callback.ObjectDetectorCallback" title="alonet.callbacks.object_detector_callback.ObjectDetectorCallback"><code class="xref py py-class docutils literal notranslate"><span class="pre">alonet.callbacks.object_detector_callback.ObjectDetectorCallback</span></code></a></p>
-<p>Detr Callback for object detection training that use
-alonet.Frames as GT.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="alonet.detr.callbacks.DetrObjectDetectorCallback.on_train_batch_end">
 <span class="sig-name descname"><span class="pre">on_train_batch_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pl_module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outputs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_idx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataloader_idx</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.detr.callbacks.DetrObjectDetectorCallback.on_train_batch_end" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Called when the train batch ends.</p>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="alonet.detr.callbacks.DetrObjectDetectorCallback.on_validation_epoch_end">

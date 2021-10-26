@@ -84,16 +84,20 @@ def add_argparse_args(parent_parser, add_pl_args=True, mode="training"):
 
 
 def load_training(
-    lit_model_class, args: Namespace = None, run_id: str = None, project_run_id: str = None, **kwargs,
+    lit_model_class,
+    args: Namespace = None,
+    run_id: str = None,
+    project_run_id: str = None,
+    **kwargs,
 ):
     """Load training"""
     run_id = args.run_id if run_id is None and "run_id" in args else run_id
     project_run_id = args.project_run_id if project_run_id is None and "project_run_id" in args else project_run_id
-    weights_path = getattr(args, "weights", None)
+    weights_path = getattr(args, "weights", None) if args is not None else None
     if "weights" in kwargs and kwargs["weights"] is not None:  # Highest priority
         weights_path = kwargs["weights"]
 
-    strict = True if "nostrict" in args else not args.nostrict
+    strict = True if "nostrict" not in args else not args.nostrict
     if run_id is not None and project_run_id is not None:
         run_id_project_dir = os.path.join(vb_folder(), f"project_{project_run_id}")
         ckpt_path = os.path.join(run_id_project_dir, run_id, "last.ckpt")
@@ -102,12 +106,14 @@ def load_training(
         print(f"Loading ckpt from {run_id} at {ckpt_path}")
         lit_model = lit_model_class.load_from_checkpoint(ckpt_path, strict=strict, args=args, **kwargs)
     elif weights_path is not None:
-        if ".pth" in weights_path:
+        if os.path.splitext(weights_path.lower())[1] == ".pth":
             lit_model = lit_model_class(args=args, **kwargs)
-        elif ".ckpt" in weights_path:
+        elif os.path.splitext(weights_path.lower())[1] == ".ckpt":
             lit_model = lit_model_class.load_from_checkpoint(weights_path, strict=strict, args=args, **kwargs)
         else:
             raise Exception(f"Impossible to load the weights at the following destination:{weights_path}")
+    elif args.no_run_id:
+        lit_model = lit_model_class(args=args, **kwargs)
     else:
         raise Exception("--run_id (optionally --project_run_id) must be given to load the experiment.")
 

@@ -4,6 +4,7 @@ import requests
 import shutil
 import torch
 import json
+from tqdm import tqdm
 from typing import List, Callable, Dict
 from enum import Enum
 
@@ -34,17 +35,20 @@ class Split(Enum):
 
 
 def stream_loader(dataset, num_workers=2):
-    """Get a stream loader from the dataset. Compared to the `train_loader`
-    the `stream_loader` do not have batch dimension and do not shuffle the dataset.
+    """Get a stream loader from the dataset. Compared to the :func:`train_loader`
+    the :func:`stream_loader` do not have batch dimension and do not shuffle the dataset.
 
     Parameters
     ----------
-    num_workers: (int)
-        2 by default.
+    dataset : torch.utils.data.Dataset
+        Dataset to make dataloader
+    num_workers : int
+        Number of workers, by default 2
 
-    Return:
+    Returns
     -------
-    a generator
+    torch.utils.data.DataLoader
+        A generator
     """
     data_loader = torch.utils.data.DataLoader(
         dataset, batch_size=None, collate_fn=lambda d: dataset._collate_fn(d), num_workers=num_workers
@@ -53,7 +57,24 @@ def stream_loader(dataset, num_workers=2):
 
 
 def train_loader(dataset, batch_size=1, num_workers=2, sampler=torch.utils.data.RandomSampler):
-    """Get training loader from the dataset"""
+    """Get training loader from the dataset
+
+    Parameters
+    ----------
+    dataset : torch.utils.data.Dataset
+        Dataset to make dataloader
+    batch_size : int, optional
+        Batch size, by default 1
+    num_workers : int, optional
+        Number of workers, by default 2
+    sampler : torch.utils.data, optional
+        Callback to sampler the dataset, by default torch.utils.data.RandomSampler
+
+    Returns
+    -------
+    torch.utils.data.DataLoader
+        A generator
+    """
     sampler = sampler(dataset) if sampler is not None else None
 
     data_loader = torch.utils.data.DataLoader(
@@ -248,13 +269,14 @@ class BaseDataset(torch.utils.data.Dataset):
             content = json.loads(f.read())
 
         if dataset_dir is None:
-            dataset_dir = _user_prompt(
-                f"{self.name} does not exist in config file. "
-                + "Do you want to download and use a sample?: (Y)es or (N)o: "
-            )
-            if dataset_dir.lower() in ["y", "yes"]:  # Download sample and change root directory
-                self.sample = True
-                return os.path.join(self.vb_folder, "samples")
+            if self.name in DATASETS_DOWNLOAD_PATHS:
+                dataset_dir = _user_prompt(
+                    f"{self.name} does not exist in config file. "
+                    + "Do you want to download and use a sample?: (Y)es or (N)o: "
+                )
+                if dataset_dir.lower() in ["y", "yes"]:  # Download sample and change root directory
+                    self.sample = True
+                    return os.path.join(self.vb_folder, "samples")
             dataset_dir = _user_prompt(f"Please write a new root directory for {self.name} dataset: ")
             dataset_dir = os.path.expanduser(dataset_dir)
 
@@ -293,22 +315,42 @@ class BaseDataset(torch.utils.data.Dataset):
         return batch_data
 
     def stream_loader(self, num_workers=2):
-        """Get a stream loader from the dataset. Compared to the `train_loader`
-        the `stream_loader` do not have batch dimension and do not shuffle the dataset.
+        """Get a stream loader from the dataset. Compared to the :func:`train_loader`
+        the :func:`stream_loader` do not have batch dimension and do not shuffle the dataset.
 
         Parameters
         ----------
-        num_workers: (int)
-            2 by default.
+        dataset : torch.utils.data.Dataset
+            Dataset to make dataloader
+        num_workers : int
+            Number of workers, by default 2
 
         Returns
         -------
-        a generator
+        torch.utils.data.DataLoader
+            A generator
         """
         return stream_loader(self, num_workers=num_workers)
 
     def train_loader(self, batch_size=1, num_workers=2, sampler=torch.utils.data.RandomSampler):
-        """Get training loader from the dataset"""
+        """Get training loader from the dataset
+
+        Parameters
+        ----------
+        dataset : torch.utils.data.Dataset
+            Dataset to make dataloader
+        batch_size : int, optional
+            Batch size, by default 1
+        num_workers : int, optional
+            Number of workers, by default 2
+        sampler : torch.utils.data, optional
+            Callback to sampler the dataset, by default torch.utils.data.RandomSampler
+
+        Returns
+        -------
+        torch.utils.data.DataLoader
+            A generator
+        """
         return train_loader(self, batch_size=batch_size, num_workers=num_workers, sampler=sampler)
 
     def prepare(self):
@@ -344,8 +386,18 @@ class BaseDataset(torch.utils.data.Dataset):
         if not os.path.exists(os.path.join(dest)):
             print(f"Download {self.name} sample...")
             if "http" in src:
-                r = requests.get(src, allow_redirects=True)
-                open(dest, "wb").write(r.content)
+                with open(dest, "wb") as f:
+                    response = requests.get(src, stream=True)
+                    total_length = response.headers.get("content-length")
+
+                    if total_length is None:  # no content length header
+                        f.write(response.content)
+                    else:
+                        pbar = tqdm()
+                        pbar.reset(total=int(total_length))  # initialise with new `total`
+                        for data in response.iter_content(chunk_size=4096):
+                            f.write(data)
+                            pbar.update(len(data))
             else:
                 shutil.copy2(src, dest)
 

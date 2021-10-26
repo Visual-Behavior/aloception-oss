@@ -4,7 +4,6 @@ import torch
 import re
 
 
-
 def load_pfm_np(path, flip=True, clean=False):
     with open(path, "rb") as file:
         color = None
@@ -89,7 +88,6 @@ def load_disp_png(path, decoding="rgb", scale=256.0, negate=False):
     disp = disp.transpose([2, 0, 1]).astype(np.float32)
     disp = torch.from_numpy(disp)
     return disp
-
 
 
 def load_disp(path, png_negate=None):

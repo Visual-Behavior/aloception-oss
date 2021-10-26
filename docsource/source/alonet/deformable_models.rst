@@ -18,20 +18,28 @@ To instantiate a Deformable DETR R50 (resnet50 backbone) with iterative box refi
       from alonet.deformable_detr import DeformableDetrR50Refinement
       model = DeformableDetrR50Refinement(num_classes=NUM_CLASS)
 
-If you want to finetune from the model pretrained on COCO dataset:
+To load the pretrained weights on COCO dataset:
+
+   .. code-block:: python
+
+      model = DeformableDetrR50(num_classes=NUM_CLASS, weights="deformable-detr-r50")
+      # with iterative box refinement
+      model = DeformableDetrR50Refinement(num_classes=NUM_CLASS, weights="deformable-detr-r50-refinement")
+
+If you want to finetune from the model pretrained on COCO dataset (by default):
 
    .. code-block:: python
 
       from alonet.deformable_detr import DeformableDetrR50Finetune
       # NUM_CLASS is the number of classes in your finetune
-      model = DeformableDetrR50Finetune(num_classes=NUM_CLASS, weights="deformable-detr-r50")
+      model = DeformableDetrR50Finetune(num_classes=NUM_CLASS)
 
    .. code-block:: python
 
       # with iterative box refinement
       from alonet.deformable_detr import DeformableDetrR50RefinementFinetune
       # NUM_CLASS is the number of classes in your finetune
-      model = DeformableDetrR50RefinementFinetune(num_classes=NUM_CLASS, weights="deformable-detr-r50-refinement")
+      model = DeformableDetrR50RefinementFinetune(num_classes=NUM_CLASS)
 
 To run inference:
 

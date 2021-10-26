@@ -251,7 +251,7 @@ class DeformableDETR(nn.Module):
 
         forward_head = self.forward_heads(transformer_outptus)
         if self.tracing:
-            forward_head = namedtuple("Forward", list(forward_head.keys()))(*forward_head.values())
+            forward_head = (forward_head["pred_boxes"], forward_head["pred_logits"])
 
         return forward_head
 

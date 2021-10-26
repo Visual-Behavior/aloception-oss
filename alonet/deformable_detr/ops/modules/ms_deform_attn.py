@@ -93,6 +93,7 @@ class MSDeformAttn(nn.Module):
         input_spatial_shapes,
         input_level_start_index,
         input_padding_mask=None,
+        is_tracing=False,
         **kwargs
     ):
         """
@@ -135,8 +136,9 @@ class MSDeformAttn(nn.Module):
             )
         if "is_export_onnx" in kwargs:
             # TensorRT deformable attention plugin requires batch dimension on all tensors
-            input_spatial_shapes = torch.unsqueeze(input_spatial_shapes, 0)
-            input_level_start_index = torch.unsqueeze(input_level_start_index, 0)
+            if not is_tracing:
+                input_spatial_shapes = torch.unsqueeze(input_spatial_shapes, 0)
+                input_level_start_index = torch.unsqueeze(input_level_start_index, 0)
             output = torch.ops.alonet_custom.ms_deform_attn_forward(
                 value,
                 input_spatial_shapes,

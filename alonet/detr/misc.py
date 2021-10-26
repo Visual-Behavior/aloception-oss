@@ -12,7 +12,7 @@ def assert_and_export_onnx(check_mean_std=False, input_mean_std=None):
         def wrapper(instance, frames: Union[torch.Tensor, Frame], is_export_onnx=False, *args, **kwargs):
             # A little hack: we use is_export_onnx=None as True when exporting onnx
             # because torch.onnx.export accepts only torch.Tensor or None
-            if is_export_onnx is None or instance.tracing:
+            if is_export_onnx is None or (hasattr(instance, "tracing") and instance.tracing):
                 assert isinstance(frames, torch.Tensor)
                 assert frames.shape[1] == 4  # rgb 3 + mask 1
                 return forward(instance, frames, is_export_onnx=None, **kwargs)

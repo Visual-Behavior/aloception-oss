@@ -1,3 +1,4 @@
+from tracemalloc import is_tracing
 from typing import List
 from aloscene.bounding_boxes_2d import BoundingBoxes2D
 import argparse
@@ -247,7 +248,7 @@ class DeformableDETR(nn.Module):
                 pos.append(pos_l)
 
         query_embeds = self.query_embed.weight
-        transformer_outptus = self.transformer(srcs, masks, pos, query_embeds, **kwargs)
+        transformer_outptus = self.transformer(srcs, masks, pos, query_embeds, is_tracing=self.tracing, **kwargs)
 
         forward_head = self.forward_heads(transformer_outptus)
         if self.tracing:

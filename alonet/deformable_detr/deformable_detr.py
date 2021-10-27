@@ -78,6 +78,8 @@ class DeformableDETR(nn.Module):
             By default torch.device("cuda")
         activation_fn : str, optional
             Activation function for classification head. Either "sigmoid" or "softmax". By default "sigmoid".
+        tracing : bool, Optional
+            Change model behavior to be exported as TorchScript, by default False
 
         Notes
         -----
@@ -137,6 +139,7 @@ class DeformableDETR(nn.Module):
             )
 
         self.backbone = backbone
+        self.backbone.tracing = tracing
         self.aux_loss = aux_loss
         self.with_box_refine = with_box_refine
 

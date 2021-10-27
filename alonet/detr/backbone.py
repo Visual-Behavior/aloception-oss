@@ -90,13 +90,15 @@ class FrozenBatchNorm2d(torch.nn.Module):
 class BackboneBase(nn.Module):
     """Base class to define behavior of backbone
     """
+
     def __init__(
-        self, 
-        backbone: nn.Module, 
-        train_backbone: bool, 
-        num_channels: int, 
+        self,
+        backbone: nn.Module,
+        train_backbone: bool,
+        num_channels: int,
         return_interm_layers: bool,
-        aug_tensor_compatible:bool=True
+        aug_tensor_compatible: bool = True,
+        tracing: bool = False,
     ):
         super().__init__()
         for name, parameter in backbone.named_parameters():
@@ -108,6 +110,7 @@ class BackboneBase(nn.Module):
             return_layers = {"layer4": "0"}
         self.body = IntermediateLayerGetter(backbone, return_layers=return_layers)
         self.num_channels = num_channels
+        self.tracing = tracing
 
     @assert_and_export_onnx()
     def forward(self, frames, **kwargs):
@@ -142,13 +145,15 @@ class Backbone(BackboneBase):
 
 class Joiner(nn.Sequential):
     """A sequential wrapper for backbone and position embedding.
-    
+
     `self.forward` returns a tuple:
         - list of feature maps from backbone
         - list of position encoded feature maps
     """
-    def __init__(self, backbone: Backbone, position_embedding: nn.Module):
+
+    def __init__(self, backbone: Backbone, position_embedding: nn.Module, tracing: bool = None):
         super().__init__(backbone, position_embedding)
+        self.tracing = tracing or backbone.tracing
 
     @assert_and_export_onnx()
     def forward(self, frames: aloscene.Frame, **kwargs):

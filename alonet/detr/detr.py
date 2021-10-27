@@ -5,7 +5,6 @@ End-to-End Object Detection with Transformers (DETR) model.
 import torch
 import torch.nn.functional as F
 from torch import nn
-from collections import namedtuple
 
 from alonet.detr.transformer import Transformer
 from alonet.transformers import MLP, PositionEmbeddingSine
@@ -51,6 +50,8 @@ class Detr(nn.Module):
         with the the list of the different backbone outputs, by default False
     strict_load_weights : bool, Optional
         Load the weights (if any given) with strict=True, by default True
+    tracing : bool, Optional
+        Change model behavior to be exported as TorchScript, by default False
     """
 
     INPUT_MEAN_STD = INPUT_MEAN_STD
@@ -95,6 +96,7 @@ class Detr(nn.Module):
         self.query_embed = nn.Embedding(num_queries, hidden_dim)
         self.input_proj = nn.Conv2d(backbone.num_channels, hidden_dim, kernel_size=1)
         self.backbone = backbone
+        self.backbone.tracing = tracing
         self.aux_loss = aux_loss
 
         if device is not None:

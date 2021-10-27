@@ -1,0 +1,5 @@
+{
+    "threshold": 0.2,
+    "background_class": 91,
+    "activation_fn" : "sigmoid"
+}

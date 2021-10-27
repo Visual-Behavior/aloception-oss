@@ -1,0 +1,5 @@
+{
+    "threshold": 0.85,
+    "background_class": 91,
+    "activation_fn" : "softmax"
+}

@@ -49,9 +49,9 @@ class ModelHandler(BaseHandler):
         )
 
         # Default inference-parameters
-        self.threshold = 0.2
-        self.background_class = 91
-        self.activation_fn = "sigmoid"
+        self.threshold = 0.6
+        self.background_class = None
+        self.activation_fn = "softmax"
 
     def initialize(self, context):
         # Read additional configuration
@@ -95,10 +95,12 @@ class ModelHandler(BaseHandler):
         return torch.stack(images).to(self.device)
 
     def inference(self, data, *args, **kwargs):
-        logger.info("context : th={}, af={}, bc={}".format(self.threshold, self.activation_fn, self.background_class))
         outs_boxes, outs_logits = super().inference(data, *args, **kwargs)
 
         # Get probs and labels
+        if self.activation_fn not in ["softmax", "sigmoid"]:
+            logger.warning("Incorrect activation function. Setting to default value...")
+            self.activation_fn = "softmax"
         if self.activation_fn == "softmax":
             outs_probs = F.softmax(outs_logits, -1)
         else:

@@ -17,8 +17,6 @@ import torch.nn.functional as F
 from torchvision import transforms
 from ts.torch_handler.base_handler import BaseHandler
 
-from alonet.deformable_detr.ops.functions import load_ops
-
 logger = logging.getLogger(__name__)
 
 
@@ -52,6 +50,7 @@ class ModelHandler(BaseHandler):
         self.threshold = 0.6
         self.background_class = None
         self.activation_fn = "softmax"
+        self.enable_cuda_ops = True
 
     def initialize(self, context):
         # Read additional configuration
@@ -66,7 +65,10 @@ class ModelHandler(BaseHandler):
             logger.warning("Missing the setup_config.json file. Take default values.")
 
         # Load cuda ops from default path
-        load_ops()
+        if self.enable_cuda_ops:
+            from alonet.deformable_detr.ops.functions import load_ops
+
+            load_ops()
 
         super().initialize(context)
 

@@ -1,5 +1,6 @@
 {
     "threshold": 0.85,
     "background_class": 91,
-    "activation_fn" : "softmax"
+    "activation_fn" : "softmax",
+    "enable_cuda_ops" : false
 }

@@ -16,4 +16,7 @@ captum==0.4.0
 torchserve==0.4.2
 torch-model-archiver==0.4.2
 torch-workflow-archiver==0.1.2
-#onnx_graphsurgeon==0.0.1
+nvidia-pyindex==1.0.9
+onnx_graphsurgeon==0.3.14
+nvidia-tensorrt==8.2.0.6
+pycuda==2021.1

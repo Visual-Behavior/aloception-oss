@@ -10,7 +10,7 @@ Then copy-past from detr official repository with modification
 to be usuable inside aloception along with deformable detr.
 """
 import copy
-from typing import Optional, List
+from typing import Optional
 
 import torch
 import torch.nn.functional as F
@@ -325,7 +325,12 @@ class TransformerDecoderLayer(nn.Module):
         q = k = self.with_pos_embed(tgt, query_pos)
         tgt2 = self.self_attn(q, k, value=tgt, attn_mask=tgt_mask, key_padding_mask=tgt_key_padding_mask)[0]
         tgt = tgt + self.dropout1(tgt2)
-        tgt = self.norm1(tgt)
+        if self.training:
+            tgt = self.norm1(tgt)
+        else:  # First layerNorm make manually to correct export onnx2trt
+            tgt = (tgt - torch.mean(tgt, -1, keepdim=True)) / (
+                torch.sqrt(torch.var(tgt, -1, keepdim=True) + self.norm1.eps)
+            ) * self.norm1.weight + self.norm1.bias
         tgt2 = self.multihead_attn(
             query=self.with_pos_embed(tgt, query_pos),
             key=self.with_pos_embed(memory, pos),

@@ -46,7 +46,7 @@ if __name__ == "__main__":
         args.onnx_path = os.path.join(vb_fodler(), "weights", "detr-r50", "detr-r50.onnx")
 
     input_shape = [3] + list(args.HW)
-    model = DetrR50(weights="detr-r50", aux_loss=False, return_dec_outputs=False)
+    model = DetrR50(weights="detr-r50", aux_loss=False, return_dec_outputs=False).eval()
     exporter = DetrTRTExporter(model=model, input_shapes=(input_shape,), input_names=["img"], **vars(args))
-    print(vars(args))
+
     exporter.export_engine()

@@ -263,7 +263,12 @@ class TransformerEncoderLayer(nn.Module):
         src_key_padding_mask: Optional[Tensor] = None,
         pos: Optional[Tensor] = None,
     ):
-        src2 = self.norm1(src)
+        if self.training:
+            src2 = self.norm1(src)
+        else:  # First layerNorm make manually to correct export onnx2trt
+            src2 = (src - torch.mean(src, -1, keepdim=True)) / (
+                torch.sqrt(torch.var(src, -1, keepdim=True) + self.norm1.eps)
+            ) * self.norm1.weight + self.norm1.bias
         q = k = self.with_pos_embed(src2, pos)
 
         src2 = self.self_attn(q, k, value=src2, attn_mask=src_mask, key_padding_mask=src_key_padding_mask)[0]
@@ -392,9 +397,11 @@ class TransformerDecoderLayer(nn.Module):
     ):
 
         if self.normalize_before:
+            print("sikas")
             return self.forward_pre(
                 tgt, memory, tgt_mask, memory_mask, tgt_key_padding_mask, memory_key_padding_mask, pos, query_pos
             )
+        print("nokas")
         return self.forward_post(
             tgt, memory, tgt_mask, memory_mask, tgt_key_padding_mask, memory_key_padding_mask, pos, query_pos
         )

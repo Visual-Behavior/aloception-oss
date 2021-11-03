@@ -44,7 +44,7 @@ def get_mask_queries(
     feat_size = dec_outputs.shape[2:]
 
     dec_outputs = [
-        torch.cat([dec_outputs[b : b + 1, idx], torch.zeros(1, max_size - fs, *feat_size, device=device)], dim=1,)
+        torch.cat([dec_outputs[b : b + 1, idx], torch.zeros(1, max_size - fs, *feat_size, device=device)], dim=1)
         for b, (idx, fs) in enumerate(zip(filters, fsizes))
     ]
     return torch.cat(dec_outputs, dim=0), filters
@@ -72,7 +72,7 @@ def get_base_model_frame(frames: Union[list, aloscene.Frame], cat: str = "catego
         b.labels = b.labels[cat]
 
     if isinstance(frames.boxes2d[0].labels, dict):
-        frames.apply_on_label(frames.boxes2d, criterion)
+        frames.apply_on_child(frames.boxes2d, criterion)
     if isinstance(frames.segmentation[0].labels, dict):
-        frames.apply_on_label(frames.segmentation, criterion)
+        frames.apply_on_child(frames.segmentation, criterion)
     return frames

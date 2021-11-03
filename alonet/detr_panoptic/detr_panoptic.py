@@ -37,6 +37,8 @@ class PanopticHead(nn.Module):
         Configure module in CPU or GPU, by default :attr:`torch.device("cpu")`
     weights : str, optional
         Load weights from name project, by default None
+    fpn_list : list, optional
+        Expected features backbone sizes from [layer1, layer2, layer3], by default [1024, 512, 256]
     strict_load_weights : bool
         Load the weights (if any given) with strict = ``True`` (by default).
     """
@@ -50,6 +52,7 @@ class PanopticHead(nn.Module):
         aux_loss: bool = None,
         device: torch.device = torch.device("cpu"),
         weights: str = None,
+        fpn_list: list = [1024, 512, 256],
         strict_load_weights: bool = True,
     ):
         super().__init__()
@@ -69,7 +72,7 @@ class PanopticHead(nn.Module):
         # Use values provides of DETR module in MHA and FPN
         hidden_dim, nheads = DETR_module.transformer.d_model, DETR_module.transformer.nhead
         self.bbox_attention = MHAttentionMap(hidden_dim, hidden_dim, nheads, dropout=0.1)
-        self.mask_head = FPNstyleCNN(hidden_dim + nheads, [1024, 512, 256], hidden_dim)
+        self.mask_head = FPNstyleCNN(hidden_dim + nheads, fpn_list, hidden_dim)
 
         if device is not None:
             self.to(device)
@@ -119,10 +122,9 @@ class PanopticHead(nn.Module):
         """
         # DETR model forward to obtain box embeddings
         out = self.detr(frames, **kwargs)
-        features = out["bb_outputs"]
-        src, mask = features[-1][0], features[-1][1].to(torch.float32)
-        mask = mask[:, 0].to(torch.bool)
-        bs = src.shape[0]
+        features, _ = out["bb_outputs"]
+        proj_src, mask = features[-1][0], features[-1][1]
+        bs = proj_src.shape[0]
 
         # Filter boxes and get mask indices from them
         get_filter_fn = get_filter_fn or (lambda *args, **kwargs: get_mask_queries(*args, model=self.detr, **kwargs))
@@ -130,8 +132,8 @@ class PanopticHead(nn.Module):
 
         # Use box embeddings as input of Multi Head attention
         bbox_mask = self.bbox_attention(dec_outputs, out["enc_outputs"], mask=mask)
-        # And then, use MHA ouput as input of FPN-style CNN
-        seg_masks = self.mask_head(self.detr.input_proj(src), bbox_mask, [features[i][0] for i in range(3)[::-1]])
+        # And then, use MHA ouput as input of FPN-style CNN. proj_src = input_proj(features[-1][0])
+        seg_masks = self.mask_head(proj_src, bbox_mask, [features[i][0] for i in range(3)[::-1]])
 
         out["pred_masks"] = seg_masks.view(bs, bbox_mask.shape[1], seg_masks.shape[-2], seg_masks.shape[-1])
         out["pred_masks_info"] = {"frame_size": frames.shape[-2:], "filters": filters}

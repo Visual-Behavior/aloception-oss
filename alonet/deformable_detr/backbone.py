@@ -1,19 +1,12 @@
 """
 Backbone modules for Deformable DETR
 """
-from collections import OrderedDict
 
-import torch
-import torch.nn.functional as F
-import torchvision.transforms.functional as tvF
 import torchvision
 from torch import nn
 from torchvision.models._utils import IntermediateLayerGetter
-from typing import Dict, List
 
 
-import aloscene
-from alonet.detr.backbone import Backbone as DetrBackbone
 from alonet.detr.backbone import BackboneBase as DetrBackboneBase
 from alonet.detr.backbone import Joiner as DetrJoiner
 from alonet.detr.backbone import is_main_process, FrozenBatchNorm2d
@@ -31,10 +24,11 @@ class BackboneBase(DetrBackboneBase):
             **kwargs
         )
         if return_interm_layers:
-            # return_layers = {"layer1": "0", "layer2": "1", "layer3": "2", "layer4": "3"}
-            return_layers = {"layer2": "0", "layer3": "1", "layer4": "2"}
-            self.strides = [8, 16, 32]
-            self.num_channels = [512, 1024, 2048]
+            # Ignore layer1 in forward. Use layer1 for panoptic purposes
+            return_layers = {"layer1": "0", "layer2": "1", "layer3": "2", "layer4": "3"}
+            # return_layers = {"layer2": "0", "layer3": "1", "layer4": "2"}
+            self.strides = [4, 8, 16, 32]
+            self.num_channels = [256, 512, 1024, 2048]
         else:
             return_layers = {"layer4": "0"}
             self.strides = [32]

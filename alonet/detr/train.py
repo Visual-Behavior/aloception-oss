@@ -382,9 +382,7 @@ if __name__ == "__main__":
 
     # Logger config
     logging.basicConfig(
-        level=logging.INFO,
-        format="[%(asctime)s][%(levelname)s] %(message)s",
-        datefmt="%d-%m-%y %H:%M:%S",
+        level=logging.INFO, format="[%(asctime)s][%(levelname)s] %(message)s", datefmt="%d-%m-%y %H:%M:%S"
     )
     logger = logging.getLogger("aloception")
 

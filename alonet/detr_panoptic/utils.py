@@ -44,10 +44,7 @@ def get_mask_queries(
     feat_size = dec_outputs.shape[2:]
 
     dec_outputs = [
-        torch.cat(
-            [dec_outputs[b : b + 1, idx], torch.zeros(1, max_size - fs, *feat_size, device=device)],
-            dim=1,
-        )
+        torch.cat([dec_outputs[b : b + 1, idx], torch.zeros(1, max_size - fs, *feat_size, device=device)], dim=1)
         for b, (idx, fs) in enumerate(zip(filters, fsizes))
     ]
     return torch.cat(dec_outputs, dim=0), filters

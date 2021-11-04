@@ -397,11 +397,9 @@ class TransformerDecoderLayer(nn.Module):
     ):
 
         if self.normalize_before:
-            print("sikas")
             return self.forward_pre(
                 tgt, memory, tgt_mask, memory_mask, tgt_key_padding_mask, memory_key_padding_mask, pos, query_pos
             )
-        print("nokas")
         return self.forward_post(
             tgt, memory, tgt_mask, memory_mask, tgt_key_padding_mask, memory_key_padding_mask, pos, query_pos
         )

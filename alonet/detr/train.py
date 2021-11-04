@@ -88,7 +88,7 @@ class LitDetr(pl.LightningModule):
         )
         return parent_parser
 
-    def forward(self, frames: Union[list, Frame]):
+    def forward(self, frames: Union[list, Frame], **kwargs):
         """Run a forward pass through the model.
 
         Parameters
@@ -107,10 +107,10 @@ class LitDetr(pl.LightningModule):
         # Assert inputs content
         self.assert_input(frames, inference=True)
         # Run forward pass
-        m_outputs = self.model(frames)
+        m_outputs = self.model(frames, **kwargs)
         return m_outputs
 
-    def inference(self, m_outputs: dict):
+    def inference(self, m_outputs: dict, **kwargs):
         """Given the model forward outputs, this method will return an
         :mod:`BoundingBoxes2D <aloscene.bounding_boxes_2d>` tensor.
 
@@ -124,7 +124,7 @@ class LitDetr(pl.LightningModule):
         List[:mod:`BoundingBoxes2D <aloscene.bounding_boxes_2d>`]
             Set of boxes for each batch
         """
-        return self.model.inference(m_outputs)
+        return self.model.inference(m_outputs, **kwargs)
 
     def training_step(self, frames: Union[list, Frame], batch_idx: int):
         """Train the model for one step
@@ -382,7 +382,7 @@ if __name__ == "__main__":
 
     # Logger config
     logging.basicConfig(
-        level=logging.INFO, format="[%(asctime)s][%(levelname)s] %(message)s", datefmt="%d-%m-%y %H:%M:%S",
+        level=logging.INFO, format="[%(asctime)s][%(levelname)s] %(message)s", datefmt="%d-%m-%y %H:%M:%S"
     )
     logger = logging.getLogger("aloception")
 

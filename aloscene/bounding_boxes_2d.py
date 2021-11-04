@@ -466,16 +466,21 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
             labels = boxes_abs.labels[labels_set]
             assert labels.encoding == "id"
 
-        for box, label in zip(boxes_abs, labels):
+        for b, (box, label) in enumerate(zip(boxes_abs, labels)):
             box = box.round()
             x1, y1, x2, y2 = box.as_tensor()
-            color = (0, 1, 0)
-            cv2.rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), color, 3)
+
             if label is not None:
                 color = self._GLOBAL_COLOR_SET[int(label) % len(self._GLOBAL_COLOR_SET)]
                 cv2.putText(
                     frame, str(int(label)), (int(x2), int(y1)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1, cv2.LINE_AA
                 )
+                cv2.rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), color, 3)
+            else:
+                color = (0, 1, 0)
+                cv2.rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), color, 3)
+
+
         # Return the view to display
         return View(frame, **kwargs)
 

@@ -94,7 +94,7 @@ if __name__ == "__main__":
     BaseTRTExporter.add_argparse_args(parser)
     args = parser.parse_args()
     kwargs = vars(args)
-    kwargs["onnx_path"] = os.path.join(ALONET_ROOT, f"{args.name}_iters{args.iters}.onnx")
+    kwargs["onnx_path"] = os.path.join(ALONET_ROOT, f"{args.name}_iters{args.iters}_scopenames.onnx")
     kwargs["verbose"] = True
     shape = [1, 3] + kwargs.pop("HW")
     i_shapes = (shape, shape)
@@ -103,7 +103,12 @@ if __name__ == "__main__":
     model.eval()
 
     exporter = RaftTRTExporter(
-        model=model, input_shapes=i_shapes, input_names=i_names, do_constant_folding=False, **kwargs
+        model=model,
+        input_shapes=i_shapes,
+        input_names=i_names,
+        do_constant_folding=False,
+        use_scope_names=True,
+        **kwargs,
     )
     # exporter.export_engine()
     exporter._torch2onnx()

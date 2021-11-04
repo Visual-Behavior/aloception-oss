@@ -58,3 +58,21 @@ class Padder:
         h, w = tensor.shape[-2:]
         top, bottom, left, right = self.top, self.bottom, self.left, self.right
         return tensor[..., top : h - bottom, left : w - right]
+
+
+class FlowUpSampler(torch.nn.Module):
+    def __init__(self):
+        super(FlowUpSampler, self).__init__()
+
+    def forward(self, flow, mask):
+        """Upsample flow field [H/8, W/8, 2] -> [H, W, 2] using convex combination"""
+        N, _, H, W = flow.shape
+        mask = mask.view(N, 1, 9, 8, 8, H, W)
+        mask = torch.softmax(mask, dim=2)
+
+        up_flow = F.unfold(8 * flow, [3, 3], padding=1)
+        up_flow = up_flow.view(N, 2, 9, 1, 1, H, W)
+
+        up_flow = torch.sum(mask * up_flow, dim=2)
+        up_flow = up_flow.permute(0, 1, 4, 2, 5, 3)
+        return up_flow.reshape(N, 2, 8 * H, 8 * W)

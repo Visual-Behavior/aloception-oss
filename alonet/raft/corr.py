@@ -9,24 +9,35 @@ except:
     pass
 
 
-class CorrBlock:
-    def __init__(self, fmap1, fmap2, num_levels=4, radius=4):
-        self.num_levels = num_levels
-        self.radius = radius
-        self.corr_pyramid = []
+class CorrBlockInitializer(torch.nn.Module):
+    def __init__(self):
+        super(CorrBlockInitializer, self).__init__()
 
+    def forward(self, fmap1, fmap2, num_levels=4, radius=4):
+        corr_pyramid = []
         # all pairs correlation
         corr = CorrBlock.corr(fmap1, fmap2)
 
         batch, h1, w1, dim, h2, w2 = corr.shape
         corr = corr.reshape(batch * h1 * w1, dim, h2, w2)
 
-        self.corr_pyramid.append(corr)
-        for i in range(self.num_levels - 1):
+        corr_pyramid.append(corr)
+        for i in range(num_levels - 1):
             corr = F.avg_pool2d(corr, 2, stride=2)
-            self.corr_pyramid.append(corr)
+            corr_pyramid.append(corr)
 
-    def __call__(self, coords):
+        return corr_pyramid
+
+
+class CorrBlock(torch.nn.Module):
+    def __init__(self, fmap1, fmap2, num_levels=4, radius=4):
+        super(CorrBlock, self).__init__()
+        self.num_levels = num_levels
+        self.radius = radius
+        self.initializer = CorrBlockInitializer()
+        self.corr_pyramid = self.initializer(fmap1, fmap2, num_levels, radius)
+
+    def forward(self, coords):
         r = self.radius
         coords = coords.permute(0, 2, 3, 1)
         batch, h1, w1, _ = coords.shape

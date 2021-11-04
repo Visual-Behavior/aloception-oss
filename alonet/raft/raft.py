@@ -8,7 +8,7 @@ import alonet
 from alonet.raft.corr import CorrBlock, AlternateCorrBlock
 from alonet.raft.update import BasicUpdateBlock
 from alonet.raft.extractor import BasicEncoder
-from alonet.raft.utils.utils import coords_grid, upflow8
+from alonet.raft.utils.utils import FlowUpSampler, coords_grid, upflow8
 from aloscene import Flow, Frame
 
 
@@ -42,6 +42,7 @@ class RAFTBase(nn.Module):
         fnet,
         cnet,
         update_block,
+        upsampler,
         alternate_corr=False,
         weights: str = None,
         device: torch.device = torch.device("cpu"),
@@ -51,6 +52,7 @@ class RAFTBase(nn.Module):
         self.cnet = cnet
         self.update_block = update_block
         self.alternate_corr = alternate_corr
+        self.upsampler = upsampler
 
         if weights is not None:
             weights_from_original_repo = ["raft-things", "raft-chairs", "raft-small", "raft-kitti", "raft-sintel"]
@@ -72,6 +74,7 @@ class RAFTBase(nn.Module):
         Build RAFT feature extractor
         """
         return encoder_cls(output_dim=output_dim, norm_fn="instance", dropout=self.dropout)
+        # return encoder_cls(output_dim=output_dim, norm_fn="batch", dropout=self.dropout)
 
     def build_cnet(self, encoder_cls=BasicEncoder):
         """
@@ -165,9 +168,9 @@ class RAFTBase(nn.Module):
         fmap1 = fmap1.float()
         fmap2 = fmap2.float()
         if self.alternate_corr:
-            corr_fn = AlternateCorrBlock(fmap1, fmap2, radius=self.corr_radius)
+            self.corr_fn = AlternateCorrBlock(fmap1, fmap2, radius=self.corr_radius)
         else:
-            corr_fn = CorrBlock(fmap1, fmap2, radius=self.corr_radius)
+            self.corr_fn = CorrBlock(fmap1, fmap2, radius=self.corr_radius)
 
         # run the context network
         cnet = self.cnet(frame1)
@@ -183,7 +186,7 @@ class RAFTBase(nn.Module):
         flow_predictions = {}
         for itr in range(iters):
             coords1 = coords1.detach()
-            corr = corr_fn(coords1)  # index correlation volume
+            corr = self.corr_fn(coords1)  # index correlation volume
 
             flow = coords1 - coords0
             net, up_mask, delta_flow = self.update_block(net, inp, corr, flow)
@@ -193,10 +196,11 @@ class RAFTBase(nn.Module):
 
             # upsample predictions
             if not only_last or itr == iters - 1:
-                if up_mask is None:
-                    flow_up = upflow8(coords1 - coords0)
-                else:
-                    flow_up = self.upsample_flow(coords1 - coords0, up_mask)
+                # if up_mask is None:
+                #     flow_up = upflow8(coords1 - coords0)
+                # else:
+                #     flow_up = self.upsample_flow(coords1 - coords0, up_mask)
+                flow_up = self.upsampler(coords1 - coords0, up_mask)
 
                 flow_predictions[f"flow_stage{itr}"] = flow_up
 
@@ -254,8 +258,9 @@ class RAFT(RAFTBase):
         fnet = self.build_fnet(encoder_cls=BasicEncoder, output_dim=256)
         cnet = self.build_cnet(encoder_cls=BasicEncoder)
         update_block = self.build_update_block(update_cls=BasicUpdateBlock)
+        upsampler = FlowUpSampler()
 
-        super().__init__(fnet, cnet, update_block, **kwargs)
+        super().__init__(fnet, cnet, update_block, upsampler, **kwargs)
 
 
 if __name__ == "__main__":

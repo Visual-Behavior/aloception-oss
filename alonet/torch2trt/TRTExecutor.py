@@ -3,6 +3,9 @@ from typing import Union
 import pycuda.autoinit as cuda_init
 import pycuda
 import tensorrt as trt
+import numpy as np
+from collections import defaultdict
+
 from alonet.torch2trt.utils import allocate_buffers, execute_async, execute_sync
 
 TRT_LOGGER = trt.Logger(trt.Logger.INFO)
@@ -10,6 +13,18 @@ TRT_LOGGER = trt.Logger(trt.Logger.INFO)
 # ctypes.CDLL(MS_DEFORM_IM2COL_PLUGIN_LIB)
 # trt.init_libnvinfer_plugins(TRT_LOGGER, '')
 # PLUGIN_CREATORS = trt.get_plugin_registry().plugin_creator_list
+
+
+class CustomProfiler(trt.IProfiler):
+    def __init__(self):
+        trt.IProfiler.__init__(self)
+        self.reset()
+
+    def report_layer_time(self, layer_name, ms):
+        self.timing[layer_name].append(ms)
+
+    def reset(self):
+        self.timing = defaultdict(list)
 
 
 class TRTExecutor:
@@ -67,7 +82,8 @@ class TRTExecutor:
             self.engine = engine
         self.context = self.engine.create_execution_context()
         if profiling:
-            self.context.profiler = trt.Profiler()
+            # self.context.profiler = trt.Profiler()
+            self.context.profiler = CustomProfiler()
         # TODO: test this mode later with DETR segmentaion
         if not has_dynamic_shape:
             self.inputs, self.outputs, self.bindings, self.stream = allocate_buffers(

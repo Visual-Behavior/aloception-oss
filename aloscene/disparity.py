@@ -42,7 +42,7 @@ class Disparity(aloscene.tensors.SpatialAugmentedTensor):
             x = load_disp(x, png_negate)
             names = ("C", "H", "W")
         tensor = super().__new__(cls, x, *args, names=names, **kwargs)
-        tensor.add_label("occlusion", occlusion, align_dim=["B", "T"], mergeable=True)
+        tensor.add_child("occlusion", occlusion, align_dim=["B", "T"], mergeable=True)
         tensor.add_property("disp_format", disp_format)
         return tensor
 
@@ -60,16 +60,15 @@ class Disparity(aloscene.tensors.SpatialAugmentedTensor):
             If none, the occlusion mask will be attached without name (if possible). Otherwise if no other unnamed
             occlusion mask are attached to the frame, the mask will be added to the set of mask.
         """
-        self._append_label("occlusion", occlusion, name)
+        self._append_child("occlusion", occlusion, name)
 
-    def __get_view__(self, min_disp=0, max_disp=30, cmap="nipy_spectral", reverse=False):
+    def __get_view__(self, min_disp=None, max_disp=None, cmap="nipy_spectral", reverse=False):
         assert all(dim not in self.names for dim in ["B", "T"]), "disparity should not have batch or time dimension"
         if cmap == "red2green":
             cmap = matplotlib.colors.LinearSegmentedColormap.from_list("rg", ["r", "w", "g"], N=256)
         elif isinstance(cmap, str):
             cmap = matplotlib.cm.get_cmap(cmap)
-        disp = self.unsigned().rename(None).permute([1, 2, 0]).detach().contiguous().cpu().numpy()
-        disp = np.clip(disp, min_disp, max_disp)
+        disp = self.unsigned().rename(None).permute([1, 2, 0]).detach().contiguous().numpy()
         disp = matplotlib.colors.Normalize(vmin=min_disp, vmax=max_disp, clip=True)(disp)
         if reverse:
             disp = 1 - disp
@@ -95,9 +94,9 @@ class Disparity(aloscene.tensors.SpatialAugmentedTensor):
         W_new = disp_resized.W
         # rescale disparity
         sl_x = disp_resized.get_slices({"C": 0})
-        labels = disp_resized.drop_labels()
+        labels = disp_resized.drop_children()
         disp_resized[sl_x] = disp_resized[sl_x] * W_new / W_old
-        disp_resized.set_labels(labels)
+        disp_resized.set_children(labels)
         return disp_resized
 
     def _hflip(self, **kwargs):
@@ -155,6 +154,10 @@ class Disparity(aloscene.tensors.SpatialAugmentedTensor):
 
         Parameters
         ----------
+        camera_side : str | None
+            If created from a stereo camera, this information can optionally be used to convert
+            this depth tensor into a disparity tensor. The `camera_side` is necessary to switch from unsigned to signed
+            format once using a disparity tensor.
         baseline: float | None
             The `baseline` must be known to convert this disp tensor into a depth tensor.
             The `baseline` must be given either from from the current disp tensor or from this parameter.
@@ -176,11 +179,6 @@ class Disparity(aloscene.tensors.SpatialAugmentedTensor):
             raise Exception(err_msg)
 
         disparity = self.unsigned().as_tensor()
-
-        # if plane_size is not None and self.HW != plane_size:
-        #    disparity = (disparity * plane_size[1] / self.W).as_tensor()
-        # else:
-        #    disparity = disparity.as_tensor()
 
         # unsqueeze on the Spatial H,W Dimension. On the dimension before "C", the focal_length is already supposed
         # to be aligned properly.

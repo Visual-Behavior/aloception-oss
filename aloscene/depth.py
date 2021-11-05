@@ -19,8 +19,6 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         loaded Depth tensor or path to the Depth file from which Depth will be loaded.
     occlusion : aloscene.Mask
         Occlusion mask for this Depth map. Default value : None.
-
-
     """
 
     @staticmethod
@@ -29,7 +27,7 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
             x = load_depth(x)
             names = ("C", "H", "W")
         tensor = super().__new__(cls, x, *args, names=names, **kwargs)
-        tensor.add_label("occlusion", occlusion, align_dim=["B", "T"], mergeable=True)
+        tensor.add_child("occlusion", occlusion, align_dim=["B", "T"], mergeable=True)
 
         return tensor
 
@@ -74,12 +72,9 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         """
         intrinsic = camera_intrinsic if camera_intrinsic is not None else self.cam_intrinsic
 
-        y_points, x_points = torch.meshgrid(torch.arange(self.H), torch.arange(self.W))
-        y_points = y_points.to(self.device)
-        x_points = x_points.to(self.device)
-        # if plane_size is not None and self.HW != plane_size:
-        #    y_points = y_points * plane_size[0] / self.H
-        #    x_points = x_points * plane_size[1] / self.W
+        y_points, x_points = torch.meshgrid(
+            torch.arange(self.H, device=self.device), torch.arange(self.W, device=self.device)
+        )
 
         z_points = self.as_tensor().view((-1, self.H * self.W))
 
@@ -88,17 +83,7 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
             err_msg += "the as_points3d(camera_intrinsic=...) method."
             raise Exception(err_msg)
 
-        # if principal_point is None:  # Try to automaticly set the principal_point
-        #    if plane_size[0] % 2 != 0 or plane_size[1] % 2 != 0:
-        #        err = "The principal points (center of the plane) can't be infer automaticly."
-        #        err += " The latter must be given when creating the Depth tensor or when calling "
-        #        err += "as_point3d(principal_point=(c_y, c_x))"
-        #        raise Exception(err)
-        #    principal_point = (self.plane_size[0] / 2, self.plane_size[1] / 2)
-
         target_shape = tuple([self.shape[self.names.index(n)] for n in self.names if n not in ("C", "H", "W")] + [-1])
-        # Broadcasted shape
-        broad_shape = tuple([1 for n in self.names if n not in ("C", "H", "W")] + [-1])
         target_names = tuple([n for n in self.names if n not in ("C", "H", "W")] + ["N", None])
 
         y_points = y_points.reshape((-1,))

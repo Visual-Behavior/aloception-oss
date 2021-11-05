@@ -15,6 +15,10 @@ def _test_disp_depth_points3d(depth, height, width, resize=True):
             depth.resize((height * 2, width * 2)).resize((height, width)).as_disp().as_depth().as_tensor(),
         )
 
+        d = depth.resize((height * 2, width * 2))
+
+        v = depth.resize((height * 2, width * 2)).as_disp().resize((height, width)).as_depth()
+
         assert torch.allclose(
             depth.as_tensor(),
             depth.resize((height * 2, width * 2)).as_disp().resize((height, width)).as_depth().as_tensor(),

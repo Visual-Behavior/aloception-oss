@@ -28,14 +28,14 @@ class CameraIntrinsic(AugmentedTensor):
     x: torch.Tensor | np.array | None
         Could be None. If None, x will be created based on `focal_length`, `plane_size` & the `principal_point`.
     focal_length: float | tuple | None
-        Focal length of the current frame. If tuple, will be (fy, fx).
+        Focal length (in px) of the current frame. If tuple, will be (fy, fx).
     plane_size: tuple | None
-        The `plane size` is used to unproject or project points from 2D to 3D (or 3D to 2D). If the
+        The `plane size` (in px) is used to unproject or project points from 2D to 3D (or 3D to 2D). If the
         `plane_size` is not provided, it will be assume to be equal to the current
         tensor size. In some cases, this asumption might be Fase. If so, one must pass the plane_size using one tuple
         (height, width).
     principal_point: tuple | None
-        Coordinates of the plane center in the following format : (x0, y0), in pixels. If none,
+        Coordinates of the plane center in the following format : (x0, y0), (in px). If none,
         the principal points will be assume to be half the size of the plane (if possible). If the plane size is not
         given, the principal points will be zero.
     skew: float | None
@@ -74,14 +74,6 @@ class CameraIntrinsic(AugmentedTensor):
             x[1][2] = principal_point[0]
 
         tensor = super().__new__(cls, x, *args, names=names, **kwargs)
-
-        # Add camera parameters as labels
-        # tensor.add_property("_focal_length", focal_length)
-        # plane_size = plane_size if plane_size is not None else (tensor.H, tensor.W)
-        # tensor.add_property("_plane_size", plane_size)
-        # tensor.add_property("_principal_point", principal_point)
-        # tensor.add_property("_skew", skew)
-
         return tensor
 
     def __init__(self, x=None, *args, **kwargs):

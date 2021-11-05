@@ -39,13 +39,6 @@ class Points3D(aloscene.tensors.AugmentedTensor):
     ----------
     x: list | torch.Tensor | np.array
         Points3D data. See explanation above for details.
-    focal_length: float | None
-        The `focal_length` could be used to project the 3D points onto a 2D plane.
-    plane_size: tuple | None
-        The `plane size` could be used to project the 3D points onto the camera plane.
-    principal_point: tuple | None
-        Coordinates of the plane center in the following format : (c_y, c_x), in pixels. If none, when required,
-        the principal points will be assume to be half the size of the plane (if even)
 
     names: tuple
         Names of the dimensions : ("N", None) by default. See explanation above for more details.
@@ -98,21 +91,9 @@ class Points3D(aloscene.tensors.AugmentedTensor):
         projected_points = self.as_tensor()
         projected_points[..., :2] = projected_points[..., :2] / projected_points[..., 2:3] * focal_length
 
-        # if principal_point is None:  # Try to automaticly set the principal_point
-        #    if plane_size[0] % 2 != 0 or plane_size[1] % 2 != 0:
-        #        err = "The principal points (center of the plane) can't be infer automaticly."
-        #        err += " The latter must be given when creating the Points3D tensor or when calling "
-        #        err += "as_depth(principal_point=(c_y, c_x))"
-        #        raise Exception(err)
-        #    principal_point = (plane_size[0] / 2, plane_size[1] / 2)
-
         # move frame origin from image center to top-left corner
         projected_points[..., 0] = projected_points[..., 0] + principal_points[..., 0]
         projected_points[..., 1] = projected_points[..., 1] + principal_points[..., 1]
-
-        # if plane_size != base_depth.HW:
-        #    projected_points[..., 0] = projected_points[..., 0] * base_depth.H / plane_size[0]
-        #    projected_points[..., 1] = projected_points[..., 1] * base_depth.W / plane_size[1]
 
         slice_dim = {}
         N = self.shape[self.names.index("N")]

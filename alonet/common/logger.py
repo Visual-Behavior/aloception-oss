@@ -3,6 +3,7 @@ from pytorch_lightning.loggers import TensorBoardLogger, WandbLogger
 import warnings
 import numpy as np
 import wandb
+from alodataset.utils.panoptic_utils import id2rgb
 
 
 def boxes_to_wandb_boxes(boxes: aloscene.BoundingBoxes2D, labels_names: list = None):
@@ -29,7 +30,7 @@ def boxes_to_wandb_boxes(boxes: aloscene.BoundingBoxes2D, labels_names: list = N
         }
         if boxes_labels is not None:
             n_box["class_id"] = int(boxes_labels[b])
-            if labels_names is not None:
+            if labels_names is not None and (n_box["class_id"] < len(labels_names) and n_box["class_id"] >= 0):
                 n_box["box_caption"] = labels_names[int(boxes_labels[b])]
             else:
                 n_box["box_caption"] = str(int(boxes_labels[b]))
@@ -77,25 +78,31 @@ def log_image(trainer, key, images):
     key: str
         Tag name of the log
     images: list of dict]
-        List of dict with two keys
+        List of dict with
         `image` : torch.Tensor
-        `boxes`: aloscene.BoundingBoxes2D
-    boxes: list, optional
-        List of Dict containing each two keys : name: str, boxes: aloscene.BoundingBoxes2D
+        `boxes`: aloscene.BoundingBoxes2D, optional
+        `masks`: aloscene.Mask, optional
     """
     if isinstance(trainer.logger, WandbLogger):
         wandb_images = []
         for i, image_data in enumerate(images):
             image = image_data["image"]
             boxes = None if "boxes" not in image_data else image_data["boxes"]
-            boxes_dict = None
+            masks = None if "masks" not in image_data else image_data["masks"]
+            boxes_dict, masks_dict = None, None
             if boxes is not None:
                 boxes_dict = {}
                 for i, b in enumerate(boxes):
                     boxes_dict[b["name"]] = {"box_data": boxes_to_wandb_boxes(b["boxes"], b["class_labels"])}
                     if b["class_labels"] is not None:
                         boxes_dict[b["name"]]["class_labels"] = b["class_labels"]
-            wandb_images.append(wandb.Image(image, boxes=boxes_dict))
+            if masks is not None:
+                masks_dict = {}
+                for i, m in enumerate(masks):
+                    masks_dict[m["name"]] = {"mask_data": m["masks"]}
+                    if m["class_labels"] is not None:
+                        masks_dict[m["name"]]["class_labels"] = m["class_labels"]
+            wandb_images.append(wandb.Image(image, boxes=boxes_dict, masks=masks_dict))
 
         trainer.logger.experiment.log({key: wandb_images, "trainer/global_step": trainer.global_step})
 
@@ -104,16 +111,22 @@ def log_image(trainer, key, images):
         for i, image_obj in enumerate(images):
             batch_el_key = f"{key}_{i}"
             image = image_obj["image"]
-            boxes = image_obj["boxes"]
+            boxes = None if "boxes" not in image_obj else image_obj["boxes"]
+            masks = None if "masks" not in image_obj else image_obj["masks"]
 
+            if boxes is None and masks is None:
+                trainer.logger.experiment.add_image(batch_el_key, image, trainer.global_step)
+
+            if masks is not None:
+                for m in masks:
+                    img = (256 * id2rgb(m["masks"]) * 0.8 + image * 0.2).transpose(2, 0, 1).astype(np.uint8)
+                    trainer.logger.experiment.add_image(f"{batch_el_key}_{m['name']}", img, trainer.global_step)
             if boxes is not None:
-                image = np.transpose(image, (2, 0, 1))
+                image = aloscene.Frame(np.transpose(image, (2, 0, 1)), names=["C", "H", "W"])
                 for b in boxes:
-                    img = b["boxes"].get_view(aloscene.Frame(image, names=["C", "H", "W"])).image
+                    img = b["boxes"].get_view(image).image
                     img = np.transpose(img, (2, 0, 1))
                     trainer.logger.experiment.add_image(f"{batch_el_key}_{b['name']}", img, trainer.global_step)
-            else:
-                trainer.logger.experiment.add_image(batch_el_key, image, trainer.global_step)
     else:
         warnings.warn("image logging not implemented for current logger")
 

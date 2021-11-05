@@ -75,13 +75,17 @@ class DeformableDetrTRTExporter(BaseTRTExporter):
         clip_nodes = get_nodes_by_op("Clip", graph)
 
         def handle_op_Clip(node: gs.Node):
-            min_constant = node.inputs[1].i().inputs[0].attrs["value"].values.astype(np.float32)
+            max_constant = np.array(np.finfo(np.float32).max, dtype=np.float32)
+            if "value" in node.inputs[1].i().inputs[0].attrs:
+                min_constant = node.inputs[1].i().inputs[0].attrs["value"].values.astype(np.float32)
+                if len(node.inputs[2].inputs) > 0:
+                    max_constant = node.inputs[2].i().inputs[0].attrs["value"].values.astype(np.float32)
+            elif "to" in node.inputs[1].i().inputs[0].attrs:
+                min_constant = np.array(np.finfo(np.float32).min, dtype=np.float32)
+            else:
+                raise Exception("Error")
             node.inputs.pop(1)
             node.inputs.insert(1, gs.Constant(name=node.name + "_min", values=min_constant))
-            if len(node.inputs[2].inputs) > 0:
-                max_constant = node.inputs[2].i().inputs[0].attrs["value"].values.astype(np.float32)
-            else:
-                max_constant = np.array(np.finfo(np.float32).max, dtype=np.float32)
             node.inputs.pop(2)
             node.inputs.insert(2, gs.Constant(name=node.name + "_max", values=max_constant))
 
@@ -133,19 +137,20 @@ if __name__ == "__main__":
     parser.add_argument("--image_chw")
     args = parser.parse_args()
 
-    model_name = "deformable-detr-r50-refinement" if args.refinement else "deformable-detr-r50"
+    if args.refinement:
+        model_name = "deformable-detr-r50-refinement"
+        model = DeformableDetrR50Refinement(weights=model_name, aux_loss=False)
+    else:
+        model_name = "deformable-detr-r50"
+        model = DeformableDetrR50(weights=model_name, aux_loss=False)
+
     if args.onnx_path is None:
         args.onnx_path = os.path.join(vb_fodler(), "weights", model_name, model_name + ".onnx")
 
     input_shape = [3] + list(args.HW)
 
     exporter = DeformableDetrTRTExporter(
-        model_name=model_name,
-        weights=model_name,
-        input_shapes=(input_shape,),
-        input_names=["img"],
-        device=device,
-        **vars(args)
+        model=model, weights=model_name, input_shapes=(input_shape,), input_names=["img"], device=device, **vars(args)
     )
 
     exporter.export_engine()

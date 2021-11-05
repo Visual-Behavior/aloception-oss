@@ -67,9 +67,11 @@ def profile_trt(engine_path=None, precision="fp32", iters=12, name="raft-things"
         # model.context.profiler.print_all()
         # plot_timings(model)
         # print_costly_nodes(model)
-        # aggregated_time(model)
+        aggregated_time(model)
         # print_op_names(model)
-        print_not_in_names(model)
+        # print_not_in_names(model)
+        # print_if_pattern_found(model)
+        update_block_summary(model)
         exit()
         print("=====inference_end=====", flush=True)
 
@@ -162,7 +164,41 @@ def print_not_in_names(model):
             print("  ", key, ":", val, "ms")
 
 
-def aggregated_time(model):
+def print_if_pattern_found(model, pattern="[update_block]"):
+    timings = model.context.profiler.timing
+    timings = {key: np.sum(val) for key, val in timings.items()}
+    sorted_key_val = sorted(timings.items(), key=lambda x: x[1], reverse=True)
+    for key, val in sorted_key_val:
+        if pattern in key:
+            print("  ", key, ":", val, "ms")
+
+
+def update_block_summary(model, percentage=False):
+    timings = model.context.profiler.timing
+    timings = {key: np.sum(val) for key, val in timings.items()}
+    subtimings = defaultdict(lambda: 0)
+    subblocks = ["SepConvGRU", "BasicMotionEncoder", "FlowHead", "Sequential"]
+    sorted_key_val = sorted(timings.items(), key=lambda x: x[1], reverse=True)
+    total = 0
+    for key, val in sorted_key_val:
+        if "[update_block]" in key:
+            # print("  ", key, ":", val, "ms")
+            total += val
+            for name in subblocks:
+                if name in key:
+                    subtimings[name] += val
+
+    print("\nUpdate Block profiling:")
+    for key, val in sorted(subtimings.items(), reverse=True, key=lambda x: x[1]):
+        if percentage:
+            print(f"  {key} : {val*100/total:.0f} %")
+        else:
+            print(f"  {key} : {val:.2f} ms")
+
+    print(f"   ==> represents {sum(subtimings.values())*100/total:.2f} % ")
+
+
+def aggregated_time(model, percentage=False):
     timings = model.context.profiler.timing
     timings = {key: np.sum(val) for key, val in timings.items()}
     sorted_key_val = sorted(timings.items(), key=lambda x: x[1], reverse=True)
@@ -182,13 +218,16 @@ def aggregated_time(model):
 
     print("\nTime spent in each block:")
     for key, val in sorted(block_times.items(), reverse=True, key=lambda x: x[1]):
-        print(key, f": {100*val/total_time:.1f} %")
+        if percentage:
+            print(key, f": {100*val/total_time:.1f} %")
+        else:
+            print(key, f": {val:.2f} ms")
 
     print(f"==> accounts for {100*sum(block_times.values())/total_time:.2f} % of total time")
 
-    print("\nTime spent in specific subblocks:")
-    for key, val in sorted(subblock_times.items(), reverse=True, key=lambda x: x[1]):
-        print(key, f": {100*val/total_time:.1f} %")
+    # print("\nTime spent in specific subblocks:")
+    # for key, val in sorted(subblock_times.items(), reverse=True, key=lambda x: x[1]):
+    #     print(key, f": {100*val/total_time:.1f} %")
 
 
 if __name__ == "__main__":

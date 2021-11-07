@@ -150,7 +150,7 @@ class Detr(nn.Module):
         mask = mask.to(torch.bool)
 
         input_proj = self.input_proj(src)
-        transformer_outptus = self.transformer(self.input_proj(src), mask, self.query_embed.weight, pos[-1], **kwargs)
+        transformer_outptus = self.transformer(input_proj, mask, self.query_embed.weight, pos[-1], **kwargs)
 
         # Feature reconstruction with features[-1][0] = input_proj(features[-1][0])
         if self.return_bb_outputs:
@@ -466,9 +466,7 @@ class Detr(nn.Module):
         )
 
     def build_decoder(
-        self,
-        hidden_dim: int = 256,
-        num_decoder_layers: int = 6,
+        self, hidden_dim: int = 256, num_decoder_layers: int = 6,
     ):
         """Build decoder layer
 

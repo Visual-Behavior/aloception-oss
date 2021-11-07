@@ -9,10 +9,11 @@
 
 import copy
 import math
+from numpy import dtype
 
 import torch
 import torch.nn.functional as F
-from torch import nn
+from torch import device, nn
 from torch.nn.init import xavier_uniform_, constant_, normal_
 
 from .utils import inverse_sigmoid
@@ -199,33 +200,43 @@ class DeformableTransformer(nn.Module):
         return valid_ratio
 
     def forward(self, srcs, masks, pos_embeds, query_embed=None, **kwargs):
-        transformer_outputs = {}
-
         assert self.two_stage or query_embed is not None
+
+        transformer_outputs = {}
 
         # prepare input for encoder
         src_flatten = []
         mask_flatten = []
         lvl_pos_embed_flatten = []
-        spatial_shapes = torch.zeros(len(srcs), 2, dtype=torch.long, device=srcs[0].device)
+        if "is_tracing" in kwargs and kwargs["is_tracing"]:
+            spatial_shapes = torch.empty(len(srcs), 2, dtype=torch.int32, device=srcs[0].device)
+        else:
+            spatial_shapes = []
+
         for lvl, (src, mask, pos_embed) in enumerate(zip(srcs, masks, pos_embeds)):
             bs, c, h, w = src.shape
-            spatial_shapes[lvl][0] = h
-            spatial_shapes[lvl][1] = w
-            # spatial_shape = torch.tensor([[h, w]], dtype=torch.long, device=srcs[0].device)
-            # spatial_shapes.append(spatial_shape)
+            if "is_tracing" in kwargs and kwargs["is_tracing"]:  # Used in tracing mode for dinamic input shape
+                spatial_shapes[lvl, 0] = h
+                spatial_shapes[lvl, 1] = w
+            else:  # Shape fixed to export in onnx/tensorRT
+                spatial_shapes.append(torch.tensor([[h, w]], dtype=torch.int32, device=srcs[0].device))
             src = src.flatten(2).transpose(1, 2)
             mask = mask.flatten(1)
             pos_embed = pos_embed.flatten(2).transpose(1, 2)
-            lvl_pos_embed = pos_embed + self.level_embed[lvl].view(1, 1, -1)
+            lvl_pos_embed = pos_embed + self.level_embed[lvl : lvl + 1].view(1, 1, -1)
             lvl_pos_embed_flatten.append(lvl_pos_embed)
             src_flatten.append(src)
             mask_flatten.append(mask)
+
         src_flatten = torch.cat(src_flatten, 1)
         mask_flatten = torch.cat(mask_flatten, 1)
         lvl_pos_embed_flatten = torch.cat(lvl_pos_embed_flatten, 1)
-        # spatial_shapes = torch.cat(spatial_shapes, dim=0)
-        level_start_index = torch.cat((spatial_shapes.new_zeros((1,)), spatial_shapes.prod(1).cumsum(0)[:-1]))
+        if isinstance(spatial_shapes, list):
+            spatial_shapes = torch.cat(spatial_shapes, 0)
+
+        level_start_index = torch.cat((spatial_shapes.new_zeros((1,)), spatial_shapes.prod(1).cumsum(0)[:-1])).type(
+            torch.int32
+        )
         _valid_ratios = [self.get_valid_ratio(m) for m in masks]
         valid_ratios = torch.stack(_valid_ratios, 1)
 
@@ -275,10 +286,12 @@ class DeformableTransformer(nn.Module):
 
         # Memory by layer
         memory_split = []
-        init_pos = torch.tensor(0)
-        for spatial_shape in spatial_shapes:
-            pos = init_pos + spatial_shape.prod().item()
-            memory_split.append(memory.transpose(1, 2)[..., init_pos:pos].view(bs, c, *spatial_shape))
+        init_pos = spatial_shapes.new_zeros(1).squeeze()
+        for ss in range(spatial_shapes.shape[0]):
+            pos = init_pos + spatial_shapes[ss].prod().type(torch.int32)
+            memory_split.append(
+                memory.transpose(1, 2)[..., init_pos:pos].view(bs, c, spatial_shapes[ss][0], spatial_shapes[ss][1])
+            )
             init_pos = pos
         transformer_outputs["memory"] = memory_split
 
@@ -330,7 +343,6 @@ class DeformableTransformerEncoderLayer(nn.Module):
 
         # ffn
         src = self.forward_ffn(_src)
-
         return src
 
 
@@ -341,7 +353,7 @@ class DeformableTransformerEncoder(nn.Module):
         self.num_layers = num_layers
 
     @staticmethod
-    def get_reference_points(spatial_shapes, valid_ratios, device):
+    def get_reference_points(spatial_shapes, valid_ratios, device, **kwargs):
         """
         Get the reference points used in sampling
 
@@ -360,13 +372,18 @@ class DeformableTransformerEncoder(nn.Module):
         reference_points_list = []
         valid_ratios = torch.unsqueeze(valid_ratios, dim=1)  # (b, 4, 2) -> (b, 1, 4, 2)
         for lvl in range(spatial_shapes.shape[0]):
-            H_, W_ = spatial_shapes[lvl][0], spatial_shapes[lvl][1]
+            if "is_tracing" in kwargs and kwargs["is_tracing"]:  # Used in tracing mode for dinamic input shape
+                H_, W_ = spatial_shapes[lvl, 0], spatial_shapes[lvl, 1]
+            else:
+                H_, W_ = int(spatial_shapes[lvl, 0]), int(spatial_shapes[lvl, 1])
             # ref_y, ref_x = torch.meshgrid(torch.linspace(0.5, H_ - 0.5, H_, dtype=torch.float32, device=device),
             #                               torch.linspace(0.5, W_ - 0.5, W_, dtype=torch.float32, device=device))
             # Avoid using linspace because it's not supported in ONNX
             # arange in TensorRT use INT32 only
+
             range_y = torch.arange(H_, dtype=torch.int32, device=device).float() + 0.5
             range_x = torch.arange(W_, dtype=torch.int32, device=device).float() + 0.5
+
             ref_y, ref_x = torch.meshgrid(range_y, range_x)
             ref_y = ref_y.reshape((1, -1))  # (1, H_ * W_)
             ref_x = ref_x.reshape((1, -1))  # (1, H_ * W_)
@@ -386,7 +403,7 @@ class DeformableTransformerEncoder(nn.Module):
 
     def forward(self, src, spatial_shapes, level_start_index, valid_ratios, pos=None, padding_mask=None, **kwargs):
         output = src
-        reference_points = self.get_reference_points(spatial_shapes, valid_ratios, device=src.device)
+        reference_points = self.get_reference_points(spatial_shapes, valid_ratios, device=src.device, **kwargs)
         for i, layer in enumerate(self.layers):
             output = layer(output, pos, reference_points, spatial_shapes, level_start_index, padding_mask, **kwargs)
         return output

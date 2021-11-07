@@ -2,6 +2,7 @@
 Various positional encodings for the transformer.
 """
 import math
+from numpy import dtype
 import torch
 from torch import nn
 
@@ -56,16 +57,19 @@ class PositionEmbeddingSine(nn.Module):
                 y_embed = y_embed - 0.5
                 x_embed = x_embed - 0.5
             eps = 1e-6
-            y_embed = y_embed / (y_embed[:, -1:, :] + eps) * self.scale
-            x_embed = x_embed / (x_embed[:, :, -1:] + eps) * self.scale
+            y_embed = y_embed / (y_embed[:, [-1], :] + eps) * self.scale
+            x_embed = x_embed / (x_embed[:, :, [-1]] + eps) * self.scale
 
         dim_t = torch.arange(self.num_pos_feats, dtype=torch.float32, device=ft_maps.device)
-        dim_t = self.temperature ** (2 * (dim_t // 2) / self.num_pos_feats)
+        dim_t = self.temperature ** (2 * torch.div(dim_t, 2, rounding_mode="floor") / self.num_pos_feats)
 
         pos_x = x_embed[..., None] / dim_t
         pos_y = y_embed[..., None] / dim_t
-        pos_x = torch.stack((pos_x[:, :, :, 0::2].sin(), pos_x[:, :, :, 1::2].cos()), dim=4).flatten(3)
-        pos_y = torch.stack((pos_y[:, :, :, 0::2].sin(), pos_y[:, :, :, 1::2].cos()), dim=4).flatten(3)
+
+        # Replace p1 = 0::2 and p2 = 1::2 to avoid INT32 warning in export tensorRT
+        p1, p2 = range(0, self.num_pos_feats, 2), range(1, self.num_pos_feats, 2)
+        pos_x = torch.stack((pos_x[:, :, :, p1].sin(), pos_x[:, :, :, p2].cos()), dim=4).flatten(3)
+        pos_y = torch.stack((pos_y[:, :, :, p1].sin(), pos_y[:, :, :, p2].cos()), dim=4).flatten(3)
         pos = torch.cat((pos_y, pos_x), dim=3).permute(0, 3, 1, 2)
 
         return pos

@@ -7,6 +7,6 @@ ALONET_ROOT=$1
 BUILD_DIR=$ALONET_ROOT/torch2trt/plugins/ms_deform_im2col/build
 mkdir -p $BUILD_DIR
 cd $BUILD_DIR
-cmake .. -DTRT_LIB=${TRT_LIBPATH}/lib/ -DTRT_INCLUDE=${TRT_LIBPATH}/include/
+cmake ..
 make -j
 cd -

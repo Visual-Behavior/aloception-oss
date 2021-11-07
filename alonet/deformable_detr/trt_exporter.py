@@ -50,7 +50,7 @@ class DeformableDetrTRTExporter(BaseTRTExporter):
         self.custom_opset = {"alonet_custom": 1}
 
     def adapt_graph(self, graph: gs.Graph):
-        batch_size = graph.inputs[0].shape[0]
+        # batch_size = graph.inputs[0].shape[0] # test
 
         # ======= Add nodes for MsDeformIm2ColTRT ===========
         # Replace ms_deform_attn_forward nodes by MsDeformIm2ColTRT
@@ -76,8 +76,6 @@ class DeformableDetrTRTExporter(BaseTRTExporter):
 
         def handle_op_Clip(node: gs.Node):
             max_constant = np.array(np.finfo(np.float32).max, dtype=np.float32)
-            print(node.inputs[1].i().inputs[0].attrs.keys())
-            print(node)
             if "value" in node.inputs[1].i().inputs[0].attrs:
                 min_constant = node.inputs[1].i().inputs[0].attrs["value"].values.astype(np.float32)
                 if len(node.inputs[2].inputs) > 0:
@@ -141,10 +139,10 @@ if __name__ == "__main__":
 
     if args.refinement:
         model_name = "deformable-detr-r50-refinement"
-        model = DeformableDetrR50Refinement(weights=model_name, aux_loss=False)
+        model = DeformableDetrR50Refinement(weights=model_name, aux_loss=False).eval()
     else:
         model_name = "deformable-detr-r50"
-        model = DeformableDetrR50(weights=model_name, aux_loss=False)
+        model = DeformableDetrR50(weights=model_name, aux_loss=False).eval()
 
     if args.onnx_path is None:
         args.onnx_path = os.path.join(vb_fodler(), "weights", model_name, model_name + ".onnx")

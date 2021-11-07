@@ -170,7 +170,7 @@ class BaseTRTExporter:
             inputs,  # model input (or a tuple for multiple inputs)
             self.onnx_path,  # where to save the model
             export_params=True,  # store the trained parameter weights inside the model file
-            opset_version=11,  # the ONNX version to export the model to
+            opset_version=13,  # the ONNX version to export the model to
             do_constant_folding=self.do_constant_folding,  # whether to execute constant folding for optimization
             verbose=self.verbose,
             input_names=self.input_names,  # the model's input names

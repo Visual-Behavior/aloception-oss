@@ -115,8 +115,7 @@ class DeformableDETR(nn.Module):
                 in_channels = backbone.num_channels[i]
                 input_proj_list.append(
                     nn.Sequential(
-                        nn.Conv2d(in_channels, self.hidden_dim, kernel_size=1),
-                        nn.GroupNorm(32, self.hidden_dim),
+                        nn.Conv2d(in_channels, self.hidden_dim, kernel_size=1), nn.GroupNorm(32, self.hidden_dim),
                     )
                 )
             for _ in range(num_feature_levels - num_backbone_outs):
@@ -248,7 +247,13 @@ class DeformableDETR(nn.Module):
                 pos.append(pos_l)
 
         query_embeds = self.query_embed.weight
+
         transformer_outptus = self.transformer(srcs, masks, pos[1:], query_embeds, is_tracing=self.tracing, **kwargs)
+        output = {"memory": transformer_outptus["memory"]}  # test
+        if self.tracing:  # test
+            return tuple(output.values())
+        else:
+            return output
 
         # Feature reconstruction with features[-1][0] = input_proj(features[-1][0])
         if self.return_bb_outputs:
@@ -258,6 +263,7 @@ class DeformableDETR(nn.Module):
         if self.tracing:
             forward_head = (forward_head["pred_boxes"], forward_head["pred_logits"])
 
+        # return dict(pred_boxes=forward_head["pred_boxes"], pred_logits=forward_head["pred_logits"])  # test
         return forward_head
 
     def forward_position_heads(self, transformer_outptus: dict):
@@ -375,11 +381,7 @@ class DeformableDETR(nn.Module):
         # as a dict having both a Tensor and a list.
         return [{"pred_logits": a, "pred_boxes": b, **kwargs} for a, b in zip(outputs_class[:-1], outputs_coord[:-1])]
 
-    def get_outs_labels(
-        self,
-        m_outputs: dict = None,
-        activation_fn: str = None,
-    ) -> List[torch.Tensor]:
+    def get_outs_labels(self, m_outputs: dict = None, activation_fn: str = None,) -> List[torch.Tensor]:
         """Given the model outs_scores and the model outs_labels,
         return the labels and the associated scores.
 

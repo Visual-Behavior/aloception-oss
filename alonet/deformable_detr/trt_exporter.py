@@ -76,8 +76,6 @@ class DeformableDetrTRTExporter(BaseTRTExporter):
 
         def handle_op_Clip(node: gs.Node):
             max_constant = np.array(np.finfo(np.float32).max, dtype=np.float32)
-            print(node.inputs[1].i().inputs[0].attrs.keys())
-            print(node)
             if "value" in node.inputs[1].i().inputs[0].attrs:
                 min_constant = node.inputs[1].i().inputs[0].attrs["value"].values.astype(np.float32)
                 if len(node.inputs[2].inputs) > 0:

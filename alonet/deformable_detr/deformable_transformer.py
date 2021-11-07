@@ -245,13 +245,6 @@ class DeformableTransformer(nn.Module):
             src_flatten, spatial_shapes, level_start_index, valid_ratios, lvl_pos_embed_flatten, mask_flatten, **kwargs
         )
 
-        return {
-            "memory": memory,
-            # "mask_flatten": mask_flatten,
-            # "lvl_pos_embed_flatten": lvl_pos_embed_flatten,
-            # "spatial_shapes": spatial_shapes,
-        }  # test
-
         # prepare input for decoder
         bs, _, c = memory.shape
         if self.two_stage:
@@ -346,8 +339,6 @@ class DeformableTransformerEncoderLayer(nn.Module):
             pos_embed_src, reference_points, src, spatial_shapes, level_start_index, padding_mask, **kwargs
         )
         _src = src + self.dropout1(src2)
-        return _src  # test
-
         _src = self.norm1(_src)
 
         # ffn
@@ -381,18 +372,17 @@ class DeformableTransformerEncoder(nn.Module):
         reference_points_list = []
         valid_ratios = torch.unsqueeze(valid_ratios, dim=1)  # (b, 4, 2) -> (b, 1, 4, 2)
         for lvl in range(spatial_shapes.shape[0]):
-            H_, W_ = spatial_shapes[lvl, 0], spatial_shapes[lvl, 1]
+            if "is_tracing" in kwargs and kwargs["is_tracing"]:  # Used in tracing mode for dinamic input shape
+                H_, W_ = spatial_shapes[lvl, 0], spatial_shapes[lvl, 1]
+            else:
+                H_, W_ = int(spatial_shapes[lvl, 0]), int(spatial_shapes[lvl, 1])
             # ref_y, ref_x = torch.meshgrid(torch.linspace(0.5, H_ - 0.5, H_, dtype=torch.float32, device=device),
             #                               torch.linspace(0.5, W_ - 0.5, W_, dtype=torch.float32, device=device))
             # Avoid using linspace because it's not supported in ONNX
             # arange in TensorRT use INT32 only
 
-            if "is_tracing" in kwargs and kwargs["is_tracing"]:  # Used in tracing mode for dinamic input shape
-                range_y = torch.arange(H_, dtype=torch.int32, device=device).float() + 0.5
-                range_x = torch.arange(W_, dtype=torch.int32, device=device).float() + 0.5
-            else:
-                range_y = torch.arange(H_, dtype=torch.int32, device=device).float() + 0.5
-                range_x = torch.arange(W_, dtype=torch.int32, device=device).float() + 0.5
+            range_y = torch.arange(H_, dtype=torch.int32, device=device).float() + 0.5
+            range_x = torch.arange(W_, dtype=torch.int32, device=device).float() + 0.5
 
             ref_y, ref_x = torch.meshgrid(range_y, range_x)
             ref_y = ref_y.reshape((1, -1))  # (1, H_ * W_)
@@ -416,7 +406,6 @@ class DeformableTransformerEncoder(nn.Module):
         reference_points = self.get_reference_points(spatial_shapes, valid_ratios, device=src.device, **kwargs)
         for i, layer in enumerate(self.layers):
             output = layer(output, pos, reference_points, spatial_shapes, level_start_index, padding_mask, **kwargs)
-            break  # test
         return output
 
 

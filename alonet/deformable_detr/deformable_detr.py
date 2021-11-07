@@ -247,13 +247,7 @@ class DeformableDETR(nn.Module):
                 pos.append(pos_l)
 
         query_embeds = self.query_embed.weight
-
         transformer_outptus = self.transformer(srcs, masks, pos[1:], query_embeds, is_tracing=self.tracing, **kwargs)
-        output = {"memory": transformer_outptus["memory"]}  # test
-        if self.tracing:  # test
-            return tuple(output.values())
-        else:
-            return output
 
         # Feature reconstruction with features[-1][0] = input_proj(features[-1][0])
         if self.return_bb_outputs:
@@ -262,8 +256,6 @@ class DeformableDETR(nn.Module):
         forward_head = self.forward_heads(transformer_outptus, bb_outputs=(features, pos[:-1]))
         if self.tracing:
             forward_head = (forward_head["pred_boxes"], forward_head["pred_logits"])
-
-        # return dict(pred_boxes=forward_head["pred_boxes"], pred_logits=forward_head["pred_logits"])  # test
         return forward_head
 
     def forward_position_heads(self, transformer_outptus: dict):

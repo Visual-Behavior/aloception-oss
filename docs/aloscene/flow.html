@@ -92,19 +92,19 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../getting_started/getting_started.html">Getting started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../getting_started/aloscene.html">Aloscene: Computer vision with ease</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../getting_started/alodataset.html">Alodataset: Loading your datasets</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../getting_started/alonet.html">Alonet: Loading &amp; training your models</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../getting_started/augmented_tensor.html">About Augmented Tensor</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/alodataset.html">Alodataset: Loading your vision datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/alonet.html">Alonet : Training your models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/augmented_tensor.html">About augmented tensors</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Turorials</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/data_setup.html">How to setup your data?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/training_detr.html">Training Detr</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/finetuning_detr.html">Finetuning DETR</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/training_panoptic.html">Training Panoptic Head module</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/training_deformable_detr.html">Training Deformable DETR</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/finetuning_deformable_detr.html">Finetuning Deformanble DETR</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/tensort_inference.html">Exporting DETR / Deformable-DETR to TensorRT</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../tutorials/training_raft.html">Training RAFT</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Aloception API</span></p>
 <ul class="current">
@@ -112,6 +112,7 @@
 <li class="toctree-l2"><a class="reference internal" href="frame.html">Frame</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bounding_boxes_2d.html">BoundingBoxes2D</a></li>
 <li class="toctree-l2"><a class="reference internal" href="oriented_boxes_2d.html">OrientedBoxes2D</a></li>
+<li class="toctree-l2"><a class="reference internal" href="points2d.html">Points2D</a></li>
 <li class="toctree-l2"><a class="reference internal" href="labels.html">Label</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mask.html">Mask</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mask.html#module-aloscene.mask">Mask API</a></li>
@@ -299,7 +300,7 @@ because flow vectors values have been correctly modified. The occlusion has also
 <span id="flow-api"></span><h2>Flow API<a class="headerlink" href="#module-aloscene.flow" title="Permalink to this headline">¶</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="aloscene.flow.Flow">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">aloscene.flow.</span></span><span class="sig-name descname"><span class="pre">Flow</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">occlusion</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="mask.html#aloscene.mask.Mask" title="aloscene.mask.Mask"><span class="pre">aloscene.mask.Mask</span></a><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aloscene.flow.Flow" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">aloscene.flow.</span></span><span class="sig-name descname"><span class="pre">Flow</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">occlusion</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="mask.html#aloscene.mask.Mask" title="aloscene.mask.Mask"><span class="pre">aloscene.mask.Mask</span></a><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">('C',</span> <span class="pre">'H',</span> <span class="pre">'W')</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aloscene.flow.Flow" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="spatial_augmented_tensor.html#aloscene.tensors.spatial_augmented_tensor.SpatialAugmentedTensor" title="aloscene.tensors.spatial_augmented_tensor.SpatialAugmentedTensor"><code class="xref py py-class docutils literal notranslate"><span class="pre">aloscene.tensors.spatial_augmented_tensor.SpatialAugmentedTensor</span></code></a></p>
 <p>Optical Flow Map.</p>
 <dl class="field-list simple">

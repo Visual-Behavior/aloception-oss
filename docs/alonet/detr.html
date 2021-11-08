@@ -92,19 +92,19 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../getting_started/getting_started.html">Getting started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../getting_started/aloscene.html">Aloscene: Computer vision with ease</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../getting_started/alodataset.html">Alodataset: Loading your datasets</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../getting_started/alonet.html">Alonet: Loading &amp; training your models</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../getting_started/augmented_tensor.html">About Augmented Tensor</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/alodataset.html">Alodataset: Loading your vision datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/alonet.html">Alonet : Training your models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/augmented_tensor.html">About augmented tensors</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Turorials</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/data_setup.html">How to setup your data?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/training_detr.html">Training Detr</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/finetuning_detr.html">Finetuning DETR</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/training_panoptic.html">Training Panoptic Head module</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/training_deformable_detr.html">Training Deformable DETR</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/finetuning_deformable_detr.html">Finetuning Deformanble DETR</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/tensort_inference.html">Exporting DETR / Deformable-DETR to TensorRT</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../tutorials/training_raft.html">Training RAFT</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Aloception API</span></p>
 <ul class="current">
@@ -119,6 +119,7 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="deformable.html">Deformable DETR</a></li>
+<li class="toctree-l2"><a class="reference internal" href="panoptic.html">Detr panoptic</a></li>
 <li class="toctree-l2"><a class="reference internal" href="alonet.callbacks.html">Callbacks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="alonet.metrics.html">Metrics</a></li>
 <li class="toctree-l2"><a class="reference internal" href="alonet.transformers.html">Transformer</a></li>
@@ -220,9 +221,10 @@
 <div class="section" id="detr">
 <h1>Detr<a class="headerlink" href="#detr" title="Permalink to this headline">¶</a></h1>
 <div class="toctree-wrapper compound">
-<p class="caption" role="heading"><span class="caption-text">Detr</span></p>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="detr_models.html">Models</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="detr_models.html#basic-usage">Basic usage</a></li>
 <li class="toctree-l2"><a class="reference internal" href="detr_models.html#module-alonet.detr.detr">Detr Base</a></li>
 <li class="toctree-l2"><a class="reference internal" href="detr_models.html#module-alonet.detr.detr_r50">Detr R50</a></li>
 <li class="toctree-l2"><a class="reference internal" href="detr_models.html#module-alonet.detr.detr_r50_finetune">Detr R50 Finetune</a></li>
@@ -241,7 +243,18 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="detr_connectors.html">Detr: Data connectors</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="detr_connectors.html#module-alonet.detr.coco_data_modules">CocoDetection2Detr</a></li>
+<li class="toctree-l2"><a class="reference internal" href="detr_connectors.html#module-alonet.detr.data_modules.data2detr">Data2Detr</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="detr_connectors.html#see-also">See Also</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="detr_connectors.html#cocodetection2detr">CocoDetection2Detr</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="detr_connectors.html#examples">Examples</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="detr_connectors.html#cocopanoptic2detr">CocoPanoptic2Detr</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="detr_connectors.html#id1">Examples</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>

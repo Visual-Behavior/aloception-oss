@@ -8,13 +8,12 @@
 # ------------------------------------------------------------------------
 
 import copy
-from typing import Optional, List
 import math
 
 import torch
 import torch.nn.functional as F
-from torch import nn, Tensor
-from torch.nn.init import xavier_uniform_, constant_, uniform_, normal_
+from torch import nn
+from torch.nn.init import xavier_uniform_, constant_, normal_
 
 from .utils import inverse_sigmoid
 from .ops.modules import MSDeformAttn
@@ -145,7 +144,7 @@ class DeformableTransformer(nn.Module):
 
     def gen_encoder_output_proposals(self, memory, memory_padding_mask, spatial_shapes):
         N_, S_, C_ = memory.shape
-        base_scale = 4.0
+        # base_scale = 4.0
         proposals = []
         _cur = 0
         for lvl, (H_, W_) in enumerate(spatial_shapes):
@@ -249,7 +248,6 @@ class DeformableTransformer(nn.Module):
             topk_coords_unact = torch.gather(enc_outputs_coord_unact, 1, topk_proposals.unsqueeze(-1).repeat(1, 1, 4))
             topk_coords_unact = topk_coords_unact.detach()
             reference_points = topk_coords_unact.sigmoid()
-            init_reference_out = reference_points
             pos_trans_out = self.pos_trans_norm(self.pos_trans(self.get_proposal_pos_embed(topk_coords_unact)))
             query_embed, tgt = torch.split(pos_trans_out, c, dim=2)
         else:
@@ -257,10 +255,8 @@ class DeformableTransformer(nn.Module):
             query_embed = query_embed.unsqueeze(0).expand(bs, -1, -1)
             tgt = tgt.unsqueeze(0).expand(bs, -1, -1)
             reference_points = self.reference_points(query_embed).sigmoid()
-            init_reference_out = reference_points
 
         # decoder
-        # tgt, reference_points, src, src_spatial_shapes, src_level_start_index, src_valid_ratios,
         dec_outputs = self.decoder(
             tgt,
             reference_points,
@@ -273,9 +269,16 @@ class DeformableTransformer(nn.Module):
             **kwargs,
         )
 
-        dec_outputs
         transformer_outputs.update(dec_outputs)
-        transformer_outputs["init_reference_out"] = init_reference_out
+
+        # Memory by layer
+        memory_split = []
+        init_pos = torch.tensor(0)
+        for spatial_shape in spatial_shapes:
+            pos = init_pos + spatial_shape.prod().item()
+            memory_split.append(memory.transpose(1, 2)[..., init_pos:pos].view(bs, c, *spatial_shape))
+            init_pos = pos
+        transformer_outputs["memory"] = memory_split
 
         if self.two_stage:
             transformer_outputs["enc_outputs_class"] = enc_outputs_class
@@ -504,9 +507,9 @@ class DeformableTransformerDecoder(nn.Module):
         self.bbox_embed = None
         self.class_embed = None
 
-    def pre_process_tgt(self, tgt, query_pos, tgt_key_padding_mask, **kwargs):
+    def pre_process_tgt(self, tgt, query_pos, tgt_key_padding_mask, reference_points, **kwargs):
         """Pre process decoder inputs"""
-        return tgt, query_pos, tgt_key_padding_mask
+        return tgt, query_pos, tgt_key_padding_mask, reference_points
 
     def decoder_forward(
         self,
@@ -587,12 +590,14 @@ class DeformableTransformerDecoder(nn.Module):
         decoder_outputs = {} if decoder_outputs is None else decoder_outputs
 
         tgt = tgt.transpose(0, 1)
-        tgt, query_pos, tgt_key_padding_mask = self.pre_process_tgt(
-            tgt, query_pos, tgt_key_padding_mask=tgt_key_padding_mask, **kwargs
+        query_pos = query_pos.transpose(0, 1)
+        tgt, query_pos, tgt_key_padding_mask, reference_points = self.pre_process_tgt(
+            tgt, query_pos, tgt_key_padding_mask=tgt_key_padding_mask, reference_points=reference_points, **kwargs
         )
         tgt = tgt.transpose(1, 0)
+        query_pos = query_pos.transpose(1, 0)
 
-        output, reference_points = self.decoder_forward(
+        output, inter_reference_points = self.decoder_forward(
             tgt=tgt,
             reference_points=reference_points,
             src=src,
@@ -605,7 +610,8 @@ class DeformableTransformerDecoder(nn.Module):
             **kwargs,
         )
 
-        decoder_outputs.update({"hs": output, "inter_references_out": reference_points})
+        decoder_outputs["init_reference_out"] = reference_points
+        decoder_outputs.update({"hs": output, "inter_references_out": inter_reference_points})
 
         return decoder_outputs
 

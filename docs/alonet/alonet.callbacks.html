@@ -43,7 +43,7 @@
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Metrics" href="alonet.metrics.html" />
-    <link rel="prev" title="Training" href="deformable_training.html" /> 
+    <link rel="prev" title="Training" href="panoptic_training.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
@@ -92,19 +92,19 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../getting_started/getting_started.html">Getting started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../getting_started/aloscene.html">Aloscene: Computer vision with ease</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../getting_started/alodataset.html">Alodataset: Loading your datasets</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../getting_started/alonet.html">Alonet: Loading &amp; training your models</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../getting_started/augmented_tensor.html">About Augmented Tensor</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/alodataset.html">Alodataset: Loading your vision datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/alonet.html">Alonet : Training your models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/augmented_tensor.html">About augmented tensors</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Turorials</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/data_setup.html">How to setup your data?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/training_detr.html">Training Detr</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/finetuning_detr.html">Finetuning DETR</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/training_panoptic.html">Training Panoptic Head module</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/training_deformable_detr.html">Training Deformable DETR</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/finetuning_deformable_detr.html">Finetuning Deformanble DETR</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/tensort_inference.html">Exporting DETR / Deformable-DETR to TensorRT</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../tutorials/training_raft.html">Training RAFT</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Aloception API</span></p>
 <ul class="current">
@@ -113,8 +113,20 @@
 <li class="toctree-l1 current"><a class="reference internal" href="alonet.html">Alonet</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="detr.html">Detr</a></li>
 <li class="toctree-l2"><a class="reference internal" href="deformable.html">Deformable DETR</a></li>
+<li class="toctree-l2"><a class="reference internal" href="panoptic.html">Detr panoptic</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Callbacks</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#module-alonet.callbacks.map_metrics_callback">AP Metrics Callback</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-alonet.callbacks.base_metrics_callback">Base Metrics Callback</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#see-also">See Also</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-alonet.callbacks.map_metrics_callback">AP Metrics Callback</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#id2">See Also</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-alonet.callbacks.pq_metrics_callback">PQ Metrics Callback</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#id3">See Also</a></li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="#module-alonet.callbacks.metrics_callback">Metrics Callbacks</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#module-alonet.callbacks.object_detector_callback">Object Detector Callback</a></li>
 </ul>
@@ -218,25 +230,45 @@
 </style>
 <div class="section" id="callbacks">
 <h1>Callbacks<a class="headerlink" href="#callbacks" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="module-alonet.callbacks.map_metrics_callback">
-<span id="ap-metrics-callback"></span><h2>AP Metrics Callback<a class="headerlink" href="#module-alonet.callbacks.map_metrics_callback" title="Permalink to this headline">¶</a></h2>
+<p>List of callbacks used in different modules, in order to present different metrics while them are training. See
+<a class="reference external" href="https://pytorch-lightning.readthedocs.io/en/latest/extensions/callbacks.html">Callbacks</a> to get more information.</p>
+<div class="section" id="module-alonet.callbacks.base_metrics_callback">
+<span id="base-metrics-callback"></span><h2>Base Metrics Callback<a class="headerlink" href="#module-alonet.callbacks.base_metrics_callback" title="Permalink to this headline">¶</a></h2>
+<p>Class to implement a callback based for a specific metric</p>
+<div class="section" id="see-also">
+<h3>See Also<a class="headerlink" href="#see-also" title="Permalink to this headline">¶</a></h3>
+<blockquote>
+<div><p>All the possible <a class="reference internal" href="alonet.metrics.html"><span class="doc">Metrics</span></a></p>
+</div></blockquote>
 <dl class="py class">
-<dt class="sig sig-object py" id="alonet.callbacks.map_metrics_callback.ApMetricsCallback">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">alonet.callbacks.map_metrics_callback.</span></span><span class="sig-name descname"><span class="pre">ApMetricsCallback</span></span><a class="headerlink" href="#alonet.callbacks.map_metrics_callback.ApMetricsCallback" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="alonet.callbacks.base_metrics_callback.InstancesBaseMetricsCallback">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">alonet.callbacks.base_metrics_callback.</span></span><span class="sig-name descname"><span class="pre">InstancesBaseMetricsCallback</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">base_metric</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.callbacks.base_metrics_callback.InstancesBaseMetricsCallback" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pytorch_lightning.callbacks.base.Callback</span></code></p>
-<dl class="py method">
-<dt class="sig sig-object py" id="alonet.callbacks.map_metrics_callback.ApMetricsCallback.add_sample">
-<span class="sig-name descname"><span class="pre">add_sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ap_metrics</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pred_boxes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gt_boxes</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.callbacks.map_metrics_callback.ApMetricsCallback.add_sample" title="Permalink to this definition">¶</a></dt>
-<dd><p>Add a smple to some <cite>alonet.metrics.ApMetrics()</cite> class. One might want to inhert this method
-to edit the <cite>pred_boxes</cite> and <cite>gt_boxes</cite> boxes before to add them to the ApMetrics class.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>ap_metrics: alonet.metrics.ApMetrics</strong></dt><dd><p>ApMetrics intance.</p>
+<dt><strong>base_metric</strong><span class="classifier">metrics</span></dt><dd><p>A metric object of <a class="reference internal" href="alonet.metrics.html"><span class="doc">Metrics</span></a></p>
 </dd>
-<dt><strong>pred_boxes: aloscene.BoundingBoxes2D</strong></dt><dd><p>Predicted boxes2D.</p>
+</dl>
 </dd>
-<dt><strong>gt_boxes: aloscene.BoundingBoxes2D</strong></dt><dd><p>GT boxes2d.</p>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="alonet.callbacks.base_metrics_callback.InstancesBaseMetricsCallback.add_sample">
+<span class="sig-name descname"><span class="pre">add_sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">base_metric</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pred_boxes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gt_boxes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pred_masks</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gt_masks</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.callbacks.base_metrics_callback.InstancesBaseMetricsCallback.add_sample" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a sample to some <a class="reference internal" href="alonet.metrics.html"><span class="doc">Metrics</span></a>. One might want to inhert this method
+to edit the <code class="xref py py-attr docutils literal notranslate"><span class="pre">pred_boxes</span></code> and <code class="xref py py-attr docutils literal notranslate"><span class="pre">gt_boxes</span></code> boxes before to add them.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl>
+<dt><strong>base_metric</strong><span class="classifier"><a class="reference internal" href="alonet.metrics.html"><span class="doc">Metrics</span></a></span></dt><dd><p>Metric intance.</p>
+</dd>
+<dt><strong>pred_boxes</strong><span class="classifier"><a class="reference internal" href="../aloscene/bounding_boxes_2d.html#module-aloscene.bounding_boxes_2d" title="aloscene.bounding_boxes_2d"><code class="xref py py-mod docutils literal notranslate"><span class="pre">BoundingBoxes2D</span></code></a></span></dt><dd><p>Predicted boxes2D.</p>
+</dd>
+<dt><strong>gt_boxes</strong><span class="classifier"><a class="reference internal" href="../aloscene/bounding_boxes_2d.html#module-aloscene.bounding_boxes_2d" title="aloscene.bounding_boxes_2d"><code class="xref py py-mod docutils literal notranslate"><span class="pre">BoundingBoxes2D</span></code></a></span></dt><dd><p>GT boxes2d.</p>
+</dd>
+<dt><strong>pred_masks</strong><span class="classifier"><a class="reference internal" href="../aloscene/mask.html#module-aloscene.mask" title="aloscene.mask"><code class="xref py py-mod docutils literal notranslate"><span class="pre">Mask</span></code></a></span></dt><dd><p>Predicted Masks for segmentation task</p>
+</dd>
+<dt><strong>gt_masks</strong><span class="classifier"><a class="reference internal" href="../aloscene/mask.html#module-aloscene.mask" title="aloscene.mask"><code class="xref py py-mod docutils literal notranslate"><span class="pre">Mask</span></code></a></span></dt><dd><p>GT masks in segmentation task.</p>
 </dd>
 </dl>
 </dd>
@@ -244,23 +276,53 @@ to edit the <cite>pred_boxes</cite> and <cite>gt_boxes</cite> boxes before to ad
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="alonet.callbacks.map_metrics_callback.ApMetricsCallback.on_validation_batch_end">
-<span class="sig-name descname"><span class="pre">on_validation_batch_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pl_module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outputs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_idx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataloader_idx</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.callbacks.map_metrics_callback.ApMetricsCallback.on_validation_batch_end" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="alonet.callbacks.base_metrics_callback.InstancesBaseMetricsCallback.inference">
+<span class="sig-name descname"><span class="pre">inference</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pl_module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">m_outputs</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.callbacks.base_metrics_callback.InstancesBaseMetricsCallback.inference" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method will call the <a class="reference internal" href="#alonet.callbacks.base_metrics_callback.InstancesBaseMetricsCallback.inference" title="alonet.callbacks.base_metrics_callback.InstancesBaseMetricsCallback.inference"><code class="xref py py-func docutils literal notranslate"><span class="pre">inference()</span></code></a> method of the module’s model and will expect to receive the
+predicted boxes2D and/or Masks.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>pl_module</strong><span class="classifier">pl.LightningModule</span></dt><dd><p>Pytorch lighting module with inference function</p>
+</dd>
+<dt><strong>m_outputs</strong><span class="classifier">dict</span></dt><dd><p>Forward outputs</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt><a class="reference internal" href="../aloscene/bounding_boxes_2d.html#module-aloscene.bounding_boxes_2d" title="aloscene.bounding_boxes_2d"><code class="xref py py-mod docutils literal notranslate"><span class="pre">BoundingBoxes2D</span></code></a></dt><dd><p>Boxes predicted</p>
+</dd>
+<dt><a class="reference internal" href="../aloscene/mask.html#module-aloscene.mask" title="aloscene.mask"><code class="xref py py-mod docutils literal notranslate"><span class="pre">Mask</span></code></a></dt><dd><p>Masks predicted</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>If <code class="xref py py-attr docutils literal notranslate"><span class="pre">m_outputs</span></code> does not contain <code class="xref py py-attr docutils literal notranslate"><span class="pre">pred_masks</span></code> attribute, a [None]*B list will be returned
+by default</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alonet.callbacks.base_metrics_callback.InstancesBaseMetricsCallback.on_validation_batch_end">
+<span class="sig-name descname"><span class="pre">on_validation_batch_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pl_module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outputs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_idx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataloader_idx</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.callbacks.base_metrics_callback.InstancesBaseMetricsCallback.on_validation_batch_end" title="Permalink to this definition">¶</a></dt>
 <dd><p>Method call after each validation batch. This class is a pytorch lightning callback, therefore
 this method will by automaticly call by pl.</p>
-<p>This method will call the <cite>infernece</cite> method of the module’s model and will expect to receive the predicted boxes2D. Theses
-Boxes will be aggregate to compute the AP metrics in the <cite>on_validation_end</cite> method. The infernece method will be call using
-the <cite>m_outputs</cite> key from the outputs dict. If <cite>m_outputs</cite> is a list, then the list will be consider as an temporal list. Therefore,
-this callback will aggregate the predicted boxes for each element of the sequence and will log the final results with the
-timestep prefix val/t/ instead of simply /val/</p>
+<p>This method will call the <cite>infernece</cite> method of the module’s model and will expect to receive the
+predicted boxes2D and/or Masks. Theses elements will be aggregate to compute the different metrics in the
+<cite>on_validation_end</cite> method.
+The infernece method will be call using the <cite>m_outputs</cite> key from the outputs dict. If <cite>m_outputs</cite> is a list,
+then the list will be consider as an temporal list. Therefore, this callback will aggregate the prediction
+for each element of the sequence and will log the final results with the timestep prefix val/t/ instead of
+simply /val/</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>trainer: pl.Trainer</strong></dt><dd><p>Pytorch lightning trainer</p>
 </dd>
-<dt><strong>pl_module: pl.LightningModule</strong></dt><dd><p>Pytorch lightning module. The “m_outputs” key is expected for this this callback to work properly.</p>
+<dt><strong>pl_module: pl.LightningModule</strong></dt><dd><p>Pytorch lightning module. The <code class="xref py py-attr docutils literal notranslate"><span class="pre">m_outputs</span></code> key is expected for this this callback to work properly.</p>
 </dd>
-<dt><strong>outputs:</strong></dt><dd><p>Training/Validation step outputs of the pl.LightningModule class.</p>
+<dt><strong>outputs: dict</strong></dt><dd><p>Training/Validation step outputs of the pl.LightningModule class.</p>
 </dd>
 <dt><strong>batch: list</strong></dt><dd><p>Batch comming from the dataloader. Usually, a list of frame.</p>
 </dd>
@@ -273,6 +335,42 @@ timestep prefix val/t/ instead of simply /val/</p>
 </dl>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="alonet.callbacks.base_metrics_callback.InstancesBaseMetricsCallback.on_validation_end">
+<span class="sig-name descname"><span class="pre">on_validation_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pl_module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.callbacks.base_metrics_callback.InstancesBaseMetricsCallback.on_validation_end" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method call at the end of each validation epoch. The method will use all the aggregate
+data over the epoch to log the final metrics on wandb.
+This class is a pytorch lightning callback, therefore this method will by automaticly call by pl.</p>
+<p>This method is currently a WIP since some metrics are not logged due to some wandb error when loading
+Table.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>trainer: pl.Trainer</strong></dt><dd><p>Pytorch lightning trainer</p>
+</dd>
+<dt><strong>pl_module: pl.LightningModule</strong></dt><dd><p>Pytorch lightning module</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="module-alonet.callbacks.map_metrics_callback">
+<span id="ap-metrics-callback"></span><h2>AP Metrics Callback<a class="headerlink" href="#module-alonet.callbacks.map_metrics_callback" title="Permalink to this headline">¶</a></h2>
+<p>Callback that stores samples in each step to calculate the AP for one IoU and one class</p>
+<div class="section" id="id2">
+<h3>See Also<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h3>
+<blockquote>
+<div><p><a class="reference internal" href="alonet.metrics.html#module-alonet.metrics.compute_map" title="alonet.metrics.compute_map"><code class="xref py py-mod docutils literal notranslate"><span class="pre">ApMetrics</span></code></a>, the specific metric implement in this callback</p>
+</div></blockquote>
+<dl class="py class">
+<dt class="sig sig-object py" id="alonet.callbacks.map_metrics_callback.ApMetricsCallback">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">alonet.callbacks.map_metrics_callback.</span></span><span class="sig-name descname"><span class="pre">ApMetricsCallback</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.callbacks.map_metrics_callback.ApMetricsCallback" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#alonet.callbacks.base_metrics_callback.InstancesBaseMetricsCallback" title="alonet.callbacks.base_metrics_callback.InstancesBaseMetricsCallback"><code class="xref py py-class docutils literal notranslate"><span class="pre">alonet.callbacks.base_metrics_callback.InstancesBaseMetricsCallback</span></code></a></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="alonet.callbacks.map_metrics_callback.ApMetricsCallback.on_validation_end">
 <span class="sig-name descname"><span class="pre">on_validation_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pl_module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.callbacks.map_metrics_callback.ApMetricsCallback.on_validation_end" title="Permalink to this definition">¶</a></dt>
@@ -295,6 +393,43 @@ Table.</p>
 
 </dd></dl>
 
+</div>
+</div>
+<div class="section" id="module-alonet.callbacks.pq_metrics_callback">
+<span id="pq-metrics-callback"></span><h2>PQ Metrics Callback<a class="headerlink" href="#module-alonet.callbacks.pq_metrics_callback" title="Permalink to this headline">¶</a></h2>
+<p>Callback that stores samples in each step to calculate the different Panoptic Quality metrics</p>
+<div class="section" id="id3">
+<h3>See Also<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h3>
+<blockquote>
+<div><p><a class="reference internal" href="alonet.metrics.html#module-alonet.metrics.compute_pq" title="alonet.metrics.compute_pq"><code class="xref py py-mod docutils literal notranslate"><span class="pre">PQMetrics</span></code></a>, the specific metric implement in this callback</p>
+</div></blockquote>
+<dl class="py class">
+<dt class="sig sig-object py" id="alonet.callbacks.pq_metrics_callback.PQMetricsCallback">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">alonet.callbacks.pq_metrics_callback.</span></span><span class="sig-name descname"><span class="pre">PQMetricsCallback</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.callbacks.pq_metrics_callback.PQMetricsCallback" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#alonet.callbacks.base_metrics_callback.InstancesBaseMetricsCallback" title="alonet.callbacks.base_metrics_callback.InstancesBaseMetricsCallback"><code class="xref py py-class docutils literal notranslate"><span class="pre">alonet.callbacks.base_metrics_callback.InstancesBaseMetricsCallback</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="alonet.callbacks.pq_metrics_callback.PQMetricsCallback.on_validation_end">
+<span class="sig-name descname"><span class="pre">on_validation_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pl_module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.callbacks.pq_metrics_callback.PQMetricsCallback.on_validation_end" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method call at the end of each validation epoch. The method will use all the aggregate
+data over the epoch to log the final metrics on wandb.
+This class is a pytorch lightning callback, therefore this method will by automaticly call by pl.</p>
+<p>This method is currently a WIP since some metrics are not logged due to some wandb error when loading
+Table.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>trainer: pl.Trainer</strong></dt><dd><p>Pytorch lightning trainer</p>
+</dd>
+<dt><strong>pl_module: pl.LightningModule</strong></dt><dd><p>Pytorch lightning module</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
 </div>
 <div class="section" id="module-alonet.callbacks.metrics_callback">
 <span id="metrics-callbacks"></span><h2>Metrics Callbacks<a class="headerlink" href="#module-alonet.callbacks.metrics_callback" title="Permalink to this headline">¶</a></h2>
@@ -435,24 +570,33 @@ The tensor is expected to be a single scaler with the value to log</p>
 </div>
 <div class="section" id="module-alonet.callbacks.object_detector_callback">
 <span id="object-detector-callback"></span><h2>Object Detector Callback<a class="headerlink" href="#module-alonet.callbacks.object_detector_callback" title="Permalink to this headline">¶</a></h2>
+<p>Callback for any object detection training that use <a class="reference internal" href="../aloscene/frame.html#module-aloscene.frame" title="aloscene.frame"><code class="xref py py-mod docutils literal notranslate"><span class="pre">Frame</span></code></a> as GT.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="alonet.callbacks.object_detector_callback.ObjectDetectorCallback">
 <em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">alonet.callbacks.object_detector_callback.</span></span><span class="sig-name descname"><span class="pre">ObjectDetectorCallback</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">val_frames</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.callbacks.object_detector_callback.ObjectDetectorCallback" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pytorch_lightning.callbacks.base.Callback</span></code></p>
-<p>Callback for any object detection training that use
-alonet.Frames as GT.</p>
+<p>The callback load frames every x training step as well as once every validation step on the given
+<code class="xref py py-attr docutils literal notranslate"><span class="pre">val_frames</span></code> and log the different objects predicted</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl>
+<dt><strong>val_frames</strong><span class="classifier">Union[list, <a class="reference internal" href="../aloscene/frame.html#module-aloscene.frame" title="aloscene.frame"><code class="xref py py-mod docutils literal notranslate"><span class="pre">Frames</span></code></a>]</span></dt><dd><p>List of sample from the validation set to use to load the validation progress</p>
+</dd>
+</dl>
+</dd>
+</dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="alonet.callbacks.object_detector_callback.ObjectDetectorCallback.log_boxes_2d">
 <span class="sig-name descname"><span class="pre">log_boxes_2d</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">frames</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">preds_boxes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.callbacks.object_detector_callback.ObjectDetectorCallback.log_boxes_2d" title="Permalink to this definition">¶</a></dt>
 <dd><p>Given a frames and predicted boxes2d, this method will log the images into wandb</p>
-<dl class="field-list simple">
+<dl class="field-list">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>frames: list of aloscene.Frame</strong></dt><dd><p>Frame with GT boxes2d attached</p>
+<dd class="field-odd"><dl>
+<dt><strong>frames</strong><span class="classifier">list of <a class="reference internal" href="../aloscene/frame.html#module-aloscene.frame" title="aloscene.frame"><code class="xref py py-mod docutils literal notranslate"><span class="pre">frame</span></code></a></span></dt><dd><p>Frame with GT boxes2d attached</p>
 </dd>
-<dt><strong>preds_boxes: list of aloscene.BoundingBoxes2D</strong></dt><dd><p>A set of predicted boxes2d</p>
+<dt><strong>preds_boxes</strong><span class="classifier">list of <a class="reference internal" href="../aloscene/bounding_boxes_2d.html#module-aloscene.bounding_boxes_2d" title="aloscene.bounding_boxes_2d"><code class="xref py py-mod docutils literal notranslate"><span class="pre">BoundingBoxes2D</span></code></a></span></dt><dd><p>A set of predicted boxes2d</p>
 </dd>
-<dt><strong>trainer: pl.trainer.trainer.Trainer</strong></dt><dd><p>Lightning trainer</p>
+<dt><strong>trainer</strong><span class="classifier">pl.trainer.trainer.Trainer</span></dt><dd><p>Lightning trainer</p>
 </dd>
 </dl>
 </dd>
@@ -463,12 +607,45 @@ alonet.Frames as GT.</p>
 <dt class="sig sig-object py" id="alonet.callbacks.object_detector_callback.ObjectDetectorCallback.log_boxes_3d">
 <span class="sig-name descname"><span class="pre">log_boxes_3d</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">frames</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">preds_boxes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.callbacks.object_detector_callback.ObjectDetectorCallback.log_boxes_3d" title="Permalink to this definition">¶</a></dt>
 <dd><p>Given a frames and predicted boxes3d, this method will log the images into wandb</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl>
+<dt><strong>frames</strong><span class="classifier"><a class="reference internal" href="../aloscene/frame.html#module-aloscene.frame" title="aloscene.frame"><code class="xref py py-mod docutils literal notranslate"><span class="pre">frame</span></code></a></span></dt><dd><p>Frame with GT boxes2d attached</p>
+</dd>
+<dt><strong>preds_boxes</strong><span class="classifier"><a class="reference internal" href="../aloscene/bounding_boxes_3d.html#module-aloscene.bounding_boxes_3d" title="aloscene.bounding_boxes_3d"><code class="xref py py-mod docutils literal notranslate"><span class="pre">BoundingBoxes3D</span></code></a></span></dt><dd><p>A set of predicted boxes3d</p>
+</dd>
+<dt><strong>trainer: pl.trainer.trainer.Trainer</strong></dt><dd><p>Lightning trainer</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alonet.callbacks.object_detector_callback.ObjectDetectorCallback.log_masks">
+<span class="sig-name descname"><span class="pre">log_masks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">frames</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pred_masks</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.callbacks.object_detector_callback.ObjectDetectorCallback.log_masks" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a frames and predicted masks in segmentation tasks, this method will log the images into wandb</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl>
+<dt><strong>frames</strong><span class="classifier">list of <a class="reference internal" href="../aloscene/frame.html#module-aloscene.frame" title="aloscene.frame"><code class="xref py py-mod docutils literal notranslate"><span class="pre">frame</span></code></a></span></dt><dd><p>Frame with GT masks attached</p>
+</dd>
+<dt><strong>preds_masks</strong><span class="classifier">list of <a class="reference internal" href="../aloscene/mask.html#module-aloscene.mask" title="aloscene.mask"><code class="xref py py-mod docutils literal notranslate"><span class="pre">Mask</span></code></a></span></dt><dd><p>A set of predicted segmentation masks</p>
+</dd>
+<dt><strong>trainer</strong><span class="classifier">pl.trainer.trainer.Trainer</span></dt><dd><p>Lightning trainer</p>
+</dd>
+<dt><strong>name</strong><span class="classifier">str</span></dt><dd><p>Name to show in wandb</p>
+</dd>
+</dl>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="alonet.callbacks.object_detector_callback.ObjectDetectorCallback.on_train_batch_end">
 <span class="sig-name descname"><span class="pre">on_train_batch_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pl_module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outputs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_idx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataloader_idx</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alonet.callbacks.object_detector_callback.ObjectDetectorCallback.on_train_batch_end" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Called when the train batch ends.</p>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="alonet.callbacks.object_detector_callback.ObjectDetectorCallback.on_validation_epoch_end">
@@ -488,7 +665,7 @@ alonet.Frames as GT.</p>
           <footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
         <a href="alonet.metrics.html" class="btn btn-neutral float-right" title="Metrics" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
-        <a href="deformable_training.html" class="btn btn-neutral float-left" title="Training" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="panoptic_training.html" class="btn btn-neutral float-left" title="Training" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
     </div>
 
   <hr/>

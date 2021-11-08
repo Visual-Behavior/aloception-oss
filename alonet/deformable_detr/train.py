@@ -1,19 +1,7 @@
-import os
 import torch
-from torch import nn
-import torch.nn.functional as F
 
 from argparse import ArgumentParser
-
-import pytorch_lightning as pl
-import wandb
-
-import logging
-from typing import *
-
-import alodataset
-import aloscene
-import alonet
+from typing import Union
 
 from alonet.deformable_detr import DeformableDetrR50, DeformableDetrR50Refinement
 from alonet.deformable_detr import DeformableCriterion, DeformableDetrHungarianMatcher
@@ -37,23 +25,33 @@ class LitDeformableDetr(LitDetr):
         ArgumentParser
             Parser with arguments for Deformable DETR added
         """
-        parser = parent_parser.add_argument_group(
-            "LitDeformableDetr") if parser is None else parser
-        parser.add_argument('--weights', type=str, default=None,
-                            help="One of (deformable-detr-r50-refinement, deformable-detr-r50). Default: None")
-        parser.add_argument('--gradient_clip_val', type=float,
-                            default=0.1, help="Gradient clipping norm (default 0.1")
-        parser.add_argument('--accumulate_grad_batches', type=int, default=4,
-                            help="Number of gradient accumulation steps (default 4)")
-        parser.add_argument('--track_grad_norm', type=int, default=-1,
-                            help="Default -1, no track. Otherwise tracks that p-norm.")
-        parser.add_argument('--model_name', type=str, default="deformable-detr-r50-refinement",
-                            help="Model name to use. One of ['deformable-detr-r50-refinement', 'deformable-detr-r50']. (default deformable-detr-r50-refinement)")
+        parser = parent_parser.add_argument_group("LitDeformableDetr") if parser is None else parser
+        parser.add_argument(
+            "--weights",
+            type=str,
+            default=None,
+            help="One of (deformable-detr-r50-refinement, deformable-detr-r50). Default: None",
+        )
+        parser.add_argument("--gradient_clip_val", type=float, default=0.1, help="Gradient clipping norm (default 0.1")
+        parser.add_argument(
+            "--accumulate_grad_batches", type=int, default=4, help="Number of gradient accumulation steps (default 4)"
+        )
+        parser.add_argument(
+            "--track_grad_norm", type=int, default=-1, help="Default -1, no track. Otherwise tracks that p-norm."
+        )
+        parser.add_argument(
+            "--model_name",
+            type=str,
+            default="deformable-detr-r50-refinement",
+            help="Model name to use. One of ['deformable-detr-r50-refinement', 'deformable-detr-r50']. "
+            + "(default deformable-detr-r50-refinement)",
+        )
 
         return parent_parser
 
-
-    def build_model(self, num_classes=91, aux_loss=True, weights=None, activation_fn="sigmoid") -> Union[DeformableDetrR50Refinement, DeformableDetrR50]:
+    def build_model(
+        self, num_classes=91, aux_loss=True, weights=None, activation_fn="sigmoid"
+    ) -> Union[DeformableDetrR50Refinement, DeformableDetrR50]:
         """Build model for training
 
         Parameters
@@ -62,7 +60,7 @@ class LitDeformableDetr(LitDetr):
             Number of classes to detect, by default 91
         aux_loss : bool, optional
             aux_loss : bool, optional
-            If True, the model will returns auxilary outputs at each decoder layer 
+            If True, the model will returns auxilary outputs at each decoder layer
             to calculate auxiliary decoding losses. By default True.
         weights : str, optional
             Pretrained weights, by default None
@@ -91,9 +89,10 @@ class LitDeformableDetr(LitDetr):
         loss_label_weight=1,
         loss_boxes_weight=5,
         loss_giou_weight=2,
-        losses=['labels', 'boxes'],
+        losses=["labels", "boxes"],
         aux_loss_stage=6,
-        eos_coef=0.1) -> DeformableCriterion:
+        eos_coef=0.1,
+    ) -> DeformableCriterion:
         """Build criterion module to calculate losses
 
         Parameters
@@ -128,10 +127,23 @@ class LitDeformableDetr(LitDetr):
             eos_coef=eos_coef,
         )
 
-    def build_matcher(self, cost_class=1, cost_boxes=5, cost_giou=2):
-        return alonet.deformable_detr.matcher.DeformableDetrHungarianMatcher(
-            cost_class=cost_class, cost_boxes=cost_boxes, cost_giou=cost_giou
-        )
+    def build_matcher(self, cost_class=1, cost_boxes=5, cost_giou=2) -> DeformableDetrHungarianMatcher:
+        """Build matcher to match between predictions and targets
+
+        Parameters
+        ----------
+        cost_class : int, optional
+            Weight of the classification error in the matching cost, by default 1
+        cost_boxes : int, optional
+            Weight of the L1 error of the bounding box coordinates in the matching cost, by default 5
+        cost_giou : int, optional
+            Weight of the giou loss of the bounding box in the matching cost, by default 2
+
+        Returns
+        -------
+        DeformableDetrHungarianMatcher
+        """
+        return DeformableDetrHungarianMatcher(cost_class=cost_class, cost_boxes=cost_boxes, cost_giou=cost_giou)
 
     def configure_optimizers(self):
         """Configure optimzier using AdamW"""
@@ -162,27 +174,6 @@ class LitDeformableDetr(LitDetr):
         optimizer = torch.optim.AdamW(param_dicts, lr=1e-4, weight_decay=1e-4)
         return optimizer
 
-    def build_matcher(self, cost_class=1, cost_boxes=5, cost_giou=2) -> DeformableDetrHungarianMatcher:
-        """Build matcher to match between predictions and targets
-
-        Parameters
-        ----------
-        cost_class : int, optional
-            Weight of the classification error in the matching cost, by default 1
-        cost_boxes : int, optional
-            Weight of the L1 error of the bounding box coordinates in the matching cost, by default 5
-        cost_giou : int, optional
-            Weight of the giou loss of the bounding box in the matching cost, by default 2
-
-        Returns
-        -------
-        DeformableDetrHungarianMatcher
-        """
-        return DeformableDetrHungarianMatcher(
-            cost_class=cost_class,
-            cost_boxes=cost_boxes, 
-            cost_giou=cost_giou
-        )
 
 if __name__ == "__main__":
     args = LitDeformableDetr.add_argparse_args(ArgumentParser()).parse_args()  # Help provider

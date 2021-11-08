@@ -37,26 +37,28 @@ class RAFTBase(nn.Module):
     corr_levels = None
     corr_radius = None
 
+    out_plane = None
+
     def __init__(
         self,
         fnet,
         cnet,
         update_block,
         upsampler,
-        alternate_corr=False,
         weights: str = None,
+        corr_block=CorrBlock,
         device: torch.device = torch.device("cpu"),
     ):
         super().__init__()
         self.fnet = fnet
         self.cnet = cnet
         self.update_block = update_block
-        self.alternate_corr = alternate_corr
         self.upsampler = upsampler
+        self.corr_block = corr_block
 
         if weights is not None:
             weights_from_original_repo = ["raft-things", "raft-chairs", "raft-small", "raft-kitti", "raft-sintel"]
-            if weights in weights_from_original_repo or ".pth" in weights:
+            if weights in weights_from_original_repo or ".pth" in weights or ".ckpt" in weights:
                 alonet.common.load_weights(self, weights, device)
             else:
                 raise ValueError(f"Unknown weights: '{weights}'")
@@ -86,7 +88,7 @@ class RAFTBase(nn.Module):
         """
         Build RAFT Update Block
         """
-        return update_cls(self.corr_levels, self.corr_radius, hidden_dim=self.hdim)
+        return update_cls(self.corr_levels, self.corr_radius, hidden_dim=self.hdim, out_planes=self.out_plane)
 
     def freeze_bn(self):
         for m in self.modules():
@@ -104,16 +106,28 @@ class RAFTBase(nn.Module):
 
     def upsample_flow(self, flow, mask):
         """Upsample flow field [H/8, W/8, 2] -> [H, W, 2] using convex combination"""
-        N, _, H, W = flow.shape
-        mask = mask.view(N, 1, 9, 8, 8, H, W)
-        mask = torch.softmax(mask, dim=2)
+        if mask is None:
+            return upflow8(flow)
+        else:
+            N, _, H, W = flow.shape
+            mask = mask.view(N, 1, 9, 8, 8, H, W)
+            mask = torch.softmax(mask, dim=2)
 
-        up_flow = F.unfold(8 * flow, [3, 3], padding=1)
-        up_flow = up_flow.view(N, 2, 9, 1, 1, H, W)
+            up_flow = F.unfold(8 * flow, [3, 3], padding=1)
+            up_flow = up_flow.view(N, self.out_plane, 9, 1, 1, H, W)
 
-        up_flow = torch.sum(mask * up_flow, dim=2)
-        up_flow = up_flow.permute(0, 1, 4, 2, 5, 3)
-        return up_flow.reshape(N, 2, 8 * H, 8 * W)
+            up_flow = torch.sum(mask * up_flow, dim=2)
+            up_flow = up_flow.permute(0, 1, 4, 2, 5, 3)
+            return up_flow.reshape(N, self.out_plane, 8 * H, 8 * W)
+
+    def forward_heads(self, m_outputs, only_last=False):
+        if not only_last:
+            for out_dict in m_outputs:
+                out_dict["up_flow"] = self.upsampler(out_dict["flow"], out_dict["up_mask"])
+
+        else:
+            m_outputs[-1]["up_flow"] = self.upsampler(m_outputs[-1]["flow"], m_outputs[-1]["up_mask"])
+        return m_outputs
 
     @staticmethod
     def assert_and_adapt_input(frame1, frame2, is_export_onnx):
@@ -158,23 +172,17 @@ class RAFTBase(nn.Module):
         # specific check for onnx export
         frame1, frame2 = self.assert_and_adapt_input(frame1, frame2, is_export_onnx)
 
-        hdim = self.hidden_dim
-        cdim = self.context_dim
-
         # run the feature network
-
         fmap1, fmap2 = self.fnet([frame1, frame2])
 
         fmap1 = fmap1.float()
         fmap2 = fmap2.float()
-        if self.alternate_corr:
-            self.corr_fn = AlternateCorrBlock(fmap1, fmap2, radius=self.corr_radius)
-        else:
-            self.corr_fn = CorrBlock(fmap1, fmap2, radius=self.corr_radius)
+
+        self.corr_fn = self.corr_block(fmap1, fmap2, radius=self.corr_radius)
 
         # run the context network
         cnet = self.cnet(frame1)
-        net, inp = torch.split(cnet, [hdim, cdim], dim=1)
+        net, inp = torch.split(cnet, [self.hdim, self.cdim], dim=1)
         net = torch.tanh(net)
         inp = torch.relu(inp)
 
@@ -183,44 +191,37 @@ class RAFTBase(nn.Module):
         if flow_init is not None:
             coords1 = coords1 + flow_init
 
-        flow_predictions = {}
+        m_outputs = list()
+
         for itr in range(iters):
             coords1 = coords1.detach()
             corr = self.corr_fn(coords1)  # index correlation volume
-
             flow = coords1 - coords0
             net, up_mask, delta_flow = self.update_block(net, inp, corr, flow)
-
-            # F(t+1) = F(t) + \Delta(t)
             coords1 = coords1 + delta_flow
+            m_outputs.append(
+                {"flow": coords1 - coords0, "hidden_state": net, "up_mask": up_mask, "delta_flow": delta_flow}
+            )
 
-            # upsample predictions
-            if not only_last or itr == iters - 1:
-                # if up_mask is None:
-                #     flow_up = upflow8(coords1 - coords0)
-                # else:
-                #     flow_up = self.upsample_flow(coords1 - coords0, up_mask)
-                flow_up = self.upsampler(coords1 - coords0, up_mask)
+        m_outputs = self.forward_heads(m_outputs, only_last=only_last)
 
-                flow_predictions[f"flow_stage{itr}"] = flow_up
-
-        if only_last:
-            flow_low = coords1 - coords0
-            return {"flow_low": flow_low, "flow_up": flow_up}
+        # return last dict for onnx_export ; None is a hack
+        if is_export_onnx is None:
+            return m_outputs[-1]
         else:
-            return flow_predictions
+            return m_outputs
 
     @torch.no_grad()
-    def inference(self, forward_out, only_last=False):
+    def inference(self, m_outputs, only_last=False):
+        def generate_frame(out_dict):
+            # flow_low = Flow(out_dict["flow"], names=("B", "C", "H", "W"))
+            flow_up = Flow(out_dict["up_flow"], names=("B", "C", "H", "W"))
+            return flow_up
+
         if only_last:
-            flow_low, flow_up = forward_out
-            flow_low = Flow(flow_low, names=("B", "C", "H", "W"))
-            flow_up = Flow(flow_up, names=("B", "C", "H", "W"))
-            return flow_low, flow_up
-        elif isinstance(forward_out, list):
-            return [Flow(flow, names=("B", "C", "H", "W")) for flow in forward_out]
+            return generate_frame(m_outputs[-1])
         else:
-            return Flow(forward_out, names=("B", "C", "H", "W"))
+            return [generate_frame(out_dict) for out_dict in m_outputs]
 
 
 class RAFT(RAFTBase):
@@ -252,13 +253,15 @@ class RAFT(RAFTBase):
     corr_levels = 4
     corr_radius = 4
 
+    out_plane = 2
+
     def __init__(self, dropout=0, **kwargs):
         self.dropout = dropout
 
         fnet = self.build_fnet(encoder_cls=BasicEncoder, output_dim=256)
         cnet = self.build_cnet(encoder_cls=BasicEncoder)
         update_block = self.build_update_block(update_cls=BasicUpdateBlock)
-        upsampler = FlowUpSampler()
+        upsampler = FlowUpSampler(self.out_plane)
 
         super().__init__(fnet, cnet, update_block, upsampler, **kwargs)
 
@@ -290,8 +293,10 @@ if __name__ == "__main__":
 
     # inference
     with torch.no_grad():
-        flow = raft.forward(frame1, frame2)[-1]  # keep only last stage flow estimation
+        m_outputs = raft.forward(frame1, frame2)  # keep only last stage flow estimation
+        output = raft.inference(m_outputs)
+
+        flow = output[-1]
         flow = padder.unpad(flow)  # unpad to original image resolution
-        flow = raft.inference(flow)
         flow = flow.detach().cpu()
         flow.get_view().render()

@@ -12,12 +12,48 @@ from aloscene.utils.data_utils import LDtoDL
 
 
 class SpatialAugmentedTensor(AugmentedTensor):
+    """Spatial Augmented Tensor. Used to represets any 2D data. The spatial augmented tensor can be used as a
+    basis for images, depth or and spatially related data. Moreover, for stereo setup, the augmented tensor
+    can encode data about the baseline and/or the side of the current plane ("left" or "right").
+
+    cam_intrinsic: CameraIntrinsic
+        Camera Intrinsic. If provided, the focal_length, plane_size, principal_point, camera_side & baseline will not
+        be used. An error will be raised if theses parameters are provided since using the `cam_intrinsic` and theses
+        parameters could be ambigious.
+    cam_extrinsic: CameraExtrinsic
+        Camera extrinsic parameters as an homogenious transformation matrix.
+    camera_side : {'left', 'right', None}
+        If part of a stereo setup, will encode the side of the camere "left" or "right" or None.
+    baseline: float | None
+        If part of a stereo setup, the `baseline` is the distance between the two cameras.
+    """
+
     @staticmethod
-    def __new__(cls, x, *args, cam_intrinsic: CameraIntrinsic = None, cam_extrinsic: CameraExtrinsic = None, **kwargs):
+    def __new__(
+        cls,
+        x,
+        *args,
+        cam_intrinsic: CameraIntrinsic = None,
+        cam_extrinsic: CameraExtrinsic = None,
+        # For stereo setups
+        camera_side: str = None,
+        baseline: float = None,
+        mask=None,
+        **kwargs,
+    ):
         tensor = super().__new__(cls, x, *args, **kwargs)
-        # Add camera parameters as labels
-        tensor.add_label("cam_intrinsic", cam_intrinsic, align_dim=["B", "T"], mergeable=True)
-        tensor.add_label("cam_extrinsic", cam_extrinsic, align_dim=["B", "T"], mergeable=True)
+
+        tensor.add_child("mask", mask, align_dim=["B", "T"], mergeable=True)
+        tensor.add_property("baseline", baseline)
+        tensor.add_property("camera_side", camera_side)
+
+        # Intrisic and extrinsic parameters are cloned by default, to prevent having multiple reference
+        # of the same intrisic/extrinsic across nodes.
+        cam_intrinsic = cam_intrinsic.clone() if cam_intrinsic is not None else cam_intrinsic
+        cam_extrinsic = cam_extrinsic.clone() if cam_extrinsic is not None else cam_extrinsic
+        tensor.add_child("cam_intrinsic", cam_intrinsic, align_dim=["B", "T"], mergeable=True)
+        tensor.add_child("cam_extrinsic", cam_extrinsic, align_dim=["B", "T"], mergeable=True)
+
         return tensor
 
     def __init__(self, x, *args, **kwargs):
@@ -35,11 +71,24 @@ class SpatialAugmentedTensor(AugmentedTensor):
     def H(self):
         return self.shape[self.names.index("H")]
 
+    def append_mask(self, mask, name: str = None):
+        """Attach a mask to the frame.
+
+        Parameters
+        ----------
+        mask: aloscene.Mask
+            Mask to attached to the Frame
+        name: str
+            If none, the mask will be attached without name (if possible). Otherwise if no other unnamed
+            mask are attached to the frame, the mask will be added to the set of mask.
+        """
+        self._append_child("mask", mask, name)
+
     def append_cam_intrinsic(self, cam_intrinsic: CameraIntrinsic):
-        self._append_label("cam_intrinsic", cam_intrinsic)
+        self._append_child("cam_intrinsic", cam_intrinsic)
 
     def append_cam_extrinsic(self, cam_extrinsic: CameraExtrinsic):
-        self._append_label("cam_extrinsic", cam_extrinsic)
+        self._append_child("cam_extrinsic", cam_extrinsic)
 
     def get_view(self, views: list = [], exclude=[], size=None, grid_size=None, **kwargs):
         """Render the spatial augmented tensor.
@@ -65,11 +114,11 @@ class SpatialAugmentedTensor(AugmentedTensor):
 
         # Include type
         include_type = [
-            (type(l), ln, sn) for l, ln, sn in self._flatten_label([v for v in views if not isinstance(v, View)])
+            (type(l), ln, sn) for l, ln, sn in self._flatten_child([v for v in views if not isinstance(v, View)])
         ]
         # Exclude type
         exclude_type = [
-            (type(l), ln, sn) for l, ln, sn in self._flatten_label([v for v in exclude if not isinstance(v, View)])
+            (type(l), ln, sn) for l, ln, sn in self._flatten_child([v for v in exclude if not isinstance(v, View)])
         ]
 
         def _is_include(label, set_name):
@@ -102,7 +151,7 @@ class SpatialAugmentedTensor(AugmentedTensor):
                     view = sa_tensor.__get_view__(**__kwargs)
                     view.title = ",".join(f"{k}:{info[k]}" for k in info)
                     n_views.append(view)
-                for label, label_name, set_name in sa_tensor._flatten_labels():
+                for label, label_name, set_name in sa_tensor._flatten_children():
                     # Do not render this label ?
                     if not _is_include(label, set_name) or _is_exclude(label, set_name):
                         continue
@@ -153,20 +202,20 @@ class SpatialAugmentedTensor(AugmentedTensor):
         tensor.rename_(*tuple(["T"] + list(tensor._saved_names)))
 
         def batch_label(tensor, label, name):
-            if tensor._label_property[name]["mergeable"]:
+            if tensor._child_property[name]["mergeable"]:
                 label.rename_(*tuple(["T"] + list(label._saved_names)))
-                for sub_name in label._labels_list:
+                for sub_name in label._children_list:
                     sub_label = getattr(label, sub_name)
                     if sub_label is not None:
-                        self.apply_on_label(sub_label, lambda l: batch_label(label, l, sub_name), on_list=False)
+                        self.apply_on_child(sub_label, lambda l: batch_label(label, l, sub_name), on_list=False)
             else:
-                self.apply_on_label(label, lambda l: l.reset_names(), on_list=True)
+                self.apply_on_child(label, lambda l: l.reset_names(), on_list=True)
 
         # Add a batch dimension on the
-        for name in tensor._labels_list:
+        for name in tensor._children_list:
             label = getattr(tensor, name)
             if label is not None:
-                self.apply_on_label(label, lambda l: batch_label(tensor, l, name), on_list=False)
+                self.apply_on_child(label, lambda l: batch_label(tensor, l, name), on_list=False)
 
         return tensor
 
@@ -191,25 +240,25 @@ class SpatialAugmentedTensor(AugmentedTensor):
             - If label is mergeable, "B" is added to its previous names
             - else, the previous name are restored.
             """
-            if tensor._label_property[name]["mergeable"]:
+            if tensor._child_property[name]["mergeable"]:
                 label.rename_(*tuple(["B"] + list(label._saved_names)))
-                for sub_name in label._labels_list:
+                for sub_name in label._children_list:
                     sub_label = getattr(label, sub_name)
                     if sub_label is not None:
-                        self.apply_on_label(sub_label, lambda l: batch_label(label, l, sub_name), on_list=False)
+                        self.apply_on_child(sub_label, lambda l: batch_label(label, l, sub_name), on_list=False)
             else:
-                self.apply_on_label(label, lambda l: l.reset_names(), on_list=True)
+                self.apply_on_child(label, lambda l: l.reset_names(), on_list=True)
 
         # Add a batch dimension on the label
-        for name in tensor._labels_list:
+        for name in tensor._children_list:
             label = getattr(tensor, name)
             if label is not None:
-                self.apply_on_label(label, lambda l: batch_label(tensor, l, name), on_list=False)
+                self.apply_on_child(label, lambda l: batch_label(tensor, l, name), on_list=False)
 
         return tensor
 
     @staticmethod
-    def batch_list(sa_tensors: list, pad_boxes: bool = False):
+    def batch_list(sa_tensors: list, pad_boxes: bool = False, pad_points2d: bool = False):
         """Given a list of Spatial Augmeted tensor of potentially different size (otherwise cat is enough) this method
         will create a new set of frame of same size (the max size across the frames)
         and add to each frame a mask with 1. on the padded area.
@@ -218,15 +267,17 @@ class SpatialAugmentedTensor(AugmentedTensor):
 
         Parameters
         ----------
-        sa_tensors: list
-            List of any aloscene.tensors.SpatialAugmentedTensor (or list of dicts or SpatialAugmentedTensor)
+        sa_tensors: list or dict
+            List of any aloscene.tensors.SpatialAugmentedTensor. If dict is given, this method will be applied on each
+            list of spatial augmented tensors within the list
         pad_boxes: bool
             By default, do not rescale the boxes attached to the sptial augmented Tensor (see explanation in boxes2d.pad)
 
         Returns
         -----------
-        batch_frame: a child of aloscene.tensors.SpatialAugmentedTensor (or dict of SpatialAugmentedTensor)
-            Multiple sa_tensor with mask label
+        aloscene.tensors.SpatialAugmentedTensor
+            A child of aloscene.tensors.SpatialAugmentedTensor (or dict of SpatialAugmentedTensor)
+            with `mask` label to keep track of the padded areas.
         """
         assert len(sa_tensors) >= 1 and isinstance(sa_tensors, list)
         frame0 = sa_tensors[0]
@@ -240,99 +291,57 @@ class SpatialAugmentedTensor(AugmentedTensor):
         max_h, max_w = 0, 0
         dtype = sa_tensors[0].dtype
         device = sa_tensors[0].device
-        normalization = sa_tensors[0].normalization
-        mean_std = sa_tensors[0].mean_std
-        instance = type(sa_tensors[0])
 
         # Retrieve the target size
         for i, frame in enumerate(sa_tensors):
-            max_h, max_w = max(frame.H, max_h), max(frame.W, max_w)
+            if frame is not None:
+                max_h, max_w = max(frame.H, max_h), max(frame.W, max_w)
 
-        saved_frame_labels = {}
         n_sa_tensors = []
-        for i, frame in enumerate(sa_tensors):
-            # Add the batch dimension and drop the labels
-            n_sa_tensors.append(frame.batch())
-
-            labels = n_sa_tensors[i].get_labels()
-            # Pad labels
-            labels = AugmentedTensor.apply_on_label(
-                labels,
-                lambda l: l.pad(
-                    (0, max_h / frame.H - 1), (0, max_w / frame.W - 1), frame_size=frame.HW, pad_boxes=pad_boxes
-                ),
-            )
-
-            # Merge labels on the first dim (TODO, move on an appropriate method)
-            # The following can be merge into an other method in the augmented_tensor class that do roughly the same thing
-            for label_name in labels:
-                if labels[label_name] is None:
-                    continue
-                if label_name not in saved_frame_labels:
-                    saved_frame_labels[label_name] = (
-                        {key: [] for key in labels[label_name]} if isinstance(labels[label_name], dict) else []
-                    )
-                if isinstance(labels[label_name], dict):
-                    for key in labels[label_name]:
-                        saved_frame_labels[label_name] = frame._merge_label(
-                            labels[label_name][key],
-                            label_name,
-                            key,
-                            saved_frame_labels[label_name],
-                            {"dim": 0},
-                            check_dim=False,
-                        )
-                else:
-                    saved_frame_labels = frame._merge_label(
-                        labels[label_name], label_name, label_name, saved_frame_labels, {"dim": 0}, check_dim=False
-                    )
-
-        # Merge all aligned tensors on the batch dimension
-        # Same thing that above, the following code should directlt use an other method
-        # that roughly do the same thing
-        # TODO: Test the following code since I don't have access ot mergeable label right now
-        for label_name in saved_frame_labels:
-            if not frame._label_property[label_name]["mergeable"]:
+        for i, n_frame in enumerate(sa_tensors):
+            if n_frame is None:
                 continue
-            if isinstance(saved_frame_labels[label_name], dict):
-                for key in saved_frame_labels[label_name]:
-                    saved_frame_labels[label_name][key] = torch.cat(saved_frame_labels[label_name][key], dim=0)
-            else:
-                saved_frame_labels[label_name] = torch.cat(saved_frame_labels[label_name], dim=0)
+            # Add the batch dimension and drop the labels
+            n_sa_tensors.append(n_frame.batch())
+            frame = n_frame
 
         batch_size = len(n_sa_tensors)
         # Retrieve the new shapes and dim names
         n_tensor_shape, n_mask_shape = list(n_sa_tensors[0].shape), list(n_sa_tensors[0].shape)
+        # New target frame size
         n_tensor_shape[0], n_mask_shape[0] = batch_size, batch_size
         n_tensor_shape[n_sa_tensors[0].names.index("H")] = max_h
         n_tensor_shape[n_sa_tensors[0].names.index("W")] = max_w
+        # New target mask shape
         n_mask_shape[n_sa_tensors[0].names.index("H")] = max_h
         n_mask_shape[n_sa_tensors[0].names.index("W")] = max_w
         n_mask_shape[n_sa_tensors[0].names.index("C")] = 1
         n_names = n_sa_tensors[0].names
 
+        n_padded_list = []
+        for spatial_tensor in n_sa_tensors:
+            h_pad = (0, max_h - spatial_tensor.H)
+            w_pad = (0, max_w - spatial_tensor.W)
+            padded_spatial_tensor = spatial_tensor.pad(h_pad, w_pad, pad_boxes=pad_boxes, pad_points2d=pad_points2d)
+            n_padded_list.append(padded_spatial_tensor)
+
+        n_augmented_tensors = torch.cat(n_padded_list, dim=0)
+
         # Set the new mask and tensor buffer filled up with zeros and ones
         # Also, for normalized frames, the zero value is actually different based on the mean/std
         n_tensor = torch.zeros(tuple(n_tensor_shape), dtype=dtype, device=device)
-        if mean_std is not None:
-            mean_tensor, std_tensor = instance._get_mean_std_tensor(
-                tuple(n_mask_shape), n_names, mean_std, device=device
-            )
-            n_tensor = n_tensor - mean_tensor
-            n_tensor = n_tensor / std_tensor
-        n_mask = torch.ones(tuple(n_mask_shape), dtype=torch.float, device=device)
 
+        # Create the batch list mask
+        n_mask = torch.ones(tuple(n_mask_shape), dtype=torch.float, device=device)
         for b, frame in enumerate(n_sa_tensors):
             n_slice = frame.get_slices({"B": b, "H": slice(None, frame.H), "W": slice(None, frame.W)})
             n_tensor[n_slice].copy_(frame[0])
             n_mask[n_slice] = 0
 
-        n_frame = instance(n_tensor, names=n_names, normalization=normalization, device=device, mean_std=mean_std)
-        n_frame.append_mask(aloscene.Mask(n_mask, names=n_names))
-        # Put back the merged dropped labels
-        n_frame.set_labels(saved_frame_labels)
+        # n_frame = instance(n_tensor, names=n_names, normalization=normalization, device=device, mean_std=mean_std)
+        n_augmented_tensors.append_mask(aloscene.Mask(n_mask, names=n_names))
 
-        return n_frame
+        return n_augmented_tensors
 
     def _relative_to_absolute_hs_ws(self, hs=None, ws=None, assert_integer=True):
         """
@@ -384,7 +393,7 @@ class SpatialAugmentedTensor(AugmentedTensor):
 
         the ._crop method of SpatialAugmentedTensor crops the tensor
         by using the bracket notation tensor[hmin:hmax, wmin:wmax],
-        which then triggers tensor._getitem_label,
+        which then triggers tensor._getitem_child,
         which calls label.crop on each labels.
 
         Therefore, if anything was done in _crop_label,
@@ -442,6 +451,10 @@ class SpatialAugmentedTensor(AugmentedTensor):
         h = self.relative_to_absolute(size[0], "h", assert_integer=False)
         # assert_integer = False to avoid raising Assertion. Ex: when coordinates = 900.0000000000001
         w = self.relative_to_absolute(size[1], "w", assert_integer=False)
+        # If a SpatialAgumentedTensor is empty, resize operation does not work. Use view instead.
+        if ("N" in self.names and self.size("N") == 0) or ("C" in self.names and self.size("C") == 0):
+            shapes = list(self.shape)[:-2] + [h, w]
+            return self.rename(None).view(shapes).reset_names()
         return F.resize(self.rename(None), (h, w)).reset_names()
 
     def _crop(self, H_crop: tuple, W_crop: tuple, **kwargs):
@@ -487,17 +500,16 @@ class SpatialAugmentedTensor(AugmentedTensor):
         -------
         padded
         """
-
-        pad_top = int(offset_y[0] * self.H)
-        pad_bottom = int(offset_y[1] * self.H)
-        pad_left = int(offset_x[0] * self.W)
-        pad_right = int(offset_x[1] * self.W)
+        pad_top = int(round(offset_y[0] * self.H))
+        pad_bottom = int(round(offset_y[1] * self.H))
+        pad_left = int(round(offset_x[0] * self.W))
+        pad_right = int(round(offset_x[1] * self.W))
 
         padding = [pad_left, pad_top, pad_right, pad_bottom]
         tensor_padded = F.pad(self.rename(None), padding, padding_mode="constant", fill=value).reset_names()
         return tensor_padded
 
-    def _getitem_label(self, label, label_name, idx):
+    def _getitem_child(self, label, label_name, idx):
         """
         This method is used in AugmentedTensor.__getitem__
         The following must be specific to spatial labeled tensor only.
@@ -506,7 +518,7 @@ class SpatialAugmentedTensor(AugmentedTensor):
         def _slice_list(label_list, curr_dim_idx, dim_idx, slicer):
 
             if isinstance(label_list, torch.Tensor):
-                assert self._label_property[label_name]["mergeable"]
+                assert self._child_property[label_name]["mergeable"]
                 n_slice = label_list.get_slices({label_list.names[dim_idx]: slicer}, label_list)
                 return label_list[n_slice]
             if curr_dim_idx != dim_idx:
@@ -535,7 +547,7 @@ class SpatialAugmentedTensor(AugmentedTensor):
                     elif self.names[dim_idx] == "W":
                         hw_crop[1] = (slicer.start / self.W, slicer.stop / self.W)
                     else:
-                        allow_dims = self._label_property[label_name]["align_dim"]
+                        allow_dims = self._child_property[label_name]["align_dim"]
                         if self.names[label_dim_idx] not in allow_dims:
                             raise Exception(
                                 "Only a slice on the following none spatial dim is allow: {}. Trying to slice on {} for names {}".format(
@@ -549,7 +561,7 @@ class SpatialAugmentedTensor(AugmentedTensor):
                     dim_idx += 1
                     label_dim_idx += 1
                 elif isinstance(slicer, int):
-                    allow_dims = self._label_property[label_name]["align_dim"]
+                    allow_dims = self._child_property[label_name]["align_dim"]
                     if self.names[dim_idx] not in allow_dims:
                         raise Exception(
                             "Only a slice on the following none spatial dim is allow: {}. Trying to slice on {} for names {}".format(
@@ -562,7 +574,7 @@ class SpatialAugmentedTensor(AugmentedTensor):
                     raise Exception("Do not handle this slice")
 
             if hw_crop[0] is not None or hw_crop[1] is not None:
-                label = self.apply_on_label(
+                label = self.apply_on_child(
                     label,
                     lambda l: l.crop(
                         hw_crop[0],

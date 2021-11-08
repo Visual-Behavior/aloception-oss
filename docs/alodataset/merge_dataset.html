@@ -92,19 +92,19 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../getting_started/getting_started.html">Getting started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../getting_started/aloscene.html">Aloscene: Computer vision with ease</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../getting_started/alodataset.html">Alodataset: Loading your datasets</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../getting_started/alonet.html">Alonet: Loading &amp; training your models</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../getting_started/augmented_tensor.html">About Augmented Tensor</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/alodataset.html">Alodataset: Loading your vision datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/alonet.html">Alonet : Training your models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/augmented_tensor.html">About augmented tensors</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Turorials</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/data_setup.html">How to setup your data?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/training_detr.html">Training Detr</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/finetuning_detr.html">Finetuning DETR</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/training_panoptic.html">Training Panoptic Head module</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/training_deformable_detr.html">Training Deformable DETR</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/finetuning_deformable_detr.html">Finetuning Deformanble DETR</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/tensort_inference.html">Exporting DETR / Deformable-DETR to TensorRT</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../tutorials/training_raft.html">Training RAFT</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Aloception API</span></p>
 <ul class="current">
@@ -272,12 +272,20 @@ from the next dataset until the last dataset.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="alodataset.merge_dataset.MergeDataset.stream_loader">
 <span class="sig-name descname"><span class="pre">stream_loader</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_workers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alodataset.merge_dataset.MergeDataset.stream_loader" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get a stream loader from the dataset. Compared to the <cite>train_loader</cite>
-the <cite>stream_loader</cite> remove the batch dimension and do not shuffle the dataset.</p>
+<dd><p>Get a stream loader from the dataset. Compared to the <a class="reference internal" href="#alodataset.merge_dataset.MergeDataset.train_loader" title="alodataset.merge_dataset.MergeDataset.train_loader"><code class="xref py py-func docutils literal notranslate"><span class="pre">train_loader()</span></code></a>
+the <a class="reference internal" href="#alodataset.merge_dataset.MergeDataset.stream_loader" title="alodataset.merge_dataset.MergeDataset.stream_loader"><code class="xref py py-func docutils literal notranslate"><span class="pre">stream_loader()</span></code></a> do not have batch dimension and do not shuffle the dataset.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>num_workers: (int)</strong></dt><dd><p>2 by default.</p>
+<dt><strong>dataset</strong><span class="classifier">torch.utils.data.Dataset</span></dt><dd><p>Dataset to make dataloader</p>
+</dd>
+<dt><strong>num_workers</strong><span class="classifier">int</span></dt><dd><p>Number of workers, by default 2</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>torch.utils.data.DataLoader</dt><dd><p>A generator</p>
 </dd>
 </dl>
 </dd>

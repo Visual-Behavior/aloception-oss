@@ -94,15 +94,16 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../getting_started/getting_started.html">Getting started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../getting_started/aloscene.html">Aloscene: Computer vision with ease</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../getting_started/alodataset.html">Alodataset: Loading your datasets</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../getting_started/alonet.html">Alonet: Loading &amp; training your models</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../getting_started/augmented_tensor.html">About Augmented Tensor</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/alodataset.html">Alodataset: Loading your vision datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/alonet.html">Alonet : Training your models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/augmented_tensor.html">About augmented tensors</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Turorials</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="data_setup.html">How to setup your data?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="training_detr.html">Training Detr</a></li>
 <li class="toctree-l1"><a class="reference internal" href="finetuning_detr.html">Finetuning DETR</a></li>
+<li class="toctree-l1"><a class="reference internal" href="training_panoptic.html">Training Panoptic Head module</a></li>
 <li class="toctree-l1"><a class="reference internal" href="training_deformable_detr.html">Training Deformable DETR</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Finetuning Deformanble DETR</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#1.-Train-Deformable-DETR50-Finetune">1. Train Deformable DETR50 Finetune</a></li>
@@ -111,7 +112,6 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="tensort_inference.html">Exporting DETR / Deformable-DETR to TensorRT</a></li>
-<li class="toctree-l1"><a class="reference internal" href="training_raft.html">Training RAFT</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Aloception API</span></p>
 <ul>
@@ -538,7 +538,7 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="admonition note">
 <p class="admonition-title fa fa-exclamation-circle"><strong>Note</strong></p>
-<p><a class="reference internal" href="../alonet/detr_connectors.html#module-alonet.detr.coco_data_modules"><span class="std std-ref">CocoDetection2Detr</span></a> definition will deploy an user prompt task to know where was storaged <a class="reference external" href="https://public.roboflow.com/object-detection/mask-wearing">Mask Wearing Dataset</a>. Here, the user must input <em>/paht/mask/wearing</em>. Check <a class="reference internal" href="data_setup.html"><span class="doc">How to setup your data</span></a> tutorial to know more about that.</p>
+<p><a class="reference internal" href="../alonet/detr_connectors.html#cocodetection2detr"><span class="std std-ref">CocoDetection2Detr</span></a> definition will deploy an user prompt task to know where was storaged <a class="reference external" href="https://public.roboflow.com/object-detection/mask-wearing">Mask Wearing Dataset</a>. Here, the user must input <em>/paht/mask/wearing</em>. Check <a class="reference internal" href="data_setup.html"><span class="doc">How to setup your data</span></a> tutorial to know more about that.</p>
 </div>
 <p>Once the process has been completed, the $HOME/.aloception/project_run_id/run_id folder folder will be created with the different checkpoint files.</p>
 <div class="admonition note">

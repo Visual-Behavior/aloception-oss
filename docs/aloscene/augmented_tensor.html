@@ -92,19 +92,19 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../getting_started/getting_started.html">Getting started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../getting_started/aloscene.html">Aloscene: Computer vision with ease</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../getting_started/alodataset.html">Alodataset: Loading your datasets</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../getting_started/alonet.html">Alonet: Loading &amp; training your models</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../getting_started/augmented_tensor.html">About Augmented Tensor</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/alodataset.html">Alodataset: Loading your vision datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/alonet.html">Alonet : Training your models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/augmented_tensor.html">About augmented tensors</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Turorials</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/data_setup.html">How to setup your data?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/training_detr.html">Training Detr</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/finetuning_detr.html">Finetuning DETR</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/training_panoptic.html">Training Panoptic Head module</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/training_deformable_detr.html">Training Deformable DETR</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/finetuning_deformable_detr.html">Finetuning Deformanble DETR</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/tensort_inference.html">Exporting DETR / Deformable-DETR to TensorRT</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../tutorials/training_raft.html">Training RAFT</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Aloception API</span></p>
 <ul class="current">
@@ -112,6 +112,7 @@
 <li class="toctree-l2"><a class="reference internal" href="frame.html">Frame</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bounding_boxes_2d.html">BoundingBoxes2D</a></li>
 <li class="toctree-l2"><a class="reference internal" href="oriented_boxes_2d.html">OrientedBoxes2D</a></li>
+<li class="toctree-l2"><a class="reference internal" href="points2d.html">Points2D</a></li>
 <li class="toctree-l2"><a class="reference internal" href="labels.html">Label</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mask.html">Mask</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mask.html#module-aloscene.mask">Mask API</a></li>
@@ -218,7 +219,6 @@
     text-align: unset;
 }
 </style>
-<p>Here is the augmented tensor page</p>
 <div class="section" id="module-aloscene.tensors.augmented_tensor">
 <span id="augmented-tensor"></span><h1>Augmented Tensor<a class="headerlink" href="#module-aloscene.tensors.augmented_tensor" title="Permalink to this headline">¶</a></h1>
 <dl class="py class">
@@ -361,9 +361,11 @@ the dimensions that are not keys of the dict have a default value of slice(None)
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>offset_y: tuple</strong></dt><dd><p>(percentage top_offset, percentage bottom_offset) Percentage based on the previous size</p>
+<dt><strong>offset_y: tuple of float or tuple of int</strong></dt><dd><p>(percentage top_offset, percentage bottom_offset) Percentage based on the previous size If tuple of int
+the absolute value will be converted to float (percentahe) before to be applied.</p>
 </dd>
-<dt><strong>offset_x: tuple</strong></dt><dd><p>(percentage left_offset, percentage right_offset) Percentage based on the previous size</p>
+<dt><strong>offset_x: tuple of float or tuple of int</strong></dt><dd><p>(percentage left_offset, percentage right_offset) Percentage based on the previous size. If tuple of int
+the absolute value will be converted to float (percentage) before to be applied.</p>
 </dd>
 </dl>
 </dd>

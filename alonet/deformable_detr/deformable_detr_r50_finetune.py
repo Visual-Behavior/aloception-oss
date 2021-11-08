@@ -4,6 +4,7 @@ from torch import nn
 
 from alonet.deformable_detr.deformable_detr import _get_clones
 from alonet.deformable_detr import DeformableDetrR50, DeformableDetrR50Refinement
+from alonet.common import load_weights
 
 
 class DeformableDetrR50Finetune(DeformableDetrR50):
@@ -16,6 +17,10 @@ class DeformableDetrR50Finetune(DeformableDetrR50):
         Number of classes to use
     activation_fn : str, optional
         Activation function to use in :attr:`class_embed` layer, by default "sigmoid"
+    base_weights : str, optional
+        DetrR50 weights, by default "deformable-detr-r50"
+    weights : str, optional
+        Load weights from pth or ckpt file, by default None
     *args : Namespace
         Arguments used in :mod:`Deformable DetrR50 <alonet.deformable_detr.deformable_detr_r50>` module
     **kwargs : dict
@@ -24,16 +29,23 @@ class DeformableDetrR50Finetune(DeformableDetrR50):
     Raises
     ------
     Exception
-        :attr:`activation_fn` must be "softmax" or "sigmoid". However, :attr:`activation_fn` = "softmax" implies to work with background class.
-        That means increases in one the :attr:`num_classes` automatically.
+        :attr:`activation_fn` must be "softmax" or "sigmoid". However, :attr:`activation_fn` = "softmax" implies
+        to work with background class. That means increases in one the :attr:`num_classes` automatically.
     """
 
-    def __init__(self, num_classes: int, *args, activation_fn: str = "sigmoid", **kwargs):
+    def __init__(
+        self,
+        num_classes: int,
+        activation_fn: str = "sigmoid",
+        base_weights: str = "deformable-detr-r50",
+        weights: str = None,
+        **kwargs,
+    ):
         """Init method"""
         if activation_fn not in ["sigmoid", "softmax"]:
             raise Exception(f"activation_fn = {activation_fn} must be one of this two values: 'sigmoid' or 'softmax'.")
 
-        super().__init__(*args, **kwargs)
+        super().__init__(weights=base_weights, **kwargs)
 
         self.activation_fn = activation_fn
         self.background_class = num_classes if self.activation_fn == "softmax" else None
@@ -48,11 +60,19 @@ class DeformableDetrR50Finetune(DeformableDetrR50):
         num_pred = self.transformer.decoder.num_layers
         self.class_embed = nn.ModuleList([self.class_embed for _ in range(num_pred)])
 
+        # Load weights procedure
+        if weights is not None:
+            if ".pth" in weights or ".ckpt" in weights:
+                load_weights(self, weights, self.device)
+            else:
+                raise ValueError(f"Unknown weights: '{weights}'")
+
 
 class DeformableDetrR50RefinementFinetune(DeformableDetrR50Refinement):
     """
     Pre made helpfull class to finetune the
-    :mod:`Deformable DetrR50 with refinement <alonet.deformable_detr.deformable_detr_r50_refinement>` model on a custom class.
+    :mod:`Deformable DetrR50 with refinement <alonet.deformable_detr.deformable_detr_r50_refinement>` model on a
+    custom class.
 
     Parameters
     ----------
@@ -60,25 +80,37 @@ class DeformableDetrR50RefinementFinetune(DeformableDetrR50Refinement):
         Number of classes to use
     activation_fn : str, optional
         Activation function to use in :attr:`class_embed` layer, by default "sigmoid"
+    base_weights : str, optional
+        DetrR50 weights, by default "deformable-detr-r50-refinement"
+    weights : str, optional
+        Load weights from pth or ckpt file, by default None
     *args : Namespace
-        Arguments used in :mod:`Deformable DetrR50 with refinement <alonet.deformable_detr.deformable_detr_r50_refinement>` module
+        Arguments used in :mod:`Deformable DetrR50 with refinement
+        <alonet.deformable_detr.deformable_detr_r50_refinement>` module
     **kwargs : dict
-        Aditional arguments used in :mod:`Deformable DetrR50 with refinement <alonet.deformable_detr.deformable_detr_r50_refinement>` module
+        Aditional arguments used in :mod:`Deformable DetrR50 with refinement
+        <alonet.deformable_detr.deformable_detr_r50_refinement>` module
 
     Raises
     ------
     Exception
-        :attr:`activation_fn` must be "softmax" or "sigmoid". However, :attr:`activation_fn` = "softmax" implies to work with background class.
-        That means increases in one the :attr:`num_classes` automatically.
+        :attr:`activation_fn` must be "softmax" or "sigmoid". However, :attr:`activation_fn` = "softmax" implies
+        to work with background class. That means increases in one the :attr:`num_classes` automatically.
     """
 
-    def __init__(self, num_classes: int, *args, activation_fn: str = "sigmoid", **kwargs):
+    def __init__(
+        self,
+        num_classes: int,
+        activation_fn: str = "sigmoid",
+        base_weights: str = "deformable-detr-r50-refinement",
+        weights: str = None,
+        **kwargs,
+    ):
         """Init method"""
-
         if activation_fn not in ["sigmoid", "softmax"]:
             raise Exception(f"activation_fn = {activation_fn} must be one of this two values: 'sigmoid' or 'softmax'.")
 
-        super().__init__(*args, **kwargs)
+        super().__init__(weights=base_weights, **kwargs)
 
         self.activation_fn = activation_fn
         self.background_class = num_classes if self.activation_fn == "softmax" else None
@@ -92,6 +124,13 @@ class DeformableDetrR50RefinementFinetune(DeformableDetrR50Refinement):
         self.class_embed = self.class_embed.to(self.device)
         num_pred = self.transformer.decoder.num_layers
         self.class_embed = _get_clones(self.class_embed, num_pred)
+
+        # Load weights procedure
+        if weights is not None:
+            if ".pth" in weights or ".ckpt" in weights:
+                load_weights(self, weights, self.device)
+            else:
+                raise ValueError(f"Unknown weights: '{weights}'")
 
 
 if __name__ == "__main__":

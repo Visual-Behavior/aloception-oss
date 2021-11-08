@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>About Augmented Tensor &mdash; Aloception 0.0.1 documentation</title>
+  <title>About augmented tensors &mdash; Aloception 0.0.1 documentation</title>
   
 
   
@@ -36,6 +36,8 @@
         <script src="../_static/underscore.js"></script>
         <script src="../_static/doctools.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+        <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
     
     <script type="text/javascript" src="../_static/js/theme.js"></script>
 
@@ -43,7 +45,7 @@
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="How to setup your data?" href="../tutorials/data_setup.html" />
-    <link rel="prev" title="Alonet: Loading &amp; training your models" href="alonet.html" /> 
+    <link rel="prev" title="Alonet : Training your models" href="alonet.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
@@ -92,19 +94,24 @@
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="getting_started.html">Getting started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="aloscene.html">Aloscene: Computer vision with ease</a></li>
-<li class="toctree-l1"><a class="reference internal" href="alodataset.html">Alodataset: Loading your datasets</a></li>
-<li class="toctree-l1"><a class="reference internal" href="alonet.html">Alonet: Loading &amp; training your models</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">About Augmented Tensor</a></li>
+<li class="toctree-l1"><a class="reference internal" href="alodataset.html">Alodataset: Loading your vision datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="alonet.html">Alonet : Training your models</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">About augmented tensors</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#Statefull-tensors">Statefull tensors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Augmented-tensors-and-attached-labels.">Augmented tensors and attached labels.</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Transforming-augmented-tensors">Transforming augmented tensors</a></li>
+</ul>
+</li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Turorials</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/data_setup.html">How to setup your data?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/training_detr.html">Training Detr</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/finetuning_detr.html">Finetuning DETR</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/training_panoptic.html">Training Panoptic Head module</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/training_deformable_detr.html">Training Deformable DETR</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/finetuning_deformable_detr.html">Finetuning Deformanble DETR</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/tensort_inference.html">Exporting DETR / Deformable-DETR to TensorRT</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../tutorials/training_raft.html">Training RAFT</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Aloception API</span></p>
 <ul>
@@ -159,13 +166,13 @@
     
       <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
         
-      <li>About Augmented Tensor</li>
+      <li>About augmented tensors</li>
     
     
       <li class="wy-breadcrumbs-aside">
         
           
-            <a href="../_sources/getting_started/augmented_tensor.rst.txt" rel="nofollow"> View page source</a>
+            <a href="../_sources/getting_started/augmented_tensor.ipynb.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -180,6 +187,252 @@
             
   
 <style>
+/* CSS for nbsphinx extension */
+
+/* remove conflicting styling from Sphinx themes */
+div.nbinput.container div.prompt *,
+div.nboutput.container div.prompt *,
+div.nbinput.container div.input_area pre,
+div.nboutput.container div.output_area pre,
+div.nbinput.container div.input_area .highlight,
+div.nboutput.container div.output_area .highlight {
+    border: none;
+    padding: 0;
+    margin: 0;
+    box-shadow: none;
+}
+
+div.nbinput.container > div[class*=highlight],
+div.nboutput.container > div[class*=highlight] {
+    margin: 0;
+}
+
+div.nbinput.container div.prompt *,
+div.nboutput.container div.prompt * {
+    background: none;
+}
+
+div.nboutput.container div.output_area .highlight,
+div.nboutput.container div.output_area pre {
+    background: unset;
+}
+
+div.nboutput.container div.output_area div.highlight {
+    color: unset;  /* override Pygments text color */
+}
+
+/* avoid gaps between output lines */
+div.nboutput.container div[class*=highlight] pre {
+    line-height: normal;
+}
+
+/* input/output containers */
+div.nbinput.container,
+div.nboutput.container {
+    display: -webkit-flex;
+    display: flex;
+    align-items: flex-start;
+    margin: 0;
+    width: 100%;
+}
+@media (max-width: 540px) {
+    div.nbinput.container,
+    div.nboutput.container {
+        flex-direction: column;
+    }
+}
+
+/* input container */
+div.nbinput.container {
+    padding-top: 5px;
+}
+
+/* last container */
+div.nblast.container {
+    padding-bottom: 5px;
+}
+
+/* input prompt */
+div.nbinput.container div.prompt pre {
+    color: #307FC1;
+}
+
+/* output prompt */
+div.nboutput.container div.prompt pre {
+    color: #BF5B3D;
+}
+
+/* all prompts */
+div.nbinput.container div.prompt,
+div.nboutput.container div.prompt {
+    width: 4.5ex;
+    padding-top: 5px;
+    position: relative;
+    user-select: none;
+}
+
+div.nbinput.container div.prompt > div,
+div.nboutput.container div.prompt > div {
+    position: absolute;
+    right: 0;
+    margin-right: 0.3ex;
+}
+
+@media (max-width: 540px) {
+    div.nbinput.container div.prompt,
+    div.nboutput.container div.prompt {
+        width: unset;
+        text-align: left;
+        padding: 0.4em;
+    }
+    div.nboutput.container div.prompt.empty {
+        padding: 0;
+    }
+
+    div.nbinput.container div.prompt > div,
+    div.nboutput.container div.prompt > div {
+        position: unset;
+    }
+}
+
+/* disable scrollbars on prompts */
+div.nbinput.container div.prompt pre,
+div.nboutput.container div.prompt pre {
+    overflow: hidden;
+}
+
+/* input/output area */
+div.nbinput.container div.input_area,
+div.nboutput.container div.output_area {
+    -webkit-flex: 1;
+    flex: 1;
+    overflow: auto;
+}
+@media (max-width: 540px) {
+    div.nbinput.container div.input_area,
+    div.nboutput.container div.output_area {
+        width: 100%;
+    }
+}
+
+/* input area */
+div.nbinput.container div.input_area {
+    border: 1px solid #e0e0e0;
+    border-radius: 2px;
+    /*background: #f5f5f5;*/
+}
+
+/* override MathJax center alignment in output cells */
+div.nboutput.container div[class*=MathJax] {
+    text-align: left !important;
+}
+
+/* override sphinx.ext.imgmath center alignment in output cells */
+div.nboutput.container div.math p {
+    text-align: left;
+}
+
+/* standard error */
+div.nboutput.container div.output_area.stderr {
+    background: #fdd;
+}
+
+/* ANSI colors */
+.ansi-black-fg { color: #3E424D; }
+.ansi-black-bg { background-color: #3E424D; }
+.ansi-black-intense-fg { color: #282C36; }
+.ansi-black-intense-bg { background-color: #282C36; }
+.ansi-red-fg { color: #E75C58; }
+.ansi-red-bg { background-color: #E75C58; }
+.ansi-red-intense-fg { color: #B22B31; }
+.ansi-red-intense-bg { background-color: #B22B31; }
+.ansi-green-fg { color: #00A250; }
+.ansi-green-bg { background-color: #00A250; }
+.ansi-green-intense-fg { color: #007427; }
+.ansi-green-intense-bg { background-color: #007427; }
+.ansi-yellow-fg { color: #DDB62B; }
+.ansi-yellow-bg { background-color: #DDB62B; }
+.ansi-yellow-intense-fg { color: #B27D12; }
+.ansi-yellow-intense-bg { background-color: #B27D12; }
+.ansi-blue-fg { color: #208FFB; }
+.ansi-blue-bg { background-color: #208FFB; }
+.ansi-blue-intense-fg { color: #0065CA; }
+.ansi-blue-intense-bg { background-color: #0065CA; }
+.ansi-magenta-fg { color: #D160C4; }
+.ansi-magenta-bg { background-color: #D160C4; }
+.ansi-magenta-intense-fg { color: #A03196; }
+.ansi-magenta-intense-bg { background-color: #A03196; }
+.ansi-cyan-fg { color: #60C6C8; }
+.ansi-cyan-bg { background-color: #60C6C8; }
+.ansi-cyan-intense-fg { color: #258F8F; }
+.ansi-cyan-intense-bg { background-color: #258F8F; }
+.ansi-white-fg { color: #C5C1B4; }
+.ansi-white-bg { background-color: #C5C1B4; }
+.ansi-white-intense-fg { color: #A1A6B2; }
+.ansi-white-intense-bg { background-color: #A1A6B2; }
+
+.ansi-default-inverse-fg { color: #FFFFFF; }
+.ansi-default-inverse-bg { background-color: #000000; }
+
+.ansi-bold { font-weight: bold; }
+.ansi-underline { text-decoration: underline; }
+
+
+div.nbinput.container div.input_area div[class*=highlight] > pre,
+div.nboutput.container div.output_area div[class*=highlight] > pre,
+div.nboutput.container div.output_area div[class*=highlight].math,
+div.nboutput.container div.output_area.rendered_html,
+div.nboutput.container div.output_area > div.output_javascript,
+div.nboutput.container div.output_area:not(.rendered_html) > img{
+    padding: 5px;
+    margin: 0;
+}
+
+/* fix copybtn overflow problem in chromium (needed for 'sphinx_copybutton') */
+div.nbinput.container div.input_area > div[class^='highlight'],
+div.nboutput.container div.output_area > div[class^='highlight']{
+    overflow-y: hidden;
+}
+
+/* hide copybtn icon on prompts (needed for 'sphinx_copybutton') */
+.prompt a.copybtn {
+    display: none;
+}
+
+/* Some additional styling taken form the Jupyter notebook CSS */
+div.rendered_html table {
+  border: none;
+  border-collapse: collapse;
+  border-spacing: 0;
+  color: black;
+  font-size: 12px;
+  table-layout: fixed;
+}
+div.rendered_html thead {
+  border-bottom: 1px solid black;
+  vertical-align: bottom;
+}
+div.rendered_html tr,
+div.rendered_html th,
+div.rendered_html td {
+  text-align: right;
+  vertical-align: middle;
+  padding: 0.5em 0.5em;
+  line-height: normal;
+  white-space: normal;
+  max-width: none;
+  border: none;
+}
+div.rendered_html th {
+  font-weight: bold;
+}
+div.rendered_html tbody tr:nth-child(odd) {
+  background: #f5f5f5;
+}
+div.rendered_html tbody tr:hover {
+  background: rgba(66, 165, 245, 0.2);
+}
+
 /* CSS overrides for sphinx_rtd_theme */
 
 /* 24px margin */
@@ -202,8 +455,370 @@
     text-align: unset;
 }
 </style>
-<div class="section" id="about-augmented-tensor">
-<h1>About Augmented Tensor<a class="headerlink" href="#about-augmented-tensor" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="About-augmented-tensors">
+<h1>About augmented tensors<a class="headerlink" href="#About-augmented-tensors" title="Permalink to this headline">¶</a></h1>
+<p>Augmented tensors are at the core of the <code class="docutils literal notranslate"><span class="pre">aloscene</span></code> package. The idea behind augmented tensors is to make the transition from the data structure to the Tensor as seamless as possible.</p>
+<div class="section" id="Statefull-tensors">
+<h2>Statefull tensors<a class="headerlink" href="#Statefull-tensors" title="Permalink to this headline">¶</a></h2>
+<p>One nice property of augmented tensors is that can encode a known state that will be preserved over time (as long as you’ll use the provided methods in the <code class="docutils literal notranslate"><span class="pre">aloscene</span></code> package)</p>
+<p>Let’s take one example with the <code class="docutils literal notranslate"><span class="pre">BondixBoxes2d</span></code> augmented tensors.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[32]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">aloscene</span>
+
+<span class="n">boxes</span> <span class="o">=</span> <span class="n">aloscene</span><span class="o">.</span><span class="n">BoundingBoxes2D</span><span class="p">([</span>
+    <span class="p">[</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">],</span>
+    <span class="p">[</span><span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">]],</span>
+    <span class="n">boxes_format</span><span class="o">=</span><span class="s2">&quot;xcyc&quot;</span><span class="p">,</span>
+    <span class="n">absolute</span><span class="o">=</span><span class="kc">False</span>
+<span class="p">)</span>
+<span class="n">boxes</span><span class="o">.</span><span class="n">get_view</span><span class="p">()</span><span class="o">.</span><span class="n">render</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/getting_started_augmented_tensor_1_0.png" src="../_images/getting_started_augmented_tensor_1_0.png" />
+</div>
+</div>
+<p>In the above example, <code class="docutils literal notranslate"><span class="pre">boxes</span></code> is a specific tensor with properties and methods related to 2d boxes. You can at any point in the program know the state of the Tensor by look into the attached properties.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[33]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;boxes names&quot;</span><span class="p">,</span> <span class="n">boxes</span><span class="o">.</span><span class="n">names</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;boxes_format&quot;</span><span class="p">,</span> <span class="n">boxes</span><span class="o">.</span><span class="n">boxes_format</span><span class="p">)</span> <span class="c1"># What is the current pos</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;absolute&quot;</span><span class="p">,</span> <span class="n">boxes</span><span class="o">.</span><span class="n">absolute</span><span class="p">)</span> <span class="c1"># Is the position relative or absolute</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+boxes names (&#39;N&#39;, None)
+boxes_format xcyc
+absolute False
+</pre></div></div>
+</div>
+<p>Because the tensor is stateful, you can convert your boxes into other types without worrying about the current state of your tensor.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[34]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="c1"># Encode the boxes in x1,y1,x2,y2 instead of xc, yc, w, h</span>
+<span class="n">boxes</span> <span class="o">=</span> <span class="n">boxes</span><span class="o">.</span><span class="n">xyxy</span><span class="p">()</span>
+<span class="c1"># Convert the boxes values to absolute.</span>
+<span class="c1"># to do so, the frame size must be known.</span>
+<span class="n">boxes</span> <span class="o">=</span> <span class="n">boxes</span><span class="o">.</span><span class="n">abs_pos</span><span class="p">((</span><span class="mi">500</span><span class="p">,</span> <span class="mi">500</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">boxes</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+tensor(
+        boxes_format=xyxy, absolute=True, frame_size=(500, 500),
+
+        [[175., 175., 325., 325.],
+        [125., 100., 275., 300.]])
+</pre></div></div>
+</div>
+<p>Since your tensor is state full, you don’t need to know its current state to run some boxes related operations.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[35]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;iou&quot;</span><span class="p">,</span> <span class="n">boxes</span><span class="o">.</span><span class="n">iou_with</span><span class="p">(</span><span class="n">boxes</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;iou&quot;</span><span class="p">,</span> <span class="n">boxes</span><span class="o">.</span><span class="n">area</span><span class="p">())</span>
+<span class="n">boxes</span><span class="o">.</span><span class="n">get_view</span><span class="p">()</span><span class="o">.</span><span class="n">render</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+iou tensor([[1.0000, 0.3125],
+        [0.3125, 1.0000]])
+iou tensor([22500., 30000.])
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/getting_started_augmented_tensor_7_1.png" src="../_images/getting_started_augmented_tensor_7_1.png" />
+</div>
+</div>
+<div class="admonition note">
+<p><strong>NOTE</strong> The size of the displayed image is different from the first one since we’re now using absolute boxes with known frame sizes.</p>
+</div>
+<p>Before being an augmented tensor, <code class="docutils literal notranslate"><span class="pre">boxes</span></code> is first of all a tensors. Therefore, you can at any point, use it as such while tracking your gradient.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[36]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">boxes</span> <span class="o">=</span> <span class="n">boxes</span> <span class="o">*</span> <span class="mf">0.5</span>
+<span class="n">boxes</span><span class="o">.</span><span class="n">get_view</span><span class="p">()</span><span class="o">.</span><span class="n">render</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/getting_started_augmented_tensor_10_0.png" src="../_images/getting_started_augmented_tensor_10_0.png" />
+</div>
+</div>
+<div class="admonition warning">
+<p class="admonition-title fa fa-exclamation-circle"><strong>Warning</strong></p>
+<p>Be careful though, PyTorch does not yet support all types of operations with <code class="docutils literal notranslate"><span class="pre">names</span></code> tensors. Also, since <code class="docutils literal notranslate"><span class="pre">boxes</span></code> is responsible for keeping a coherent structure, some of your operations could at some point change the tensor content so that it will not encode the specific type of date you were expected.</p>
+</div>
+<p>To prevent such an issue, you should first convert your augmented tensor to a regular tensor using <code class="docutils literal notranslate"><span class="pre">as_tensor()</span></code></p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[39]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">torch</span>
+<span class="n">dist</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cdist</span><span class="p">(</span><span class="n">boxes</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(),</span> <span class="n">boxes</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(),</span> <span class="n">p</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">dist</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+tensor([[ 0.0000, 53.0330],
+        [53.0330,  0.0000]])
+</pre></div></div>
+</div>
+</div>
+<div class="section" id="Augmented-tensors-and-attached-labels.">
+<h2>Augmented tensors and attached labels.<a class="headerlink" href="#Augmented-tensors-and-attached-labels." title="Permalink to this headline">¶</a></h2>
+<p>One other nice aspect of augmented tensors is that some augmented tensors can be linked with one an others. By doing so, you can structure your tensors and their relationships while keeping their values coherent.</p>
+<p>For instance, one might need to handle <code class="docutils literal notranslate"><span class="pre">frames</span></code> and <code class="docutils literal notranslate"><span class="pre">boxes</span></code> for training some model. Therefore the ground truth boxes will be attached and co-dependent of the <code class="docutils literal notranslate"><span class="pre">frames</span></code>. If the frame is changed, cropped or resized, so the ground true boxes.</p>
+<p>The following example illustrates how one can change the structure of one augmented tensor and perform operations on it.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[76]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">alodataset</span>
+<span class="n">frame</span> <span class="o">=</span> <span class="n">alodataset</span><span class="o">.</span><span class="n">CocoDetectionDataset</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">getitem</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">boxes</span> <span class="o">=</span> <span class="n">frame</span><span class="o">.</span><span class="n">boxes2d</span>
+<span class="n">frame</span><span class="o">.</span><span class="n">get_view</span><span class="p">()</span><span class="o">.</span><span class="n">render</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/getting_started_augmented_tensor_14_0.png" src="../_images/getting_started_augmented_tensor_14_0.png" />
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[71]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="nb">print</span><span class="p">(</span><span class="n">boxes</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+tensor(
+        boxes_format=xyxy, absolute=True, frame_size=(480, 640),
+        labels=torch.Size([19])
+        [[300.0600, 303.7500, 355.4000, 360.7200],
+        [106.7600, 231.5900, 180.3800, 266.3100],
+        [359.3700, 325.0000, 382.6600, 362.2000],
+        [166.3500, 355.1900, 263.7500, 480.0000],
+        [315.9700,  10.3700, 474.9500, 219.4300],
+        [476.7600,  33.4400, 640.0000, 265.3500],
+        [355.1600, 123.3400, 640.0000, 480.0000],
+        [  0.0000,  65.3200, 198.1200, 480.0000],
+        [ 37.7500,  12.9400, 160.7200, 210.3400],
+        [445.2600, 156.5000, 497.1100, 217.9700],
+        [ 98.7100, 220.2600, 179.6000, 257.5700],
+        [295.6200, 159.9900, 310.7200, 179.4900],
+        [298.5100, 270.2300, 324.5500, 302.6400],
+        [371.0700, 282.0300, 384.9800, 296.8100],
+        [385.4800, 286.2700, 396.0800, 294.6600],
+        [376.3000, 290.7600, 388.8800, 300.5500],
+        [382.1400, 279.1000, 394.4000, 289.2600],
+        [388.4200, 255.2400, 395.3200, 258.5800],
+        [377.8600, 300.4000, 393.9800, 318.3800]])
+</pre></div></div>
+</div>
+<p>As we can see above, boxes are a tensor with a specific <code class="docutils literal notranslate"><span class="pre">boxes_format</span></code>, encoding with <code class="docutils literal notranslate"><span class="pre">absolute</span></code> value based on a known <code class="docutils literal notranslate"><span class="pre">frame_size</span></code>.</p>
+<p>We can also see that the boxes have another augmented tensor attached: <code class="docutils literal notranslate"><span class="pre">labels</span></code>. This one gives information about the boxes labels.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[72]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="nb">print</span><span class="p">(</span><span class="n">boxes</span><span class="o">.</span><span class="n">labels</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+tensor(
+        encoding=id, labels_names=[&#39;N/A&#39;, &#39;person&#39;, &#39;bicycle&#39;, &#39;car&#39;, &#39;motorcycle&#39;, &#39;airplane&#39;, &#39;bus&#39;, &#39;train&#39;, &#39;truck&#39;, &#39;boat&#39;, &#39;traffic light&#39;, &#39;fire hydrant&#39;, &#39;N/A&#39;, &#39;stop sign&#39;, &#39;parking meter&#39;, &#39;bench&#39;, &#39;bird&#39;, &#39;cat&#39;, &#39;dog&#39;, &#39;horse&#39;, &#39;sheep&#39;, &#39;cow&#39;, &#39;elephant&#39;, &#39;bear&#39;, &#39;zebra&#39;, &#39;giraffe&#39;, &#39;N/A&#39;, &#39;backpack&#39;, &#39;umbrella&#39;, &#39;N/A&#39;, &#39;N/A&#39;, &#39;handbag&#39;, &#39;tie&#39;, &#39;suitcase&#39;, &#39;frisbee&#39;, &#39;skis&#39;, &#39;snowboard&#39;, &#39;sports ball&#39;, &#39;kite&#39;, &#39;baseball bat&#39;, &#39;baseball glove&#39;, &#39;skateboard&#39;, &#39;surfboard&#39;, &#39;tennis racket&#39;, &#39;bottle&#39;, &#39;N/A&#39;, &#39;wine glass&#39;, &#39;cup&#39;, &#39;fork&#39;, &#39;knife&#39;, &#39;spoon&#39;, &#39;bowl&#39;, &#39;banana&#39;, &#39;apple&#39;, &#39;sandwich&#39;, &#39;orange&#39;, &#39;broccoli&#39;, &#39;carrot&#39;, &#39;hot dog&#39;, &#39;pizza&#39;, &#39;donut&#39;, &#39;cake&#39;, &#39;chair&#39;, &#39;couch&#39;, &#39;potted plant&#39;, &#39;bed&#39;, &#39;N/A&#39;, &#39;dining table&#39;, &#39;N/A&#39;, &#39;N/A&#39;, &#39;toilet&#39;, &#39;N/A&#39;, &#39;tv&#39;, &#39;laptop&#39;, &#39;mouse&#39;, &#39;remote&#39;, &#39;keyboard&#39;, &#39;cell phone&#39;, &#39;microwave&#39;, &#39;oven&#39;, &#39;toaster&#39;, &#39;sink&#39;, &#39;refrigerator&#39;, &#39;N/A&#39;, &#39;book&#39;, &#39;clock&#39;, &#39;vase&#39;, &#39;scissors&#39;, &#39;teddy bear&#39;, &#39;hair drier&#39;, &#39;toothbrush&#39;],
+
+        [44., 44., 47., 31.,  1.,  1.,  1.,  1.,  1., 31., 44., 46., 47., 55.,
+        55., 55., 55., 55., 55.])
+</pre></div></div>
+</div>
+<p>Let’s remove the 2d boxes and keep only the one with the <code class="docutils literal notranslate"><span class="pre">person</span></code> label.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[77]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">person_boxes</span> <span class="o">=</span> <span class="n">frame</span><span class="o">.</span><span class="n">boxes2d</span><span class="p">[(</span><span class="n">boxes</span><span class="o">.</span><span class="n">labels</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">()]</span>
+<span class="n">frame</span><span class="o">.</span><span class="n">boxes2d</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="n">frame</span><span class="o">.</span><span class="n">append_boxes2d</span><span class="p">(</span><span class="n">person_boxes</span><span class="p">,</span> <span class="s2">&quot;person&quot;</span><span class="p">)</span>
+<span class="n">frame</span><span class="o">.</span><span class="n">get_view</span><span class="p">()</span><span class="o">.</span><span class="n">render</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/getting_started_augmented_tensor_19_0.png" src="../_images/getting_started_augmented_tensor_19_0.png" />
+</div>
+</div>
+<p>Now let’s add an other set of boxes filtering with an other label.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[78]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">bag_boxes</span> <span class="o">=</span> <span class="n">boxes</span><span class="p">[(</span><span class="n">boxes</span><span class="o">.</span><span class="n">labels</span> <span class="o">==</span> <span class="mi">31</span><span class="p">)</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">()]</span>
+<span class="n">frame</span><span class="o">.</span><span class="n">append_boxes2d</span><span class="p">(</span><span class="n">n_boxes</span><span class="p">,</span> <span class="s2">&quot;bag_boxes&quot;</span><span class="p">)</span>
+<span class="n">frame</span><span class="o">.</span><span class="n">get_view</span><span class="p">()</span><span class="o">.</span><span class="n">render</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/getting_started_augmented_tensor_21_0.png" src="../_images/getting_started_augmented_tensor_21_0.png" />
+</div>
+</div>
+<p>Now, we endup with a framr with two set of boxes. The first set is for the <code class="docutils literal notranslate"><span class="pre">person</span></code>, the second set if for the <code class="docutils literal notranslate"><span class="pre">bag</span></code> boxes.</p>
+</div>
+<div class="section" id="Transforming-augmented-tensors">
+<h2>Transforming augmented tensors<a class="headerlink" href="#Transforming-augmented-tensors" title="Permalink to this headline">¶</a></h2>
+<p>Now that our structure is set up, we can slightly play with the structure of the frames. First, let’s create a new flipped version of the frame.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[85]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">flipped_frame</span> <span class="o">=</span> <span class="n">frame</span><span class="o">.</span><span class="n">hflip</span><span class="p">()</span>
+<span class="n">flipped_frame</span><span class="o">.</span><span class="n">get_view</span><span class="p">()</span><span class="o">.</span><span class="n">render</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/getting_started_augmented_tensor_24_0.png" src="../_images/getting_started_augmented_tensor_24_0.png" />
+</div>
+</div>
+<p>As you can see, using only one line, we can flip the frame while keeping the data coherent. since the boxes are also flipped. Now, let’s try to concat the two frames.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[81]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="nb">print</span><span class="p">(</span><span class="n">frame</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">frame</span><span class="o">.</span><span class="n">names</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">flipped_frame</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">flipped_frame</span><span class="o">.</span><span class="n">names</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+torch.Size([3, 480, 640]) (&#39;C&#39;, &#39;H&#39;, &#39;W&#39;)
+torch.Size([3, 480, 640]) (&#39;C&#39;, &#39;H&#39;, &#39;W&#39;)
+</pre></div></div>
+</div>
+<p>To do so, we’re gonna need a new dimension. Usually, we would have call the unsqueeze method with the concat method. But because we’ll prefer to track our frame structure, we’re gonna use the <code class="docutils literal notranslate"><span class="pre">batch()</span></code> method provided by augmented tensor API. The latter we’ll automatically extend the frame and all attached labels (if needed) with a new batch dimension.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[82]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">frame</span> <span class="o">=</span> <span class="n">frame</span><span class="o">.</span><span class="n">batch</span><span class="p">()</span>
+<span class="n">flipped_frame</span> <span class="o">=</span> <span class="n">flipped_frame</span><span class="o">.</span><span class="n">batch</span><span class="p">()</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">frame</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">frame</span><span class="o">.</span><span class="n">names</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">flipped_frame</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">flipped_frame</span><span class="o">.</span><span class="n">names</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+torch.Size([1, 3, 480, 640]) (&#39;B&#39;, &#39;C&#39;, &#39;H&#39;, &#39;W&#39;)
+torch.Size([1, 3, 480, 640]) (&#39;B&#39;, &#39;C&#39;, &#39;H&#39;, &#39;W&#39;)
+</pre></div></div>
+</div>
+<p>Now we can concat and display both frames together.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[84]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">frames</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">frame</span><span class="p">,</span> <span class="n">flipped_frame</span><span class="p">],</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">frames</span><span class="o">.</span><span class="n">get_view</span><span class="p">()</span><span class="o">.</span><span class="n">render</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/getting_started_augmented_tensor_30_0.png" src="../_images/getting_started_augmented_tensor_30_0.png" />
+</div>
+</div>
+</div>
 </div>
 
 
@@ -213,7 +828,7 @@
           <footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
         <a href="../tutorials/data_setup.html" class="btn btn-neutral float-right" title="How to setup your data?" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
-        <a href="alonet.html" class="btn btn-neutral float-left" title="Alonet: Loading &amp; training your models" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="alonet.html" class="btn btn-neutral float-left" title="Alonet : Training your models" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
     </div>
 
   <hr/>

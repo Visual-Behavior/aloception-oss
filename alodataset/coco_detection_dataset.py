@@ -5,7 +5,6 @@ in a :mod:`Frame object <aloscene.frame>`. Ideal for object detection applicatio
 
 import torch
 import torch.utils.data
-from pycocotools.coco import COCO
 from pycocotools import mask as coco_mask
 import numpy as np
 import os
@@ -26,22 +25,10 @@ class CocoDetectionSample(CocoDetection):
 
 
 class CocoDetectionDataset(BaseDataset, CocoDetectionSample):
-    def __init__(
-        self,
-        img_folder: str = None,
-        ann_file: str = None,
-        name: str = "coco",
-        return_masks=False,
-        classes: list = None,
-        stuff_ann_file: str = None,
-        **kwargs,
-    ):
-        """
+    """
     Attributes
     ----------
-    CATEGORIES : set
-        List of all unique tags read from the database
-    labels_names : list
+    label_names : list
         List of labels according to their corresponding positions
     prepare : :mod:`BaseDataset <base_dataset>`
 
@@ -57,15 +44,19 @@ class CocoDetectionDataset(BaseDataset, CocoDetectionSample):
         Include masks labels in the output, by default False
     classes : list, optional
         List of classes to be filtered in the annotation reading process, by default None
-    stuff_ann_file: str, optional
-        Additional annotations with new classes, by default None
+    fix_classes_len : int, optional
+        Fix to a specific number the number of classes, filling the rest with "N/A" value.
+        Use when the number of model outputs does not match with the number of classes in the dataset,
+        by default None
     **kwargs : dict
         :mod:`BaseDataset <base_dataset>` optional parameters
 
     Raises
     ------
     Exception
-        If a classes list is decided, each label must be inside of :attr:`CATEGORIES` list attribute
+        If a classes list is decided, each label must be inside of :attr:`label_names` list attribute
+    ValueError
+        If fix_classes_len is desired, fix_classes_len > len(label_names)
 
     Examples
     --------
@@ -79,10 +70,21 @@ class CocoDetectionDataset(BaseDataset, CocoDetectionSample):
         >>> frames.get_view(frames.boxes2d,).render()
     """
 
+    def __init__(
+        self,
+        img_folder: str = None,
+        ann_file: str = None,
+        name: str = "coco",
+        return_masks=False,
+        classes: list = None,
+        fix_classes_len: int = None,
+        **kwargs,
+    ):
         if "sample" not in kwargs:
             kwargs["sample"] = False
 
-        if not kwargs["sample"]:
+        self.sample = kwargs["sample"]
+        if not self.sample:
             assert img_folder is not None, "When sample = False, img_folder must be given."
             assert ann_file is not None, "When sample = False, ann_file must be given."
 
@@ -90,56 +92,55 @@ class CocoDetectionDataset(BaseDataset, CocoDetectionSample):
             dataset_dir = BaseDataset.get_dataset_dir(self)
             img_folder = os.path.join(dataset_dir, img_folder)
             ann_file = os.path.join(dataset_dir, ann_file)
-            stuff_ann_file = None if stuff_ann_file is None else os.path.join(dataset_dir, stuff_ann_file)
+            kwargs["sample"] = self.sample
 
-        self.sample = kwargs["sample"]
         super(CocoDetectionDataset, self).__init__(name=name, root=img_folder, annFile=ann_file, **kwargs)
         if self.sample:
             return
 
         cats = self.coco.loadCats(self.coco.getCatIds())
-        self.coco_stuff = None
-        if stuff_ann_file is not None:
-            self.coco_stuff = COCO(stuff_ann_file)
-            cats += self.coco_stuff.loadCats(self.coco_stuff.getCatIds())
 
         # Setup the class names
         nb_category = max(cat["id"] for cat in cats)
-        self.CATEGORIES = set([cat["name"] for cat in cats])
-        # aux = set([x.split("-")[0] for x in self.CATEGORIES])
-        # print(aux, len(aux))
-        # print(set([cat["supercategory"] for cat in cats]), len(set([cat["supercategory"] for cat in cats])))
-        labels_names = ["N/A"] * (nb_category + 1)
+        label_names = ["N/A"] * (nb_category + 1)
         for cat in cats:
-            labels_names[cat["id"]] = cat["name"]
+            label_names[cat["id"]] = cat["name"]
 
         self._ids_renamed = classes
         if classes is None:
-            self.labels_names = labels_names
+            self.label_names = label_names
         else:
-            notclass = [label for label in classes if label not in self.CATEGORIES]
+            notclass = [label for label in classes if label not in label_names]
             if len(notclass) > 0:  # Ignore all labels not in classes
                 raise Exception(
-                    f"The {notclass} classes dont match in CATEGORIES list. Possible values: {self.CATEGORIES}"
+                    f"The {notclass} classes dont match in label_names list. Possible values: {self.label_names}"
                 )
 
-            self.labels_names = classes
-            self._ids_renamed = [-1 if label not in classes else classes.index(label) for label in labels_names]
+            self.label_names = classes
+            self._ids_renamed = [-1 if label not in classes else classes.index(label) for label in label_names]
             self._ids_renamed = np.array(self._ids_renamed)
 
             # Check each annotation and keep only that have at least 1 box in classes list
             ids = []
             for i in self.ids:
                 target = CocoDetectionSample._load_target(self, i)
-                if any([self.ids_renamed[bbox["category_id"]] >= 0 for bbox in target]):
+                if any([self._ids_renamed[bbox["category_id"]] >= 0 for bbox in target]):
                     ids.append(i)
             self.ids = ids  # Remove images without bboxes with classes in classes list
 
         self.prepare = ConvertCocoPolysToMask(return_masks)
         self.items = self.ids
 
+        if fix_classes_len is not None:
+            if fix_classes_len > len(self.label_names):
+                self.label_names += ["N/A"] * (fix_classes_len - len(self.label_names))
+            else:
+                raise ValueError(
+                    f"fix_classes_len must be higher than the lenght of label_names ({len(self.label_names)})."
+                )
+
     def getitem(self, idx):
-        """ Get the :mod:`Frame <aloscene.frame>` corresponds to *idx* index
+        """Get the :mod:`Frame <aloscene.frame>` corresponds to *idx* index
 
         Parameters
         ----------
@@ -156,8 +157,6 @@ class CocoDetectionDataset(BaseDataset, CocoDetectionSample):
         img, target = CocoDetectionSample.__getitem__(self, idx)
 
         image_id = self.ids[idx]
-        if self.coco_stuff is not None:
-            target += self.coco_stuff.loadAnns(self.coco_stuff.getAnnIds(image_id))
         target = {"image_id": image_id, "annotations": target}
 
         frame = Frame(np.transpose(np.array(img), [2, 0, 1]), names=("C", "H", "W"))
@@ -173,8 +172,11 @@ class CocoDetectionDataset(BaseDataset, CocoDetectionSample):
             target["boxes"] = target["boxes"][idxs]
             target["labels"] = torch.from_numpy(new_labels[idxs])
 
+            if self.prepare.return_masks:
+                target["masks"] = target["masks"][idxs]
+
         labels_2d = Labels(
-            target["labels"].to(torch.float32), labels_names=self.labels_names, names=("N"), encoding="id"
+            target["labels"].to(torch.float32), labels_names=self.label_names, names=("N"), encoding="id"
         )
         boxes = BoundingBoxes2D(
             target["boxes"],
@@ -289,22 +291,9 @@ class ConvertCocoPolysToMask(object):
         return image, target
 
 
-def show_random_frame(coco_loader):
-    frames = next(iter(coco_loader.train_loader(batch_size=2)))
-    frames = Frame.batch_list(frames)
-    frames.get_view().render()
-
-
 def main():
     """Main"""
-    # coco_dataset = CocoDetectionDataset(
-    #     img_folder="val2017",
-    #     stuff_ann_file="annotations/stuff_val2017.json",
-    #     ann_file="annotations/instances_val2017.json",
-    #     return_masks=True,
-    # )
     coco_dataset = CocoDetectionDataset(sample=True)
-
     for f, frames in enumerate(coco_dataset.train_loader(batch_size=2)):
         frames = Frame.batch_list(frames)
         frames.get_view().render()

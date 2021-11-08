@@ -14,20 +14,36 @@ from aloscene import Frame
 
 
 class AloTransform(object):
-    def __init__(self, same_on_sequence: bool = True, same_on_frames: bool = False, *args, **kwargs):
+    def __init__(self, same_on_sequence: bool = True, same_on_frames: bool = False):
         """Alo Transform. Each transform in the project should
         inhert from this class.
 
         Properties
         ----------
-        same_on_sequence: (bool)
+        same_on_sequence: bool or float
             Apply the same transformation on each element of the sequences
-        same_on_frames: (bool)
+            If float, between 0 and 1, probability to apply same transformation on each element
+        same_on_frames: bool or float
             Apply the same transformations on each frame.
+            If float, between 0 and 1, probability to apply same transformation on each frame
         """
         self.same_on_sequence = same_on_sequence
         self.same_on_frames = same_on_frames
         self.sample_params()
+
+    def _init_same_on(self):
+        def _prob_to_bool(param):
+            if isinstance(param, bool):
+                return param
+            elif isinstance(param, float):
+                if (param < 0) or (param > 1):
+                    raise ValueError("Probability value should be between 0 and 1.")
+                else:
+                    return np.random.rand() < param
+            else:
+                raise TypeError("param should be bool or float")
+
+        return _prob_to_bool(self.same_on_sequence), _prob_to_bool(self.same_on_frames)
 
     def sample_params(self):
         raise Exception("Must be implement by a child class")
@@ -48,8 +64,7 @@ class AloTransform(object):
         seqid2params = {}
         frame_params = None
 
-        same_on_sequence = self.same_on_sequence
-        same_on_frames = self.same_on_frames
+        same_on_sequence, same_on_frames = self._init_same_on()
 
         # Go through each image
         if isinstance(frames, dict):
@@ -319,6 +334,84 @@ class RandomSizeCrop(AloTransform):
         region = T.RandomCrop.get_params(frame, [h, w])
         frame = F.crop(frame, *region)
         return frame
+
+
+class RandomSizePad(AloTransform):
+    def __init__(self, max_size, frame_size, **kwargs):
+        if isinstance(max_size, int):
+            max_size = (max_size, max_size)
+        self.frame_size = frame_size
+        self.max_size = max_size
+        self.set_params(*self.sample_params())
+        super().__init__(**kwargs)
+
+    def sample_params(self):
+        """ """
+        h, w = self.frame_size
+        # print("hw", h, w, self.max_size)
+        pad_width = random.randint(0, max(self.max_size[1] - w, 0))
+        pad_height = random.randint(0, max(self.max_size[0] - h, 0))
+        # print("pad_width, pad_height", pad_width, pad_height)
+        pad_left = random.randint(0, pad_width)
+        pad_right = pad_width - pad_left
+        print("pad_left", pad_left)
+        print("pad_right", pad_right)
+        pad_top = random.randint(0, pad_height)
+        pad_bottom = pad_height - pad_top
+        print("pad_top", pad_top)
+        print("pad_bottom", pad_bottom)
+        return (pad_left, pad_right, pad_top, pad_bottom)
+
+    def set_params(self, pad_left, pad_right, pad_top, pad_bottom):
+        """ """
+        self._pad_left = pad_left
+        self._pad_right = pad_right
+        self._pad_top = pad_top
+        self._pad_bottom = pad_bottom
+
+    def __call__(self, frame):
+
+        print((self._pad_top, self._pad_bottom), (self._pad_left, self._pad_right))
+
+        return frame.pad(
+            offset_y=(self._pad_top, self._pad_bottom), offset_x=(self._pad_left, self._pad_right), pad_boxes=True
+        )
+
+
+class RandomPad(AloTransform):
+    def __init__(self, max_size, frame_size, **kwargs):
+        if isinstance(max_size, int):
+            max_size = (max_size, max_size)
+        self.frame_size = frame_size
+        self.max_size = max_size
+        self.set_params(*self.sample_params())
+        super().__init__(**kwargs)
+
+    def sample_params(self):
+        """ """
+        h, w = self.frame_size
+        pad_width = max(self.max_size[1] - w, 0)
+        pad_height = max(self.max_size[0] - h, 0)
+
+        pad_left = random.randint(0, pad_width)
+        pad_right = pad_width - pad_left
+
+        pad_top = random.randint(0, pad_height)
+        pad_bottom = pad_height - pad_top
+
+        return (pad_left, pad_right, pad_top, pad_bottom)
+
+    def set_params(self, pad_left, pad_right, pad_top, pad_bottom):
+        """ """
+        self._pad_left = pad_left
+        self._pad_right = pad_right
+        self._pad_top = pad_top
+        self._pad_bottom = pad_bottom
+
+    def __call__(self, frame):
+        return frame.pad(
+            offset_y=(self._pad_top, self._pad_bottom), offset_x=(self._pad_left, self._pad_right), pad_boxes=True
+        )
 
 
 class RandomCrop(AloTransform):

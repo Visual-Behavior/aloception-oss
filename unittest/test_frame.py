@@ -1,3 +1,4 @@
+from aloscene.labels import Labels
 from aloscene.bounding_boxes_2d import BoundingBoxes2D
 
 # from aloscene.renderer import View
@@ -24,13 +25,13 @@ def get_frame():
 def tensor_equal(frame1, frame2):
     frame1.rename_(None)
     frame2.rename_(None)
-    return torch.allclose(frame1, frame2, atol=1e-5)
+    return torch.allclose(frame1, frame2, atol=1e-4)
 
 
 def test_frame_from_dt():
     # Go through the loaded sequence
     for data in waymo_dataset.stream_loader():
-        assert data["front"].shape == (2, 3, 1280, 1920)
+        assert data["front"].shape[:2] == (2, 3)
         assert data["front"].names == ("T", "C", "H", "W")
         # It should be instance of list since the dataset return a sequence and the
         # boxes are not aligned on T.
@@ -77,6 +78,7 @@ def test_frame_255():
     # Assert back equality
     assert tensor_equal(frame_01.norm255(), frame)
     assert tensor_equal(frame_255.norm255(), frame)
+
     assert tensor_equal(frame_resnet.norm255(), frame)
     assert tensor_equal(my_frame.norm255(), frame)
     assert tensor_equal(frame_minmax_sym.norm255(), frame)
@@ -523,7 +525,33 @@ def test_device_propagation():
     pass
 
 
+def test_frame_label():
+    frame = aloscene.Frame(np.random.uniform(0, 1, (3, 600, 600)), names=("C", "H", "W"))
+
+    label = aloscene.Labels([1], encoding="id")
+    frame.append_labels(label)
+
+    assert frame.labels == 1
+    frame = frame.batch()
+    assert len(frame.labels) == 1
+    frame = frame.temporal()
+    assert len(frame.labels) == 1 and len(frame.labels[0]) == 1
+    frame1 = frame.clone()
+    frame2 = frame.clone()
+    frames_batch = torch.cat([frame1, frame2], dim=1)
+    assert len(frames_batch.labels) == 1 and len(frames_batch.labels[0]) == 2
+    frames_temporal = torch.cat([frame1, frame2], dim=0)
+    assert len(frames_temporal.labels) == 2 and len(frames_temporal.labels[0]) == 1
+    n_frame = frames_batch[:, 0]
+    assert len(n_frame.labels) == 1 and len(n_frame.labels[0]) == 1
+    n_frame = frames_temporal[0]
+    assert len(n_frame.labels) == 1 and len(n_frame.labels[0]) == 1
+    frame = n_frame[0]
+    assert len(frame.labels) == 1 and len(frame.labels.shape) == 1
+
+
 if __name__ == "__main__":
+    test_frame_label()
     test_frame_from_dt()
     test_frame_01()
     test_frame_255()

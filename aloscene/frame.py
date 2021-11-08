@@ -6,8 +6,7 @@ from typing import TypeVar, Union
 
 import aloscene
 from aloscene.renderer import View
-from aloscene.disparity import Disparity
-from aloscene import BoundingBoxes2D, BoundingBoxes3D, Flow, Mask
+from aloscene import BoundingBoxes2D, BoundingBoxes3D, Depth, Disparity, Flow, Mask, Labels, Points2D, Points3D
 
 # from aloscene.camera_calib import CameraExtrinsic, CameraIntrinsic
 from aloscene.io.image import load_image
@@ -16,7 +15,66 @@ Frame = TypeVar("Frame")
 
 
 class Frame(aloscene.tensors.SpatialAugmentedTensor):
-    """Frame (Image) with associated labels and parameters"""
+    """Augmented Frame tensor. The `Frame` cam be created using the path to an image. Othwewise, if the frame
+    is created from a existing tensor or numpy array, the frame dimensions are expected to be ("C", "H", "W").
+    If this is not the case, the `names` must be passed to the tensor.
+
+    If your data is more than 3 dimensional you might need to set the `names` to ("B", "C", "H", "W") for batch
+    dimension or ("T", "C", "H", "W") for the temporal dimension, or even ("B", "T", "C", "H", "W") for batch and
+    temporal dimension. Checkout the example below for an example.
+
+    Parameters
+    ----------
+    boxes2d : dict | :mod:`BoundingBoxes2D <aloscene.bounding_boxes_2d>`
+        Dict of boxes2d or an instance of :mod:`BoundingBoxes2D <aloscene.bounding_boxes_2d>`
+    boxes3d : dict | :mod:`BoundingBoxes3D <aloscene.bounding_boxes_3d>`
+        Dict of boxes3d or an instance of :mod:`BoundingBoxes3D <aloscene.bounding_boxes_3d>`
+    labels : dict | :mod:`Labels <aloscene.labels>`
+        Dict of labels or an instance of :mod:`Labels <aloscene.labels>`
+    flow : dict | :mod:`Flow <aloscene.flow>`
+        Dict of flow or an  instance of :mod:`Flow <aloscene.flow>`
+    segmentation : dict | :mod:`Mask <aloscene.mask>`
+        Dict of masks or an instance of :mod:`Mask <aloscene.mask>`
+    disparity : dict | :mod:`Disparity <aloscene.disparity>`
+        Dict of Disparity  or an instance of :mod:`Disparity <aloscene.disparity>`
+    points2d : dict | :mod:`Points2D <aloscene.points_2d>`
+        Dict of Points2D or an instance of :mod:`Points2D  <aloscene.points_2d>`
+    points3d : dict | :mod:`Points3D <aloscene.points_3d>`
+        Dict of Points3D or an instance of :mod:`Points3D  <aloscene.points_3d>`
+    depth : dict | :mod:`Depth <aloscene.depth>`
+        Dict of Depth or an instance of :mod:`Depth <aloscene.depth>`
+    normalization: str
+        One of ["255", "01", "minmax_sym"]
+    mean_std: tuple
+        Tuple with the mean and std of the tensor. (mean, std).
+        Example: ((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)))
+
+
+    Notes
+    -----
+    Note on dimension:
+
+    - C refers to the channel dimension
+    - N refers to a dimension with a dynamic number of elements.
+    - H refers to the height of a `SpatialAugmentedTensor`
+    - W refers to the width of a `SpatialAugmentedTensor`
+    - B refers to the batch dimension
+    - T refers to the temporal dimension
+
+    Examples
+    --------
+    >>> # Creating a frame from a given path
+    >>> frane = aloscene.Frame("path/to/frame.jpg")
+    >>> frame.get_view().render()
+    >>>
+    >>> # Creating a frame from a numpy array or tensor
+    >>> data = np.zeros((3, 256, 512))
+    >>> frame = aloscene.Frame(data, normalization="01")
+    >>>
+    >>> # Creating a frame from a numpy array or tensor
+    >>> data = np.zeros((1, 3, 256, 512))
+    >>> frame = aloscene.Frame(data, normalization="01", names=("B", "C", "H", "W"))
+    """
 
     @staticmethod
     def __new__(
@@ -24,30 +82,37 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         x,
         boxes2d: Union[dict, BoundingBoxes2D] = None,
         boxes3d: Union[dict, BoundingBoxes3D] = None,
-        flow: Flow = None,
-        mask: Mask = None,
-        segmentation: Mask = None,
-        disparity: Disparity = None,
+        labels: Union[dict, Labels] = None,
+        flow: Union[dict, Flow] = None,
+        segmentation: Union[dict, Mask] = None,
+        disparity: Union[dict, Disparity] = None,
+        points2d: Union[dict, Points2D] = None,
+        points3d: Union[dict, Points3D] = None,
+        depth: Union[dict, Depth] = None,
         normalization="255",
         mean_std=None,
+        names=("C", "H", "W"),
         *args,
         **kwargs,
     ):
-        """Frame (Image) with associated labels and parameters"""
         if isinstance(x, str):
             # Load frame from path
             x = load_image(x)
             normalization = "255"
-            kwargs["names"] = ("C", "H", "W")
-        tensor = super().__new__(cls, x, *args, **kwargs)
+            names = ("C", "H", "W")
+
+        tensor = super().__new__(cls, x, *args, names=names, **kwargs)
 
         # Add label
-        tensor.add_label("boxes2d", boxes2d, align_dim=["B", "T"], mergeable=False)
-        tensor.add_label("boxes3d", boxes3d, align_dim=["B", "T"], mergeable=False)
-        tensor.add_label("flow", flow, align_dim=["B", "T"], mergeable=False)
-        tensor.add_label("mask", mask, align_dim=["B", "T"], mergeable=True)
-        tensor.add_label("disparity", disparity, align_dim=["B", "T"], mergeable=True)
-        tensor.add_label("segmentation", segmentation, align_dim=["B", "T"], mergeable=False)
+        tensor.add_child("points2d", points2d, align_dim=["B", "T"], mergeable=False)
+        tensor.add_child("points3d", points3d, align_dim=["B", "T"], mergeable=False)
+        tensor.add_child("boxes2d", boxes2d, align_dim=["B", "T"], mergeable=False)
+        tensor.add_child("boxes3d", boxes3d, align_dim=["B", "T"], mergeable=False)
+        tensor.add_child("flow", flow, align_dim=["B", "T"], mergeable=False)
+        tensor.add_child("disparity", disparity, align_dim=["B", "T"], mergeable=True)
+        tensor.add_child("depth", depth, align_dim=["B", "T"], mergeable=False)
+        tensor.add_child("segmentation", segmentation, align_dim=["B", "T"], mergeable=False)
+        tensor.add_child("labels", labels, align_dim=["B", "T"], mergeable=True)
 
         # Add other tensor property
         tensor.add_property("normalization", normalization)
@@ -73,84 +138,171 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         """
         torchvision.utils.save_image(self.cpu().norm01().as_tensor(), tgt_path)
 
-    def append_boxes2d(self, boxes: BoundingBoxes2D, name: str = None):
-        """Attach a set of boxes to the frame.
+    def append_labels(self, labels: Labels, name: str = None):
+        """Attach a set of labels to the frame. This can be usefull for classification
+        or multi label classification. The rank of the label must be >= 1
 
         Parameters
         ----------
-        boxes: BoundingBoxes2D
+        labels : :mod:`Labels <aloscene.labels>`
+            Set of labels to attached to the frame
+        name : str
+            If none, the label will be attached without name (if possible). Otherwise if no other unnamed
+            labels are attached to the frame, the labels will be added to the set of labels.
+
+        Examples
+        --------
+        >> frame = aloscene.Frame("/path/to/image.jpeg")
+        >> labels = aloscene.Labels([42])
+        >> frame.append_labels(labels)
+        """
+        self._append_child("labels", labels, name)
+
+    def append_boxes2d(self, boxes: BoundingBoxes2D, name: str = None):
+        """Attach a set of BoundingBoxes2D to the frame.
+
+        Parameters
+        ----------
+        boxes : :mod:`BoundingBoxes2D <aloscene.bounding_boxes_2d>`
             Boxes to attached to the Frame
         name: str
             If none, the boxes will be attached without name (if possible). Otherwise if no other unnamed
             boxes are attached to the frame, the boxes will be added to the set of boxes.
+
+        Examples
+        --------
+        >>> # Adding one set of unnamed boxes
+        >>> frane = aloscene.Frame("path/to/frame.jpg")
+        >>> boxes2d = aloscene.BoundingBoxes2D([[0.5, 0.5, 0.5, 0.5]], boxes_format="xcyc", absolute=False)
+        >>> frame.append_boxes2d(boxes2d)
+        >>>
+        >>> # Adding one set of named boxes
+        >>> frane = aloscene.Frame("path/to/frame.jpg")
+        >>> boxes2d = aloscene.BoundingBoxes2D([[0.5, 0.5, 0.5, 0.5]], boxes_format="xcyc", absolute=False)
+        >>> frame.append_boxes2d(boxes2d, "boxes_set")
         """
-        self._append_label("boxes2d", boxes, name)
+        self._append_child("boxes2d", boxes, name)
+
+    def append_points2d(self, points: Points2D, name: str = None):
+        """Attach a set of points to the frame.
+
+        Parameters
+        ----------
+        points : :mod:`Points2D <aloscene.points_2d>`
+            Points to attach to the Frame
+        name : str
+            If None, the points will be attached without name (if possible). Otherwise if no other unnamed
+            points are attached to the frame, the points will be added to the set of points.
+        """
+        self._append_child("points2d", points, name)
+
+    def append_points3d(self, points_3d: Points3D, name: str = None):
+        """Attach a set of points to the frame.
+
+        Parameters
+        ----------
+        points_3d : :mod:`Points3D <aloscene.points_3d>`
+            Points to attach to the Frame
+        name : str
+            If None, the points will be attached without name (if possible). Otherwise if no other unnamed
+            points are attached to the frame, the points will be added to the set of points.
+        """
+        self._append_child("points3d", points_3d, name)
 
     def append_boxes3d(self, boxes_3d: BoundingBoxes3D, name: str = None):
-        """Attach boxes 3d to this image
+        """Attach BoundingBoxes3D to the frame
 
         Parameters
         ----------
-        boxes: BoundingBoxes3D
+        boxes_3d : :mod:`BoundingBoxes3D <aloscene.bounding_boxes_3d>`
             Boxes to attached to the Frame
-        name: str
+        name : str
             If none, the boxes will be attached without name (if possible). Otherwise if no other unnamed
             boxes are attached to the frame, the boxes will be added to the set of boxes.
+
+        Examples
+        --------
+        >>> # To be render and transform properly, boxes3D required cam_extrinsic parameters.
+        >>> # To make things easier to get started, let's use the waymo dataset sample
+        >>> # and let's add a new set of boxes 3D
+        >>> frame = alodataset.WaymoDataset(sample=True).getitem(0)["front"]
+        >>> # [xc, yc, zc, Dx, Dy, Dz, heading]
+        >>> boxes3d = aloscene.BoundingBoxes3D([[-6.2120, -1.0164, 22.5095, 1.9325, 1.4111, 4.0868, -0.2779]])
+        >>> We append to boxes3D twice because the frame has a temporal dimension (T=2)
+        >>> frame.append_boxes3d([boxes3d, boxes3d], "my_set")
         """
-        self._append_label("boxes3d", boxes_3d, name)
+        self._append_child("boxes3d", boxes_3d, name)
 
-    def append_mask(self, mask: Mask, name: str = None):
-        """Attach a mask to the frame.
-
-        Parameters
-        ----------
-        mask: aloscene.Mask
-            Mask to attached to the Frame
-        name: str
-            If none, the mask will be attached without name (if possible). Otherwise if no other unnamed
-            mask are attached to the frame, the mask will be added to the set of mask.
-        """
-        self._append_label("mask", mask, name)
-
-    def append_flow(self, flow, name=None):
+    def append_flow(self, flow, name: str = None):
         """Attach a flow to the frame.
 
         Parameters
         ----------
-        flow: aloscene.Flow
+        flow : :mod:`Flow <aloscene.flow>`
             Flow to attach to the Frame
-        name: str
+        name : str
             If none, the flow will be attached without name (if possible). Otherwise if no other unnamed
             flow are attached to the frame, the flow will be added to the set of flow.
-        """
-        self._append_label("flow", flow, name)
 
-    def append_disparity(self, disparity, name=None):
+        Examples
+        --------
+        >>> frame = aloscene.Frame("/path/to/image.jpeg")
+        >>> flow = aloscene.Flow(np.zeros((2, frame.H, frame.W)))
+        >>> frame.append_flow(flow)
+        """
+        self._append_child("flow", flow, name)
+
+    def append_disparity(self, disparity, name: str = None):
         """Attach a disparity map to the frame.
 
         Parameters
         ----------
-        disparity: aloscene.Disparity
+        disparity : :mod:`Disparity <aloscene.disparity>`
             Disparity to attach to the Frame
-        name: str
+        name : str
             If none, the disparity will be attached without name (if possible). Otherwise if no other unnamed
             disparity are attached to the frame, the disparity will be added to the set of flow.
+
+        Examples
+        --------
+        >>> frame = aloscene.Frame("/path/to/image.jpeg")
+        >>> disparity = aloscene.Disparity(np.zeros((1, frame.H, frame.W)))
+        >>> frame.append_disparity(disparity)
         """
-        self._append_label("disparity", disparity, name)
+        self._append_child("disparity", disparity, name)
+
+    def append_depth(self, depth, name: str = None):
+        """Attach a depth map to the frame.
+
+        Parameters
+        ----------
+        depth : :mod:`Depth <aloscene.depth>`
+            Depth to attach to the Frame
+        name : str
+            If none, the disparity will be attached without name (if possible). Otherwise if no other unnamed
+            disparity are attached to the frame, the disparity will be added to the set of flow.
+
+        Examples
+        --------
+        >>> frame = aloscene.Frame("/path/to/image.jpeg")
+        >>> depth = aloscene.Depth(np.random.rand((1, frame.H, frame.W)))
+        >>> frame.append_depth(depth)
+        """
+        self._append_child("depth", depth, name)
 
     def append_segmentation(self, segmentation: Mask, name: str = None):
         """Attach a segmentation to the frame.
 
         Parameters
         ----------
-        segmentation: aloscene.Mask
+        segmentation : :mod:`Mask <aloscene.mask>`
             Mask with size (N,H,W), where N is the features maps, each one for one object.
-            Each feature map must be a binary mask. For that, is a type of aloscene.Mask
-        name: str
+            Each feature map must be a binary mask. For that, is a type of :mod:`Mask <aloscene.mask>`
+        name : str
             If none, the mask will be attached without name (if possible). Otherwise if no other unnamed
             mask are attached to the frame, the mask will be added to the set of mask.
         """
-        self._append_label("segmentation", segmentation, name)
+        self._append_child("segmentation", segmentation, name)
 
     @staticmethod
     def _get_mean_std_tensor(shape, names, mean_std: tuple, device="cpu"):
@@ -166,6 +318,10 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
     def norm01(self) -> Frame:
         """Normnalize the tensor from the current tensor
         normalization to values between 0 and 1.
+
+        Examples
+        --------
+        >>> frame_01 = frame.norm01()
         """
         tensor = self
 
@@ -190,7 +346,17 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         return tensor
 
     def norm_as(self, target_frame) -> Frame:
-        """Normalize the tensor as the given `target_frame`."""
+        """Normalize the tensor as the given `target_frame`.
+
+        Parameters
+        ----------
+        target_frame: aloscene.Frame
+            Will change the frame normalization as this `target_frame`
+
+        Examples
+        --------
+        >>> new_frame = frame.norm_as(target_frame)
+        """
         if target_frame.normalization == "01":
             return self.norm01
         elif target_frame.normalization == "255":
@@ -210,6 +376,10 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
     def norm255(self) -> Frame:
         """Normnalize the tensor from the current tensor
         normalization to values between 0 and 255
+
+        Examples
+        --------
+        >>> frame_255 = frame.norm255()
         """
         tensor = self
 
@@ -237,6 +407,10 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
     def norm_minmax_sym(self):
         """
         Normalize the tensor to values between -1 and 1
+
+        Examples
+        --------
+        >>> frame_minmax_sym = frame.norm_minmax_sym()
         """
         tensor = self
         if tensor.normalization == "minmax_sym":
@@ -255,6 +429,12 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         """Normnalize the tensor from the current tensor
         normalization to the expected resnet normalization (x - mean) / std
         with x normalized with value between 0 and 1.
+
+        Examples
+        --------
+        >>> mean = (0.485, 0.456, 0.406)
+        >>> std = (0.229, 0.224, 0.225)
+        >>> normalized_frame = frame.mean_std_norm(mean, std, "my_norm")
         """
         tensor = self
         mean_tensor, std_tensor = self._get_mean_std_tensor(
@@ -282,6 +462,13 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         return tensor
 
     def norm_resnet(self) -> Frame:
+        """Normalized the current frame based on the normalized use on resnet on pytorch. This method will
+        simply call `frame.mean_std_norm()` with the resnet mean/std and the name `resnet`.
+
+        Examples
+        --------
+        >>> frame_resnet = frame.norm_resnet()
+        """
         return self.mean_std_norm(mean=self._resnet_mean_std[0], std=self._resnet_mean_std[1], name="resnet")
 
     def __get_view__(self, title=None):
@@ -339,7 +526,7 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
 
             # Create a new frame with the same parameters and set back a copy of the previous labels
             n_tensor = type(self)(n_tensor, normalization=self.normalization, mean_std=self.mean_std, names=self.names)
-            n_tensor.set_labels(self.clone().get_labels())
+            n_tensor.set_children(self.clone().get_children())
             return n_tensor
         else:
             raise Exception("This normalziation {} is not handle by the frame _pad method".format(self.normalization))

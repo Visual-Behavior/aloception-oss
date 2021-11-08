@@ -16,7 +16,7 @@ def vb_folder():
     alofolder = os.path.join(home, ".aloception")
     if not os.path.exists(alofolder):
         raise Exception(
-            f"{alofolder} do not exists. Please, create the folder with the appropriate files. (Checkout documentation)"
+            f"{alofolder} do not exist. Please, create the folder with the appropriate files. (Checkout documentation)"
         )
     return alofolder
 
@@ -68,33 +68,54 @@ def add_argparse_args(parent_parser, add_pl_args=True, mode="training"):
     )
     parser.add_argument("--cpu", action="store_true", help="Use the CPU instead of scaling on the vaiable GPUs")
     parser.add_argument("--run_id", type=str, help="Load the weights from this saved experiment")
+    parser.add_argument(
+        "--no_run_id", action="store_true", help="Skip loading form run_id when an experiment is restored."
+    )
     parser.add_argument("--project_run_id", type=str, help="Project related with the run ID to load")
     parser.add_argument("--expe_name", type=str, default=None, help="expe_name to be logged in wandb")
     parser.add_argument("--no_suffix", action="store_true", help="do not add date suffix to expe_name")
+    parser.add_argument(
+        "--nostrict",
+        action="store_true",
+        help="load from checkpoint to run a model with different weights names (default False)",
+    )
 
     return parent_parser
 
 
 def load_training(
-    lit_model_class, args=None, run_id: str = None, project_run_id: str = None, no_exception=False, **kwargs
+    lit_model_class,
+    args: Namespace = None,
+    run_id: str = None,
+    project_run_id: str = None,
+    **kwargs,
 ):
     """Load training"""
-    run_id = args.run_id if run_id is None else run_id
-    project_run_id = args.project_run_id if project_run_id is None else project_run_id
+    run_id = args.run_id if run_id is None and "run_id" in args else run_id
+    project_run_id = args.project_run_id if project_run_id is None and "project_run_id" in args else project_run_id
+    weights_path = getattr(args, "weights", None) if args is not None else None
+    if "weights" in kwargs and kwargs["weights"] is not None:  # Highest priority
+        weights_path = kwargs["weights"]
 
+    strict = True if "nostrict" not in args else not args.nostrict
     if run_id is not None and project_run_id is not None:
         run_id_project_dir = os.path.join(vb_folder(), f"project_{project_run_id}")
         ckpt_path = os.path.join(run_id_project_dir, run_id, "last.ckpt")
         if not os.path.exists(ckpt_path):
             raise Exception(f"Impossible to load the ckpt at the following destination:{ckpt_path}")
         print(f"Loading ckpt from {run_id} at {ckpt_path}")
-        lit_model = lit_model_class.load_from_checkpoint(ckpt_path, args=args, **kwargs)
-    elif no_exception and getattr(args, "weights", None) is not None:
+        lit_model = lit_model_class.load_from_checkpoint(ckpt_path, strict=strict, args=args, **kwargs)
+    elif weights_path is not None:
+        if os.path.splitext(weights_path.lower())[1] == ".pth":
+            lit_model = lit_model_class(args=args, **kwargs)
+        elif os.path.splitext(weights_path.lower())[1] == ".ckpt":
+            lit_model = lit_model_class.load_from_checkpoint(weights_path, strict=strict, args=args, **kwargs)
+        else:
+            raise Exception(f"Impossible to load the weights at the following destination:{weights_path}")
+    elif args.no_run_id:
         lit_model = lit_model_class(args=args, **kwargs)
     else:
-        raise Exception(
-            "--run_id and --project_run_id must be given (ass script args or to the method) to load the experiment."
-        )
+        raise Exception("--run_id (optionally --project_run_id) must be given to load the experiment.")
 
     return lit_model
 
@@ -113,14 +134,26 @@ def get_expe_infos(project, expe_name, args=None):
 
 
 def run_pl_training(
-    lit_model, data_loader, callbacks: list, args, project: str = None, expe_name: str = None, **pl_trainer
+    lit_model, data_loader, callbacks: list, args=None, project: str = None, expe_name: str = None, **pl_trainer
 ):
     """Helper to run training with pytorch lightning while handling project ID and names"""
+
+    if args is None:
+        args = Namespace()
+        args.run_id = None
+        args.project_run_id = None
+        args.no_suffix = False
+        args.log = None
+        args.logger = "wandb"
+        args.save = False
+        args.cpu = False
+
     # Set the experiment name ID
     project_dir, expe_dir, expe_name = get_expe_infos(project, expe_name, args)
     resume_from_checkpoint = None
 
     if args.run_id is not None:
+        strict = not args.nostrict
         run_id_project_dir = (
             project_dir if args.project_run_id is None else os.path.join(vb_folder(), f"project_{args.project_run_id}")
         )
@@ -130,7 +163,7 @@ def run_pl_training(
         if not args.resume:
             kwargs_config = getattr(lit_model, "_init_kwargs_config", {})
             print(f"Loading ckpt from {args.run_id} at {ckpt_path}")
-            lit_model = type(lit_model).load_from_checkpoint(ckpt_path, args=args, **kwargs_config)
+            lit_model = type(lit_model).load_from_checkpoint(ckpt_path, strict=strict, args=args, **kwargs_config)
         else:
             expe_name = args.run_id
             resume_from_checkpoint = ckpt_path
@@ -147,7 +180,9 @@ def run_pl_training(
         logger = None
 
     if args.save:
-        checkpoint_callback = ModelCheckpoint(dirpath=expe_dir, verbose=True, save_last=True)
+        checkpoint_callback = ModelCheckpoint(
+            dirpath=expe_dir, verbose=True, save_last=True, save_top_k=3, monitor="val_loss"
+        )
         callbacks.append(checkpoint_callback)
 
     # Init trainer and run training
@@ -160,7 +195,7 @@ def run_pl_training(
         callbacks=callbacks,
         resume_from_checkpoint=resume_from_checkpoint,
         accelerator=None if torch.cuda.device_count() <= 1 else "ddp",
-        **pl_trainer
+        **pl_trainer,
     )
 
     # Runing training

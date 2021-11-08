@@ -92,19 +92,19 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../getting_started/getting_started.html">Getting started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../getting_started/aloscene.html">Aloscene: Computer vision with ease</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../getting_started/alodataset.html">Alodataset: Loading your datasets</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../getting_started/alonet.html">Alonet: Loading &amp; training your models</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../getting_started/augmented_tensor.html">About Augmented Tensor</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/alodataset.html">Alodataset: Loading your vision datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/alonet.html">Alonet : Training your models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/augmented_tensor.html">About augmented tensors</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Turorials</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/data_setup.html">How to setup your data?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/training_detr.html">Training Detr</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/finetuning_detr.html">Finetuning DETR</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/training_panoptic.html">Training Panoptic Head module</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/training_deformable_detr.html">Training Deformable DETR</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/finetuning_deformable_detr.html">Finetuning Deformanble DETR</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/tensort_inference.html">Exporting DETR / Deformable-DETR to TensorRT</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../tutorials/training_raft.html">Training RAFT</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Aloception API</span></p>
 <ul class="current">
@@ -112,6 +112,7 @@
 <li class="toctree-l2"><a class="reference internal" href="frame.html">Frame</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bounding_boxes_2d.html">BoundingBoxes2D</a></li>
 <li class="toctree-l2"><a class="reference internal" href="oriented_boxes_2d.html">OrientedBoxes2D</a></li>
+<li class="toctree-l2"><a class="reference internal" href="points2d.html">Points2D</a></li>
 <li class="toctree-l2"><a class="reference internal" href="labels.html">Label</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Mask</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#basic-use">Basic Use</a></li>
@@ -249,7 +250,7 @@ by multiplying it by the mask.</p>
 <span id="mask-api"></span><h1>Mask API<a class="headerlink" href="#module-aloscene.mask" title="Permalink to this headline">¶</a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="aloscene.mask.Mask">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">aloscene.mask.</span></span><span class="sig-name descname"><span class="pre">Mask</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aloscene.mask.Mask" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">aloscene.mask.</span></span><span class="sig-name descname"><span class="pre">Mask</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">,</span> </span><a class="reference internal" href="labels.html#aloscene.labels.Labels" title="aloscene.labels.Labels"><span class="pre">aloscene.labels.Labels</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aloscene.mask.Mask" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="spatial_augmented_tensor.html#aloscene.tensors.spatial_augmented_tensor.SpatialAugmentedTensor" title="aloscene.tensors.spatial_augmented_tensor.SpatialAugmentedTensor"><code class="xref py py-class docutils literal notranslate"><span class="pre">aloscene.tensors.spatial_augmented_tensor.SpatialAugmentedTensor</span></code></a></p>
 <p>Binary or Float Mask</p>
 <dl class="field-list simple">
@@ -260,6 +261,105 @@ by multiplying it by the mask.</p>
 </dl>
 </dd>
 </dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="aloscene.mask.Mask.append_labels">
+<span class="sig-name descname"><span class="pre">append_labels</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">labels</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aloscene.mask.Mask.append_labels" title="Permalink to this definition">¶</a></dt>
+<dd><p>Attach a set of labels to the masks.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>labels: aloscene.Labels</strong></dt><dd><p>Set of labels to attached to the masks</p>
+</dd>
+<dt><strong>name: str</strong></dt><dd><p>If none, the label will be attached without name (if possible). Otherwise if no other unnamed
+labels are attached to the frame, the labels will be added to the set of labels.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aloscene.mask.Mask.get_view">
+<span class="sig-name descname"><span class="pre">get_view</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">frame</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels_set</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color_by_cat</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aloscene.mask.Mask.get_view" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get view of segmentation mask and used it in a input Frame</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>frame</strong><span class="classifier">Tensor, optional</span></dt><dd><p>Frame where the segmentation mask will be displayed, by default None</p>
+</dd>
+<dt><strong>size</strong><span class="classifier">tuple, optional</span></dt><dd><p>Size of a desired masks, by default not-resize</p>
+</dd>
+<dt><strong>labels_set</strong><span class="classifier">str, optional</span></dt><dd><p>Set of labels to show in segmentation when multiple labels are defined, by default None</p>
+</dd>
+<dt><strong>color_by_cat</strong><span class="classifier">bool, optional</span></dt><dd><p>Set same color by category ID, by default False</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>Renderer.View</dt><dd><p>Frame view, ready to render</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><dl class="simple">
+<dt>Exception</dt><dd><p>Input frame must be a aloscene.Frame object</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aloscene.mask.Mask.iou_with">
+<span class="sig-name descname"><span class="pre">iou_with</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mask2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aloscene.mask.Mask.iou_with" title="Permalink to this definition">¶</a></dt>
+<dd><p>IoU calculation between mask2 and itself</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>mask2</strong><span class="classifier">aloscene.Mask</span></dt><dd><p>Masks with size (M,H,W)</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>torch.Tensor</dt><dd><p>IoU matrix of size (N,M)</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">rtype</dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>
+..</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="aloscene.mask.Mask.mask2id">
+<span class="sig-name descname"><span class="pre">mask2id</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">labels_set</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_ann</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_cats</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#aloscene.mask.Mask.mask2id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a panoptic view of the frame, where each pixel represent one class</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>labels_set</strong><span class="classifier">str, optional</span></dt><dd><p>If multilabels are handled, get mask_id by a set of label desired, by default None</p>
+</dd>
+<dt><strong>return_ann</strong><span class="classifier">bool, optional</span></dt><dd><p>Return annotations to get_view function, by default False</p>
+</dd>
+<dt><strong>return_cats</strong><span class="classifier">bool, optional</span></dt><dd><p>Return categories ID instance ID, by default False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>np.array</dt><dd><p>Array of (H,W) dimensions, where each value represent one class</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 </div>

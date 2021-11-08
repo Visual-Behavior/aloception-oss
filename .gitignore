@@ -17,8 +17,10 @@ aloscene/utils/rotated_iou/cuda_op/dist
 aloscene/utils/rotated_iou/cuda_op/sort_vertices.egg-info
 docsource/build
 build/*
-build/*
 docsource/build/*
 tensorboard/*
 **/.ipynb_checkpoints
 *_Tutorial*
+workspace.code-workspace
+_sandbox/
+logs/*

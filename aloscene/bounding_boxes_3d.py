@@ -42,11 +42,11 @@ class BoundingBoxes3D(aloscene.tensors.AugmentedTensor):
     @staticmethod
     def __new__(cls, x, labels: Union[dict, Labels] = None, names=("N", None), *args, **kwargs):
         tensor = super().__new__(cls, x, *args, names=names, **kwargs)
-        tensor.add_label("labels", labels, align_dim=["N"], mergeable=True)
+        assert tensor.shape[-1] == 7
+        tensor.add_child("labels", labels, align_dim=["N"], mergeable=True)
         return tensor
 
     def __init__(self, x, *args, **kwargs):
-        assert x.shape[-1] == 7
         super().__init__(x)
         if import_error:
             print("==== ERROR ====")

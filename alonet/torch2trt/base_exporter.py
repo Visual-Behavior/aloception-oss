@@ -14,7 +14,6 @@ import onnx_graphsurgeon as gs
 from alonet.torch2trt import TRTEngineBuilder, TRTExecutor
 from alonet.torch2trt.utils import print_graph_io
 from alonet.torch2trt.onnx_hack import scope_name_workaround, get_scope_names, rename_tensors_
-from torch.onnx import OperatorExportTypes
 
 
 class BaseTRTExporter:
@@ -42,6 +41,7 @@ class BaseTRTExporter:
         device=torch.device("cpu"),
         verbose=False,
         use_scope_names=False,
+        operator_export_type=None,
         **kwargs,
     ):
         """
@@ -78,6 +78,7 @@ class BaseTRTExporter:
         self.precision = precision
         self.use_scope_names = use_scope_names
         self.custom_opset = None  # to be redefine in child class if needed
+        self.operator_export_type = operator_export_type
 
         # ===== Initiate Trt Engine builder
         onnx_dir = os.path.split(onnx_path)[0]
@@ -190,7 +191,7 @@ class BaseTRTExporter:
                 output_names=output_names,
                 custom_opsets=self.custom_opset,
                 enable_onnx_checker=True,
-                operator_export_type=OperatorExportTypes.ONNX_FALLTHROUGH,
+                operator_export_type=self.operator_export_type,
             )
 
             if self.use_scope_names:

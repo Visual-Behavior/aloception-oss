@@ -1,3 +1,4 @@
+from torch.onnx import OperatorExportTypes
 from collections import OrderedDict
 import argparse
 import torch
@@ -18,6 +19,7 @@ class RaftTRTExporter(BaseTRTExporter):
     def __init__(self, iters, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.iters = iters
+        self.operator_export_type = OperatorExportTypes.ONNX_FALLTHROUGH
 
     @staticmethod
     def replace_grid_sampler(graph, node, idx):

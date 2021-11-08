@@ -257,9 +257,9 @@ configuration module on top of this type of database: :doc:`/alodataset/coco_det
 
 For |coco|_, the *valid* dataset can be implemented by::
 
-    from alodataset import CocoDetectionDataset
+    from alodataset import CocoBaseDataset
 
-    coco_dataset = CocoDetectionDataset(
+    coco_dataset = CocoBaseDataset(
         name = "coco", # Parameter by default, change for others datasets
         img_folder = "val2017",
         ann_file = "annotations/instances_val2017.json",
@@ -273,7 +273,7 @@ Now the module could read and process the images `COCO2017 detection valid set <
 
 If a speed setup is required, we could use :attr:`sample` attribute, without having to download the data set::
 
-    coco_dataset = CocoDetectionDataset(sample = True)
+    coco_dataset = CocoBaseDataset(sample = True)
 
 .. warning::
     :attr:`sample` feature only applies to datasets managed by :doc:`/alodataset/alodataset`

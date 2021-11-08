@@ -87,7 +87,7 @@ class Data2Detr(pl.LightningDataModule):
             "--num_workers",
             type=int,
             default=8,
-            help="num_workers to use on the CocoDetectionDataset (default %(default)s)",
+            help="num_workers to use on the CocoBaseDataset (default %(default)s)",
         )
         parser.add_argument(
             "--no_augmentation", action="store_true", help="Do not use augmentation to train the model"
@@ -148,7 +148,10 @@ class Data2Detr(pl.LightningDataModule):
         return frame.norm_resnet()
 
     def val_transform(
-        self, frame: aloscene.Frame, same_on_sequence: bool = True, same_on_frames: bool = False,
+        self,
+        frame: aloscene.Frame,
+        same_on_sequence: bool = True,
+        same_on_frames: bool = False,
     ):
         """Transform requered to valid on each frame
 

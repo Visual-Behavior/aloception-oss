@@ -15,7 +15,7 @@ Data2Detr
 
 CocoDetection2Detr
 --------------------------------------
-LightningDataModule that make the connection between :mod:`CocoDetectionDataset <alodataset.coco_detection_dataset>`
+LightningDataModule that make the connection between :mod:`CocoBaseDataset <alodataset.coco_detection_dataset>`
 and :mod:`LitDetr <alonet.detr.train>` modules. See :mod:`Data2Detr <alonet.detr.data_modules.data2detr>`
 to more information about the methods and configurations.
 

@@ -25,7 +25,7 @@ def img_plot(frames):
 ######
 #
 # pl.LightningDataModule for reading and preprocessing the images in coco dataset.
-# Use CocoDetectionDataset (provided as an alodataset) to load images.
+# Use CocoBaseDataset (provided as an alodataset) to load images.
 # Also, CocoDetection2Detr allows to load, clean, apply transformers and group images in batches for train/eval.
 #
 # All information available at:

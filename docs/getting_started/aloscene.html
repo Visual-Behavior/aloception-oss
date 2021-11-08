@@ -4,32 +4,32 @@
 <html class="writer-html5" lang="en" >
 <head>
   <meta charset="utf-8" />
-  
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
+
   <title>Aloscene: Computer vision with ease &mdash; Aloception 0.0.1 documentation</title>
-  
 
-  
+
+
   <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
   <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
   <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
 
-  
-  
 
-  
-  
 
-  
 
-  
+
+
+
+
+
+
   <!--[if lt IE 9]>
     <script src="../_static/js/html5shiv.min.js"></script>
   <![endif]-->
-  
-    
+
+
       <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
         <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
         <script src="../_static/jquery.js"></script>
@@ -38,39 +38,39 @@
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
-    
+
     <script type="text/javascript" src="../_static/js/theme.js"></script>
 
-    
+
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Alodataset: Loading your vision datasets" href="alodataset.html" />
-    <link rel="prev" title="Getting started" href="getting_started.html" /> 
+    <link rel="prev" title="Getting started" href="getting_started.html" />
 </head>
 
 <body class="wy-body-for-nav">
 
-   
+
   <div class="wy-grid-for-nav">
-    
+
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
 
-          
+
+
             <a href="../index.html" class="icon icon-home"> Aloception
-          
 
-          
+
+
           </a>
 
-          
-            
-            
-          
 
-          
+
+
+
+
+
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" />
@@ -79,17 +79,17 @@
   </form>
 </div>
 
-          
+
         </div>
 
-        
+
         <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
+
+
+
+
+
+
               <p class="caption" role="heading"><span class="caption-text">Geting Started</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="getting_started.html">Getting started</a></li>
@@ -124,29 +124,29 @@
 <li class="toctree-l1"><a class="reference internal" href="../alonet/alonet.html">Alonet</a></li>
 </ul>
 
-            
-          
+
+
         </div>
-        
+
       </div>
     </nav>
 
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
 
-      
+
       <nav class="wy-nav-top" aria-label="top navigation">
-        
+
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../index.html">Aloception</a>
-        
+
       </nav>
 
 
       <div class="wy-nav-content">
-        
+
         <div class="rst-content">
-        
-          
+
+
 
 
 
@@ -167,29 +167,29 @@
 <div role="navigation" aria-label="breadcrumbs navigation">
 
   <ul class="wy-breadcrumbs">
-    
+
       <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
-        
+
       <li>Aloscene: Computer vision with ease</li>
-    
-    
+
+
       <li class="wy-breadcrumbs-aside">
-        
-          
+
+
             <a href="../_sources/getting_started/aloscene.ipynb.txt" rel="nofollow"> View page source</a>
-          
-        
+
+
       </li>
-    
+
   </ul>
 
-  
+
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
-  
+
+
 <style>
 /* CSS for nbsphinx extension */
 
@@ -464,7 +464,7 @@ div.rendered_html tbody tr:hover {
 <p>Aloscene extends the use of tensors with Augmented Tensors and Spatial Augmented Tensors. The latter are designed to facilitate the use of computer vision data (such as frames, 2d boxes, 3d boxes, optical flow, disparity, camera parameters…).</p>
 <div class="section" id="Hello-world">
 <h2>Hello world<a class="headerlink" href="#Hello-world" title="Permalink to this headline">¶</a></h2>
-<p>In the following, we simply use the CocoDetectionDataset to display one frame.</p>
+<p>In the following, we simply use the CocoBaseDataset to display one frame.</p>
 <ul class="simple">
 <li><p>The <code class="docutils literal notranslate"><span class="pre">get_view</span></code> method is specific to <strong>Augmented Tensor</strong>. It makes it easy for someone to display all the avaiable data within a <strong>Frame</strong></p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">get_view</span></code> return a <code class="docutils literal notranslate"><span class="pre">View</span></code> object that can be used to <code class="docutils literal notranslate"><span class="pre">render()</span></code> the frame using matplotlib or opencv.</p></li>
@@ -475,9 +475,9 @@ div.rendered_html tbody tr:hover {
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">alodataset</span> <span class="kn">import</span> <span class="n">CocoDetectionDataset</span>
+<span></span><span class="kn">from</span> <span class="nn">alodataset</span> <span class="kn">import</span> <span class="n">CocoBaseDataset</span>
 
-<span class="n">coco_dataset</span> <span class="o">=</span> <span class="n">CocoDetectionDataset</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">coco_dataset</span> <span class="o">=</span> <span class="n">CocoBaseDataset</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="n">frame</span> <span class="o">=</span> <span class="n">coco_dataset</span><span class="o">.</span><span class="n">getitem</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 <span class="n">frame</span><span class="o">.</span><span class="n">get_view</span><span class="p">()</span><span class="o">.</span><span class="n">render</span><span class="p">()</span>
 </pre></div>
@@ -744,7 +744,7 @@ len(boxes2d) 1
 
 
            </div>
-           
+
           </div>
           <footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
@@ -760,14 +760,14 @@ len(boxes2d) 1
 
     </p>
   </div>
-    
-    
-    
+
+
+
     Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
-    
+
     <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
-    
-    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
 
 </footer>
         </div>
@@ -776,7 +776,7 @@ len(boxes2d) 1
     </section>
 
   </div>
-  
+
 
   <script type="text/javascript">
       jQuery(function () {
@@ -784,10 +784,10 @@ len(boxes2d) 1
       });
   </script>
 
-  
-  
-    
-   
+
+
+
+
 
 </body>
 </html>

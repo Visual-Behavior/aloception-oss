@@ -213,17 +213,9 @@ class CocoDetectionDataset(CocoBaseDataset, SplitMixin):
 
 
 if __name__ == "__main__":
-    params = dict(
-        include_stuff_cats=True,
-        return_masks=True,
-        classes=["person", "cat", "dog", "horse", "grass", "sky-other", "snow", "tree", "wood"],
-        return_multiple_labels=True,
-        fix_classes_len=250,
-        split=Split.VAL,
-    )
-    coco_dataset = CocoDetectionDataset(**params)
-    for f, frames in enumerate(coco_dataset.stream_loader(num_workers=0)):
+    coco_dataset = CocoDetectionDataset(split=Split.VAL, return_multiple_labels=True)
+    for f, frames in enumerate(coco_dataset.stream_loader(num_workers=1)):
         frames = Frame.batch_list([frames])
-        frames.get_view(labels_set="iscrowd").render()
+        frames.get_view().render()
         if f > 1:
             break

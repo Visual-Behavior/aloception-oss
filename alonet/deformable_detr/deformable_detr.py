@@ -8,6 +8,7 @@ import torch.nn.functional as F
 from torch import nn
 import math
 import copy
+from collections import namedtuple
 
 import aloscene
 import alonet
@@ -95,7 +96,6 @@ class DeformableDETR(nn.Module):
         self.return_dec_outputs = return_dec_outputs
         self.return_enc_outputs = return_enc_outputs
         self.return_bb_outputs = return_bb_outputs
-        self.tracing = tracing
 
         if activation_fn not in ["sigmoid", "softmax"]:
             raise Exception(f"activation_fn = {activation_fn} must be one of this two values: 'sigmoid' or 'softmax'.")
@@ -138,9 +138,9 @@ class DeformableDETR(nn.Module):
             )
 
         self.backbone = backbone
-        self.backbone.tracing = tracing
         self.aux_loss = aux_loss
         self.with_box_refine = with_box_refine
+        self.tracing = tracing
 
         prior_prob = 0.01
         bias_value = -math.log((1 - prior_prob) / prior_prob)
@@ -179,6 +179,15 @@ class DeformableDETR(nn.Module):
             else:
                 raise ValueError(f"Unknown weights: '{weights}'")
 
+    @property
+    def tracing(self):
+        return self._tracing
+
+    @tracing.setter
+    def tracing(self, is_tracing):
+        self._tracing = is_tracing
+        self.backbone.tracing = is_tracing
+
     @assert_and_export_onnx(check_mean_std=True, input_mean_std=INPUT_MEAN_STD)
     def forward(self, frames: aloscene.Frame, **kwargs):
         """
@@ -214,7 +223,7 @@ class DeformableDETR(nn.Module):
 
         assert next(self.parameters()).is_cuda, "DeformableDETR cannot run on CPU (due to MSdeformable op)"
 
-        if "is_export_onnx" in kwargs:
+        if "is_trace" in kwargs:
             frame_masks = frames[:, 3:4]
         else:
             frame_masks = frames.mask.as_tensor()
@@ -247,15 +256,16 @@ class DeformableDETR(nn.Module):
                 pos.append(pos_l)
 
         query_embeds = self.query_embed.weight
-        transformer_outptus = self.transformer(srcs, masks, pos[1:], query_embeds, is_tracing=self.tracing, **kwargs)
+        transformer_outptus = self.transformer(srcs, masks, pos[1:], query_embeds, **kwargs)
 
         # Feature reconstruction with features[-1][0] = input_proj(features[-1][0])
         if self.return_bb_outputs:
             features[-1] = (srcs[-2], masks[-2])
-
         forward_head = self.forward_heads(transformer_outptus, bb_outputs=(features, pos[:-1]))
+
         if self.tracing:
-            forward_head = (forward_head["pred_boxes"], forward_head["pred_logits"])
+            output = namedtuple("m_outputs", "pred_boxes pred_logits")
+            forward_head = output(forward_head["pred_boxes"], forward_head["pred_logits"])
         return forward_head
 
     def forward_position_heads(self, transformer_outptus: dict):
@@ -348,9 +358,8 @@ class DeformableDETR(nn.Module):
         out = {
             "pred_logits": outputs_class[self.num_decoder_layers - 1],
             "pred_boxes": outputs_coord[self.num_decoder_layers - 1],
+            "activation_fn": self.activation_fn,
         }
-        if not self.tracing:
-            out["activation_fn"] = self.activation_fn
 
         if self.aux_loss:
             out["aux_outputs"] = self._set_aux_loss(outputs_class, outputs_coord, activation_fn=out["activation_fn"])

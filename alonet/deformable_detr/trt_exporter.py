@@ -139,10 +139,10 @@ if __name__ == "__main__":
 
     if args.refinement:
         model_name = "deformable-detr-r50-refinement"
-        model = DeformableDetrR50Refinement(weights=model_name, aux_loss=False).eval()
+        model = DeformableDetrR50Refinement(weights=model_name, tracing=True).eval()
     else:
         model_name = "deformable-detr-r50"
-        model = DeformableDetrR50(weights=model_name, aux_loss=False).eval()
+        model = DeformableDetrR50(weights=model_name, tracing=True).eval()
 
     if args.onnx_path is None:
         args.onnx_path = os.path.join(vb_fodler(), "weights", model_name, model_name + ".onnx")

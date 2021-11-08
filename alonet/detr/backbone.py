@@ -114,7 +114,7 @@ class BackboneBase(nn.Module):
 
     @assert_and_export_onnx()
     def forward(self, frames, **kwargs):
-        if "is_export_onnx" in kwargs:
+        if "is_trace" in kwargs:
             frame_masks = frames[:, 3:4]
             frames = frames[:, :3]
         else:
@@ -153,7 +153,19 @@ class Joiner(nn.Sequential):
 
     def __init__(self, backbone: Backbone, position_embedding: nn.Module, tracing: bool = None):
         super().__init__(backbone, position_embedding)
-        self.tracing = tracing or backbone.tracing
+        self.tracing = tracing
+
+    @property
+    def tracing(self):
+        return self._tracing
+
+    @tracing.setter
+    def tracing(self, is_tracing: bool = None):
+        self._tracing = is_tracing
+        if is_tracing is not None:  # Update backbone tracing
+            self[0].tracing = is_tracing
+        else:  # Get same tracing property from backbone
+            self._tracing = self[0].tracing
 
     @assert_and_export_onnx()
     def forward(self, frames: aloscene.Frame, **kwargs):

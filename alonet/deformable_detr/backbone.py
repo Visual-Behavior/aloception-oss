@@ -58,7 +58,6 @@ class Joiner(DetrJoiner):
     """
 
     def __init__(self, backbone, position_embedding, tracing: bool = None):
-        super().__init__(backbone, position_embedding)
+        super().__init__(backbone, position_embedding, tracing)
         self.strides = backbone.strides
         self.num_channels = backbone.num_channels
-        self.tracing = tracing or backbone.tracing

@@ -48,7 +48,7 @@ if __name__ == "__main__":
     device = torch.device("cpu") if args.cpu else torch.device("cuda")
 
     input_shape = [3] + list(args.HW)
-    model = DetrR50(weights="detr-r50", aux_loss=False, return_dec_outputs=False).eval().to(device)
+    model = DetrR50(weights="detr-r50", tracing=True).eval().to(device)
     exporter = DetrTRTExporter(
         model=model, input_shapes=(input_shape,), input_names=["img"], device=device, **vars(args)
     )

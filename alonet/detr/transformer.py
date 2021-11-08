@@ -244,6 +244,7 @@ class TransformerEncoderLayer(nn.Module):
         src_mask: Optional[Tensor] = None,
         src_key_padding_mask: Optional[Tensor] = None,
         pos: Optional[Tensor] = None,
+        **kwargs,
     ):
         q = k = self.with_pos_embed(src, pos)
 
@@ -262,13 +263,14 @@ class TransformerEncoderLayer(nn.Module):
         src_mask: Optional[Tensor] = None,
         src_key_padding_mask: Optional[Tensor] = None,
         pos: Optional[Tensor] = None,
+        **kwargs,
     ):
-        if self.training:
-            src2 = self.norm1(src)
-        else:  # First layerNorm make manually to correct export onnx2trt
+        if "is_export_onnx" in kwargs:  # First layerNorm make manually to correct export onnx2trt
             src2 = (src - torch.mean(src, -1, keepdim=True)) / (
                 torch.sqrt(torch.var(src, -1, keepdim=True) + self.norm1.eps)
             ) * self.norm1.weight + self.norm1.bias
+        else:
+            src2 = self.norm1(src)
         q = k = self.with_pos_embed(src2, pos)
 
         src2 = self.self_attn(q, k, value=src2, attn_mask=src_mask, key_padding_mask=src_key_padding_mask)[0]
@@ -287,8 +289,8 @@ class TransformerEncoderLayer(nn.Module):
         **kwargs,
     ):
         if self.normalize_before:
-            return self.forward_pre(src, src_mask, src_key_padding_mask, pos)
-        return self.forward_post(src, src_mask, src_key_padding_mask, pos)
+            return self.forward_pre(src, src_mask, src_key_padding_mask, pos, **kwargs)
+        return self.forward_post(src, src_mask, src_key_padding_mask, pos, **kwargs)
 
 
 class TransformerDecoderLayer(nn.Module):
@@ -326,16 +328,17 @@ class TransformerDecoderLayer(nn.Module):
         memory_key_padding_mask: Optional[Tensor] = None,
         pos: Optional[Tensor] = None,
         query_pos: Optional[Tensor] = None,
+        **kwargs,
     ):
         q = k = self.with_pos_embed(tgt, query_pos)
         tgt2 = self.self_attn(q, k, value=tgt, attn_mask=tgt_mask, key_padding_mask=tgt_key_padding_mask)[0]
         tgt = tgt + self.dropout1(tgt2)
-        if self.training:
-            tgt = self.norm1(tgt)
-        else:  # First layerNorm make manually to correct export onnx2trt
+        if "is_export_onnx" in kwargs:  # First layerNorm make manually to correct export onnx2trt
             tgt = (tgt - torch.mean(tgt, -1, keepdim=True)) / (
                 torch.sqrt(torch.var(tgt, -1, keepdim=True) + self.norm1.eps)
             ) * self.norm1.weight + self.norm1.bias
+        else:
+            tgt = self.norm1(tgt)
         tgt2 = self.multihead_attn(
             query=self.with_pos_embed(tgt, query_pos),
             key=self.with_pos_embed(memory, pos),
@@ -360,6 +363,7 @@ class TransformerDecoderLayer(nn.Module):
         memory_key_padding_mask: Optional[Tensor] = None,
         pos: Optional[Tensor] = None,
         query_pos: Optional[Tensor] = None,
+        **kwargs,
     ):
         tgt2 = self.norm1(tgt)
         q = k = self.with_pos_embed(tgt2, query_pos)
@@ -398,10 +402,18 @@ class TransformerDecoderLayer(nn.Module):
 
         if self.normalize_before:
             return self.forward_pre(
-                tgt, memory, tgt_mask, memory_mask, tgt_key_padding_mask, memory_key_padding_mask, pos, query_pos
+                tgt,
+                memory,
+                tgt_mask,
+                memory_mask,
+                tgt_key_padding_mask,
+                memory_key_padding_mask,
+                pos,
+                query_pos,
+                **kwargs,
             )
         return self.forward_post(
-            tgt, memory, tgt_mask, memory_mask, tgt_key_padding_mask, memory_key_padding_mask, pos, query_pos
+            tgt, memory, tgt_mask, memory_mask, tgt_key_padding_mask, memory_key_padding_mask, pos, query_pos, **kwargs
         )
 
     def forward(
@@ -440,7 +452,7 @@ def build_transformer():
     hidden_dim = 256
     dropout = 0.1
     nheads = 8
-    num_queries = 100
+    # num_queries = 100
     dim_feedforward = 2048
     enc_layers = 6
     dec_layers = 6

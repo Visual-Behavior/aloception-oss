@@ -6,10 +6,7 @@ import tensorrt as trt
 import torch
 import numpy as np
 
-from aloscene import Frame
-
 import onnx_graphsurgeon as gs
-import alonet.torch2trt as torch2trt
 from alonet.torch2trt import TRTEngineBuilder, TRTExecutor
 import alonet.torch2trt.utils as utils
 
@@ -62,7 +59,12 @@ class BaseTRTExporter:
         verbose: bool, default False
             Print out everything. Good for debugging.
 
+        Raises
+        ------
+        Exception
+            Model must be instantiated with attr:`tracing` = True
         """
+        assert hasattr(model, "tracing") and model.tracing, "Model must be instantiated with tracing=True"
         self.model = model
         self.input_names = input_names
         self.onnx_path = onnx_path
@@ -157,11 +159,12 @@ class BaseTRTExporter:
             m_outputs = self.model(*inputs, **kwargs)
         np_inputs = tuple(np.array(i.cpu()) for i in inputs)
         np_m_outputs = {}
-        output_names = []
-        for key, val in m_outputs.items():
+        output_names = (
+            m_outputs._fields if hasattr(m_outputs, "_fields") else ["out_" + str(i) for i in range(len(m_outputs))]
+        )
+        for key, val in zip(output_names, m_outputs):
             if isinstance(val, torch.Tensor):
                 np_m_outputs[key] = val.cpu().numpy()
-                output_names.append(key)
         # print("Model output keys:", m_outputs.keys())
         # Export to ONNX
         inputs = (*inputs, kwargs)
@@ -256,7 +259,7 @@ class BaseTRTExporter:
             "--onnx_path",
             type=str,
             default=None,
-            help="/path/onnx/will/be/exported. If not defined, this will be set as ~/.aloception/weights/MODEL/MODEL.onnx",
+            help="/path/onnx/will/be/exported, by default set as ~/.aloception/weights/MODEL/MODEL.onnx",
         )
         parser.add_argument("--batch_size", type=int, default=1, help="Engine batch size, default = 1")
         parser.add_argument("--precision", type=str, default="fp32", help="fp32/fp16/mix, default FP32")

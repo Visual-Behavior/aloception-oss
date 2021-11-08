@@ -9,11 +9,10 @@
 
 import copy
 import math
-from numpy import dtype
 
 import torch
 import torch.nn.functional as F
-from torch import device, nn
+from torch import nn
 from torch.nn.init import xavier_uniform_, constant_, normal_
 
 from .utils import inverse_sigmoid
@@ -208,18 +207,17 @@ class DeformableTransformer(nn.Module):
         src_flatten = []
         mask_flatten = []
         lvl_pos_embed_flatten = []
-        if "is_tracing" in kwargs and kwargs["is_tracing"]:
-            spatial_shapes = torch.empty(len(srcs), 2, dtype=torch.int32, device=srcs[0].device)
-        else:
+        if "is_export_onnx" in kwargs:
             spatial_shapes = []
+        else:
+            spatial_shapes = torch.empty(len(srcs), 2, dtype=torch.int32, device=srcs[0].device)
 
         for lvl, (src, mask, pos_embed) in enumerate(zip(srcs, masks, pos_embeds)):
             bs, c, h, w = src.shape
-            if "is_tracing" in kwargs and kwargs["is_tracing"]:  # Used in tracing mode for dinamic input shape
-                spatial_shapes[lvl, 0] = h
-                spatial_shapes[lvl, 1] = w
-            else:  # Shape fixed to export in onnx/tensorRT
+            if "is_export_onnx" in kwargs:  # Shape fixed to export in onnx/tensorRT
                 spatial_shapes.append(torch.tensor([[h, w]], dtype=torch.int32, device=srcs[0].device))
+            else:  # Used in tracing mode for dinamic input shape
+                spatial_shapes[lvl, 0], spatial_shapes[lvl, 1] = h, w
             src = src.flatten(2).transpose(1, 2)
             mask = mask.flatten(1)
             pos_embed = pos_embed.flatten(2).transpose(1, 2)
@@ -372,10 +370,10 @@ class DeformableTransformerEncoder(nn.Module):
         reference_points_list = []
         valid_ratios = torch.unsqueeze(valid_ratios, dim=1)  # (b, 4, 2) -> (b, 1, 4, 2)
         for lvl in range(spatial_shapes.shape[0]):
-            if "is_tracing" in kwargs and kwargs["is_tracing"]:  # Used in tracing mode for dinamic input shape
-                H_, W_ = spatial_shapes[lvl, 0], spatial_shapes[lvl, 1]
-            else:
-                H_, W_ = int(spatial_shapes[lvl, 0]), int(spatial_shapes[lvl, 1])
+            H_, W_ = spatial_shapes[lvl, 0], spatial_shapes[lvl, 1]
+            if "is_export_onnx" in kwargs:  # Fixed dimensions for export in onnx
+                H_, W_ = int(H_), int(W_)
+
             # ref_y, ref_x = torch.meshgrid(torch.linspace(0.5, H_ - 0.5, H_, dtype=torch.float32, device=device),
             #                               torch.linspace(0.5, W_ - 0.5, W_, dtype=torch.float32, device=device))
             # Avoid using linspace because it's not supported in ONNX

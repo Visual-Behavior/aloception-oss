@@ -15,7 +15,7 @@ rm deformable_detr_r50.mar
 python alonet/deformable_detr/production/export_to_pt.py
 
 # Generate .mar file
-torch-model-archiver --model-name deformable_detr_r50 --version 1.0 --serialized-file deformable-detr-r50.pt --handler alonet/detr/production/model_handler.py --extra-files "alonet/detr/production/index_to_name.json,alonet/deformable_detr/production/setup_config.json"
+torch-model-archiver --model-name deformable_detr_r50 --version 1.0 --serialized-file deformable-detr-r50.pt --handler alonet/detr/production/model_handler.py --extra-files "alonet/detr/production/index_to_name_things.json,alonet/deformable_detr/production/setup_config.json"
 
 # Move file into model_store folder
 mkdir model_store

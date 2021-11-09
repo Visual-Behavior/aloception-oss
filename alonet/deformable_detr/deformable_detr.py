@@ -223,7 +223,7 @@ class DeformableDETR(nn.Module):
 
         assert next(self.parameters()).is_cuda, "DeformableDETR cannot run on CPU (due to MSdeformable op)"
 
-        if "is_trace" in kwargs:
+        if self.tracing:
             frame_masks = frames[:, 3:4]
         else:
             frame_masks = frames.mask.as_tensor()

@@ -1,30 +1,20 @@
 # -*- coding: utf-8 -*-
-"""Read a dataset in **COCO JSON** format and transform each element
-in a :mod:`Frame object <aloscene.frame>`. Ideal for object detection applications.
+"""Based on :mod:`CocoBaseDataset object <alodataset.coco_detection_dataset>`. Read a dataset in **COCO JSON**
+format with additional options to get multiples labels and transform each element in a
+:mod:`Frame object <aloscene.frame>`. Ideal for object detection and segmentation applications.
 """
 
-import torch
-import torch.utils.data
-from pycocotools import mask as coco_mask
-import numpy as np
 import os
+import torch
+import numpy as np
+from pycocotools.coco import COCO
+from collections import defaultdict
 
-# import detr.datasets.transforms as T
-
-from torchvision.datasets.coco import CocoDetection
-
-from alodataset import BaseDataset
-from aloscene import BoundingBoxes2D, Frame, Labels, Mask
-
-
-class CocoDetectionSample(CocoDetection):
-    def __init__(self, *args, **kwargs):
-        if self.sample:
-            return
-        super().__init__(*args, **kwargs)
+from alodataset import BaseDataset, CocoBaseDataset, Split, SplitMixin
+from aloscene import Frame
 
 
-class CocoDetectionDataset(BaseDataset, CocoDetectionSample):
+class CocoDetectionDataset(CocoBaseDataset, SplitMixin):
     """
     Attributes
     ----------
@@ -34,12 +24,10 @@ class CocoDetectionDataset(BaseDataset, CocoDetectionSample):
 
     Parameters
     ----------
-    img_folder : str
-        Path to the image folder relative at `dataset_dir` (stored into the aloception config file)
-    ann_file : str
-        Path to the annotation file relative at `dataset_dir` (stored into the aloception config file)
     name : str, optional
         Key of database name in `alodataset_config.json` file, by default *coco*
+    split : :class:`~alodataset.base_dataset.Split`, optional
+        Handle a specific dataset, by defautl :attr:`Split.TRAIN`
     return_masks : bool, optional
         Include masks labels in the output, by default False
     classes : list, optional
@@ -48,96 +36,150 @@ class CocoDetectionDataset(BaseDataset, CocoDetectionSample):
         Fix to a specific number the number of classes, filling the rest with "N/A" value.
         Use when the number of model outputs does not match with the number of classes in the dataset,
         by default None
+    include_stuff_cats : bool, optional
+        Include :attr:`STUFF` objects in reading process, by default False
+    return_multiple_labels : bool, optional
+        Return Labels as a dictionary, with all posible categories found in annotations file, by default False
     **kwargs : dict
         :mod:`BaseDataset <base_dataset>` optional parameters
 
     Raises
     ------
     Exception
-        If a classes list is decided, each label must be inside of :attr:`label_names` list attribute
+        If a :attr:`classes` list is decided, each label must be inside of :attr:`label_names` list attribute
     ValueError
-        If fix_classes_len is desired, fix_classes_len > len(label_names)
+        If :attr:`fix_classes_len` is desired, :attr:`fix_classes_len` > len(:attr:`label_names`)
+    Exception
+        All categories in annotations files must have different ids
 
     Examples
     --------
-        >>> coco_ds = CocoDetectionDataset(
-        ... img_folder = "val2017",
-        ... ann_file = "annotations/instances_val2017.json",
-        ... mode = "validation"
-        )
+        >>> coco_ds = CocoDetectionDataset()
         >>> frames = next(iter(coco_ds.train_loader()))
         >>> frames = frames[0].batch_list(frames)
         >>> frames.get_view(frames.boxes2d,).render()
     """
 
+    SPLIT_FOLDERS = {Split.VAL: "val2017", Split.TRAIN: "train2017"}
+    SPLIT_ANN_FILES = {
+        Split.VAL: "annotations/instances_val2017.json",
+        Split.TRAIN: "annotations/instances_train2017.json",
+    }
+    SPLIT_ANN_STUFF_FILES = {
+        Split.VAL: "annotations/stuff_val2017.json",
+        Split.TRAIN: "annotations/stuff_train2017.json",
+    }
+
     def __init__(
         self,
-        img_folder: str = None,
-        ann_file: str = None,
         name: str = "coco",
-        return_masks=False,
         classes: list = None,
+        include_stuff_cats: bool = False,
         fix_classes_len: int = None,
+        split=Split.TRAIN,
         **kwargs,
     ):
-        if "sample" not in kwargs:
-            kwargs["sample"] = False
+        SplitMixin.__init__(self, split)
+        super(CocoDetectionDataset, self).__init__(
+            name=name,
+            img_folder=self.get_split_folder(),
+            ann_file=self.get_split_ann_file(),
+            classes=None if include_stuff_cats else classes,
+            fix_classes_len=fix_classes_len,
+            **kwargs,
+        )
 
-        self.sample = kwargs["sample"]
-        if not self.sample:
-            assert img_folder is not None, "When sample = False, img_folder must be given."
-            assert ann_file is not None, "When sample = False, ann_file must be given."
+        # Extend annotations
+        self.coco_stuff = None
+        if include_stuff_cats:
+            self.coco_stuff = COCO(os.path.join(self.dataset_dir, self.get_split_stuff_ann_file()))
 
-            self.name = name
-            dataset_dir = BaseDataset.get_dataset_dir(self)
-            img_folder = os.path.join(dataset_dir, img_folder)
-            ann_file = os.path.join(dataset_dir, ann_file)
-            kwargs["sample"] = self.sample
+            # Merge stuff labels into things labels
+            cats = self.coco_stuff.loadCats(self.coco_stuff.getCatIds())
+            nb_category = max(cat["id"] for cat in cats)
+            label_names = ["N/A"] * (nb_category + 1)
+            for cat in cats:
+                label_names[cat["id"]] = cat["name"]
+            for lid in range(max(len(self.label_names), len(label_names))):
+                if lid < len(label_names):
+                    if lid < len(self.label_names):
+                        if self.label_names[lid] != "N/A" and label_names[lid] != "N/A":
+                            raise Exception(
+                                f"Two categories were found for id {lid}: "
+                                + f"{self.label_names[lid]} (things) and {label_names[lid]} (stuffs). Ambiguity"
+                            )
+                        elif label_names[lid] != "N/A":
+                            self.label_names[lid] = label_names[lid]
+                    else:
+                        self.label_names.append(label_names[lid])
+                else:
+                    break
 
-        super(CocoDetectionDataset, self).__init__(name=name, root=img_folder, annFile=ann_file, **kwargs)
-        if self.sample:
-            return
+            # Classes filter if desired
+            if classes is not None:
+                notclass = [label for label in classes if label not in self.label_names]
+                if len(notclass) > 0:  # Ignore all labels not in classes
+                    raise Exception(
+                        f"The {notclass} classes dont match in label_names list. Possible values: {self.label_names}"
+                    )
 
-        cats = self.coco.loadCats(self.coco.getCatIds())
+                self._ids_renamed = [-1 if lbl not in classes else classes.index(lbl) for lbl in self.label_names]
+                self._ids_renamed = np.array(self._ids_renamed)
+                self.label_names = classes
 
-        # Setup the class names
-        nb_category = max(cat["id"] for cat in cats)
-        label_names = ["N/A"] * (nb_category + 1)
-        for cat in cats:
-            label_names[cat["id"]] = cat["name"]
+                # Check each annotation and keep only that have at least 1 box in classes list
+                ids = []
+                for i in self.items:
+                    # Only take into account images with things annotations
+                    target = self.coco.loadAnns(
+                        self.coco.getAnnIds(i)
+                    )  # + self.coco_stuff.loadAnns(self.coco_stuff.getAnnIds(i))
+                    if any([self._ids_renamed[bbox["category_id"]] >= 0 for bbox in target]):
+                        ids.append(i)
+                self.items = ids  # Remove images without bboxes with classes in classes list
 
-        self._ids_renamed = classes
-        if classes is None:
-            self.label_names = label_names
-        else:
-            notclass = [label for label in classes if label not in label_names]
-            if len(notclass) > 0:  # Ignore all labels not in classes
-                raise Exception(
-                    f"The {notclass} classes dont match in label_names list. Possible values: {self.label_names}"
-                )
+                if fix_classes_len is not None:
+                    self._fix_classes(fix_classes_len)
 
-            self.label_names = classes
-            self._ids_renamed = [-1 if label not in classes else classes.index(label) for label in label_names]
-            self._ids_renamed = np.array(self._ids_renamed)
+        # Re-calcule encoding label types (+stuff)
+        if self.label_types is not None:
+            dict_cats = dict()
+            self.label_types = defaultdict(list)
+            self.label_types_names = dict(isthing=["stuff", "thing", "N/A"])
 
-            # Check each annotation and keep only that have at least 1 box in classes list
-            ids = []
-            for i in self.ids:
-                target = CocoDetectionSample._load_target(self, i)
-                if any([self._ids_renamed[bbox["category_id"]] >= 0 for bbox in target]):
-                    ids.append(i)
-            self.ids = ids  # Remove images without bboxes with classes in classes list
+            for lbl in self.label_names:
+                cat = self.coco.loadCats(self.coco.getCatIds(lbl))
+                isthing = 1
+                if len(cat) == 0 and include_stuff_cats:
+                    cat = self.coco_stuff.loadCats(self.coco_stuff.getCatIds(lbl))
+                    isthing = 0 if len(cat) > 0 else 2
+                dict_cats[lbl] = cat[0] if len(cat) > 0 else {}
+                self.label_types["isthing"].append(isthing)
+            label_types, label_types_names = self._get_label_types(dict_cats)
+            self.label_types.update(label_types)
+            self.label_types_names.update(label_types_names)
 
-        self.prepare = ConvertCocoPolysToMask(return_masks)
-        self.items = self.ids
+    def get_split_ann_file(self):
+        """Get annotation file according to :attr:`split`.
 
-        if fix_classes_len is not None:
-            if fix_classes_len > len(self.label_names):
-                self.label_names += ["N/A"] * (fix_classes_len - len(self.label_names))
-            else:
-                raise ValueError(
-                    f"fix_classes_len must be higher than the lenght of label_names ({len(self.label_names)})."
-                )
+        Returns
+        -------
+        str
+            annotation file
+        """
+        assert self.split in self.SPLIT_ANN_FILES
+        return self.SPLIT_ANN_FILES[self.split]
+
+    def get_split_stuff_ann_file(self):
+        """Get stuff annotation file according to :attr:`split`.
+
+        Returns
+        -------
+        str
+            annotation file
+        """
+        assert self.split in self.SPLIT_ANN_STUFF_FILES
+        return self.SPLIT_ANN_STUFF_FILES[self.split]
 
     def getitem(self, idx):
         """Get the :mod:`Frame <aloscene.frame>` corresponds to *idx* index
@@ -149,157 +191,31 @@ class CocoDetectionDataset(BaseDataset, CocoDetectionSample):
 
         Returns
         -------
-        aloscene.Frame
+        :mod:`Frame <aloscene.frame>`
             Frame with their corresponding boxes and labels
         """
         if self.sample:
             return BaseDataset.__getitem__(self, idx)
-        img, target = CocoDetectionSample.__getitem__(self, idx)
 
-        image_id = self.ids[idx]
-        target = {"image_id": image_id, "annotations": target}
+        frame = super().getitem(idx)
+        if self.coco_stuff is not None:
+            image_id = self.items[idx]
+            target = self.coco_stuff.loadAnns(self.coco_stuff.getAnnIds(image_id))
+            target = {"image_id": image_id, "annotations": target}
+            _, target = self.prepare(frame, target)
 
-        frame = Frame(np.transpose(np.array(img), [2, 0, 1]), names=("C", "H", "W"))
-        _, target = self.prepare(img, target)
-
-        # Clean index by unique classes filtered
-        if self._ids_renamed is not None:
-            new_labels = target["labels"].numpy().astype(int)
-            new_labels = self._ids_renamed[new_labels]
-
-            # Keep only valid boxes
-            idxs = np.where(new_labels >= 0)[0]
-            target["boxes"] = target["boxes"][idxs]
-            target["labels"] = torch.from_numpy(new_labels[idxs])
-
+            boxes, segmentation = self._target2aloscene(target, frame)
+            frame.boxes2d = torch.cat([frame.boxes2d, boxes], dim=0)
             if self.prepare.return_masks:
-                target["masks"] = target["masks"][idxs]
-
-        labels_2d = Labels(
-            target["labels"].to(torch.float32), labels_names=self.label_names, names=("N"), encoding="id"
-        )
-        boxes = BoundingBoxes2D(
-            target["boxes"],
-            boxes_format="xyxy",
-            absolute=True,
-            frame_size=frame.HW,
-            names=("N", None),
-            labels=labels_2d,
-        )
-        frame.append_boxes2d(boxes)
-
-        if self.prepare.return_masks:
-            segmentation = Mask(target["masks"], names=("N", "H", "W"), labels=labels_2d)
-            frame.append_segmentation(segmentation)
+                frame.segmentation = torch.cat([frame.segmentation, segmentation], dim=0)
 
         return frame
 
 
-class ConvertCocoPolysToMask(object):
-    """Class to convert polygons or keypoints into boxes
-
-    Attributes
-    ----------
-    return_masks : bool, optional
-        Return in target the mask as attribute, by default False
-
-    Examples
-    --------
-        >>> coco_mask = ConvertCocoPolysToMask()
-        >>> new_image, new_target = coco_mask(image, target)
-    """
-
-    def __init__(self, return_masks: bool = False):
-        self.return_masks = return_masks
-
-    def convert_coco_poly_to_mask(self, segmentations, height, width):
-        masks = []
-        for polygons in segmentations:
-            if isinstance(polygons, list):
-                polygons = coco_mask.frPyObjects(polygons, height, width)
-            mask = coco_mask.decode(polygons)
-            if len(mask.shape) < 3:
-                mask = mask[..., None]
-            mask = torch.as_tensor(mask, dtype=torch.uint8)
-            mask = mask.any(dim=2)
-            masks.append(mask)
-        if masks:
-            masks = torch.stack(masks, dim=0)
-        else:
-            masks = torch.zeros((0, height, width), dtype=torch.uint8)
-        return masks
-
-    def __call__(self, image, target):
-
-        w, h = image.size[0], image.size[1]
-
-        image_id = target["image_id"]
-        image_id = torch.tensor([image_id])
-
-        anno = target["annotations"]
-
-        anno = [obj for obj in anno if "iscrowd" not in obj or obj["iscrowd"] == 0]
-
-        boxes = [obj["bbox"] for obj in anno]
-        # guard against no boxes via resizing
-        boxes = torch.as_tensor(boxes, dtype=torch.float32).reshape(-1, 4)
-        boxes[:, 2:] += boxes[:, :2]
-        boxes[:, 0::2].clamp_(min=0, max=w)
-        boxes[:, 1::2].clamp_(min=0, max=h)
-
-        classes = [obj["category_id"] for obj in anno]
-        classes = torch.tensor(classes, dtype=torch.int64)
-
-        if self.return_masks:
-            segmentations = [obj["segmentation"] for obj in anno]
-            masks = self.convert_coco_poly_to_mask(segmentations, h, w)
-
-        keypoints = None
-        if anno and "keypoints" in anno[0]:
-            keypoints = [obj["keypoints"] for obj in anno]
-            keypoints = torch.as_tensor(keypoints, dtype=torch.float32)
-            num_keypoints = keypoints.shape[0]
-            if num_keypoints:
-                keypoints = keypoints.view(num_keypoints, -1, 3)
-
-        keep = (boxes[:, 3] > boxes[:, 1]) & (boxes[:, 2] > boxes[:, 0])
-        boxes = boxes[keep]
-        classes = classes[keep]
-        if self.return_masks:
-            masks = masks[keep]
-        if keypoints is not None:
-            keypoints = keypoints[keep]
-
-        target = {}
-        target["boxes"] = boxes
-        target["labels"] = classes
-        if self.return_masks:
-            target["masks"] = masks
-        target["image_id"] = image_id
-        if keypoints is not None:
-            target["keypoints"] = keypoints
-
-        # for conversion to coco api
-        area = torch.tensor([obj["area"] for obj in anno])
-        iscrowd = torch.tensor([obj["iscrowd"] if "iscrowd" in obj else 0 for obj in anno])
-        target["area"] = area[keep]
-        target["iscrowd"] = iscrowd[keep]
-
-        target["orig_size"] = torch.as_tensor([int(h), int(w)])
-        target["size"] = torch.as_tensor([int(h), int(w)])
-
-        return image, target
-
-
-def main():
-    """Main"""
-    coco_dataset = CocoDetectionDataset(sample=True)
-    for f, frames in enumerate(coco_dataset.train_loader(batch_size=2)):
-        frames = Frame.batch_list(frames)
+if __name__ == "__main__":
+    coco_dataset = CocoDetectionDataset(split=Split.VAL, return_multiple_labels=True)
+    for f, frames in enumerate(coco_dataset.stream_loader(num_workers=1)):
+        frames = Frame.batch_list([frames])
         frames.get_view().render()
         if f > 1:
             break
-
-
-if __name__ == "__main__":
-    main()

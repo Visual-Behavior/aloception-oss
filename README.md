@@ -28,7 +28,7 @@ frame.get_view().render()
 **Alodataset** implement ready-to-use datasets for computer vision with the help of **aloscene** and **augmented tensors** to make it easier to transform and display your vision data.
 
 ```python
-coco_dataset = alodataset.CocoDetectionDataset(sample=True)
+coco_dataset = alodataset.CocoBaseDataset(sample=True)
 for frame in coco_dataset.stream_loader():
     frame.get_view().render()
 ```
@@ -202,7 +202,7 @@ Here is a list of all the datasets you can use on Aloception. If you're dataset 
 
 | Dataset name  | alodataset location  | To try
 |---|---|---|
-| CocoDetection  | alodataset.CocoDetectionDataset   | `python alodataset/coco_detection_dataset.py`
+| CocoDetection  | alodataset.CocoBaseDataset   | `python alodataset/coco_base_dataset.py`
 | CocoPanoptic  | alodataset.CocoPanopticDataset   | `python alodataset/coco_panopic_dataset.py`
 | CrowdHuman  | alodataset.CrowdHumanDataset   | `python alodataset/crowd_human_dataset.py `
 | Waymo  | alodataset.WaymoDataset   | `python alodataset/waymo_dataset.py`

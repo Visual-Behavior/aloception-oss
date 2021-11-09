@@ -72,21 +72,13 @@ class CocoDetection2Detr(Data2Detr):
             self.train_loader_kwargs["ann_file"] = val_ann
 
     def setup(self, stage: Optional[str] = None):
-        """:attr:`train_dataset` and :attr:`val_dataset` datasets setup, follow the parameters used
-        in class declaration. Also, set :attr:`label_names` attribute.
-
-        Parameters
-        ----------
-        stage : str, optional
-            Stage either `fit`, `validate`, `test` or `predict`, by default None
-        """
         if stage == "fit" or stage is None:
             # Setup train/val loaders
-            self.train_dataset = alodataset.CocoDetectionDataset(
+            self.train_dataset = alodataset.CocoBaseDataset(
                 transform_fn=self.train_transform, sample=self.sample, **self.train_loader_kwargs
             )
             self.sample = self.train_dataset.sample or self.sample  # Update sample if user prompt is given
-            self.val_dataset = alodataset.CocoDetectionDataset(
+            self.val_dataset = alodataset.CocoBaseDataset(
                 transform_fn=self.val_transform, sample=self.sample, **self.val_loader_kwargs
             )
             self.sample = self.val_dataset.sample or self.sample  # Update sample if user prompt is given

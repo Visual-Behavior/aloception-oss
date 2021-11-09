@@ -2,6 +2,7 @@ from .base_dataset import BaseDataset, Split
 from .sequence_mixin import SequenceMixin
 from .split_mixin import SplitMixin
 from .waymo_dataset import WaymoDataset
+from .coco_base_dataset import CocoBaseDataset
 from .coco_detection_dataset import CocoDetectionDataset
 from .coco_panoptic_dataset import CocoPanopticDataset
 from .chairssdhom_dataset import ChairsSDHomDataset

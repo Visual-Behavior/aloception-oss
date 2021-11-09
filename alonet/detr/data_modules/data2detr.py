@@ -87,7 +87,7 @@ class Data2Detr(pl.LightningDataModule):
             "--num_workers",
             type=int,
             default=8,
-            help="num_workers to use on the CocoDetectionDataset (default %(default)s)",
+            help="num_workers to use on the CocoBaseDataset (default %(default)s)",
         )
         parser.add_argument(
             "--no_augmentation", action="store_true", help="Do not use augmentation to train the model"
@@ -148,7 +148,10 @@ class Data2Detr(pl.LightningDataModule):
         return frame.norm_resnet()
 
     def val_transform(
-        self, frame: aloscene.Frame, same_on_sequence: bool = True, same_on_frames: bool = False,
+        self,
+        frame: aloscene.Frame,
+        same_on_sequence: bool = True,
+        same_on_frames: bool = False,
     ):
         """Transform requered to valid on each frame
 
@@ -179,21 +182,15 @@ class Data2Detr(pl.LightningDataModule):
         return frame.norm_resnet()
 
     def setup(self, stage: Optional[str] = None):
-        """Called at the beginning of fit (train + validate), validate, test, and predict. This is a good hook when
-        you need to build models dynamically or adjust something about them. This hook is called on every process when
-        using DDP.
+        """:attr:`train_dataset` and :attr:`val_dataset` datasets setup, follow the parameters used
+        in class declaration.
 
         Parameters
         ----------
         stage : str, optional
             Stage either `fit`, `validate`, `test` or `predict`, by default None
-
-        Raises
-        ------
-        Exception
-            This class must be inhert and set :attr:`train_dataset` and :attr:`val_dataset` attributes
         """
-        raise Exception("This class must be inhert and set self.train_dataset and self.val_dataset attributes")
+        raise Exception("This class must be inhert and set ``train_dataset`` and ``val_dataset`` class attributes")
 
     def train_dataloader(self):
         """Get train dataloader

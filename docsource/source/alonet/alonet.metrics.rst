@@ -12,7 +12,7 @@ Examples
 
     import torch
 
-    from alodataset import CocoDetectionDataset
+    from alodataset import CocoBaseDataset
     from alonet.detr import DetrR50
     from alonet.metrics import ApMetrics
 
@@ -21,7 +21,7 @@ Examples
     device = torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")
 
     # Model/Dataset definition to evaluate
-    dataset = CocoDetectionDataset(sample=True)
+    dataset = CocoBaseDataset(sample=True)
     model = DetrR50(weights = "detr-r50")
     model.eval().to(device)
 

@@ -8,6 +8,7 @@ import alonet
 from alonet.raft.corr import CorrBlock, AlternateCorrBlock
 from alonet.raft.update import BasicUpdateBlock
 from alonet.raft.extractor import BasicEncoder
+from alonet.common.abstract_classes import abstract_attribute, check_abstract_attribute_instanciation, super_new
 from alonet.raft.utils.utils import coords_grid, upflow8
 from aloscene import Flow, Frame
 
@@ -32,19 +33,22 @@ class RAFTBase(nn.Module):
     """
 
     # should be overriden in subclasses
-    hidden_dim = None
-    context_dim = None
-    corr_levels = None
-    corr_radius = None
+    hidden_dim = abstract_attribute()
+    context_dim = abstract_attribute()
+    corr_levels = abstract_attribute()
+    corr_radius = abstract_attribute()
+    out_plane = abstract_attribute()
 
-    out_plane = None
+    # checks that all abstract attribute are instanciated in child class
+    def __new__(cls, *args, **kwargs):
+        check_abstract_attribute_instanciation(cls)
+        return super_new(RAFTBase, cls, *args, **kwargs)
 
     def __init__(
         self,
         fnet,
         cnet,
         update_block,
-        alternate_corr=False,
         weights: str = None,
         corr_block=CorrBlock,
         device: torch.device = torch.device("cpu"),
@@ -229,7 +233,6 @@ class RAFT(RAFTBase):
     context_dim = 128
     corr_levels = 4
     corr_radius = 4
-
     out_plane = 2
 
     def __init__(self, dropout=0, **kwargs):

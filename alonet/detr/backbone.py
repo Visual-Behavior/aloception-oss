@@ -114,7 +114,7 @@ class BackboneBase(nn.Module):
 
     @assert_and_export_onnx()
     def forward(self, frames, **kwargs):
-        if "is_trace" in kwargs:
+        if "is_tracing" in kwargs:
             frame_masks = frames[:, 3:4]
             frames = frames[:, :3]
         else:

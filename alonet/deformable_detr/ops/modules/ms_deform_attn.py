@@ -133,7 +133,7 @@ class MSDeformAttn(nn.Module):
             raise ValueError(
                 "Last dim of reference_points must be 2 or 4, but get {} instead.".format(reference_points.shape[-1])
             )
-        if "is_trace" in kwargs:
+        if "is_tracing" in kwargs:
             # TensorRT deformable attention plugin requires batch dimension on all tensors
             if "is_export_onnx" in kwargs:
                 input_spatial_shapes = torch.unsqueeze(input_spatial_shapes, 0)

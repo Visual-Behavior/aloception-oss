@@ -8,6 +8,7 @@ import torch.nn.functional as F
 from torch import nn
 import math
 import copy
+from collections import namedtuple
 
 import aloscene
 import alonet
@@ -55,6 +56,8 @@ class DeformableDETR(nn.Module):
         By default torch.device("cuda")
     activation_fn : str, optional
         Activation function for classification head. Either ``sigmoid`` or ``softmax``. By default "sigmoid".
+    tracing : bool, Optional
+        Change model behavior to be exported as TorchScript, by default False
 
     Notes
     -----
@@ -81,6 +84,7 @@ class DeformableDETR(nn.Module):
         activation_fn: str = "sigmoid",
         return_intermediate_dec: bool = True,
         strict_load_weights: bool = True,
+        tracing=False,
     ):
         super().__init__()
         self.device = device
@@ -136,6 +140,7 @@ class DeformableDETR(nn.Module):
         self.backbone = backbone
         self.aux_loss = aux_loss
         self.with_box_refine = with_box_refine
+        self.tracing = tracing
 
         prior_prob = 0.01
         bias_value = -math.log((1 - prior_prob) / prior_prob)
@@ -174,6 +179,15 @@ class DeformableDETR(nn.Module):
             else:
                 raise ValueError(f"Unknown weights: '{weights}'")
 
+    @property
+    def tracing(self):
+        return self._tracing
+
+    @tracing.setter
+    def tracing(self, is_tracing):
+        self._tracing = is_tracing
+        self.backbone.tracing = is_tracing
+
     @assert_and_export_onnx(check_mean_std=True, input_mean_std=INPUT_MEAN_STD)
     def forward(self, frames: aloscene.Frame, **kwargs):
         """
@@ -209,7 +223,7 @@ class DeformableDETR(nn.Module):
 
         assert next(self.parameters()).is_cuda, "DeformableDETR cannot run on CPU (due to MSdeformable op)"
 
-        if "is_export_onnx" in kwargs:
+        if self.tracing:
             frame_masks = frames[:, 3:4]
         else:
             frame_masks = frames.mask.as_tensor()
@@ -247,7 +261,12 @@ class DeformableDETR(nn.Module):
         # Feature reconstruction with features[-1][0] = input_proj(features[-1][0])
         if self.return_bb_outputs:
             features[-1] = (srcs[-2], masks[-2])
-        return self.forward_heads(transformer_outptus, bb_outputs=(features, pos[:-1]))
+        forward_head = self.forward_heads(transformer_outptus, bb_outputs=(features, pos[:-1]))
+
+        if self.tracing:
+            output = namedtuple("m_outputs", "pred_boxes pred_logits")
+            forward_head = output(forward_head["pred_boxes"], forward_head["pred_logits"])
+        return forward_head
 
     def forward_position_heads(self, transformer_outptus: dict):
         """Forward from transformer decoder output into positional (boxes)
@@ -590,9 +609,7 @@ class DeformableDETR(nn.Module):
             n_points=dec_n_points,
         )
 
-    def build_decoder(
-        self, dec_layers: int = 6, return_intermediate_dec: bool = True,
-    ):
+    def build_decoder(self, dec_layers: int = 6, return_intermediate_dec: bool = True):
         """Build decoder layer
 
         Parameters

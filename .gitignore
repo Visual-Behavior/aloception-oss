@@ -24,3 +24,5 @@ tensorboard/*
 workspace.code-workspace
 _sandbox/
 logs/*
+*.mar
+*.pt

@@ -1,4 +1,0 @@
-# ninja log v5
-1	2312	1629118743673518094	/home/thibault/work/aloception/alonet/deformable_detr/ops/build/temp.linux-x86_64-3.8/home/thibault/work/aloception/alonet/deformable_detr/ops/src/cpu/ms_deform_attn_cpu.o	2091f42443555d65
-1	7757	1629118749113552717	/home/thibault/work/aloception/alonet/deformable_detr/ops/build/temp.linux-x86_64-3.8/home/thibault/work/aloception/alonet/deformable_detr/ops/src/cuda/ms_deform_attn_cuda.o	2b6954dbc688ee98
-0	12095	1629118753449580274	/home/thibault/work/aloception/alonet/deformable_detr/ops/build/temp.linux-x86_64-3.8/home/thibault/work/aloception/alonet/deformable_detr/ops/src/vision.o	2f02fc352b550bff

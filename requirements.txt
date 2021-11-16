@@ -12,4 +12,7 @@ python-dateutil==2.8.2
 urllib3==1.26.6
 wandb==0.12.2
 tqdm==4.62.3
-#onnx_graphsurgeon==0.0.1
+captum==0.4.0
+torchserve==0.4.2
+torch-model-archiver==0.4.2
+torch-workflow-archiver==0.1.2

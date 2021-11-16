@@ -15,12 +15,13 @@ from alonet.detr.backbone import is_main_process, FrozenBatchNorm2d
 class BackboneBase(DetrBackboneBase):
     """Base class to define behavior of backbone"""
 
-    def __init__(self, backbone: nn.Module, train_backbone: bool, return_interm_layers: bool):
+    def __init__(self, backbone: nn.Module, train_backbone: bool, return_interm_layers: bool, **kwargs):
         super().__init__(
             backbone,
             train_backbone,
             num_channels=2048,  # Don't care. Will be override
             return_interm_layers=True,  # Don't care. Will be override
+            **kwargs
         )
         if return_interm_layers:
             # Ignore layer1 in forward. Use layer1 for panoptic purposes
@@ -38,14 +39,14 @@ class BackboneBase(DetrBackboneBase):
 class Backbone(BackboneBase):
     """ResNet backbone with frozen BatchNorm."""
 
-    def __init__(self, name: str, train_backbone: bool, return_interm_layers: bool, dilation: bool):
+    def __init__(self, name: str, train_backbone: bool, return_interm_layers: bool, dilation: bool, **kwargs):
         backbone = getattr(torchvision.models, name)(
             replace_stride_with_dilation=[False, False, dilation],
             pretrained=is_main_process(),
             norm_layer=FrozenBatchNorm2d,
         )
         assert name not in ("resnet18", "resnet34"), "number of channels are hard coded"
-        super().__init__(backbone, train_backbone, return_interm_layers)
+        super().__init__(backbone, train_backbone, return_interm_layers, **kwargs)
 
 
 class Joiner(DetrJoiner):
@@ -56,7 +57,7 @@ class Joiner(DetrJoiner):
         - list of position encoded feature maps
     """
 
-    def __init__(self, backbone, position_embedding):
-        super().__init__(backbone, position_embedding)
+    def __init__(self, backbone, position_embedding, tracing: bool = None):
+        super().__init__(backbone, position_embedding, tracing)
         self.strides = backbone.strides
         self.num_channels = backbone.num_channels

@@ -5,6 +5,7 @@ End-to-End Object Detection with Transformers (DETR) model.
 import torch
 import torch.nn.functional as F
 from torch import nn
+from collections import namedtuple
 
 from alonet.detr.transformer import Transformer
 from alonet.transformers import MLP, PositionEmbeddingSine
@@ -50,6 +51,8 @@ class Detr(nn.Module):
         with the the list of the different backbone outputs, by default False
     strict_load_weights : bool, Optional
         Load the weights (if any given) with strict=True, by default True
+    tracing : bool, Optional
+        Change model behavior to be exported as TorchScript, by default False
     """
 
     INPUT_MEAN_STD = INPUT_MEAN_STD
@@ -68,6 +71,7 @@ class Detr(nn.Module):
         return_bb_outputs=False,
         device: torch.device = torch.device("cpu"),
         strict_load_weights=True,
+        tracing: bool = False,
     ):
         super().__init__()
         self.num_queries = num_queries
@@ -93,6 +97,7 @@ class Detr(nn.Module):
         self.input_proj = nn.Conv2d(backbone.num_channels, hidden_dim, kernel_size=1)
         self.backbone = backbone
         self.aux_loss = aux_loss
+        self.tracing = tracing
 
         if device is not None:
             self.to(device)
@@ -105,6 +110,15 @@ class Detr(nn.Module):
 
         self.device = device
         self.INPUT_MEAN_STD = INPUT_MEAN_STD
+
+    @property
+    def tracing(self):
+        return self._tracing
+
+    @tracing.setter
+    def tracing(self, is_tracing):
+        self._tracing = is_tracing
+        self.backbone.tracing = is_tracing
 
     @assert_and_export_onnx(check_mean_std=True, input_mean_std=INPUT_MEAN_STD)
     def forward(self, frames: aloscene.Frame, **kwargs):
@@ -150,7 +164,12 @@ class Detr(nn.Module):
         # Feature reconstruction with features[-1][0] = input_proj(features[-1][0])
         if self.return_bb_outputs:
             features[-1] = (input_proj, mask)
-        return self.forward_heads(transformer_outptus, bb_outputs=(features, pos))
+        forward_head = self.forward_heads(transformer_outptus, bb_outputs=(features, pos))
+
+        if self.tracing:
+            output = namedtuple("m_outputs", "pred_boxes pred_logits")
+            forward_head = output(forward_head["pred_boxes"], forward_head["pred_logits"])
+        return forward_head
 
     def forward_position_heads(self, transformer_outptus: dict):
         """Forward from transformer decoder output into bbox_embed layer to get box predictions

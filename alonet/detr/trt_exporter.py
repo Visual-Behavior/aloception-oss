@@ -37,16 +37,20 @@ if __name__ == "__main__":
     # test script
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--HW", type=int, nargs=2, default=[1280, 1920], help="Height and width of input image, default 1280 1920"
+        "--HW", type=int, nargs=2, default=[1280, 1920], help="Height and width of input image, by default %(default)s"
     )
+    parser.add_argument("--cpu", action="store_true", help="Compile model in CPU, by default %(default)s")
     BaseTRTExporter.add_argparse_args(parser)
     # parser.add_argument("--image_chw")
     args = parser.parse_args()
     if args.onnx_path is None:
         args.onnx_path = os.path.join(vb_fodler(), "weights", "detr-r50", "detr-r50.onnx")
+    device = torch.device("cpu") if args.cpu else torch.device("cuda")
 
     input_shape = [3] + list(args.HW)
-    model = DetrR50(weights="detr-r50", aux_loss=False, return_dec_outputs=False)
-    exporter = DetrTRTExporter(model=model, input_shapes=(input_shape,), input_names=["img"], **vars(args))
-    print(vars(args))
+    model = DetrR50(weights="detr-r50", tracing=True).eval().to(device)
+    exporter = DetrTRTExporter(
+        model=model, input_shapes=(input_shape,), input_names=["img"], device=device, **vars(args)
+    )
+
     exporter.export_engine()

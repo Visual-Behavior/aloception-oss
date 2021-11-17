@@ -108,12 +108,9 @@ class CameraIntrinsic(AugmentedTensor):
         cam_intrinsic = self.clone()
         resize_ratio_w = size[0]
         resize_ratio_h = size[1]
-        assert (
-            abs(resize_ratio_h - resize_ratio_w) < 1e-2
-        ), f"Should resize with the same aspect ratio, got ratio: {size}"
-        cam_intrinsic[..., 0, 0] *= resize_ratio_h  # fx
+        cam_intrinsic[..., 0, 0] *= resize_ratio_w  # fx
         cam_intrinsic[..., 1, 1] *= resize_ratio_h  # fy
-        cam_intrinsic[..., 0, 2] *= resize_ratio_h  # x0
+        cam_intrinsic[..., 0, 2] *= resize_ratio_w  # x0
         cam_intrinsic[..., 1, 2] *= resize_ratio_h  # y0
         return cam_intrinsic
 

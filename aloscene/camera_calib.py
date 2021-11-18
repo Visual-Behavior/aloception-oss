@@ -72,6 +72,7 @@ class CameraIntrinsic(AugmentedTensor):
                 principal_point = (0, 0)
             x[0][2] = principal_point[1]
             x[1][2] = principal_point[0]
+            x[2][2] = 1
 
         tensor = super().__new__(cls, x, *args, names=names, **kwargs)
         return tensor

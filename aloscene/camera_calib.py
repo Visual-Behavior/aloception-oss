@@ -101,8 +101,18 @@ class CameraIntrinsic(AugmentedTensor):
         """
         frame_size: (H, W)
         """
+        assert abs(self.sheer) < 1e-3
         cam_intrinsic = self.clone()
         cam_intrinsic[..., 0, 2] = frame_size[1] - cam_intrinsic[..., 0, 2]
+        return cam_intrinsic
+
+    def _vflip(self, *args, frame_size: tuple[int, int], **kwargs):
+        """
+        frame_size: (H, W)
+        """
+        assert abs(self.sheer) < 1e-3
+        cam_intrinsic = self.clone()
+        cam_intrinsic[..., 1, 2] = frame_size[0] - cam_intrinsic[..., 1, 2]
         return cam_intrinsic
 
     def _resize(self, size, **kwargs):

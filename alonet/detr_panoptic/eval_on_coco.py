@@ -30,7 +30,7 @@ def main(args):
     for it, data in enumerate(coco_loader.val_dataloader()):
         frame = Frame.batch_list(data).to(device)
 
-        pred_boxes, pred_masks = lit_panoptic.inference(lit_panoptic(frame))
+        pred_boxes, pred_masks = lit_panoptic.inference(lit_panoptic(frame, threshold=0.85))
         pred_boxes, pred_masks = pred_boxes[0], pred_masks[0]
         gt_boxes = frame.boxes2d[0]  # Get gt boxes as BoundingBoxes2D.
         gt_masks = frame.segmentation[0]  # Get gt masks as Mask

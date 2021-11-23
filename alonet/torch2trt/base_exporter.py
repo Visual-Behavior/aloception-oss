@@ -1,3 +1,4 @@
+import io
 import os
 import time
 from typing import Dict, Tuple, Union
@@ -5,8 +6,10 @@ import onnx
 import tensorrt as trt
 import torch
 import numpy as np
-
 import onnx_graphsurgeon as gs
+from contextlib import redirect_stdout, ExitStack
+
+from alonet.torch2trt.onnx_hack import scope_name_workaround, get_scope_names, rename_tensors_
 from alonet.torch2trt import TRTEngineBuilder, TRTExecutor
 import alonet.torch2trt.utils as utils
 
@@ -35,6 +38,8 @@ class BaseTRTExporter:
         do_constant_folding=True,
         device=torch.device("cpu"),
         verbose=False,
+        use_scope_names=False,
+        operator_export_type=None,
         **kwargs,
     ):
         """
@@ -75,7 +80,8 @@ class BaseTRTExporter:
         self.device = device
         self.precision = precision
         self.custom_opset = None  # to be redefine in child class if needed
-
+        self.use_scope_names = use_scope_names
+        self.operator_export_type = operator_export_type
         # ===== Initiate Trt Engine builder
         onnx_dir = os.path.split(onnx_path)[0]
         onnx_file_name = os.path.split(onnx_path)[1]
@@ -168,19 +174,38 @@ class BaseTRTExporter:
         # print("Model output keys:", m_outputs.keys())
         # Export to ONNX
         inputs = (*inputs, kwargs)
-        torch.onnx.export(
-            self.model,  # model being run
-            inputs,  # model input (or a tuple for multiple inputs)
-            self.onnx_path,  # where to save the model
-            export_params=True,  # store the trained parameter weights inside the model file
-            opset_version=13,  # the ONNX version to export the model to
-            do_constant_folding=self.do_constant_folding,  # whether to execute constant folding for optimization
-            verbose=self.verbose,
-            input_names=self.input_names,  # the model's input names
-            output_names=output_names,
-            custom_opsets=self.custom_opset,
-            enable_onnx_checker=True,
-        )
+        with ExitStack() as stack:
+            # context managers necessary to redirect stdout and modify export trace to print scope
+            if self.use_scope_names:
+                buffer = stack.enter_context(io.StringIO())
+                stack.enter_context(redirect_stdout(buffer))
+                stack.enter_context(scope_name_workaround())
+            torch.onnx.export(
+                self.model,  # model being run
+                inputs,  # model input (or a tuple for multiple inputs)
+                self.onnx_path,  # where to save the model
+                export_params=True,  # store the trained parameter weights inside the model file
+                opset_version=13,  # the ONNX version to export the model to
+                do_constant_folding=self.do_constant_folding,  # whether to execute constant folding for optimization
+                verbose=self.verbose,
+                input_names=self.input_names,  # the model's input names
+                output_names=output_names,
+                custom_opsets=self.custom_opset,
+                enable_onnx_checker=True,
+                operator_export_type=self.operator_export_type,
+            )
+
+            if self.use_scope_names:
+                onnx_export_log = buffer.getvalue()
+
+        # rewrite onnx graph with new scope names
+        if self.use_scope_names:
+            # print(onnx_export_log)
+            number2scope = get_scope_names(onnx_export_log, strict=False)
+            graph = gs.import_onnx(onnx.load(self.onnx_path))
+            graph = rename_tensors_(graph, number2scope, verbose=True)
+            onnx.save(gs.export_onnx(graph), self.onnx_path)
+
         print("Saved ONNX at:", self.onnx_path)
         # empty GPU memory for later TensorRT optimization
         torch.cuda.empty_cache()

@@ -72,6 +72,7 @@ class CameraIntrinsic(AugmentedTensor):
                 principal_point = (0, 0)
             x[0][2] = principal_point[1]
             x[1][2] = principal_point[0]
+            x[2][2] = 1
 
         tensor = super().__new__(cls, x, *args, names=names, **kwargs)
         return tensor
@@ -100,20 +101,27 @@ class CameraIntrinsic(AugmentedTensor):
         """
         frame_size: (H, W)
         """
+        assert abs(self.skew) < 1e-3
         cam_intrinsic = self.clone()
         cam_intrinsic[..., 0, 2] = frame_size[1] - cam_intrinsic[..., 0, 2]
+        return cam_intrinsic
+
+    def _vflip(self, *args, frame_size: tuple[int, int], **kwargs):
+        """
+        frame_size: (H, W)
+        """
+        assert abs(self.skew) < 1e-3
+        cam_intrinsic = self.clone()
+        cam_intrinsic[..., 1, 2] = frame_size[0] - cam_intrinsic[..., 1, 2]
         return cam_intrinsic
 
     def _resize(self, size, **kwargs):
         cam_intrinsic = self.clone()
         resize_ratio_w = size[0]
         resize_ratio_h = size[1]
-        assert (
-            abs(resize_ratio_h - resize_ratio_w) < 1e-2
-        ), f"Should resize with the same aspect ratio, got ratio: {size}"
-        cam_intrinsic[..., 0, 0] *= resize_ratio_h  # fx
+        cam_intrinsic[..., 0, 0] *= resize_ratio_w  # fx
         cam_intrinsic[..., 1, 1] *= resize_ratio_h  # fy
-        cam_intrinsic[..., 0, 2] *= resize_ratio_h  # x0
+        cam_intrinsic[..., 0, 2] *= resize_ratio_w  # x0
         cam_intrinsic[..., 1, 2] *= resize_ratio_h  # y0
         return cam_intrinsic
 

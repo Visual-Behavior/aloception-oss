@@ -1,4 +1,4 @@
-from __future__ import annotations
+# from __future__ import annotations
 import torch
 from torch import Tensor
 
@@ -130,7 +130,7 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
         """
         self._append_child("labels", labels, name)
 
-    def xcyc(self) -> BoundingBoxes2D:
+    def xcyc(self):
         """Get a new BoundingBoxes2D Tensor with boxes following this format:
         [x_center, y_center, width, height]. Could be relative value (betwen 0 and 1)
         or absolute value based on the current Tensor representation.
@@ -172,7 +172,7 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
         else:
             raise Exception(f"BoundingBoxes2D:Do not know mapping from {tensor.boxes_format} to xcyc")
 
-    def xyxy(self) -> BoundingBoxes2D:
+    def xyxy(self):
         """Get a new BoundingBoxes2D Tensor with boxes following this format:
         [x1, y1, x2, y2]. Could be relative value (betwen 0 and 1)
         or absolute value based on the current Tensor representation.
@@ -185,7 +185,10 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
         if tensor.boxes_format == "xcyc":
             labels = tensor.drop_children()
             # Convert from xcyc to xyxy
-            n_tensor = torch.cat([tensor[:, :2] - (tensor[:, 2:] / 2), tensor[:, :2] + (tensor[:, 2:] / 2)], dim=1,)
+            n_tensor = torch.cat(
+                [tensor[:, :2] - (tensor[:, 2:] / 2), tensor[:, :2] + (tensor[:, 2:] / 2)],
+                dim=1,
+            )
             n_tensor.boxes_format = "xyxy"
             n_tensor.set_children(labels)
             return n_tensor
@@ -195,7 +198,10 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
             labels = tensor.drop_children()
             tensor.rename_(None)
             # Convert from yxyx to xyxy
-            n_tensor = torch.cat([tensor[:, :2].flip([1]), tensor[:, 2:].flip([1])], dim=1,)
+            n_tensor = torch.cat(
+                [tensor[:, :2].flip([1]), tensor[:, 2:].flip([1])],
+                dim=1,
+            )
             tensor.reset_names()
             n_tensor.reset_names()
             n_tensor.boxes_format = "xyxy"
@@ -205,7 +211,7 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
         else:
             raise Exception(f"BoundingBoxes2D:Do not know mapping from {tensor.boxes_format} to xyxy")
 
-    def yxyx(self) -> BoundingBoxes2D:
+    def yxyx(self):
         """Get a new BoundingBoxes2D Tensor with boxes following this format:
         [y1, x1, y1, x1]. Could be relative value (betwen 0 and 1)
         or absolute value based on the current Tensor representation.
@@ -236,7 +242,10 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
             labels = tensor.drop_children()
             tensor.rename_(None)
             # Convert from xyxy to yxyx
-            yxyx_boxes = torch.cat([tensor[:, :2].flip([1]), tensor[:, 2:].flip([1])], dim=1,)
+            yxyx_boxes = torch.cat(
+                [tensor[:, :2].flip([1]), tensor[:, 2:].flip([1])],
+                dim=1,
+            )
             yxyx_boxes.reset_names()
             tensor.reset_names()
             yxyx_boxes.boxes_format = "yxyx"
@@ -248,7 +257,7 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
         else:
             raise Exception(f"BoundingBoxes2D:Do not know mapping from {tensor.boxes_format} to yxyx")
 
-    def abs_pos(self, frame_size) -> BoundingBoxes2D:
+    def abs_pos(self, frame_size):
         """Get a new BoundingBoxes2D Tensor with absolute position
         relative to the given `frame_size`.
         Parameters
@@ -302,7 +311,7 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
 
         return tensor
 
-    def rel_pos(self) -> BoundingBoxes2D:
+    def rel_pos(self):
         """Get a new BoundingBoxes2D Tensor with absolute position
         relative to the given `frame_size`.
         Examples
@@ -333,7 +342,7 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
         tensor.frame_size = None
         return tensor
 
-    def get_with_format(self, boxes_format: str) -> BoundingBoxes2D:
+    def get_with_format(self, boxes_format: str) :
         """Set boxes into the desired format (Inplace operation)
         Parameters
         ----------
@@ -479,7 +488,6 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
             else:
                 color = (0, 1, 0)
                 cv2.rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), color, 3)
-
 
         # Return the view to display
         return View(frame, **kwargs)
@@ -715,7 +723,6 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
         offset_y = (self.padded_size[0][0], self.padded_size[0][1])
         offset_x = (self.padded_size[1][0], self.padded_size[1][1])
 
-
         if not self.absolute:
             boxes = self.abs_pos((100, 100)).xcyc()
             h_shift = boxes.frame_size[0] * offset_y[0]
@@ -771,24 +778,22 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
                 padded_size = n_boxes.padded_size
 
                 prev_padded_size = (
-                (
-                    (padded_size[0][0] * pr_frame_size[0]),
-                    (padded_size[0][1] * pr_frame_size[0])
-                ),
-                (
-                    (padded_size[1][0] * pr_frame_size[1]),
-                    (padded_size[1][1] * pr_frame_size[1])
-                )
+                    ((padded_size[0][0] * pr_frame_size[0]), (padded_size[0][1] * pr_frame_size[0])),
+                    ((padded_size[1][0] * pr_frame_size[1]), (padded_size[1][1] * pr_frame_size[1])),
                 )
 
                 n_padded_size = (
                     (
-                        prev_padded_size[0][0] + offset_y[0] * (prev_padded_size[0][0] + prev_padded_size[0][1] + pr_frame_size[0]),
-                        prev_padded_size[0][1] + offset_y[1] * (prev_padded_size[0][0] + prev_padded_size[0][1] + pr_frame_size[0]),
+                        prev_padded_size[0][0]
+                        + offset_y[0] * (prev_padded_size[0][0] + prev_padded_size[0][1] + pr_frame_size[0]),
+                        prev_padded_size[0][1]
+                        + offset_y[1] * (prev_padded_size[0][0] + prev_padded_size[0][1] + pr_frame_size[0]),
                     ),
                     (
-                        prev_padded_size[1][0] + offset_x[0] * (prev_padded_size[1][0] + prev_padded_size[1][1] + pr_frame_size[1]),
-                        prev_padded_size[1][1] + offset_x[1] * (prev_padded_size[1][0] + prev_padded_size[1][1] + pr_frame_size[1]),
+                        prev_padded_size[1][0]
+                        + offset_x[0] * (prev_padded_size[1][0] + prev_padded_size[1][1] + pr_frame_size[1]),
+                        prev_padded_size[1][1]
+                        + offset_x[1] * (prev_padded_size[1][0] + prev_padded_size[1][1] + pr_frame_size[1]),
                     ),
                 )
 
@@ -882,7 +887,7 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
 
         return n_boxes
 
-    def as_boxes(self, boxes: BoundingBoxes2D) -> BoundingBoxes2D:
+    def as_boxes(self, boxes) :
         """Convert the current boxes state into the given `boxes` state, following the same `boxes_format`, the same
         `frame_size` (if any) and the same `padded_size` (if any).
         Parameters
@@ -907,7 +912,7 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
 
         return n_boxes
 
-    def remove_padding(self) -> BoundingBoxes2D:
+    def remove_padding(self) :
         """This method can be usefull when one use a padded Frame but only want to learn on the non-padded area.
         Thefore the target points will remain unpadded while keeping information about the real padded size.
         Thus, this method will simply remove the memorized padded information.

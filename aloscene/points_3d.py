@@ -1,4 +1,4 @@
-from __future__ import annotations
+# from __future__ import annotations
 
 from torchvision.io.image import read_image
 import torch
@@ -141,10 +141,10 @@ class Points3D(aloscene.tensors.AugmentedTensor):
     def _resize(self, size, **kwargs):
         raise Exception("Not handler yet")
 
-    def _crop(self, H_crop: tuple, W_crop: tuple, **kwargs) -> Points3D:
+    def _crop(self, H_crop: tuple, W_crop: tuple, **kwargs):
         raise Exception("Not handler yet")
 
-    def _pad(self, offset_y: tuple, offset_x: tuple, **kwargs) -> Points3D:
+    def _pad(self, offset_y: tuple, offset_x: tuple, **kwargs):
         raise Exception("Not handler yet")
 
     def _spatial_shift(self, shift_y: float, shift_x: float, **kwargs):

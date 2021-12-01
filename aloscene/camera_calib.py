@@ -1,4 +1,5 @@
-from __future__ import annotations
+# from __future__ import annotations
+from typing import Tuple
 from aloscene.tensors.augmented_tensor import AugmentedTensor
 import aloscene
 
@@ -97,7 +98,7 @@ class CameraIntrinsic(AugmentedTensor):
         """Skew (shear time camera constant)"""
         return self.as_tensor()[..., 0, 1]
 
-    def _hflip(self, *args, frame_size: tuple[int, int], **kwargs):
+    def _hflip(self, *args, frame_size: Tuple[int, int], **kwargs):
         """
         frame_size: (H, W)
         """
@@ -106,7 +107,7 @@ class CameraIntrinsic(AugmentedTensor):
         cam_intrinsic[..., 0, 2] = frame_size[1] - cam_intrinsic[..., 0, 2]
         return cam_intrinsic
 
-    def _vflip(self, *args, frame_size: tuple[int, int], **kwargs):
+    def _vflip(self, *args, frame_size: Tuple[int, int], **kwargs):
         """
         frame_size: (H, W)
         """
@@ -143,7 +144,7 @@ class CameraIntrinsic(AugmentedTensor):
         cam_intrinsic[..., 1, 2] -= hmin
         return cam_intrinsic
 
-    def _pad(self, offset_y, offset_x, frame_size: tuple[int, int], **kwargs):
+    def _pad(self, offset_y, offset_x, frame_size: Tuple[int, int], **kwargs):
         """Pad the set of boxes based on the given offset
 
         Parameters

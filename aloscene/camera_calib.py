@@ -56,7 +56,8 @@ class CameraIntrinsic(AugmentedTensor):
         **kwargs,
     ):
         if x is None:
-            x = torch.zeros((4, 4))
+            x = torch.eye(4)
+            # x = torch.zeros((4, 4))
             focal_length = (focal_length, focal_length) if not isinstance(focal_length, tuple) else focal_length
             x[0][0] = focal_length[1] if focal_length[1] is not None else np.inf
             x[1][1] = focal_length[0] if focal_length[1] is not None else np.inf

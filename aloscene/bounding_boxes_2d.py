@@ -185,7 +185,10 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
         if tensor.boxes_format == "xcyc":
             labels = tensor.drop_children()
             # Convert from xcyc to xyxy
-            n_tensor = torch.cat([tensor[:, :2] - (tensor[:, 2:] / 2), tensor[:, :2] + (tensor[:, 2:] / 2)], dim=1,)
+            n_tensor = torch.cat(
+                [tensor[:, :2] - (tensor[:, 2:] / 2), tensor[:, :2] + (tensor[:, 2:] / 2)],
+                dim=1,
+            )
             n_tensor.boxes_format = "xyxy"
             n_tensor.set_children(labels)
             return n_tensor
@@ -195,7 +198,10 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
             labels = tensor.drop_children()
             tensor.rename_(None)
             # Convert from yxyx to xyxy
-            n_tensor = torch.cat([tensor[:, :2].flip([1]), tensor[:, 2:].flip([1])], dim=1,)
+            n_tensor = torch.cat(
+                [tensor[:, :2].flip([1]), tensor[:, 2:].flip([1])],
+                dim=1,
+            )
             tensor.reset_names()
             n_tensor.reset_names()
             n_tensor.boxes_format = "xyxy"
@@ -236,7 +242,10 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
             labels = tensor.drop_children()
             tensor.rename_(None)
             # Convert from xyxy to yxyx
-            yxyx_boxes = torch.cat([tensor[:, :2].flip([1]), tensor[:, 2:].flip([1])], dim=1,)
+            yxyx_boxes = torch.cat(
+                [tensor[:, :2].flip([1]), tensor[:, 2:].flip([1])],
+                dim=1,
+            )
             yxyx_boxes.reset_names()
             tensor.reset_names()
             yxyx_boxes.boxes_format = "yxyx"
@@ -480,7 +489,6 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
                 color = (0, 1, 0)
                 cv2.rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), color, 3)
 
-
         # Return the view to display
         return View(frame, **kwargs)
 
@@ -694,7 +702,10 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
 
         # Put back the instance into the same state as before
         if absolute:
-            cropped_boxes = cropped_boxes.abs_pos(frame_size)
+            n_frame_size = ((H_crop[1] - H_crop[0]) * frame_size[0], (W_crop[1] - W_crop[0]) * frame_size[1])
+            cropped_boxes = cropped_boxes.abs_pos(n_frame_size)
+        else:
+            cropped_boxes.frame_size = None
 
         cropped_boxes = cropped_boxes.get_with_format(boxes_format)
 
@@ -714,7 +725,6 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
 
         offset_y = (self.padded_size[0][0], self.padded_size[0][1])
         offset_x = (self.padded_size[1][0], self.padded_size[1][1])
-
 
         if not self.absolute:
             boxes = self.abs_pos((100, 100)).xcyc()
@@ -771,24 +781,22 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
                 padded_size = n_boxes.padded_size
 
                 prev_padded_size = (
-                (
-                    (padded_size[0][0] * pr_frame_size[0]),
-                    (padded_size[0][1] * pr_frame_size[0])
-                ),
-                (
-                    (padded_size[1][0] * pr_frame_size[1]),
-                    (padded_size[1][1] * pr_frame_size[1])
-                )
+                    ((padded_size[0][0] * pr_frame_size[0]), (padded_size[0][1] * pr_frame_size[0])),
+                    ((padded_size[1][0] * pr_frame_size[1]), (padded_size[1][1] * pr_frame_size[1])),
                 )
 
                 n_padded_size = (
                     (
-                        prev_padded_size[0][0] + offset_y[0] * (prev_padded_size[0][0] + prev_padded_size[0][1] + pr_frame_size[0]),
-                        prev_padded_size[0][1] + offset_y[1] * (prev_padded_size[0][0] + prev_padded_size[0][1] + pr_frame_size[0]),
+                        prev_padded_size[0][0]
+                        + offset_y[0] * (prev_padded_size[0][0] + prev_padded_size[0][1] + pr_frame_size[0]),
+                        prev_padded_size[0][1]
+                        + offset_y[1] * (prev_padded_size[0][0] + prev_padded_size[0][1] + pr_frame_size[0]),
                     ),
                     (
-                        prev_padded_size[1][0] + offset_x[0] * (prev_padded_size[1][0] + prev_padded_size[1][1] + pr_frame_size[1]),
-                        prev_padded_size[1][1] + offset_x[1] * (prev_padded_size[1][0] + prev_padded_size[1][1] + pr_frame_size[1]),
+                        prev_padded_size[1][0]
+                        + offset_x[0] * (prev_padded_size[1][0] + prev_padded_size[1][1] + pr_frame_size[1]),
+                        prev_padded_size[1][1]
+                        + offset_x[1] * (prev_padded_size[1][0] + prev_padded_size[1][1] + pr_frame_size[1]),
                     ),
                 )
 

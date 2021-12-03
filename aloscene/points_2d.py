@@ -444,9 +444,10 @@ class Points2D(aloscene.tensors.AugmentedTensor):
 
         absolute = self.absolute
         frame_size = self.frame_size
+
         points_format = self.points_format
 
-        # Get a new set of bbox
+        # Get a new set of points
         n_points = self.abs_pos((100, 100)).xy()
 
         # Retrieve crop coordinates
@@ -467,7 +468,11 @@ class Points2D(aloscene.tensors.AugmentedTensor):
 
         # Put back the instance into the same state as before
         if absolute:
-            cropped_points = cropped_points.abs_pos(frame_size)
+            n_frame_size = ((H_crop[1] - H_crop[0]) * frame_size[0], (W_crop[1] - W_crop[0]) * frame_size[1])
+            cropped_points = cropped_points.abs_pos(n_frame_size)
+        else:
+            cropped_points.frame_size = None
+
         cropped_points = cropped_points.get_with_format(points_format)
 
         return cropped_points

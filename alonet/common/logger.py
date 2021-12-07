@@ -115,6 +115,7 @@ def log_image(trainer, key, images):
             masks = None if "masks" not in image_obj else image_obj["masks"]
 
             if boxes is None and masks is None:
+                image = image.transpose(2, 0, 1)
                 trainer.logger.experiment.add_image(batch_el_key, image, trainer.global_step)
 
             if masks is not None:

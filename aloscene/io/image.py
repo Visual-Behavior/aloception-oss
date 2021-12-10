@@ -3,6 +3,7 @@ import torch
 from torchvision.io.image import ImageReadMode
 
 from aloscene.io.utils.errors import InvalidSampleError
+import cv2 as cv
 
 
 def load_image(image_path):
@@ -20,7 +21,8 @@ def load_image(image_path):
         tensor containing the image
     """
     try:
-        image = torchvision.io.read_image(image_path, ImageReadMode.RGB).type(torch.float32)
+        image = cv.imread(image_path)
     except RuntimeError as e:
         raise InvalidSampleError(f"[Alodataset Warning] Invalid image: {image_path} error={e}")
+    image = torch.tensor(cv.cvtColor(image, cv.COLOR_BGR2RGB), dtype=torch.float32).permute(2, 0, 1)
     return image

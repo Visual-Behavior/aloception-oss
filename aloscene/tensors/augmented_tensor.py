@@ -457,10 +457,10 @@ class AugmentedTensor(torch.Tensor):
         for tensor in tensor_list:
 
             for prop in tensor._property_list:
-                if prop in prop_name_to_value:
-                    assert prop_name_to_value[prop] == getattr(
-                        tensor, prop
-                    ), f"Trying to merge augmented tensor with different property: {prop}, {prop_name_to_value[prop]}, {getattr(tensor, prop)}"
+                # if prop in prop_name_to_value:
+                #     assert prop_name_to_value[prop] == getattr(
+                #         tensor, prop
+                #     ), f"Trying to merge augmented tensor with different property: {prop}, {prop_name_to_value[prop]}, {getattr(tensor, prop)}"
                 prop_name_to_value[prop] = getattr(tensor, prop)
 
             for label_name in tensor._children_list:

@@ -146,6 +146,30 @@ class AloTransform(object):
             return frames
 
 
+class Identity(AloTransform):
+    def __init__(self, p: float = 0.5, *args, **kwargs):
+        """No change to the frame. To be used with RandomSelect where
+        we want transforms1 pr transforms2 to be no transformation
+        """
+        self.p = p
+        super().__init__(*args, **kwargs)
+
+    def sample_params(self):
+        """Sample a `number` between and 1. The transformation
+        will be aply if `number` is < `self.p`
+        """
+        self._r = random.random()
+        return (self._r,)
+
+    def set_params(self, _r):
+        """Given predefined params, set the params on the class"""
+        self._r = _r
+
+    def apply(self, frame: Frame):
+        """Does nothing and return the frame"""
+        return frame
+
+
 class Compose(AloTransform):
     def __init__(self, transforms: AloTransform, *args, **kwargs):
         """Compose a set of transformation

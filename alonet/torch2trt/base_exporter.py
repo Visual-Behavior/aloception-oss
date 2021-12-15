@@ -187,7 +187,7 @@ class BaseTRTExporter:
                 export_params=True,  # store the trained parameter weights inside the model file
                 opset_version=13,  # the ONNX version to export the model to
                 do_constant_folding=self.do_constant_folding,  # whether to execute constant folding for optimization
-                verbose=self.verbose,
+                verbose=self.verbose or self.use_scope_names,  # verbose mandatory in scope names procedure
                 input_names=self.input_names,  # the model's input names
                 output_names=output_names,
                 custom_opsets=self.custom_opset,

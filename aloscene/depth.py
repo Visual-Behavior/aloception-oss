@@ -45,9 +45,9 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
             If none, the occlusion mask will be attached without name (if possible). Otherwise if no other unnamed
             occlusion mask are attached to the frame, the mask will be added to the set of mask.
         """
-        self._append_label("occlusion", occlusion, name)
+        self._append_child("occlusion", occlusion, name)
 
-    def __get_view__(self, cmap="nipy_spectral", min_depth=0, max_depth=200):
+    def __get_view__(self, cmap="nipy_spectral", min_depth=0, max_depth=200, title=None):
         assert all(dim not in self.names for dim in ["B", "T"]), "Depth should not have batch or time dimension"
         cmap = matplotlib.cm.get_cmap(cmap)
         depth = self.rename(None).permute([1, 2, 0]).detach().cpu().contiguous().numpy()
@@ -55,7 +55,7 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         depth = max_depth - np.clip(depth, min_depth, max_depth)
         depth = matplotlib.colors.Normalize(vmax=max_depth)(depth)
         depth_color = cmap(depth)[:, :, 0, :3]
-        return View(depth_color)
+        return View(depth_color, title=title)
 
     def as_points3d(self, camera_intrinsic: aloscene.CameraIntrinsic = None):
         """Compute the 3D coordinates of points 2D points based on their respective depth.

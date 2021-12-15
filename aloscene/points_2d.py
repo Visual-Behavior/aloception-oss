@@ -1,4 +1,4 @@
-from __future__ import annotations
+# from __future__ import annotations
 
 from torchvision.io.image import read_image
 import torch
@@ -145,7 +145,7 @@ class Points2D(aloscene.tensors.AugmentedTensor):
         """
         self._append_child("labels", labels, name)
 
-    def xy(self) -> Points2D:
+    def xy(self):
         """Get a new Point2d Tensor with points following this format:
         [x, y]. Could be relative value (betwen 0 and 1)
         or absolute value based on the current Tensor representation.
@@ -162,7 +162,7 @@ class Points2D(aloscene.tensors.AugmentedTensor):
             tensor.points_format = "xy"
             return tensor
 
-    def yx(self) -> Points2D:
+    def yx(self):
         """Get a new Point2d Tensor with points following this format:
         [y, x]. Could be relative value (betwen 0 and 1)
         or absolute value based on the current Tensor representation.
@@ -179,7 +179,7 @@ class Points2D(aloscene.tensors.AugmentedTensor):
             tensor.points_format = "yx"
             return tensor
 
-    def abs_pos(self, frame_size: tuple) -> Points2D:
+    def abs_pos(self, frame_size: tuple):
         """Get a new Point2d Tensor with absolute position
         relative to the given `frame_size`.
 
@@ -249,7 +249,7 @@ class Points2D(aloscene.tensors.AugmentedTensor):
 
             return tensor
 
-    def rel_pos(self) -> Points2D:
+    def rel_pos(self):
         """Get a new Point2d Tensor with relative position (between 0 and 1)
         based on the current frame_size.
 
@@ -285,7 +285,7 @@ class Points2D(aloscene.tensors.AugmentedTensor):
         else:
             return tensor
 
-    def get_with_format(self, points_format: str) -> Points2D:
+    def get_with_format(self, points_format: str):
         """Get the points with the desired format.
 
         Parameters
@@ -306,7 +306,7 @@ class Points2D(aloscene.tensors.AugmentedTensor):
 
     _GLOBAL_COLOR_SET = np.random.uniform(0, 1, (300, 3))
 
-    def get_view(self, frame: aloscene.Frame = None, size: tuple = None, labels_set: str = None, **kwargs):
+    def get_view(self, frame=None, size: tuple = None, labels_set: str = None, **kwargs):
         """Create a view of the points on a frame
 
         Parameters
@@ -429,7 +429,7 @@ class Points2D(aloscene.tensors.AugmentedTensor):
             abs_size = tuple(s * fs for s, fs in zip(size, points.frame_size))
             return points.abs_pos(abs_size)
 
-    def _crop(self, H_crop: tuple, W_crop: tuple, **kwargs) -> Points2D:
+    def _crop(self, H_crop: tuple, W_crop: tuple, **kwargs):
         """Crop Points with the given relative crop
 
         Parameters
@@ -472,7 +472,7 @@ class Points2D(aloscene.tensors.AugmentedTensor):
 
         return cropped_points
 
-    def fit_to_padded_size(self) -> Points2D:
+    def fit_to_padded_size(self):
         """This method can be usefull when one use a padded Frame but only want to learn on the non-padded area.
         Thefore the target points will remain unpadded while keeping information about the real padded size.
 
@@ -516,7 +516,7 @@ class Points2D(aloscene.tensors.AugmentedTensor):
 
         return points
 
-    def _pad(self, offset_y: tuple, offset_x: tuple, pad_points2d: bool = True, **kwargs) -> Points2D:
+    def _pad(self, offset_y: tuple, offset_x: tuple, pad_points2d: bool = True, **kwargs):
         """Pad the set of points based on the given offset
 
         Parameters
@@ -582,7 +582,7 @@ class Points2D(aloscene.tensors.AugmentedTensor):
     def _spatial_shift(self, shift_y: float, shift_x: float, **kwargs):
         raise Exception("Not handle by points 2D")
 
-    def as_points(self, points) -> Points2D:
+    def as_points(self, points):
         n_points = self.clone()
 
         if points.absolute and not n_points.absolute:
@@ -597,7 +597,7 @@ class Points2D(aloscene.tensors.AugmentedTensor):
 
         return n_points
 
-    def remove_padding(self) -> Points2D:
+    def remove_padding(self):
         """This method can be usefull when one use a padded Frame but only want to learn on the non-padded area.
         Thefore the target points will remain unpadded while keeping information about the real padded size.
 

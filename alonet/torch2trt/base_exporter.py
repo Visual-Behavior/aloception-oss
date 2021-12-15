@@ -10,8 +10,7 @@ import onnx_graphsurgeon as gs
 from contextlib import redirect_stdout, ExitStack
 
 from alonet.torch2trt.onnx_hack import scope_name_workaround, get_scope_names, rename_tensors_
-from alonet.torch2trt import TRTEngineBuilder, TRTExecutor
-import alonet.torch2trt.utils as utils
+from alonet.torch2trt import TRTEngineBuilder, TRTExecutor, utils
 
 
 class BaseTRTExporter:

@@ -1,4 +1,4 @@
-from __future__ import annotations
+# from __future__ import annotations
 import torch
 from torch import Tensor
 
@@ -168,7 +168,7 @@ class OrientedBoxes2D(aloscene.tensors.AugmentedTensor):
         return View(frame, **kwargs)
 
     @staticmethod
-    def boxes2abspos(tensor: OrientedBoxes2D, frame_size: tuple) -> OrientedBoxes2D:
+    def boxes2abspos(tensor, frame_size: tuple):
         """Get a new OrientedBoxes2D Tensor with absolute position \
         relative to the given `frame_size` (H, W)
 
@@ -201,7 +201,7 @@ class OrientedBoxes2D(aloscene.tensors.AugmentedTensor):
             raise Exception("boxes2abspos no handled error")
         return tensor
 
-    def abs_pos(self, frame_size: tuple) -> OrientedBoxes2D:
+    def abs_pos(self, frame_size: tuple):
         """Get a new OrientedBoxes2D Tensor with absolute position \
         relative to the given `frame_size` (H, W)
 
@@ -254,7 +254,7 @@ class OrientedBoxes2D(aloscene.tensors.AugmentedTensor):
         return self.boxes2relpos(self.clone())
 
     @staticmethod
-    def rotated_iou(boxes1: OrientedBoxes2D, boxes2: OrientedBoxes2D, ret_union=False):
+    def rotated_iou(boxes1, boxes2, ret_union=False):
         """Compute the IOU between the two set of rotated boxes in order
 
         Parameters
@@ -315,9 +315,7 @@ class OrientedBoxes2D(aloscene.tensors.AugmentedTensor):
         return self.rotated_iou(self, boxes2, ret_union=ret_union)
 
     @staticmethod
-    def rotated_giou(
-        boxes1: OrientedBoxes2D, boxes2: OrientedBoxes2D, enclosing_type: str = "smallest", ret_iou=False
-    ):
+    def rotated_giou(boxes1, boxes2, enclosing_type: str = "smallest", ret_iou=False):
         """Calculate GIoU for 2 sets of rotated boxes in order
 
         Parameters

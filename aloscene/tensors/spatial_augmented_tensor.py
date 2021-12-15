@@ -457,6 +457,24 @@ class SpatialAugmentedTensor(AugmentedTensor):
             return self.rename(None).view(shapes).reset_names()
         return F.resize(self.rename(None), (h, w)).reset_names()
 
+    def _rotate(self, angle, **kwargs):
+        """Rotate SpatialAugmentedTensor, but not its labels
+
+        Parameters
+        ----------
+        angle : float
+
+        Returns
+        -------
+        rotated : aloscene.SpatialAugmentedTensor
+            rotated tensor
+        """
+        # If a SpatialAgumentedTensor is empty, rotate operation does not work. Use view instead.
+        if ("N" in self.names and self.size("N") == 0) or ("C" in self.names and self.size("C") == 0):
+            shapes = list(self.shape)[:-2] + [h, w]
+            return self.rename(None).view(shapes).reset_names()
+        return F.rotate(self.rename(None), angle).reset_names()
+
     def _crop(self, H_crop: tuple, W_crop: tuple, **kwargs):
         """Crop the SpatialAugmentedTensor
 

@@ -578,6 +578,38 @@ class Resize(AloTransform):
         return frame
 
 
+class Rotate(AloTransform):
+    def __init__(self, angle: float, *args, **kwargs):
+        """Rotate the given frame using the given rotation angle.
+
+        Parameters
+        ----------
+        angle: float, between 0 and 360
+        """
+        assert isinstance(angle, float)
+        self.angle = angle
+        super().__init__(*args, **kwargs)
+
+    def sample_params(self):
+        """Sample an `angle` from the list of possible `angles`"""
+        return (self.angle,)
+
+    def set_params(self, angle):
+        """Given predefined params, set the params on the class"""
+        self.angle = angle
+
+    def apply(self, frame: Frame):
+        """Apply the transformation
+
+        Parameters
+        ----------
+        frame: Frame
+            Frame to apply the transformation on
+        """
+        frame = frame.rotate(self.angle)
+        return frame
+
+
 class RealisticNoise(AloTransform):
     def __init__(self, gaussian_std: float = 0.02, shot_std: float = 0.2, *args, **kwargs):
         """Add an approximation of a realistic noise to the image.

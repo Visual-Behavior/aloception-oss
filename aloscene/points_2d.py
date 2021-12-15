@@ -429,6 +429,26 @@ class Points2D(aloscene.tensors.AugmentedTensor):
             abs_size = tuple(s * fs for s, fs in zip(size, points.frame_size))
             return points.abs_pos(abs_size)
 
+    def _rotate(self, angle, **kwargs):
+        """Rotate Point2d, but not their labels
+
+        Parameters
+        ----------
+        size : float
+
+        Returns
+        -------
+        points : aloscene.Point2d
+            rotated points
+        """
+        points = self.clone()
+        H, W = self.frame_size
+        angle_rad = angle * np.pi / 180
+        rot_mat = torch.tensor([[np.cos(angle_rad), np.sin(angle_rad)], [-np.sin(angle_rad), np.cos(angle_rad)]])
+        tr_mat = torch.tensor([W / 2, H / 2])
+
+        return points.abs_pos(abs_size)
+
     def _crop(self, H_crop: tuple, W_crop: tuple, **kwargs) -> Points2D:
         """Crop Points with the given relative crop
 

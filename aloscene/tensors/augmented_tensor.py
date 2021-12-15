@@ -48,34 +48,29 @@ class AugmentedTensor(torch.Tensor):
         super().__init__()
 
     def drop_children(self):
-        """ Remove all children from this augmented tensor and return
+        """Remove all children from this augmented tensor and return
         the removed children.
         """
         labels = {}
         for name in self._children_list:
-            labels[name] = {
-                "value": getattr(self, name),
-                "property": self._child_property[name]
-            }
+            labels[name] = {"value": getattr(self, name), "property": self._child_property[name]}
             setattr(self, name, None)
         return labels
 
     def get_children(self):
-        """ Get all children attached from this augmented tensor
-        """
+        """Get all children attached from this augmented tensor"""
         labels = {}
         for name in self._children_list:
             # Use apply to return the same label but with a new structure
             # so that if the returned structure is changed, this will not impact the current one
             labels[name] = {
                 "value": self.apply_on_child(getattr(self, name), lambda l: l),
-                "property": self._child_property[name]
+                "property": self._child_property[name],
             }
         return labels
 
     def set_children(self, labels):
-        """ Set children on this augmented tensor
-        """
+        """Set children on this augmented tensor"""
         for name in labels:
             if name not in self._children_list:
                 self.add_child(name, labels[name]["value"], **labels[name]["property"])
@@ -166,7 +161,7 @@ class AugmentedTensor(torch.Tensor):
         return True
 
     def add_child(self, child_name, child, align_dim=["B", "T"], mergeable=True, **kwargs):
-        """ Add/attached an augmented tensor on this augmented tensor.
+        """Add/attached an augmented tensor on this augmented tensor.
 
         Parameters
         ----------
@@ -197,8 +192,6 @@ class AugmentedTensor(torch.Tensor):
             self._child_property[child_name] = kwargs
 
         setattr(self, child_name, child)
-
-
 
     def _append_child(self, child_name: str, child, set_name: str = None):
         """
@@ -237,8 +230,6 @@ class AugmentedTensor(torch.Tensor):
             setattr(self, child_name, child)
         else:
             label[set_name] = child
-
-
 
     def _getitem_child(self, label, label_name, idx):
         """
@@ -766,6 +757,7 @@ class AugmentedTensor(torch.Tensor):
         """
         Recursively apply function on labels to modify tensor inplace
         """
+
         def __apply(l):
             return func(l).recursive_apply_on_children_(func)
 
@@ -850,8 +842,31 @@ class AugmentedTensor(torch.Tensor):
 
         return resized
 
-    def _resize(self, *args, **kwargs):
-        raise Exception("This Augmented tensor should implement this method")
+    def rotate(self, angle, **kwargs):
+        """
+        Rotate AugmentedTensor, and its labels recursively
+
+        Parameters
+        ----------
+        angle : float
+
+        Returns
+        -------
+        rotated : aloscene AugmentedTensor
+            rotated tensor
+        """
+
+        def rotate_func(label):
+            try:
+                label_rotated = label._rotate(angle, **kwargs)
+                return label_rotated
+            except AttributeError:
+                return label
+
+        rotated = self._rotate(angle, **kwargs)
+        rotated.recursive_apply_on_children_(rotate_func)
+
+        return rotated
 
     def _crop_label(self, label, H_crop, W_crop, **kwargs):
         try:
@@ -922,7 +937,6 @@ class AugmentedTensor(torch.Tensor):
         padded.recursive_apply_on_children_(lambda label: self._pad_label(label, offset_y, offset_x, **kwargs))
         return padded
 
-
     def _spatial_shift_label(self, label, shift_y, shift_x, **kwargs):
         try:
             label_shift = label._spatial_shift(shift_y, shift_x, **kwargs)
@@ -947,7 +961,9 @@ class AugmentedTensor(torch.Tensor):
             shifted tensor
         """
         shifted = self._spatial_shift(shift_y, shift_x, **kwargs)
-        shifted.recursive_apply_on_children_(lambda label: self._spatial_shift_label(label, shift_y, shift_x, **kwargs))
+        shifted.recursive_apply_on_children_(
+            lambda label: self._spatial_shift_label(label, shift_y, shift_x, **kwargs)
+        )
         return shifted
 
     def _spatial_shift(self, shift_y, shift_x, **kwargs):
@@ -978,6 +994,10 @@ class AugmentedTensor(torch.Tensor):
 
     def _resize(self, *args, **kwargs):
         # Must be implement by child class to handle resize
+        return self.clone()
+
+    def _rotate(self, *args, **kwargs):
+        # Must be implement by child class to handle rotate
         return self.clone()
 
     def _crop(self, *args, **kwargs):

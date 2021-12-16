@@ -444,10 +444,19 @@ class Points2D(aloscene.tensors.AugmentedTensor):
         points = self.clone()
         H, W = self.frame_size
         angle_rad = angle * np.pi / 180
-        rot_mat = torch.tensor([[np.cos(angle_rad), np.sin(angle_rad)], [-np.sin(angle_rad), np.cos(angle_rad)]])
+        rot_mat = torch.tensor([[np.cos(angle_rad), np.sin(angle_rad)], [-np.sin(angle_rad), np.cos(angle_rad)]]).to(
+            torch.float32
+        )
         tr_mat = torch.tensor([W / 2, H / 2])
+        for i in range(points.shape[0]):
+            points[i] = torch.matmul(rot_mat, points[i] - tr_mat) + tr_mat
 
-        return points.abs_pos(abs_size)
+        max_size = torch.as_tensor([W, H], dtype=torch.float32)
+        points_filter = (points >= 0).as_tensor() & (points <= max_size).as_tensor()
+        points_filter = points_filter[:, 0] & points_filter[:, 1]
+        points = points[points_filter]
+
+        return points
 
     def _crop(self, H_crop: tuple, W_crop: tuple, **kwargs) -> Points2D:
         """Crop Points with the given relative crop

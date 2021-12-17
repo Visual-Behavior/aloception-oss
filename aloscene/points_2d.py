@@ -609,7 +609,44 @@ class Points2D(aloscene.tensors.AugmentedTensor):
         return points
 
     def _spatial_shift(self, shift_y: float, shift_x: float, **kwargs):
-        raise Exception("Not handle by points 2D")
+        """
+        Spatially shift the Points
+        Parameters
+        ----------
+        shift_y: float
+            Shift percentage on the y axis. Could be negative or positive
+        shift_x: float
+            Shift percentage on the x axis. Could ne negative or positive.
+        Returns
+        -------
+        shifted_tensor: aloscene.AugmentedTensor
+            shifted tensor
+        """
+        if self.padded_size is not None:
+            raise Exception(
+                "Can't process spatial shift when padded size is not Note. Call fit_to_padded_size() first"
+            )
+        # get needed information
+        original_format = self.points_format
+        original_absolute = self.absolute
+        frame_size = self.frame_size
+
+        # shift the points
+        n_points = self.clone().rel_pos().xy()
+        n_points += torch.as_tensor([[shift_x, shift_y]])  # , device=self.device)
+
+        # filter points outside of the image
+        points_filter = (n_points >= 0).as_tensor() & (n_points <= 1).as_tensor()
+        points_filter = points_filter[:, 0] & points_filter[:, 1]
+        n_points = n_points[points_filter]
+        n_points = n_points.reset_names()
+
+        # Put back the instance into the same state as before
+        if original_absolute:
+            n_points = n_points.abs_pos(frame_size)
+        n_points = n_points.get_with_format(original_format)
+
+        return n_points
 
     def as_points(self, points):
         n_points = self.clone()

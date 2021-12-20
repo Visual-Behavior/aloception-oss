@@ -80,15 +80,14 @@ class Labels(aloscene.tensors.AugmentedTensor):
         frame: aloscene.Frame
             Tensor of type Frame to display the boxes on. If the frame is None, nothing wll be returned.
         """
-        frame_size = (frame.H, frame.W)
-        x0, y0 = int(frame_size[0] * 0.10), int(frame_size[1] * 0.10)
-        size = adapt_text_size_to_frame(1.0, frame_size)
-
-        if frame_size[0] < 200 or frame_size[0] < 200:
-            print("Warning: frame label does not get render since the frame is too small (< 200 px)")
-            return None
-
         if frame is not None:
+            frame_size = (frame.H, frame.W)
+            x0, y0 = int(frame_size[0] * 0.10), int(frame_size[1] * 0.10)
+            size = adapt_text_size_to_frame(1.0, frame_size)
+
+            if frame_size[0] < 200 or frame_size[0] < 200:
+                print("Warning: frame label does not get render since the frame is too small (< 200 px)")
+                return None
 
             # Get an imave with values between 0 and 1
             frame = frame.norm01().cpu().rename(None).permute([1, 2, 0]).detach().contiguous().numpy()

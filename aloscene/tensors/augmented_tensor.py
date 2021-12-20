@@ -148,7 +148,11 @@ class AugmentedTensor(torch.Tensor):
             elif not any(v in self.COMMON_DIM_NAMES for v in var.names):
                 return True
             for dim_id, dim_name in enumerate(var.names):
-                if dim_id < len(self.names) and dim_name in self.COMMON_DIM_NAMES and self.names[dim_id] == dim_name:
+                if (
+                    dim_id < len(self.names)
+                    and dim_name in self.COMMON_DIM_NAMES
+                    and self.names[dim_id] == dim_name
+                ):
                     return True
             raise Exception(
                 f"Impossible to align label name dim ({var.names}) with the tensor name dim ({self.names})."
@@ -389,7 +393,9 @@ class AugmentedTensor(torch.Tensor):
         for name in self._children_list:
             label = getattr(self, name)
             if label is not None:
-                setattr(n_frame, name, self.apply_on_child(label, lambda l: l.cuda(*args, **kwargs)))
+                setattr(
+                    n_frame, name, self.apply_on_child(label, lambda l: l.cuda(*args, **kwargs))
+                )
         return n_frame
 
     def _merge_child(self, label, label_name, key, dict_merge, kwargs, check_dim=True):
@@ -401,7 +407,10 @@ class AugmentedTensor(torch.Tensor):
             # merge everything on the real target dimension.
             target_dim = 0
 
-        if check_dim and self.names[target_dim] not in self._child_property[label_name]["align_dim"]:
+        if (
+            check_dim
+            and self.names[target_dim] not in self._child_property[label_name]["align_dim"]
+        ):
             raise Exception(
                 "Can only merge labeled tensor on the following dimension '{}'. \
                 \nDrop the labels before to apply such operations or convert your labeled tensor to tensor first.".format(
@@ -470,7 +479,11 @@ class AugmentedTensor(torch.Tensor):
                     if isinstance(label_value, dict):
                         for key in label_value:
                             labels_dict2list[label_name] = self._merge_child(
-                                label_value[key], label_name, key, labels_dict2list[label_name], kwargs
+                                label_value[key],
+                                label_name,
+                                key,
+                                labels_dict2list[label_name],
+                                kwargs,
                             )
                     elif label_value is None and isinstance(labels_dict2list[label_name], dict):
                         for key in labels_dict2list[label_name]:
@@ -478,7 +491,9 @@ class AugmentedTensor(torch.Tensor):
                                 label_value, label_name, key, labels_dict2list[label_name], kwargs
                             )
                     else:
-                        self._merge_child(label_value, label_name, label_name, labels_dict2list, kwargs)
+                        self._merge_child(
+                            label_value, label_name, label_name, labels_dict2list, kwargs
+                        )
             else:
                 raise Exception("Can't merge none AugmentedTensor with AugmentedTensor")
 
@@ -523,7 +538,9 @@ class AugmentedTensor(torch.Tensor):
         for name in self._children_list:
             label = getattr(tensor, name)
             if label is not None:
-                results = self.apply_on_child(label, lambda l: _handle_expand_on_label(l, name), on_list=False)
+                results = self.apply_on_child(
+                    label, lambda l: _handle_expand_on_label(l, name), on_list=False
+                )
                 setattr(tensor, name, results)
 
     def __iter__(self):
@@ -704,7 +721,12 @@ class AugmentedTensor(torch.Tensor):
                     if isinstance(values[key], list):
                         cvalue = (
                             f"{key}:["
-                            + ", ".join(["{}".format(len(k) if k is not None else None) for k in values[key]])
+                            + ", ".join(
+                                [
+                                    "{}".format(len(k) if k is not None else None)
+                                    for k in values[key]
+                                ]
+                            )
                             + "]"
                         )
                         content_value += f"{cvalue}, "
@@ -937,7 +959,9 @@ class AugmentedTensor(torch.Tensor):
             offset_x = (offset_x[0] / self.W, offset_x[1] / self.W)
 
         padded = self._pad(offset_y, offset_x, **kwargs)
-        padded.recursive_apply_on_children_(lambda label: self._pad_label(label, offset_y, offset_x, **kwargs))
+        padded.recursive_apply_on_children_(
+            lambda label: self._pad_label(label, offset_y, offset_x, **kwargs)
+        )
         return padded
 
     def _spatial_shift_label(self, label, shift_y, shift_x, **kwargs):

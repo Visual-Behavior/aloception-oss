@@ -456,6 +456,14 @@ class Points2D(aloscene.tensors.AugmentedTensor):
         points_filter = points_filter[:, 0] & points_filter[:, 1]
         points = points[points_filter]
 
+        points = points.rel_pos()
+
+        # no modification needed for relative coordinates
+        if self.absolute:
+            points = points.abs_pos(self.frame_size)
+
+        points = points.get_with_format(self.points_format)
+
         return points
 
     def _crop(self, H_crop: tuple, W_crop: tuple, **kwargs):

@@ -702,7 +702,10 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
 
         # Put back the instance into the same state as before
         if absolute:
-            cropped_boxes = cropped_boxes.abs_pos(frame_size)
+            n_frame_size = ((H_crop[1] - H_crop[0]) * frame_size[0], (W_crop[1] - W_crop[0]) * frame_size[1])
+            cropped_boxes = cropped_boxes.abs_pos(n_frame_size)
+        else:
+            cropped_boxes.frame_size = None
 
         cropped_boxes = cropped_boxes.get_with_format(boxes_format)
 

@@ -1,8 +1,8 @@
 # from aloscene.renderer import View
 from alodataset import WaymoDataset  # , Split
 import aloscene
-
 import torch
+import numpy as np
 
 waymo_dataset = WaymoDataset(sample=True)
 TEST_FRAME = 0
@@ -375,6 +375,24 @@ def test_boxes_slice():
     assert len(n_frame.boxes2d["gt_boxes_2d"].shape) == 2
 
 
+def test_crop_abs():
+    image = np.zeros((3, 843, 1500))
+    boxes = [[298, 105, 50, 50], [1250, 105, 50, 50], [298, 705, 50, 50], [1250, 705, 50, 50]]
+    frame = aloscene.Frame(image)
+    labels = aloscene.Labels([0, 0, 0, 0], labels_names=["boxes"])
+    boxes = aloscene.BoundingBoxes2D(
+        boxes, boxes_format="xcyc", frame_size=(frame.H, frame.W), absolute=True, labels=labels
+    )
+    frame.append_boxes2d(boxes)
+    # frame.get_view().render()
+    frame = frame.crop(H_crop=(0.0, 0.5), W_crop=(0.0, 0.5))
+    # frame.get_view().render()
+    # frame.get_view().render()
+    assert torch.allclose(frame.boxes2d[0].as_tensor(), boxes[0].as_tensor())
+    assert np.allclose(frame.boxes2d.frame_size[0], frame.HW[0])
+    assert np.allclose(frame.boxes2d.frame_size[1], frame.HW[1])
+
+
 if __name__ == "__main__":
     test_boxes_from_dt()
     test_boxes_rel_xcyc()
@@ -383,5 +401,6 @@ if __name__ == "__main__":
     test_boxes_abs_xcyc()
     test_boxes_abs_yxyx()
     test_boxes_abs_xyxy()
-    # test_padded_boxes() # Outdated
+    # test_padded_boxes() Outdated
     test_boxes_slice()
+    test_crop_abs()

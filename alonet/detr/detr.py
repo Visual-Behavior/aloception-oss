@@ -99,6 +99,9 @@ class Detr(nn.Module):
         self.aux_loss = aux_loss
         self.tracing = tracing
 
+        if self.tracing and self.aux_loss:
+            raise AttributeError("When tracing = True, aux_loss must be False")
+
         if device is not None:
             self.to(device)
 
@@ -167,8 +170,8 @@ class Detr(nn.Module):
         forward_head = self.forward_heads(transformer_outptus, bb_outputs=(features, pos))
 
         if self.tracing:
-            output = namedtuple("m_outputs", "pred_boxes pred_logits")
-            forward_head = output(forward_head["pred_boxes"], forward_head["pred_logits"])
+            output = namedtuple("m_outputs", forward_head.keys())
+            forward_head = output(*forward_head.values())
         return forward_head
 
     def forward_position_heads(self, transformer_outptus: dict):
@@ -236,9 +239,12 @@ class Detr(nn.Module):
         if self.return_enc_outputs:
             out["enc_outputs"] = transformer_outptus["memory"]
 
-        if self.return_bb_outputs:
-            out["bb_outputs"] = bb_outputs
-
+        if self.return_bb_outputs:  # Split backbone to correct export
+            features, pos = bb_outputs
+            for lvl, (src, mask) in enumerate(features):
+                out[f"bb_lvl{lvl}_src_outputs"] = src
+                out[f"bb_lvl{lvl}_mask_outputs"] = mask
+                out[f"bb_lvl{lvl}_pos_outputs"] = pos[lvl]
         return out
 
     def get_outs_labels(self, m_outputs: dict):
@@ -476,7 +482,9 @@ class Detr(nn.Module):
         )
 
     def build_decoder(
-        self, hidden_dim: int = 256, num_decoder_layers: int = 6,
+        self,
+        hidden_dim: int = 256,
+        num_decoder_layers: int = 6,
     ):
         """Build decoder layer
 

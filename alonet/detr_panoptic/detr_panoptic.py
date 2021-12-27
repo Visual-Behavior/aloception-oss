@@ -3,8 +3,8 @@
 """
 Panoptic module to use in object detection/segmentation tasks.
 """
-import os
-from typing import Callable, Dict
+from typing import Callable, Dict, Union
+from collections import namedtuple
 import argparse
 import time
 
@@ -41,6 +41,8 @@ class PanopticHead(nn.Module):
         Expected features backbone sizes from [layer1, layer2, layer3], by default [1024, 512, 256]
     strict_load_weights : bool
         Load the weights (if any given) with strict = ``True`` (by default).
+    tracing : bool, Optional
+        Change model behavior to be exported as TorchScript, by default False
     """
 
     INPUT_MEAN_STD = alonet.detr.detr.INPUT_MEAN_STD
@@ -54,6 +56,7 @@ class PanopticHead(nn.Module):
         weights: str = None,
         fpn_list: list = [1024, 512, 256],
         strict_load_weights: bool = True,
+        tracing: bool = False,
     ):
         super().__init__()
         self.detr = DETR_module
@@ -62,7 +65,12 @@ class PanopticHead(nn.Module):
         self.detr.return_dec_outputs = True
         self.detr.return_enc_outputs = True
         self.detr.return_bb_outputs = True
-        self.detr.aux_loss = aux_loss or self.detr.aux_loss
+        self.detr.aux_loss = aux_loss if aux_loss is not None else self.detr.aux_loss
+        self.detr.tracing = False  # Get normal outputs to export only PanopticHead
+        self.tracing = tracing
+
+        if self.tracing and self.detr.aux_loss:
+            raise AttributeError("When tracing = True, aux_loss must be False")
 
         # Freeze DETR parameters to not train them
         if freeze_detr:
@@ -86,14 +94,22 @@ class PanopticHead(nn.Module):
             else:
                 raise ValueError(f"Unknown weights: '{weights}'")
 
-    @assert_and_export_onnx(check_mean_std=True, input_mean_std=INPUT_MEAN_STD)
-    def forward(self, frames: aloscene.frame, get_filter_fn: Callable = None, **kwargs):
+    def forward(self, frames: Union[aloscene.Frame, dict], get_filter_fn: Callable = None, **kwargs):
         """PanopticHead forward, that joint to the previous boxes predictions the new masks feature.
 
         Parameters
         ----------
-        frames : :mod:`Frames <aloscene.frame>`
-            Input frame to network
+        frames : Union[:mod:`Frames <aloscene.frame>`, dict]
+            Input frame to network or DETR/Deformable DETR outputs, with the following parameters :
+
+            - :attr:`pred_logits`: The classification logits (including no-object) for all queries.
+            - :attr:`pred_boxes`: The normalized boxes coordinates for all queries, represented as
+              (center_x, center_y, height, width). These values are normalized in [0, 1], relative to the size of
+              each individual image (disregarding possible padding).
+            - :attr:`bb_outputs`: Backbone outputs, requered in this forward
+            - :attr:`enc_outputs`: Transformer encoder outputs, requered on this forward
+            - :attr:`dec_outputs`: Transformer decoder outputs, requered on this forward
+
         get_filter_fn : Callable
             Function that returns two parameters: the :attr:`dec_outputs` tensor filtered by a boolean mask per
             batch. It is expected that the function will at least receive :attr:`frames` and :attr:`m_outputs`
@@ -121,23 +137,75 @@ class PanopticHead(nn.Module):
               dictionnaries containing the two above keys for each decoder layer.
         """
         # DETR model forward to obtain box embeddings
-        out = self.detr(frames, **kwargs)
-        features, _ = out["bb_outputs"]
-        proj_src, mask = features[-1][0], features[-1][1]
+        if self.tracing:
+            assert isinstance(
+                frames, (dict, tuple)
+            ), "Frames must be a dictionary or tuple with the corresponding outputs"
+            if isinstance(frames, tuple):
+                names = ["pred_logits", "pred_boxes", "dec_outputs", "enc_outputs"]
+                names += [f"bb_lvl{lvl}_{n}_outputs" for lvl in range(4) for n in ["src", "mask", "pos"]]
+                names = [
+                    "dec_outputs",
+                    "enc_outputs",
+                    "bb_lvl0_src_outputs",
+                    "bb_lvl1_src_outputs",
+                    "bb_lvl2_src_outputs",
+                    "bb_lvl3_src_outputs",
+                    "bb_lvl3_mask_outputs",
+                ]
+                out = dict(zip(names, frames))
+            else:
+                out = frames
+        else:
+            assert isinstance(frames, aloscene.Frame), "Frames must be a aloscene.Frame instance"
+            out = self.detr(frames, **kwargs)
+
+        # features, _ = out["bb_outputs"]
+        # proj_src, mask = features[-1][0], features[-1][1]
+        proj_src, mask = out["bb_lvl3_src_outputs"], out["bb_lvl3_mask_outputs"]
         bs = proj_src.shape[0]
 
-        # Filter boxes and get mask indices from them
-        get_filter_fn = get_filter_fn or (lambda *args, **kwargs: get_mask_queries(*args, model=self.detr, **kwargs))
-        dec_outputs, filters = get_filter_fn(frames=frames, m_outputs=out, **kwargs)
+        if not self.tracing:
+            # Filter boxes and get mask indices
+            get_filter_fn = get_filter_fn or (
+                lambda *args, **kwargs: get_mask_queries(*args, model=self.detr, **kwargs)
+            )
+            dec_outputs, filters = get_filter_fn(frames=frames, m_outputs=out, **kwargs)
+        else:
+            # Assume that boxes were filtered previosly
+            dec_outputs, filters = out["dec_outputs"][-1], None
 
         # Use box embeddings as input of Multi Head attention
         bbox_mask = self.bbox_attention(dec_outputs, out["enc_outputs"], mask=mask)
         # And then, use MHA ouput as input of FPN-style CNN. proj_src = input_proj(features[-1][0])
-        seg_masks = self.mask_head(proj_src, bbox_mask, [features[i][0] for i in range(3)[::-1]])
+        # seg_masks = self.mask_head(proj_src, bbox_mask, [features[i][0] for i in range(3)[::-1]])
+        seg_masks = self.mask_head(proj_src, bbox_mask, [out[f"bb_lvl{i}_src_outputs"] for i in range(3)[::-1]])
 
         out["pred_masks"] = seg_masks.view(bs, bbox_mask.shape[1], seg_masks.shape[-2], seg_masks.shape[-1])
-        out["pred_masks_info"] = {"frame_size": frames.shape[-2:], "filters": filters}
-        return out  # Return the DETR output + pred_masks
+
+        if self.tracing:  # Return the DETR output + pred_masks if tracing = False
+            output_named = namedtuple("m_outputs", "pred_masks")
+            out = output_named(out["pred_masks"])
+        else:
+            out["pred_masks_info"] = {"frame_size": frames.shape[-2:], "filters": filters}
+        return out
+
+    @assert_and_export_onnx(check_mean_std=True, input_mean_std=INPUT_MEAN_STD)
+    def detr_forward(self, frames: aloscene.Frame, **kwargs):
+        """DETR module forward
+
+        Parameters
+        ----------
+        frames : :mod:`Frames <aloscene.frame>`
+            Images batched, of shape [batch_size x 3 x H x W] with a :mod:`Mask <aloscene.mask>`:
+            a binary mask of shape [batch_size x 1 x H x W], containing 1 on padded pixels
+
+        Returns
+        -------
+        dict
+            Outputs from the :func:`DETR forward <alonet.detr.detr.Detr.forward>`
+        """
+        return self.detr(frames, **kwargs)
 
     @torch.no_grad()
     def inference(self, forward_out: Dict, maskth: float = 0.5, filters: list = None, **kwargs):

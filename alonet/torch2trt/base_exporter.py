@@ -255,7 +255,7 @@ class BaseTRTExporter:
         m_outputs = model.execute()
         print("==== Absolute / relavtive error:")
         for out in m_outputs:
-            diff = m_outputs[out] - sample_outputs[out]
+            diff = m_outputs[out].astype(float) - sample_outputs[out].astype(float)
             abs_err = np.abs(diff)
             rel_err = np.abs(diff / sample_outputs[out])
             print(out)

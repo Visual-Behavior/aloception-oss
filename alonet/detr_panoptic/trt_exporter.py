@@ -4,20 +4,17 @@
 import argparse
 import os
 import io
-import numpy as np
 import torch
 import onnx
 import onnx_graphsurgeon as gs
 from contextlib import ExitStack, redirect_stdout
 
 from alonet.torch2trt.onnx_hack import get_scope_names, rename_nodes_, rename_tensors_, scope_name_workaround
-from alonet.detr_panoptic import PanopticHead
-from alonet.detr import DetrR50
 from alonet.torch2trt import BaseTRTExporter
 from aloscene import Frame
 
 
-class PanopticDetrTRTExporter(BaseTRTExporter):
+class PanopticTRTExporter(BaseTRTExporter):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.custom_opset = None
@@ -61,7 +58,7 @@ class PanopticDetrTRTExporter(BaseTRTExporter):
         x = Frame(x, names=["C", "H", "W"]).norm_resnet()
         x = Frame.batch_list([x] * self.batch_size).to(self.device)
         tensor_input = self.model.detr(x)  # Get Detr outputs expected
-        return (tuple(tensor_input[iname] for iname in self.input_names),), {}
+        return (tuple(tensor_input[iname].contiguous() for iname in self.input_names),), {}
 
     def _torch2onnx(self):
         # Prepare dummy input for tracing
@@ -70,7 +67,7 @@ class PanopticDetrTRTExporter(BaseTRTExporter):
         # Get sample inputs/outputs for later sanity check
         with torch.no_grad():
             m_outputs = self.model(*inputs, **kwargs)
-        np_inputs = tuple(np.ascontiguousarray(np.array(i.cpu())) for i in inputs[0])
+        np_inputs = tuple(i.cpu().numpy() for i in inputs[0])
         np_m_outputs = {}
         output_names = (
             m_outputs._fields if hasattr(m_outputs, "_fields") else ["out_" + str(i) for i in range(len(m_outputs))]
@@ -121,6 +118,9 @@ class PanopticDetrTRTExporter(BaseTRTExporter):
 
 if __name__ == "__main__":
     from alonet.common.weights import vb_fodler
+    from alonet.detr_panoptic import PanopticHead
+    from alonet.detr import DetrR50
+    from alonet.detr.trt_exporter import DetrTRTExporter
 
     # test script
     parser = argparse.ArgumentParser()
@@ -131,11 +131,10 @@ if __name__ == "__main__":
     BaseTRTExporter.add_argparse_args(parser)
 
     args = parser.parse_args()
-    if args.onnx_path is None:
-        args.onnx_path = os.path.join(vb_fodler(), "weights", "detr-r50-panoptic", "panoptic-head.onnx")
     device = torch.device("cpu") if args.cpu else torch.device("cuda")
-
     input_shape = [3] + list(args.HW)
+    pan_onnx_path = args.onnx_path or os.path.join(vb_fodler(), "weights", "detr-r50-panoptic", "panoptic-head.onnx")
+
     model = PanopticHead(
         DETR_module=DetrR50(num_classes=250, background_class=None),
         weights="detr-r50-panoptic",
@@ -144,6 +143,18 @@ if __name__ == "__main__":
     )
     model = model.eval().to(device)
 
-    exporter = PanopticDetrTRTExporter(model=model, input_shapes=(input_shape,), device=device, **vars(args))
+    # 1. Export Detr engine
+    print("[INFO] Exporting DETR engine...")
+    args.onnx_path = os.path.join(os.path.split(pan_onnx_path)[0], "detr-r50.onnx")
+    model.detr.tracing = True
+    exporter = DetrTRTExporter(
+        model=model.detr, input_shapes=(input_shape,), input_names=["img"], device=device, **vars(args)
+    )
+    exporter.export_engine()
+    model.detr.tracing = False  # Required for next procedure
 
+    # 2. Export PanopticHead engine
+    print("[INFO] Exporting PanopticHead engine...")
+    args.onnx_path = pan_onnx_path
+    exporter = PanopticTRTExporter(model=model, input_shapes=(input_shape,), device=device, **vars(args))
     exporter.export_engine()

@@ -142,8 +142,6 @@ class PanopticHead(nn.Module):
                 frames, (dict, tuple)
             ), "Frames must be a dictionary or tuple with the corresponding outputs"
             if isinstance(frames, tuple):
-                names = ["pred_logits", "pred_boxes", "dec_outputs", "enc_outputs"]
-                names += [f"bb_lvl{lvl}_{n}_outputs" for lvl in range(4) for n in ["src", "mask", "pos"]]
                 names = [
                     "dec_outputs",
                     "enc_outputs",

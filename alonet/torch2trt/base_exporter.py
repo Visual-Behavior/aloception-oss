@@ -257,7 +257,7 @@ class BaseTRTExporter:
         for out in m_outputs:
             diff = m_outputs[out].astype(float) - sample_outputs[out].astype(float)
             abs_err = np.abs(diff)
-            rel_err = np.abs(diff / sample_outputs[out])
+            rel_err = np.abs(diff / (sample_outputs[out] + 1e-6))  # Avoid div by zero
             print(out)
             print(f"\tmean: {abs_err.mean():.2e}\t{rel_err.mean():.2e}")
             print(f"\tmax: {abs_err.max():.2e}\t{rel_err.max():.2e}")

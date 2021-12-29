@@ -2,11 +2,8 @@
 Various positional encodings for the transformer.
 """
 import math
-from numpy import dtype
 import torch
 from torch import nn
-
-import aloscene
 
 
 class PositionEmbeddingSine(nn.Module):
@@ -57,8 +54,8 @@ class PositionEmbeddingSine(nn.Module):
                 y_embed = y_embed - 0.5
                 x_embed = x_embed - 0.5
             eps = 1e-6
-            y_embed = y_embed / (y_embed[:, [-1], :] + eps) * self.scale
-            x_embed = x_embed / (x_embed[:, :, [-1]] + eps) * self.scale
+            y_embed = y_embed / (y_embed[:, -1:, :] + eps) * self.scale
+            x_embed = x_embed / (x_embed[:, :, -1:] + eps) * self.scale
 
         dim_t = torch.arange(self.num_pos_feats, dtype=torch.float32, device=ft_maps.device)
         dim_t = self.temperature ** (2 * torch.div(dim_t, 2, rounding_mode="floor") / self.num_pos_feats)
@@ -85,7 +82,8 @@ def build_position_encoding():
         # TODO find a better way of exposing other arguments
         position_embedding = PositionEmbeddingSine(N_steps, normalize=True)
     elif position_embedding in ("v3", "learned"):
-        position_embedding = PositionEmbeddingLearned(N_steps)
+        raise ValueError(f"not supported {position_embedding}")
+        # position_embedding = PositionEmbeddingLearned(N_steps)
     else:
         raise ValueError(f"not supported {position_embedding}")
 

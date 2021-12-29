@@ -15,11 +15,11 @@ from aloscene import Frame
 
 
 class PanopticTRTExporter(BaseTRTExporter):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, num_query: int = None, **kwargs):
         super().__init__(*args, **kwargs)
         self.custom_opset = None
         if self.input_names is None:  # Default inputs
-            self.input_names = [
+            self.input_names = (
                 "dec_outputs",
                 "enc_outputs",
                 "bb_lvl0_src_outputs",
@@ -27,17 +27,18 @@ class PanopticTRTExporter(BaseTRTExporter):
                 "bb_lvl2_src_outputs",
                 "bb_lvl3_src_outputs",
                 "bb_lvl3_mask_outputs",
-            ]
+            )
+        self.num_query = num_query  # Fix num_query to static value
 
     def adapt_graph(self, graph: gs.Graph):
-        # return graph
-
+        # return graph  # Not optimize
         from onnxsim import simplify
 
         # no need to modify graph
         model = onnx.load(self.onnx_path)
         check = False
         model_simp, check = simplify(model)
+        # model_simp, check = simplify(model, input_shapes={"dec_outputs": [6, 1, 10, 256]})
 
         if check:
             print("\n[INFO] Simplified ONNX model validated. Graph optimized...")
@@ -58,7 +59,12 @@ class PanopticTRTExporter(BaseTRTExporter):
         x = Frame(x, names=["C", "H", "W"]).norm_resnet()
         x = Frame.batch_list([x] * self.batch_size).to(self.device)
         tensor_input = self.model.detr(x)  # Get Detr outputs expected
-        return (tuple(tensor_input[iname].contiguous() for iname in self.input_names),), {}
+
+        if self.num_query is not None:  # Fix static num queries
+            tensor_input["dec_outputs"] = tensor_input["dec_outputs"][:, :, : self.num_query]
+
+        # return (tuple(tensor_input[iname].contiguous() for iname in self.input_names),), {}
+        return {iname: tensor_input[iname].contiguous() for iname in self.input_names}, {}
 
     def _torch2onnx(self):
         # Prepare dummy input for tracing
@@ -66,8 +72,8 @@ class PanopticTRTExporter(BaseTRTExporter):
 
         # Get sample inputs/outputs for later sanity check
         with torch.no_grad():
-            m_outputs = self.model(*inputs, **kwargs)
-        np_inputs = tuple(i.cpu().numpy() for i in inputs[0])
+            m_outputs = self.model(inputs, **kwargs)
+        np_inputs = tuple(inputs[iname].cpu().numpy() for iname in self.input_names)
         np_m_outputs = {}
         output_names = (
             m_outputs._fields if hasattr(m_outputs, "_fields") else ["out_" + str(i) for i in range(len(m_outputs))]
@@ -97,6 +103,10 @@ class PanopticTRTExporter(BaseTRTExporter):
                 custom_opsets=self.custom_opset,
                 enable_onnx_checker=True,
                 operator_export_type=self.operator_export_type,
+                # dynamic_axes={
+                #     "dec_outputs": [2],  # Query dim must be dynamic
+                #     "pred_masks": [1],  # With query dynamic, pred_masks is dynamic to.
+                # },
             )
 
             if self.use_scope_names:

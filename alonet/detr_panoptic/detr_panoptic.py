@@ -138,22 +138,8 @@ class PanopticHead(nn.Module):
         """
         # DETR model forward to obtain box embeddings
         if self.tracing:
-            assert isinstance(
-                frames, (dict, tuple)
-            ), "Frames must be a dictionary or tuple with the corresponding outputs"
-            if isinstance(frames, tuple):
-                names = [
-                    "dec_outputs",
-                    "enc_outputs",
-                    "bb_lvl0_src_outputs",
-                    "bb_lvl1_src_outputs",
-                    "bb_lvl2_src_outputs",
-                    "bb_lvl3_src_outputs",
-                    "bb_lvl3_mask_outputs",
-                ]
-                out = dict(zip(names, frames))
-            else:
-                out = frames
+            assert isinstance(frames, dict), "Frames must be a dictionary encode/decode/backbone tensors"
+            out = frames
         else:
             assert isinstance(frames, aloscene.Frame), "Frames must be a aloscene.Frame instance"
             out = self.detr(frames, **kwargs)
@@ -170,11 +156,13 @@ class PanopticHead(nn.Module):
             )
             dec_outputs, filters = get_filter_fn(frames=frames, m_outputs=out, **kwargs)
         else:
-            # Assume that boxes were filtered previosly
-            dec_outputs, filters = out["dec_outputs"][-1], None
+            # Assume that boxes were filtered previosly.
+            dec_outputs, filters = out["dec_outputs"], None
+            dec_outputs = dec_outputs[len(dec_outputs) - 1]  # Indexing -1 doesn't work well in torch2onnx
 
         # Use box embeddings as input of Multi Head attention
         bbox_mask = self.bbox_attention(dec_outputs, out["enc_outputs"], mask=mask)
+
         # And then, use MHA ouput as input of FPN-style CNN. proj_src = input_proj(features[-1][0])
         # seg_masks = self.mask_head(proj_src, bbox_mask, [features[i][0] for i in range(3)[::-1]])
         seg_masks = self.mask_head(proj_src, bbox_mask, [out[f"bb_lvl{i}_src_outputs"] for i in range(3)[::-1]])

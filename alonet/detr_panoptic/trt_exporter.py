@@ -73,7 +73,7 @@ class PanopticTRTExporter(BaseTRTExporter):
         # Get sample inputs/outputs for later sanity check
         with torch.no_grad():
             m_outputs = self.model(inputs, **kwargs)
-        np_inputs = tuple(inputs[iname].cpu().numpy() for iname in self.input_names)
+        np_inputs = tuple(inputs[iname].cpu().detach().numpy() for iname in self.input_names)
         np_m_outputs = {}
         output_names = (
             m_outputs._fields if hasattr(m_outputs, "_fields") else ["out_" + str(i) for i in range(len(m_outputs))]

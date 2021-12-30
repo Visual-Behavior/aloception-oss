@@ -58,7 +58,9 @@ class PanopticTRTExporter(BaseTRTExporter):
         x = torch.rand(shape, dtype=torch.float32)
         x = Frame(x, names=["C", "H", "W"]).norm_resnet()
         x = Frame.batch_list([x] * self.batch_size).to(self.device)
-        tensor_input = self.model.detr(x)  # Get Detr outputs expected
+
+        with torch.no_grad():
+            tensor_input = self.model.detr(x)  # Get Detr outputs expected
 
         if self.num_query is not None:  # Fix static num queries
             tensor_input["dec_outputs"] = tensor_input["dec_outputs"][:, :, : self.num_query]
@@ -73,7 +75,7 @@ class PanopticTRTExporter(BaseTRTExporter):
         # Get sample inputs/outputs for later sanity check
         with torch.no_grad():
             m_outputs = self.model(inputs, **kwargs)
-        np_inputs = tuple(inputs[iname].cpu().detach().numpy() for iname in self.input_names)
+        np_inputs = tuple(inputs[iname].cpu().numpy() for iname in self.input_names)
         np_m_outputs = {}
         output_names = (
             m_outputs._fields if hasattr(m_outputs, "_fields") else ["out_" + str(i) for i in range(len(m_outputs))]

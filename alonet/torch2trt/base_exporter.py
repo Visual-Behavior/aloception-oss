@@ -39,29 +39,33 @@ class BaseTRTExporter:
         verbose=False,
         use_scope_names=False,
         operator_export_type=None,
+        dynamic_axes=None,
         **kwargs,
     ):
         """
         Parameters
         ----------
-        model: torch.nn.Module
+        model : torch.nn.Module
             a model loaded with trained weights
-        onnx_path: str
+        onnx_path : str
             Onnx file path which will be exported.
             Example: /abc/xyz/my_model.onnx
-        input_shapes: tuple of tuple/list, default ([3, 1280, 1920], )
+        input_shapes : tuple of tuple/list, default ([3, 1280, 1920], )
             input shape must be specified when export model
-        input_names: list of str
-        batch_size: int, default 1
-        precision: str
+        input_names : list of str
+        batch_size : int, default 1
+        precision : str
             TRT engine precision, either fp32, fp16, mix
             mix precision between fp32 and fp16 allow TensorRT more liberty
             to find the best combination optimization in term of execution time.
-        do_constant_folding: bool, default True
+        do_constant_folding : bool, default True
             Optimized ONNX graph if True. Sometimes this optimization will make
             the ONNX graph modification more complicated.
-        verbose: bool, default False
+        verbose : bool, default False
             Print out everything. Good for debugging.
+        dynamic_axes : dict, by default None
+            Axes of tensors that will be dynamics (not shape specified), by default None. See
+            `https://pytorch.org/docs/stable/onnx.html#functions <torch.onnx.export>`_.
 
         Raises
         ------
@@ -81,6 +85,7 @@ class BaseTRTExporter:
         self.custom_opset = None  # to be redefine in child class if needed
         self.use_scope_names = use_scope_names
         self.operator_export_type = operator_export_type
+        self.dynamic_axes = dynamic_axes
         # ===== Initiate Trt Engine builder
         onnx_dir = os.path.split(onnx_path)[0]
         onnx_file_name = os.path.split(onnx_path)[1]
@@ -135,9 +140,9 @@ class BaseTRTExporter:
 
         Returns
         -------
-        inputs: tuple/list of torch.Tensor
+        inputs: tuple/list/dictionary of torch.Tensor
             model input tensors
-        kwargs: dict[str: torch.Tensor or None]
+        kwargs: Union[Dict[str: torch.Tensor], None]
             additional argument for model.forward if needed
         """
         pass
@@ -160,19 +165,26 @@ class BaseTRTExporter:
         inputs, kwargs = self.prepare_sample_inputs()
 
         # Get sample inputs/outputs for later sanity check
-        with torch.no_grad():
-            m_outputs = self.model(*inputs, **kwargs)
-        np_inputs = tuple(np.array(i.cpu()) for i in inputs)
-        np_m_outputs = {}
-        output_names = (
-            m_outputs._fields if hasattr(m_outputs, "_fields") else ["out_" + str(i) for i in range(len(m_outputs))]
-        )
-        for key, val in zip(output_names, m_outputs):
-            if isinstance(val, torch.Tensor):
-                np_m_outputs[key] = val.cpu().numpy()
-        # print("Model output keys:", m_outputs.keys())
-        # Export to ONNX
+        if isinstance(inputs, dict):
+            with torch.no_grad():
+                m_outputs = self.model(inputs, **kwargs)
+
+            # Prepare inputs for torch.export.onnx and sanity check
+            np_inputs = tuple(np.array(inputs[iname].cpu()) for iname in inputs)
+            inputs = (inputs,)
+        else:
+            with torch.no_grad():
+                m_outputs = self.model(*inputs, **kwargs)
+
+            # Prepare inputs for torch.export.onnx and sanity check
+            np_inputs = tuple(np.array(i.cpu()) for i in inputs)
         inputs = (*inputs, kwargs)
+
+        onames = m_outputs._fields if hasattr(m_outputs, "_fields") else [f"out_{i}" for i in range(len(m_outputs))]
+        np_m_outputs = {key: val.cpu().numpy() for key, val in zip(onames, m_outputs) if isinstance(val, torch.Tensor)}
+        # print("Model output keys:", m_outputs.keys())
+
+        # Export to ONNX
         with ExitStack() as stack:
             # context managers necessary to redirect stdout and modify export trace to print scope
             if self.use_scope_names:
@@ -188,10 +200,11 @@ class BaseTRTExporter:
                 do_constant_folding=self.do_constant_folding,  # whether to execute constant folding for optimization
                 verbose=self.verbose or self.use_scope_names,  # verbose mandatory in scope names procedure
                 input_names=self.input_names,  # the model's input names
-                output_names=output_names,
+                output_names=onames,
                 custom_opsets=self.custom_opset,
                 enable_onnx_checker=True,
                 operator_export_type=self.operator_export_type,
+                dynamic_axes=self.dynamic_axes,
             )
 
             if self.use_scope_names:
@@ -208,7 +221,7 @@ class BaseTRTExporter:
         print("Saved ONNX at:", self.onnx_path)
         # empty GPU memory for later TensorRT optimization
         torch.cuda.empty_cache()
-        return (np_inputs,), np_m_outputs
+        return np_inputs, np_m_outputs
 
     def _onnx2engine(self, **kwargs) -> trt.ICudaEngine:
         """

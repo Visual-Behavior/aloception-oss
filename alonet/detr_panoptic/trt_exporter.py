@@ -13,14 +13,14 @@ from aloscene import Frame
 
 
 class PanopticTRTExporter(BaseTRTExporter):
-    def __init__(self, *args, num_query: int = None, export_with_detr: bool = False, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.custom_opset = None
-        if self.input_names is None:  # Default inputs
+    def __init__(self, *args, export_with_detr: bool = False, **kwargs):
+        # Get default inputs
+        input_names = kwargs.get("input_names", None)
+        if input_names is None:
             if export_with_detr:
-                self.input_names = ("img",)
+                kwargs["input_names"] = ("img",)
             else:
-                self.input_names = (
+                kwargs["input_names"] = (
                     "dec_outputs",
                     "enc_outputs",
                     "bb_lvl0_src_outputs",
@@ -29,7 +29,10 @@ class PanopticTRTExporter(BaseTRTExporter):
                     "bb_lvl3_src_outputs",
                     "bb_lvl3_mask_outputs",
                 )
-        self.num_query = num_query  # Fix num_query to static value
+                kwargs["dynamic_axes"] = kwargs.get("dynamic_axes", None) or {"dec_outputs": {2: "num_queries"}}
+
+        super().__init__(*args, **kwargs)
+        self.custom_opset = None
         self.export_with_detr = export_with_detr
 
     def adapt_graph(self, graph: gs.Graph):
@@ -39,8 +42,14 @@ class PanopticTRTExporter(BaseTRTExporter):
         # no need to modify graph
         model = onnx.load(self.onnx_path)
         check = False
-        model_simp, check = simplify(model)
-        # model_simp, check = simplify(model, input_shapes={"dec_outputs": [6, 1, 10, 256]})
+        if self.dynamic_axes is not None:
+            model_simp, check = simplify(
+                model,
+                dynamic_input_shape=True,  # Choose optimal values for simplify
+                input_shapes={key: val[1] for key, val in self.engine_builder.opt_profiles.items()},
+            )
+        else:
+            model_simp, check = simplify(model)
 
         if check:
             print("\n[INFO] Simplified ONNX model validated. Graph optimized...")
@@ -51,7 +60,7 @@ class PanopticTRTExporter(BaseTRTExporter):
             print("\n[INFO] ONNX model was not validated.")
 
         if self.use_scope_names:  # Rename nodes to correct profiling
-            graph = rename_nodes_(graph, True)
+            graph = rename_nodes_(graph, verbose=True)
         return graph
 
     def prepare_sample_inputs(self):
@@ -68,11 +77,7 @@ class PanopticTRTExporter(BaseTRTExporter):
             with torch.no_grad():
                 tensor_input = self.model.detr_forward(x)  # Get Detr outputs expected
 
-            if self.num_query is not None:  # Fix static num queries
-                tensor_input["dec_outputs"] = tensor_input["dec_outputs"][:, :, : self.num_query]
-
             tensor_input = {iname: tensor_input[iname].contiguous() for iname in self.input_names}
-
         return tensor_input, {"is_export_onnx": None}
 
 
@@ -127,7 +132,13 @@ if __name__ == "__main__":
 
     # 2. Export PanopticHead engine
     args.onnx_path = pan_onnx_path
+    profile = {"dec_outputs": [(6, 1, 0, 256), (6, 1, 10, 256), (6, 1, 100, 256)]} if args.split_engines else None
     exporter = PanopticTRTExporter(
-        model=model, input_shapes=(input_shape,), export_with_detr=not args.split_engines, device=device, **vars(args)
+        model=model,
+        input_shapes=(input_shape,),
+        export_with_detr=not args.split_engines,
+        device=device,
+        opt_profiles=profile,  # Example of profile for dynamic num of queries
+        **vars(args),
     )
     exporter.export_engine()

@@ -1,7 +1,7 @@
 import io
 import os
 import time
-from typing import Dict, Tuple, Union
+from typing import Dict, List, Tuple, Union
 import onnx
 import tensorrt as trt
 import torch
@@ -30,16 +30,17 @@ class BaseTRTExporter:
         self,
         model: torch.nn.Module,
         onnx_path: str,
-        input_shapes=([3, 1280, 1920]),
-        input_names=None,
-        batch_size=1,
-        precision="fp32",
-        do_constant_folding=True,
-        device=torch.device("cpu"),
-        verbose=False,
-        use_scope_names=False,
-        operator_export_type=None,
-        dynamic_axes=None,
+        input_shapes: tuple = ([3, 1280, 1920]),
+        input_names: list = None,
+        batch_size: int = 1,
+        precision: str = "fp32",
+        do_constant_folding: bool = True,
+        device: torch.device = torch.device("cpu"),
+        verbose: bool = False,
+        use_scope_names: bool = False,
+        operator_export_type: torch.onnx.OperatorExportTypes = None,
+        dynamic_axes: Union[Dict[str, Dict[int, str]], Dict[str, List[int]]] = None,
+        opt_profiles: Dict[str, Tuple[List[int]]] = None,
         **kwargs,
     ):
         """
@@ -63,14 +64,18 @@ class BaseTRTExporter:
             the ONNX graph modification more complicated.
         verbose : bool, default False
             Print out everything. Good for debugging.
-        dynamic_axes : dict, by default None
+        dynamic_axes : Union[Dict[str, Dict[int, str]], Dict[str, List[int]]], by default None
             Axes of tensors that will be dynamics (not shape specified), by default None. See
             `https://pytorch.org/docs/stable/onnx.html#functions <torch.onnx.export>`_.
+        opt_profiles : Dict[str, Tuple[List[int]]], by default None
+            Optimization profiles (one by each dynamic axis).
 
         Raises
         ------
         Exception
-            Model must be instantiated with attr:`tracing` = True
+            * Model must be instantiated with attr:`tracing` = True
+            * If :attr:`dynamic_axes` is desired, :attr:`opt_profiles` must be provided with sames keys as
+              :attr:`dynamic_axes`.
         """
         assert hasattr(model, "tracing") and model.tracing, "Model must be instantiated with tracing=True"
         self.model = model
@@ -85,6 +90,10 @@ class BaseTRTExporter:
         self.custom_opset = None  # to be redefine in child class if needed
         self.use_scope_names = use_scope_names
         self.operator_export_type = operator_export_type
+        if dynamic_axes is not None:
+            assert opt_profiles is not None, "If dynamic_axes are to be used, opt_profiles must be provided"
+            assert isinstance(dynamic_axes, dict)
+            assert opt_profiles.keys() == dynamic_axes.keys(), "dynamic_axes and opt_profiles must have same keys"
         self.dynamic_axes = dynamic_axes
         # ===== Initiate Trt Engine builder
         onnx_dir = os.path.split(onnx_path)[0]
@@ -97,7 +106,7 @@ class BaseTRTExporter:
             trt_logger = trt.Logger(trt.Logger.VERBOSE)
         else:
             trt_logger = trt.Logger(trt.Logger.WARNING)
-        self.engine_builder = TRTEngineBuilder(self.adapted_onnx_path, logger=trt_logger)
+        self.engine_builder = TRTEngineBuilder(self.adapted_onnx_path, logger=trt_logger, opt_profiles=opt_profiles)
 
         if precision.lower() == "fp32":
             pass
@@ -182,7 +191,8 @@ class BaseTRTExporter:
 
         onames = m_outputs._fields if hasattr(m_outputs, "_fields") else [f"out_{i}" for i in range(len(m_outputs))]
         np_m_outputs = {key: val.cpu().numpy() for key, val in zip(onames, m_outputs) if isinstance(val, torch.Tensor)}
-        # print("Model output keys:", m_outputs.keys())
+        # print("Model input shapes:", [val.shape for val in np_inputs])
+        # print("Model output keys:", np_m_outputs.keys(), "shapes:", [val.shape for val in np_m_outputs.values()])
 
         # Export to ONNX
         with ExitStack() as stack:

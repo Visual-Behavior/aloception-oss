@@ -132,7 +132,7 @@ if __name__ == "__main__":
 
     # 2. Export PanopticHead engine
     args.onnx_path = pan_onnx_path
-    profile = {"dec_outputs": [(6, 1, 0, 256), (6, 1, 10, 256), (6, 1, 100, 256)]} if args.split_engines else None
+    profile = {"dec_outputs": [(6, 1, 1, 256), (6, 1, 10, 256), (6, 1, 100, 256)]} if args.split_engines else None
     exporter = PanopticTRTExporter(
         model=model,
         input_shapes=(input_shape,),

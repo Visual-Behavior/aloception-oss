@@ -185,7 +185,7 @@ def allocate_buffers(context, stream=None, sync_mode=True):
         stream = cuda.Stream()
     for binding in context.engine:
         binding_idx = context.engine.get_binding_index(binding)
-        shape = context.get_binding_shape(binding_idx)
+        shape = context.engine.get_binding_shape(binding_idx)
         dtype = trt.nptype(context.engine.get_binding_dtype(binding))
         if is_dynamic(shape):
             # Not allocate buffers because is a dynamic binding

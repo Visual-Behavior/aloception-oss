@@ -441,7 +441,7 @@ class Points2D(aloscene.tensors.AugmentedTensor):
         points : aloscene.Point2d
             rotated points
         """
-        points = self.clone()
+        points = self.xy().clone()
         H, W = self.frame_size
         angle_rad = angle * np.pi / 180
         rot_mat = torch.tensor([[np.cos(angle_rad), np.sin(angle_rad)], [-np.sin(angle_rad), np.cos(angle_rad)]]).to(
@@ -457,7 +457,6 @@ class Points2D(aloscene.tensors.AugmentedTensor):
         points = points[points_filter]
 
         points = points.rel_pos()
-
         # no modification needed for relative coordinates
         if self.absolute:
             points = points.abs_pos(self.frame_size)

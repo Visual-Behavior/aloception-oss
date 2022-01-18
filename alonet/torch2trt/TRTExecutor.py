@@ -5,7 +5,7 @@ import pycuda
 import pycuda.autoinit as cuda_init
 
 import tensorrt as trt
-from alonet.torch2trt.utils import allocate_buffers, execute_async, execute_sync
+from alonet.torch2trt.utils import allocate_buffers, allocate_dynamic_mem, execute_async, execute_sync, get_bindings
 
 TRT_LOGGER = trt.Logger(trt.Logger.INFO)
 # MS_DEFORM_IM2COL_PLUGIN_LIB = "alonet/torch2trt/plugins/ms_deform_im2col/build/libms_deform_im2col_trt.so"
@@ -48,7 +48,6 @@ class TRTExecutor:
     def __init__(
         self,
         engine: Union[str, trt.ICudaEngine],
-        has_dynamic_shape: bool = False,
         stream: pycuda.driver.Stream = None,
         sync_mode: bool = False,
         verbose_logger: bool = False,
@@ -58,7 +57,6 @@ class TRTExecutor:
         Parameters
         ----------
         engine: if str, path to engine file, if tensorrt.ICudaEngine, serialized engine
-        has_dynamic_shape: bool
         stream: pycuda.driver.Stream
             if None, one will be created by allocate_buffers function
         sync_mode: bool, default = False.
@@ -82,13 +80,19 @@ class TRTExecutor:
         self.context = self.engine.create_execution_context()
         if profiling:
             self.context.profiler = CustomProfiler()
-        # TODO: test this mode later with DETR segmentaion
-        if not has_dynamic_shape:
-            self.inputs, self.outputs, self.bindings, self.stream = allocate_buffers(
-                self.context, self.stream, self.sync_mode
-            )
-            self.dict_inputs = {mem_obj.name: mem_obj for mem_obj in self.inputs}
-            self.dict_outputs = {mem_obj.name: mem_obj for mem_obj in self.outputs}
+        # Allocate_buffer take into account if engine has dynamic axes
+        self.inputs, self.outputs, self.stream, self.has_dynamic_axes = allocate_buffers(
+            self.context, self.stream, self.sync_mode
+        )
+        self.dict_inputs = {mem_obj.name: mem_obj for mem_obj in self.inputs}
+        self.dict_outputs = {mem_obj.name: mem_obj for mem_obj in self.outputs}
+
+    @property
+    def bindings(self):
+        # Be carefull, call bindings after set all shapes
+        if self.has_dynamic_axes or not hasattr(self, "_bindings"):
+            self._bindings = get_bindings(self.context, self.dict_inputs, self.dict_outputs)
+        return self._bindings
 
     def print_bindings_info(self):
         print("ID / Name / isInput / shape / dtype")
@@ -99,6 +103,10 @@ class TRTExecutor:
             )
 
     def execute(self):
+        if self.has_dynamic_axes:
+            # Set input shape in context to update output shapes
+            allocate_dynamic_mem(self.context, self.dict_inputs, self.dict_outputs)
+
         if self.sync_mode:
             execute_sync(self.context, bindings=self.bindings, inputs=self.inputs, outputs=self.outputs)
         else:
@@ -111,7 +119,9 @@ class TRTExecutor:
         self.context.set_binding_shape(binding, shape)
 
     def allocate_mem(self):
-        self.inputs, self.outputs, self.bindings, self.stream = allocate_buffers(self.context, self.stream)
+        self.inputs, self.outputs, self.stream, self.has_dynamic_axes = allocate_buffers(
+            self.context, self.stream, self.sync_mode
+        )
         self.dict_inputs = {mem_obj.name: mem_obj for mem_obj in self.inputs}
         self.dict_outputs = {mem_obj.name: mem_obj for mem_obj in self.outputs}
 

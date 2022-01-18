@@ -30,9 +30,15 @@ class MHAttentionMap(nn.Module):
     def forward(self, q: torch.Tensor, k: torch.Tensor, mask: Optional[Tensor] = None) -> torch.Tensor:
         q = self.q_linear(q)
         k = F.conv2d(k, self.k_linear.weight.unsqueeze(-1).unsqueeze(-1), self.k_linear.bias)
-        qh = q.view(q.shape[0], q.shape[1], self.num_heads, self.hidden_dim // self.num_heads)
-        kh = k.view(k.shape[0], self.num_heads, self.hidden_dim // self.num_heads, k.shape[-2], k.shape[-1])
-        weights = torch.einsum("bqnc,bnchw->bqnhw", qh * self.normalize_fact, kh)
+
+        """ Einsum is not supported in tensorRT. Change original operation"""
+        # qh = q.view(q.shape[0], q.shape[1], self.num_heads, self.hidden_dim // self.num_heads)
+        # kh = k.view(k.shape[0], self.num_heads, self.hidden_dim // self.num_heads, k.shape[-2], k.shape[-1])
+        # weights = torch.einsum("bqnc,bnchw->bqnhw", qh * self.normalize_fact, kh)
+
+        qh = q.view(q.shape[0], q.shape[1], self.num_heads, self.hidden_dim // self.num_heads, 1, 1)
+        kh = k.view(k.shape[0], 1, self.num_heads, self.hidden_dim // self.num_heads, k.shape[-2], k.shape[-1])
+        weights = (qh * kh * self.normalize_fact).sum(dim=3)  # Output shape = [bqnhw]
 
         if mask is not None:
             weights.masked_fill_(mask.unsqueeze(1).unsqueeze(1), float("-inf"))

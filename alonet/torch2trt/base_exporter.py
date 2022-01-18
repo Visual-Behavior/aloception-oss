@@ -1,7 +1,7 @@
 import io
 import os
 import time
-from typing import Dict, Tuple, Union
+from typing import Dict, List, Tuple, Union
 import onnx
 import tensorrt as trt
 import torch
@@ -30,43 +30,52 @@ class BaseTRTExporter:
         self,
         model: torch.nn.Module,
         onnx_path: str,
-        input_shapes=([3, 1280, 1920]),
-        input_names=None,
-        batch_size=1,
-        precision="fp32",
-        do_constant_folding=True,
-        device=torch.device("cpu"),
-        verbose=False,
-        use_scope_names=False,
-        operator_export_type=None,
+        input_shapes: tuple = ([3, 1280, 1920]),
+        input_names: list = None,
+        batch_size: int = 1,
+        precision: str = "fp32",
+        do_constant_folding: bool = True,
+        device: torch.device = torch.device("cpu"),
+        verbose: bool = False,
+        use_scope_names: bool = False,
+        operator_export_type: torch.onnx.OperatorExportTypes = None,
+        dynamic_axes: Union[Dict[str, Dict[int, str]], Dict[str, List[int]]] = None,
+        opt_profiles: Dict[str, Tuple[List[int]]] = None,
         **kwargs,
     ):
         """
         Parameters
         ----------
-        model: torch.nn.Module
+        model : torch.nn.Module
             a model loaded with trained weights
-        onnx_path: str
+        onnx_path : str
             Onnx file path which will be exported.
             Example: /abc/xyz/my_model.onnx
-        input_shapes: tuple of tuple/list, default ([3, 1280, 1920], )
+        input_shapes : tuple of tuple/list, default ([3, 1280, 1920], )
             input shape must be specified when export model
-        input_names: list of str
-        batch_size: int, default 1
-        precision: str
+        input_names : list of str
+        batch_size : int, default 1
+        precision : str
             TRT engine precision, either fp32, fp16, mix
             mix precision between fp32 and fp16 allow TensorRT more liberty
             to find the best combination optimization in term of execution time.
-        do_constant_folding: bool, default True
+        do_constant_folding : bool, default True
             Optimized ONNX graph if True. Sometimes this optimization will make
             the ONNX graph modification more complicated.
-        verbose: bool, default False
+        verbose : bool, default False
             Print out everything. Good for debugging.
+        dynamic_axes : Union[Dict[str, Dict[int, str]], Dict[str, List[int]]], by default None
+            Axes of tensors that will be dynamics (not shape specified), by default None. See
+            `https://pytorch.org/docs/stable/onnx.html#functions <torch.onnx.export>`_.
+        opt_profiles : Dict[str, Tuple[List[int]]], by default None
+            Optimization profiles (one by each dynamic axis).
 
         Raises
         ------
         Exception
-            Model must be instantiated with attr:`tracing` = True
+            * Model must be instantiated with attr:`tracing` = True
+            * If :attr:`dynamic_axes` is desired, :attr:`opt_profiles` must be provided with sames keys as
+              :attr:`dynamic_axes`.
         """
         assert hasattr(model, "tracing") and model.tracing, "Model must be instantiated with tracing=True"
         self.model = model
@@ -81,6 +90,11 @@ class BaseTRTExporter:
         self.custom_opset = None  # to be redefine in child class if needed
         self.use_scope_names = use_scope_names
         self.operator_export_type = operator_export_type
+        if dynamic_axes is not None:
+            assert opt_profiles is not None, "If dynamic_axes are to be used, opt_profiles must be provided"
+            assert isinstance(dynamic_axes, dict)
+            assert opt_profiles.keys() == dynamic_axes.keys(), "dynamic_axes and opt_profiles must have same keys"
+        self.dynamic_axes = dynamic_axes
         # ===== Initiate Trt Engine builder
         onnx_dir = os.path.split(onnx_path)[0]
         onnx_file_name = os.path.split(onnx_path)[1]
@@ -92,7 +106,7 @@ class BaseTRTExporter:
             trt_logger = trt.Logger(trt.Logger.VERBOSE)
         else:
             trt_logger = trt.Logger(trt.Logger.WARNING)
-        self.engine_builder = TRTEngineBuilder(self.adapted_onnx_path, logger=trt_logger)
+        self.engine_builder = TRTEngineBuilder(self.adapted_onnx_path, logger=trt_logger, opt_profiles=opt_profiles)
 
         if precision.lower() == "fp32":
             pass
@@ -135,9 +149,9 @@ class BaseTRTExporter:
 
         Returns
         -------
-        inputs: tuple/list of torch.Tensor
+        inputs: tuple/list/dictionary of torch.Tensor
             model input tensors
-        kwargs: dict[str: torch.Tensor or None]
+        kwargs: Union[Dict[str: torch.Tensor], None]
             additional argument for model.forward if needed
         """
         pass
@@ -160,19 +174,27 @@ class BaseTRTExporter:
         inputs, kwargs = self.prepare_sample_inputs()
 
         # Get sample inputs/outputs for later sanity check
-        with torch.no_grad():
-            m_outputs = self.model(*inputs, **kwargs)
-        np_inputs = tuple(np.array(i.cpu()) for i in inputs)
-        np_m_outputs = {}
-        output_names = (
-            m_outputs._fields if hasattr(m_outputs, "_fields") else ["out_" + str(i) for i in range(len(m_outputs))]
-        )
-        for key, val in zip(output_names, m_outputs):
-            if isinstance(val, torch.Tensor):
-                np_m_outputs[key] = val.cpu().numpy()
-        # print("Model output keys:", m_outputs.keys())
-        # Export to ONNX
+        if isinstance(inputs, dict):
+            with torch.no_grad():
+                m_outputs = self.model(inputs, **kwargs)
+
+            # Prepare inputs for torch.export.onnx and sanity check
+            np_inputs = tuple(np.array(inputs[iname].cpu()) for iname in inputs)
+            inputs = (inputs,)
+        else:
+            with torch.no_grad():
+                m_outputs = self.model(*inputs, **kwargs)
+
+            # Prepare inputs for torch.export.onnx and sanity check
+            np_inputs = tuple(np.array(i.cpu()) for i in inputs)
         inputs = (*inputs, kwargs)
+
+        onames = m_outputs._fields if hasattr(m_outputs, "_fields") else [f"out_{i}" for i in range(len(m_outputs))]
+        np_m_outputs = {key: val.cpu().numpy() for key, val in zip(onames, m_outputs) if isinstance(val, torch.Tensor)}
+        # print("Model input shapes:", [val.shape for val in np_inputs])
+        # print("Model output keys:", np_m_outputs.keys(), "shapes:", [val.shape for val in np_m_outputs.values()])
+
+        # Export to ONNX
         with ExitStack() as stack:
             # context managers necessary to redirect stdout and modify export trace to print scope
             if self.use_scope_names:
@@ -188,10 +210,11 @@ class BaseTRTExporter:
                 do_constant_folding=self.do_constant_folding,  # whether to execute constant folding for optimization
                 verbose=self.verbose or self.use_scope_names,  # verbose mandatory in scope names procedure
                 input_names=self.input_names,  # the model's input names
-                output_names=output_names,
+                output_names=onames,
                 custom_opsets=self.custom_opset,
                 enable_onnx_checker=True,
                 operator_export_type=self.operator_export_type,
+                dynamic_axes=self.dynamic_axes,
             )
 
             if self.use_scope_names:
@@ -208,7 +231,7 @@ class BaseTRTExporter:
         print("Saved ONNX at:", self.onnx_path)
         # empty GPU memory for later TensorRT optimization
         torch.cuda.empty_cache()
-        return (np_inputs,), np_m_outputs
+        return np_inputs, np_m_outputs
 
     def _onnx2engine(self, **kwargs) -> trt.ICudaEngine:
         """
@@ -255,9 +278,9 @@ class BaseTRTExporter:
         m_outputs = model.execute()
         print("==== Absolute / relavtive error:")
         for out in m_outputs:
-            diff = m_outputs[out] - sample_outputs[out]
+            diff = m_outputs[out].astype(float) - sample_outputs[out].astype(float)
             abs_err = np.abs(diff)
-            rel_err = np.abs(diff / sample_outputs[out])
+            rel_err = np.abs(diff / (sample_outputs[out] + 1e-6))  # Avoid div by zero
             print(out)
             print(f"\tmean: {abs_err.mean():.2e}\t{rel_err.mean():.2e}")
             print(f"\tmax: {abs_err.max():.2e}\t{rel_err.max():.2e}")

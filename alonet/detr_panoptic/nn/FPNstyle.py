@@ -10,7 +10,7 @@ from torch import nn, Tensor
 
 
 def _expand(tensor, length: int):
-    return tensor.unsqueeze(1).repeat(1, int(length), 1, 1, 1).flatten(0, 1)
+    return tensor.unsqueeze(1).repeat(1, length, 1, 1, 1).flatten(0, 1)
 
 
 class FPNstyleCNN(nn.Module):

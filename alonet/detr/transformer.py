@@ -97,7 +97,6 @@ class Transformer(nn.Module):
         transformer_outputs.update(dec_outputs)
         transformer_outputs["memory"] = memory.permute(1, 2, 0).view(bs, c, h, w)
         transformer_outputs["hs"] = transformer_outputs["hs"].transpose(1, 2)
-
         return transformer_outputs
 
 
@@ -249,9 +248,9 @@ class TransformerEncoderLayer(nn.Module):
         q = k = self.with_pos_embed(src, pos)
 
         src2 = self.self_attn(q, k, value=src, attn_mask=src_mask, key_padding_mask=src_key_padding_mask)[0]
-
         src = src + self.dropout1(src2)
         src = self.norm1(src)
+
         src2 = self.linear2(self.dropout(self.activation(self.linear1(src))))
         src = src + self.dropout2(src2)
         src = self.norm2(src)
@@ -333,12 +332,15 @@ class TransformerDecoderLayer(nn.Module):
         q = k = self.with_pos_embed(tgt, query_pos)
         tgt2 = self.self_attn(q, k, value=tgt, attn_mask=tgt_mask, key_padding_mask=tgt_key_padding_mask)[0]
         tgt = tgt + self.dropout1(tgt2)
-        if "is_export_onnx" in kwargs:  # First layerNorm make manually to correct export onnx2trt
+
+        # First layerNorm make manually to correct export onnx2trt
+        if "is_tracing" in kwargs:
             tgt = (tgt - torch.mean(tgt, -1, keepdim=True)) / (
-                torch.sqrt(torch.var(tgt, -1, keepdim=True) + self.norm1.eps)
+                torch.sqrt(torch.var(tgt, -1, keepdim=True, unbiased=False) + self.norm1.eps)
             ) * self.norm1.weight + self.norm1.bias
         else:
             tgt = self.norm1(tgt)
+
         tgt2 = self.multihead_attn(
             query=self.with_pos_embed(tgt, query_pos),
             key=self.with_pos_embed(memory, pos),

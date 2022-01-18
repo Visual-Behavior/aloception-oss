@@ -1,5 +1,5 @@
 import tensorrt as trt
-import os
+from typing import Dict, List, Tuple
 
 TRT_LOGGER = trt.Logger(trt.Logger.VERBOSE)
 network_creation_flag = 1 << int(trt.NetworkDefinitionCreationFlag.EXPLICIT_BATCH)
@@ -20,12 +20,13 @@ class TRTEngineBuilder:
 
     def __init__(
         self,
-        onnx_file_path,
-        FP16_allowed=False,
-        INT8_allowed=False,
-        strict_type=False,
-        calibrator=None,
-        logger=TRT_LOGGER,
+        onnx_file_path: str,
+        FP16_allowed: bool = False,
+        INT8_allowed: bool = False,
+        strict_type: bool = False,
+        calibrator: bool = None,
+        logger: trt.Logger = TRT_LOGGER,
+        opt_profiles: Dict[str, Tuple[List[int]]] = None,
     ):
         """
         Parameters
@@ -40,6 +41,14 @@ class TRTEngineBuilder:
             Ensure that the builder understands to force the precision
         calibrator: extended instance from tensorrt.IInt8Calibrator
             Used for INT8 quantization
+        opt_profiles : Dict[str, Tuple[List[int]]], by default None
+            Optimization profiles (one by each dynamic axis), with the minimum, minimum and maximum values.
+
+        Raises
+        ------
+        Exception
+            If :attr:`opt_profiles` is desired, each profile must be a set of
+            [:value:`min_shape`/:value:`optimal_shape`/:value:`max_shape`]
         """
         self.FP16_allowed = FP16_allowed
         self.INT8_allowed = INT8_allowed
@@ -49,13 +58,74 @@ class TRTEngineBuilder:
         self.strict_type = strict_type
         self.logger = logger
         self.engine = None
+        if opt_profiles is not None:
+            assert isinstance(opt_profiles, dict)
+            assert all([len(op) == 3 for op in opt_profiles.values()]), "Each profile must be a set of min/opt/max"
+        self.opt_profiles = opt_profiles
 
-    def set_workspace_size(self, workspace_size_GiB):
+    def set_workspace_size(self, workspace_size_GiB: int):
         self.max_workspace_size = GiB(workspace_size_GiB)
 
-    def get_engine(self):
+    def setup_profile(self, builder: trt.Builder, config: trt.IBuilderConfig):
+        """ Setup builder engine to add custom optimization profiles
+
+        Parameters
+        ----------
+        builder : trt.Builder
+            Builder to create optimization profile
+        config : trt.IBuilderConfig
+            IBuilderConfig to add the new profile
+
+        Notes
+        -----
+        See `https://docs.nvidia.com/deeplearning/tensorrt/developer-guide/index.html#work_dynamic_shapes`_ for more
+        information
         """
-        Setup engine builder, read ONNX graph and build TensorRT engine.
+        profile = builder.create_optimization_profile()
+        for tname, profiles in self.opt_profiles.items():
+            profile.set_shape(tname, *profiles)
+        config.add_optimization_profile(profile)
+
+    def check_dynamic_axes(self, engine: trt.ICudaEngine):
+        """Setup each dynamic axis on engine with their profiles to check whether or not they are dynamic
+
+        Parameters
+        ----------
+        engine : trt.ICudaEngine
+            Engine exported
+
+        Raises
+        ------
+        Exception
+            The engine was not correctly exported: it is not possible to configure the dimensions of the tensioners
+            with their corresponding profiles.
+        """
+        context = engine.create_execution_context()
+        shapes_specified = context.all_binding_shapes_specified
+        for tname, profiles in self.opt_profiles.items():
+            binding_idx = engine.get_binding_index(tname)
+            for shape in profiles:
+                if not context.set_binding_shape(binding_idx, shape):
+                    error = f"Impossible to generate dynamic axis for '{tname}'. "
+                    error += "Proof a fixed profile (min=opt=max) with different sample_inputs shapes "
+                    error += "to find the possible error."
+                    raise Exception(error)
+        assert not shapes_specified, "Incorrect engine. All shapes are statics"
+
+    def get_engine(self):
+        """Setup engine builder, read ONNX graph and build TensorRT engine.
+
+        Returns
+        -------
+        trt.ICudaEngine
+            Engine created from ONNX graph
+
+        Raises
+        ------
+        NotImplementedError
+            INT8 flag not implemented yet
+        Exception
+            TRT export engine error. It was not possible to export the engine.
         """
         global network_creation_flag
         with trt.Builder(self.logger) as builder, builder.create_network(
@@ -72,6 +142,9 @@ class TRTEngineBuilder:
                 raise NotImplementedError()
             if self.strict_type:
                 config.set_flag(trt.BuilderFlag.STRICT_TYPES)
+            # Add optimization profile (used for dynamic shapes)
+            if self.opt_profiles is not None:
+                self.setup_profile(builder, config)
 
             # Load and build model
             with open(self.onnx_file_path, "rb") as model:
@@ -89,16 +162,34 @@ class TRTEngineBuilder:
                     return None
                 else:
                     print("ONNX file is loaded")
+
             print("Building engine...")
             engine = builder.build_engine(network, config)
+
             if engine is None:
                 raise Exception("TRT export engine error. Check log")
+
+            # Sanity check for dynamic axes
+            if self.opt_profiles is not None:
+                self.check_dynamic_axes(engine)
+
             print("Engine built")
             self.engine = engine
         return engine
 
-    def export_engine(self, engine_path):
-        """Seriazlize TensorRT engine"""
+    def export_engine(self, engine_path: str):
+        """Seriazlize TensorRT engine
+
+        Parameters
+        ----------
+        engine_path : str
+            Path to save the engine
+
+        Returns
+        -------
+        str
+            Path where engine was exported
+        """
         engine = self.get_engine()
         assert engine is not None, "Error while parsing engine from ONNX"
         with open(engine_path, "wb") as f:

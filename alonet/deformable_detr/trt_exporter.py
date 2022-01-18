@@ -4,8 +4,6 @@
 import argparse
 import os
 import torch
-import tensorrt as trt
-import ctypes
 import numpy as np
 import onnx_graphsurgeon as gs
 
@@ -59,7 +57,7 @@ class DeformableDetrTRTExporter(BaseTRTExporter):
 
         def handle_ops_MsDeformIm2ColTRT(graph: gs.Graph, node: gs.Node):
             inputs = node.inputs
-            inputs.pop()  # The last input is im2col_step = 64 (constant), our TRT plugin doesn't fully support this attribute
+            inputs.pop()  # The last input is im2col_step = 64 (constant), our TRT plugin doesn't fully support it
             outputs = node.outputs
             graph.layer(op="MsDeformIm2ColTRT", name=node.name + "_trt", inputs=inputs, outputs=outputs)
 
@@ -139,10 +137,10 @@ if __name__ == "__main__":
 
     if args.refinement:
         model_name = "deformable-detr-r50-refinement"
-        model = DeformableDetrR50Refinement(weights=model_name, tracing=True).eval()
+        model = DeformableDetrR50Refinement(weights=model_name, tracing=True, aux_loss=False).eval()
     else:
         model_name = "deformable-detr-r50"
-        model = DeformableDetrR50(weights=model_name, tracing=True).eval()
+        model = DeformableDetrR50(weights=model_name, tracing=True, aux_loss=False).eval()
 
     if args.onnx_path is None:
         args.onnx_path = os.path.join(vb_fodler(), "weights", model_name, model_name + ".onnx")

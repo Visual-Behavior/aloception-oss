@@ -72,18 +72,24 @@ def GiB(val):
     return val * 1 << 30
 
 
+def is_dynamic(shape: tuple):
+    return any(dim is None or dim < 0 for dim in shape)
+
+
 class HostDeviceMem(object):
     """
     Simple helper class to store useful data of an engine's binding
 
     Attributes
     ----------
-    host_mem: np.ndarray
+    host_mem : np.ndarray
         data stored in CPU
-    device_mem: pycuda.driver.DeviceAllocation
+    device_mem : pycuda.driver.DeviceAllocation
         represent data pointer in GPU
-    shape: tuple
-    dtype: np dtype
+    shape : tuple
+    dtype : np dtype
+    location : trt.TensorLocation
+        Device location information
     name: str
         name of the binding
     """
@@ -102,10 +108,60 @@ class HostDeviceMem(object):
         return self.__str__()
 
 
+class DynamicHostDeviceMem(HostDeviceMem):
+    """
+    Class to store useful data of an engine's binding. Allocate memory on each host setting
+
+    Attributes
+    ----------
+    host_mem : np.ndarray
+        data stored in CPU
+    device_mem : pycuda.driver.DeviceAllocation
+        represent data pointer in GPU
+    shape : tuple
+    dtype : np dtype
+    location : trt.TensorLocation
+        Device location information
+    name: str
+        name of the binding
+    """
+
+    @property
+    def host(self):
+        return self._host
+
+    @host.setter
+    def host(self, new_host):
+        if new_host is None:
+            self.release()
+        else:
+            self.allocate_mem(tuple(new_host.shape))
+        self._host = new_host
+
+    def allocate_mem(self, new_shape: tuple):
+        if self._host is None or not hasattr(self.shape, "__iter__") or tuple(new_shape) != tuple(self.shape):
+            # Allocate buffer with new shape, after release memory
+            self.release()
+            self.shape = new_shape
+            self._host = cuda.pagelocked_empty(trt.volume(self.shape), self.dtype)
+            self.device = cuda.mem_alloc(self._host.nbytes)  # New pointer
+
+    def release(self):
+        if hasattr(self, "device") and self.device is not None:
+            self.device.free()  # Freeze memory allocated
+        self.shape = None
+
+
 def allocate_buffers(context, stream=None, sync_mode=True):
     """
     Read bindings' information in ExecutionContext, create pagelocked np.ndarray in CPU,
     allocate corresponding memory in GPU.
+
+    Parameters
+    ----------
+    context : trt.IExecutionContext
+    stream : pycuda.driver.Stream, optional
+    sync_mode : bool, optional
 
     Returns
     -------
@@ -115,28 +171,96 @@ def allocate_buffers(context, stream=None, sync_mode=True):
         list of pointers in GPU for each bindings
     stream: pycuda.driver.Stream
         used for memory transfers between CPU-GPU
+
+    Notes
+    -----
+    If a binding is dynamic, create a :class:`DynamicHostDeviceMem` with :attr:`host` = :attr:`shape` = None
+    (new host will set this properties)
+
     """
     inputs = []
     outputs = []
-    bindings = []
+    has_dynamic_axes = False
     if stream is None and not sync_mode:
         stream = cuda.Stream()
     for binding in context.engine:
         binding_idx = context.engine.get_binding_index(binding)
-        shape = context.get_binding_shape(binding_idx)
-        size = trt.volume(shape) * context.engine.max_batch_size
+        shape = context.engine.get_binding_shape(binding_idx)
         dtype = trt.nptype(context.engine.get_binding_dtype(binding))
-        # Allocate host and device buffers
-        host_mem = cuda.pagelocked_empty(size, dtype)
-        device_mem = cuda.mem_alloc(host_mem.nbytes)
-        # Append the device buffer to device bindings.
-        bindings.append(int(device_mem))
+        if is_dynamic(shape):
+            # Not allocate buffers because is a dynamic binding
+            host_mem = device_mem = None
+            has_dynamic_axes = True
+            mem_obj = DynamicHostDeviceMem(host_mem, device_mem, shape, dtype, binding)
+        else:
+            size = trt.volume(shape) * context.engine.max_batch_size
+            # Allocate host and device buffers
+            host_mem = cuda.pagelocked_empty(size, dtype)
+            device_mem = cuda.mem_alloc(host_mem.nbytes)
+            mem_obj = HostDeviceMem(host_mem, device_mem, shape, dtype, binding)
         # Append to the appropriate list.
         if context.engine.binding_is_input(binding):
-            inputs.append(HostDeviceMem(host_mem, device_mem, shape, dtype, binding))
+            inputs.append(mem_obj)
         else:
-            outputs.append(HostDeviceMem(host_mem, device_mem, shape, dtype, binding))
-    return inputs, outputs, bindings, stream
+            outputs.append(mem_obj)
+    return inputs, outputs, stream, has_dynamic_axes
+
+
+def allocate_dynamic_mem(context, dict_inputs, dict_outputs):
+    """Set all input shapes in context to convert a dynamic context in static (output fix shapes).
+    Then, allocate output shapes
+
+    Parameters
+    ----------
+    context : trt.IExecutionContext
+    dict_inputs : Dict[str, HostDeviceMem]
+    dict_outputs : Dict[str, HostDeviceMem]
+    """
+    assert all(
+        mem_obj.device is not None and mem_obj.host is not None and not is_dynamic(mem_obj.shape)
+        for mem_obj in dict_inputs.values()
+    ), "When there are dynamic axes, all inputs shape must be set (model[i].host = array for all inputs)"
+
+    # Set input shape in context to update output shapes
+    for iname, mem_obj in dict_inputs.items():
+        idx = context.engine.get_binding_index(iname)
+        assert context.set_binding_shape(idx, mem_obj.shape), f"Impossible to set shape {mem_obj.shape} into {iname}"
+
+    # Create empty tensors to allocate output buffers
+    for oname, mem_obj in dict_outputs.items():
+        idx = context.engine.get_binding_index(oname)
+        shape = context.get_binding_shape(idx)  # Shape updated with inputs.set_binding_shape
+        if isinstance(mem_obj, DynamicHostDeviceMem):  # Buffer allocate
+            mem_obj.allocate_mem(shape)
+    return True
+
+
+def get_bindings(context, dict_inputs, dict_outputs):
+    """Get input/output pointers and add them into a list
+
+    Parameters
+    ----------
+    context : trt.IExecutionContext
+    dict_inputs : Dict[str, HostDeviceMem]
+    dict_outputs : Dict[str, HostDeviceMem]
+
+    Returns
+    -------
+    list
+        List of input/output pointers
+    """
+    bindings = [None] * (len(dict_inputs) + len(dict_outputs))
+
+    # Get bindings for inputs
+    for name, mem_obj in dict_inputs.items():
+        idx = context.engine.get_binding_index(name)
+        bindings[idx] = int(mem_obj.device) if mem_obj.device is not None else None
+
+    # Get bindings for outputs
+    for name, mem_obj in dict_outputs.items():
+        idx = context.engine.get_binding_index(name)
+        bindings[idx] = int(mem_obj.device) if mem_obj.device is not None else None
+    return bindings
 
 
 def execute_async(context, bindings, inputs, outputs, stream):

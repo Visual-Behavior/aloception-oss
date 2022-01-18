@@ -115,7 +115,8 @@ class DeformableDETR(nn.Module):
                 in_channels = backbone.num_channels[i]
                 input_proj_list.append(
                     nn.Sequential(
-                        nn.Conv2d(in_channels, self.hidden_dim, kernel_size=1), nn.GroupNorm(32, self.hidden_dim),
+                        nn.Conv2d(in_channels, self.hidden_dim, kernel_size=1),
+                        nn.GroupNorm(32, self.hidden_dim),
                     )
                 )
             for _ in range(num_feature_levels - num_backbone_outs):
@@ -141,6 +142,9 @@ class DeformableDETR(nn.Module):
         self.aux_loss = aux_loss
         self.with_box_refine = with_box_refine
         self.tracing = tracing
+
+        if self.tracing and self.aux_loss:
+            raise AttributeError("When tracing = True, aux_loss must be False")
 
         prior_prob = 0.01
         bias_value = -math.log((1 - prior_prob) / prior_prob)
@@ -264,8 +268,9 @@ class DeformableDETR(nn.Module):
         forward_head = self.forward_heads(transformer_outptus, bb_outputs=(features, pos[:-1]))
 
         if self.tracing:
-            output = namedtuple("m_outputs", "pred_boxes pred_logits")
-            forward_head = output(forward_head["pred_boxes"], forward_head["pred_logits"])
+            forward_head.pop("activation_fn")  # Not include in exportation
+            output = namedtuple("m_outputs", forward_head.keys())
+            forward_head = output(*forward_head.values())
         return forward_head
 
     def forward_position_heads(self, transformer_outptus: dict):
@@ -371,7 +376,11 @@ class DeformableDETR(nn.Module):
             out["enc_outputs"] = transformer_outptus["memory"][-2]  # Encoder layer used from PanopticHead
 
         if self.return_bb_outputs:
-            out["bb_outputs"] = bb_outputs
+            features, pos = bb_outputs
+            for lvl, (src, mask) in enumerate(features):
+                out[f"bb_lvl{lvl}_src_outputs"] = src
+                out[f"bb_lvl{lvl}_mask_outputs"] = mask
+                out[f"bb_lvl{lvl}_pos_outputs"] = pos[lvl]
 
         return out
 
@@ -382,7 +391,11 @@ class DeformableDETR(nn.Module):
         # as a dict having both a Tensor and a list.
         return [{"pred_logits": a, "pred_boxes": b, **kwargs} for a, b in zip(outputs_class[:-1], outputs_coord[:-1])]
 
-    def get_outs_labels(self, m_outputs: dict = None, activation_fn: str = None,) -> List[torch.Tensor]:
+    def get_outs_labels(
+        self,
+        m_outputs: dict = None,
+        activation_fn: str = None,
+    ) -> List[torch.Tensor]:
         """Given the model outs_scores and the model outs_labels,
         return the labels and the associated scores.
 

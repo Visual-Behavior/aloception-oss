@@ -17,7 +17,25 @@ class DetrTRTExporter(BaseTRTExporter):
         self.custom_opset = None
 
     def adapt_graph(self, graph: gs.Graph):
+        from onnxsim import simplify
+        import onnx
+        from alonet.torch2trt.onnx_hack import rename_nodes_
+
         # no need to modify graph
+        model = onnx.load(self.onnx_path)
+        check = False
+        model_simp, check = simplify(model)
+
+        if check:
+            print("\n[INFO] Simplified ONNX model validated. Graph optimized...")
+            graph = gs.import_onnx(model_simp)
+            graph.toposort()
+            graph.cleanup()
+        else:
+            print("\n[INFO] ONNX model was not validated.")
+
+        if self.use_scope_names:  # Rename nodes to correct profiling
+            graph = rename_nodes_(graph, True)
         return graph
 
     def prepare_sample_inputs(self):
@@ -48,7 +66,15 @@ if __name__ == "__main__":
     device = torch.device("cpu") if args.cpu else torch.device("cuda")
 
     input_shape = [3] + list(args.HW)
-    model = DetrR50(weights="detr-r50", tracing=True).eval().to(device)
+    model = DetrR50(
+        weights="detr-r50",
+        tracing=True,
+        aux_loss=False,
+        # return_dec_outputs=True,
+        # return_enc_outputs=True,
+        # return_bb_outputs=True,
+    )
+    model = model.eval().to(device)
     exporter = DetrTRTExporter(
         model=model, input_shapes=(input_shape,), input_names=["img"], device=device, **vars(args)
     )

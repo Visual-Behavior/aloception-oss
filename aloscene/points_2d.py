@@ -429,6 +429,42 @@ class Points2D(aloscene.tensors.AugmentedTensor):
             abs_size = tuple(s * fs for s, fs in zip(size, points.frame_size))
             return points.abs_pos(abs_size)
 
+    def _rotate(self, angle, **kwargs):
+        """Rotate Point2d, but not their labels
+
+        Parameters
+        ----------
+        size : float
+
+        Returns
+        -------
+        points : aloscene.Point2d
+            rotated points
+        """
+        points = self.xy()
+        H, W = self.frame_size
+        angle_rad = angle * np.pi / 180
+        rot_mat = torch.tensor([[np.cos(angle_rad), np.sin(angle_rad)], [-np.sin(angle_rad), np.cos(angle_rad)]]).to(
+            torch.float32
+        )
+        tr_mat = torch.tensor([W / 2, H / 2])
+        for i in range(points.shape[0]):
+            points[i] = torch.matmul(rot_mat, points[i] - tr_mat) + tr_mat
+
+        max_size = torch.as_tensor([W, H], dtype=torch.float32)
+        points_filter = (points >= 0).as_tensor() & (points <= max_size).as_tensor()
+        points_filter = points_filter[:, 0] & points_filter[:, 1]
+        points = points[points_filter]
+
+        points = points.rel_pos()
+        # no modification needed for relative coordinates
+        if self.absolute:
+            points = points.abs_pos(self.frame_size)
+
+        points = points.get_with_format(self.points_format)
+
+        return points
+
     def _crop(self, H_crop: tuple, W_crop: tuple, **kwargs):
         """Crop Points with the given relative crop
 
@@ -585,7 +621,44 @@ class Points2D(aloscene.tensors.AugmentedTensor):
         return points
 
     def _spatial_shift(self, shift_y: float, shift_x: float, **kwargs):
-        raise Exception("Not handle by points 2D")
+        """
+        Spatially shift the Points
+        Parameters
+        ----------
+        shift_y: float
+            Shift percentage on the y axis. Could be negative or positive
+        shift_x: float
+            Shift percentage on the x axis. Could ne negative or positive.
+        Returns
+        -------
+        shifted_tensor: aloscene.AugmentedTensor
+            shifted tensor
+        """
+        if self.padded_size is not None:
+            raise Exception(
+                "Can't process spatial shift when padded size is not Note. Call fit_to_padded_size() first"
+            )
+        # get needed information
+        original_format = self.points_format
+        original_absolute = self.absolute
+        frame_size = self.frame_size
+
+        # shift the points
+        n_points = self.clone().rel_pos().xy()
+        n_points += torch.as_tensor([[shift_x, shift_y]])  # , device=self.device)
+
+        # filter points outside of the image
+        points_filter = (n_points >= 0).as_tensor() & (n_points <= 1).as_tensor()
+        points_filter = points_filter[:, 0] & points_filter[:, 1]
+        n_points = n_points[points_filter]
+        n_points = n_points.reset_names()
+
+        # Put back the instance into the same state as before
+        if original_absolute:
+            n_points = n_points.abs_pos(frame_size)
+        n_points = n_points.get_with_format(original_format)
+
+        return n_points
 
     def as_points(self, points):
         n_points = self.clone()

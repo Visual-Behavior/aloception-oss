@@ -416,11 +416,8 @@ class DeformableDETR(nn.Module):
         Tuple
             (torch.Tensor, torch.Tensor) being the predicted labels and scores
         """
-        activation_fn = activation_fn or self.activation_fn
         assert (m_outputs) is not None
-        if "activation_fn" not in m_outputs:
-            raise Exception("'activation_fn' must be declared in forward output.")
-        activation_fn = m_outputs["activation_fn"]
+        activation_fn = m_outputs.get("activation_fn") or activation_fn or self.activation_fn
         if activation_fn == "softmax":
             outs_probs = F.softmax(m_outputs["pred_logits"], -1)
         else:
@@ -502,10 +499,7 @@ class DeformableDETR(nn.Module):
             Boxes filtered and predicted by forward outputs
         """
         outs_logits, outs_boxes = forward_out["pred_logits"], forward_out["pred_boxes"]
-
-        if "activation_fn" not in forward_out:
-            raise Exception("'activation_fn' must be declared in forward output.")
-        activation_fn = forward_out["activation_fn"]
+        activation_fn = forward_out.get("activation_fn") or self.activation_fn
 
         if activation_fn == "softmax":
             outs_probs = F.softmax(outs_logits, -1)

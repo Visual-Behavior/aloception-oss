@@ -290,7 +290,8 @@ class PanopticHead(nn.Module):
             # One shot encoding, to keep the high score class
             null_values = (~masks.bool()).all(dim=0, keepdim=True)  # Pixels without a score > maskth
             onehot_masks = torch.zeros_like(masks)
-            onehot_masks.scatter_(0, masks.argmax(dim=0, keepdim=True), 1)
+            if onehot_masks.numel():
+                onehot_masks.scatter_(0, masks.argmax(dim=0, keepdim=True), 1)
             masks = onehot_masks.type(torch.long) * (~null_values)  # One-hot encoding with threshold
 
             # Boxes/masks alignment

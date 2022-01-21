@@ -24,7 +24,7 @@ def main():
     lit_panoptic = LitPanopticDetr(args)
 
     # Start training
-    lit_panoptic.run_train(data_loader=coco_loader, args=args, project="panoptic", expe_name="coco")
+    lit_panoptic.run_train(data_loader=coco_loader, args=args, project="detr-panoptic", expe_name="coco")
 
 
 if __name__ == "__main__":

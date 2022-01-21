@@ -19,7 +19,7 @@ class LitPanopticDetr(alonet.deformable_detr.LitDeformableDetr):
     weights : str, optional
         Weights name to load, by default None
     gradient_clip_val : float, optional
-        pytorch_lightning.trainer.trainer parameter. 0 means don’t clip, by default 0.1
+        pytorch_lightning.trainer.trainer parameter. 0 means dont clip, by default 0.1
     accumulate_grad_batches : int, optional
         Accumulates grads every k batches or as set up in the dict, by default 4
     model_name : str, optional
@@ -52,8 +52,10 @@ class LitPanopticDetr(alonet.deformable_detr.LitDeformableDetr):
             "--model_name",
             type=str,
             default="detr-r50-panoptic",
-            help="Model name to use. One of {'detr-r50-panoptic', 'deformable-detr-r50-panoptic', "
-            + "'deformable-detr-r50-refinement-panoptic'}, by default %(default)s",
+            help="Model name to use. One of {'detr-r50-panoptic'}, by default %(default)s",
+        )
+        parser.add_argument(
+            "--freeze_detr", action="store_true", help="Freeze DETR weights in training, by default %(default)s"
         )
         return parent_parser
 
@@ -79,12 +81,7 @@ class LitPanopticDetr(alonet.deformable_detr.LitDeformableDetr):
         return super().validation_step(frames, batch_idx)
 
     def build_model(
-        self,
-        num_classes: int = 250,
-        background_class: int = 250,
-        aux_loss: bool = True,
-        weights: str = None,
-        activation_fn: str = "sigmoid",
+        self, num_classes: int = 250, background_class: int = 250, aux_loss: bool = True, weights: str = None
     ):
         """Build the default model
 
@@ -98,9 +95,6 @@ class LitPanopticDetr(alonet.deformable_detr.LitDeformableDetr):
             Return auxiliar outputs in forward output, by default True
         weights : str, optional
             Path or id to load weights, by default None
-        activation_fn : str, optional
-            Activation function for classification head. Either ``sigmoid`` or ``softmax``. By default sigmoid.
-            Use only in :mod:`alonet.deformable_detr.deformable_detr` models
 
         Returns
         -------
@@ -110,23 +104,19 @@ class LitPanopticDetr(alonet.deformable_detr.LitDeformableDetr):
         Raises
         ------
         Exception
-            Only :attr:`detr-r50-panoptic` and :attr:`deformable-detr-r50-panoptic` models are supported yet.
+            Only :attr:`detr-r50-panoptic` models are supported yet.
         """
         if self.model_name == "detr-r50-panoptic":
-            detr_model = alonet.detr.DetrR50(
-                num_classes=num_classes, aux_loss=aux_loss, background_class=background_class
-            )
-        elif self.model_name == "deformable-detr-r50-panoptic":
-            detr_model = alonet.deformable_detr.DeformableDetrR50(
-                num_classes=num_classes, aux_loss=aux_loss, activation_fn=activation_fn
-            )
-        elif self.model_name == "deformable-detr-r50-refinement-panoptic":
-            detr_model = alonet.deformable_detr.DeformableDetrR50Refinement(
-                num_classes=num_classes, aux_loss=aux_loss, activation_fn=activation_fn
+            model = alonet.detr_panoptic.DetrR50Panoptic(
+                num_classes=num_classes,
+                aux_loss=aux_loss,
+                background_class=background_class,
+                weights=weights or self.weights,
+                freeze_detr=self.freeze_detr,
             )
         else:
             raise Exception(f"Unsupported base model {self.model_name}")
-        return alonet.detr_panoptic.PanopticHead(detr_model, weights=weights or self.weights)
+        return model
 
     def build_criterion(
         self,
@@ -174,40 +164,21 @@ class LitPanopticDetr(alonet.deformable_detr.LitDeformableDetr):
         :mod:`DetrCriterion <alonet.detr.criterion>`
             Criterion use to train the model
         """
-        if isinstance(self.model.detr, alonet.detr.Detr):
-            return alonet.detr_panoptic.DetrPanopticCriterion(
-                matcher=matcher or self.matcher,
-                loss_ce_weight=loss_label_weight,
-                loss_boxes_weight=loss_boxes_weight,
-                loss_giou_weight=loss_giou_weight,
-                loss_dice_weight=loss_dice_weight,
-                loss_focal_weight=loss_focal_weight,
-                eos_coef=eos_coef,
-                focal_alpha=focal_alpha,
-                aux_loss_stage=aux_loss_stage,
-                losses=losses,
-            )
-        else:
-            return alonet.detr_panoptic.DeformablePanopticCriterion(
-                matcher=matcher or self.matcher,
-                loss_label_weight=loss_label_weight,
-                loss_boxes_weight=loss_boxes_weight,
-                loss_giou_weight=loss_giou_weight,
-                loss_dice_weight=loss_dice_weight,
-                loss_focal_weight=loss_focal_weight,
-                eos_coef=eos_coef,
-                focal_alpha=focal_alpha,
-                aux_loss_stage=aux_loss_stage,
-                losses=losses,
-            )
+        return alonet.detr_panoptic.DetrPanopticCriterion(
+            matcher=matcher or self.matcher,
+            loss_ce_weight=loss_label_weight,
+            loss_boxes_weight=loss_boxes_weight,
+            loss_giou_weight=loss_giou_weight,
+            loss_dice_weight=loss_dice_weight,
+            loss_focal_weight=loss_focal_weight,
+            eos_coef=eos_coef,
+            focal_alpha=focal_alpha,
+            aux_loss_stage=aux_loss_stage,
+            losses=losses,
+        )
 
     def build_matcher(self, cost_class: float = 1, cost_boxes: float = 5, cost_giou: float = 2):
-        if isinstance(self.model.detr, alonet.detr.Detr):
-            return alonet.detr.DetrHungarianMatcher(cost_class=cost_class, cost_boxes=cost_boxes, cost_giou=cost_giou)
-        else:
-            return alonet.deformable_detr.DeformableDetrHungarianMatcher(
-                cost_class=cost_class, cost_boxes=cost_boxes, cost_giou=cost_giou
-            )
+        return alonet.detr.DetrHungarianMatcher(cost_class=cost_class, cost_boxes=cost_boxes, cost_giou=cost_giou)
 
     def callbacks(self, data_loader: Frame):
         obj_detection_callback = alonet.detr_panoptic.PanopticObjectDetectorCallback(
@@ -222,7 +193,7 @@ class LitPanopticDetr(alonet.deformable_detr.LitDeformableDetr):
         self,
         data_loader: Frame,
         args: Namespace,
-        project: str = "panoptic-detr",
+        project: str = "detr-panoptic",
         expe_name: str = None,
         callbacks: list = None,
     ):

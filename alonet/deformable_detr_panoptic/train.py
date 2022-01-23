@@ -56,13 +56,6 @@ class LitPanopticDeformableDetr(LitPanopticDetr):
             + ", by default %(default)s",
         )
         parser.add_argument(
-            "--activation_fn",
-            type=str,
-            default="sigmoid",
-            choices=["sigmoid", "softmax"],
-            help="Activation function in class embed layer, by default %(default)s",
-        )
-        parser.add_argument(
             "--freeze_detr", action="store_true", help="Freeze DETR weights in training, by default %(default)s"
         )
         return parent_parser

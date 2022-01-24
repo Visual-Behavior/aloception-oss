@@ -23,7 +23,7 @@ class LitPanopticDeformableDetr(LitPanopticDetr):
     accumulate_grad_batches : int, optional
         Accumulates grads every k batches or as set up in the dict, by default 4
     model_name : str, optional
-        Name use to define the model, by default "deformable-detr-r50-panoptic"
+        Name use to define the model, by default ``deformable-detr-r50-panoptic``
     model : torch.nn, optional
         Custom model to train
 
@@ -70,7 +70,7 @@ class LitPanopticDeformableDetr(LitPanopticDetr):
         num_classes : int, optional
             Number of classes in embed layer, by default 250
         aux_loss : bool, optional
-            Return auxiliar outputs in forward output, by default True
+            Return auxiliar outputs in forward output, by default ``True``
         weights : str, optional
             Path or id to load weights, by default None
         activation_fn : str, optional
@@ -84,7 +84,7 @@ class LitPanopticDeformableDetr(LitPanopticDetr):
         Raises
         ------
         Exception
-            Only :attr:`deformable-detr-r50-panoptic` and :attr:`deformable-detr-r50-refinement-panoptic` are accepted.
+            Only ``deformable-detr-r50-panoptic`` and ``deformable-detr-r50-refinement-panoptic`` are accepted.
         """
         if self.model_name == "deformable-detr-r50-panoptic":
             model = alonet.deformable_detr_panoptic.DeformableDetrR50Panoptic(
@@ -146,14 +146,14 @@ class LitPanopticDeformableDetr(LitPanopticDetr):
             Weighting factor in range (0,1) to balance positive vs negative examples. -1 for no weighting,
             by default 0.25
         losses : list, optional
-            List of losses to take into account in total loss, by default ["labels", "boxes", "masks"].
-            Possible values: ["labels", "boxes", "masks"] (use the latest in segmentation tasks)
+            List of losses to take into account in total loss, by default [``labels``, ``boxes``, ``masks``] (uses all
+            the possible values).
         aux_loss_stage : int, optional
             Size of stages from :attr:`aux_outputs` key in forward ouputs, by default 6
 
         Returns
         -------
-        :mod:`DetrCriterion <alonet.detr.criterion>`
+        :mod:`DeformablePanopticCriterion <alonet.deformable_detr_panoptic.criterion>`
             Criterion use to train the model
         """
         return alonet.deformable_detr_panoptic.DeformablePanopticCriterion(
@@ -170,6 +170,22 @@ class LitPanopticDeformableDetr(LitPanopticDetr):
         )
 
     def build_matcher(self, cost_class: float = 1, cost_boxes: float = 5, cost_giou: float = 2):
+        """Build matcher to match between predictions and targets
+
+        Parameters
+        ----------
+        cost_class : int, optional
+            Weight of the classification error in the matching cost, by default 1
+        cost_boxes : int, optional
+            Weight of the L1 error of the bounding box coordinates in the matching cost, by default 5
+        cost_giou : int, optional
+            Weight of the giou loss of the bounding box in the matching cost, by default 2
+
+        Returns
+        -------
+        :mod:`DeformableDetrHungarianMatcher <alonet.deformable_detr.matcher>`
+            Hungarian Matcher, as a Pytorch model
+        """
         return alonet.deformable_detr.DeformableDetrHungarianMatcher(
             cost_class=cost_class, cost_boxes=cost_boxes, cost_giou=cost_giou
         )

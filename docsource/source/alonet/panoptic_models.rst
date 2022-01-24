@@ -1,7 +1,7 @@
 Models
 ======
 
-Panoptic Head is a pytorch module that implements a network to connect with the output of a
+Panoptic Head is a Pytorch module that implements a network to connect with the output of a
 :doc:`Detr-based model <detr_models>`. This new module is able to predict a segmentation features, represented by
 a binary mask for each object predicted by :doc:`Detr model <detr_models>`.
 
@@ -14,13 +14,16 @@ a binary mask for each object predicted by :doc:`Detr model <detr_models>`.
   `End-to-End Object Detection with Transformers <https://arxiv.org/pdf/2005.12872.pdf>`_ paper
 
 .. seealso::
-   :doc:`Mask </aloscene/mask>` object to know the data representation of predictions.
+
+   * :doc:`Mask </aloscene/mask>` object to know the data representation of predictions.
+   * `End-to-End Object Detection with Transformers <https://arxiv.org/pdf/2005.12872.pdf>`_ paper to understand how works
+     the architecture.
 
 Basic usage
 --------------------
 
-Given that :mod:`~alonet.detr_panoptic.detr_panoptic` implements the Panoptic Head for a |detr|_, first the module
-have to implement and be passed as :class:`~alonet.detr_panoptic.detr_panoptic.PanopticHead` parameter:
+Given that :mod:`~alonet.detr_panoptic.detr_panoptic` implements the Panoptic Head for a |detr|_, `DETR <detr>` mode
+must be defined as one of the first input parameter:
 
    .. code-block:: python
 
@@ -39,6 +42,40 @@ If you want to finetune from the model pretrained on COCO dataset, a |detrfine|_
 
       detr_model = DetrR50Finetune(num_classes=250)
       model = PanopticHead(DETR_module=detr_model)
+
+As experimental work, it is possible to couple |Deformable|_ to panoptic head, by its previous definition:
+
+   .. code-block:: python
+
+      from alonet.deformable_detr import DeformableDetrR50Finetune
+      from alonet.detr_panoptic import PanopticHead
+
+      detr_model = DeformableDetrR50Finetune(num_classes=250)
+      model = PanopticHead(DETR_module=detr_model)
+
+Or simply use the predefined models with resnet 50 backbone for DETR/Deformable DETR.
+
+   .. code-block:: python
+
+      from alonet.detr_panoptic import DetrR50Panoptic
+      from alonet.deformable_detr_panoptic import DeformableDetrR50Panoptic
+
+      # Use DetrR50 + PanopticHead and load pretrained weights
+      model DetrR50Panoptic(weights="detr-r50-panoptic")
+
+      # Use DeformableDetrR50Refinement + PanopticHead with its pretrained weights
+      model DeformableDetrR50Panoptic(
+         weights="deformable-detr-r50-panoptic-refinement",
+         activation_fn="softmax",
+         with_box_refine=True
+      )
+
+.. warning::
+
+   * As mentioned above, the work made on Deformable DETR is experimental, therefore the performance achieved differs
+     from that obtained with DETR. See |detrPerf|_ and |deformablePerf|_
+   * Unlike the :doc:`Deformable DETR <deformable>`, the weights provided by :doc:`Aloception </index>` were trained
+     for the :mod:`DeformableDetrR50Refinement <alonet.deformable_detr.deformable_detr_r50_refinement>` architecture.
 
 To run an inference:
 
@@ -75,6 +112,13 @@ Panoptic head API
    :undoc-members:
    :show-inheritance:
 
+DetrR50 Panoptic
+-----------------------------------------------
+
+.. automodule:: alonet.detr_panoptic.detr_r50_panoptic
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
 DetrR50 Panoptic Finetune
 -----------------------------------------------
@@ -84,8 +128,31 @@ DetrR50 Panoptic Finetune
    :undoc-members:
    :show-inheritance:
 
+Deformable DetrR50 Panoptic
+-----------------------------------------------
+
+.. automodule:: alonet.deformable_detr_panoptic.deformable_detr_r50_panoptic
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Deformable DetrR50 Panoptic Finetune
+-----------------------------------------------
+
+.. automodule:: alonet.deformable_detr_panoptic.deformable_detr_r50_panoptic_finetune
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 .. Hyperlinks
 .. |detr| replace:: Detr-based models
 .. _detr: detr_models.html#module-alonet.detr.detr
+.. |deformable| replace:: Deformable-based models
+.. _deformable: deformable_models.html#module-alonet.deformable_detr.deformable_detr
 .. |detrfine| replace:: DetrFinetune models
 .. _detrfine: detr_models.html#module-alonet.detr.detr_r50_finetune
+
+.. _detrPerf: https://github.com/Visual-Behavior/aloception/tree/master/alonet/detr_panoptic
+.. |detrPerf| replace:: DETR results
+.. _deformablePerf: https://github.com/Visual-Behavior/aloception/tree/master/alonet/deformable_panoptic
+.. |deformablePerf| replace:: Deformable DETR results

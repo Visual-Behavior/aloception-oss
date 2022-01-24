@@ -23,7 +23,7 @@ class LitPanopticDetr(alonet.deformable_detr.LitDeformableDetr):
     accumulate_grad_batches : int, optional
         Accumulates grads every k batches or as set up in the dict, by default 4
     model_name : str, optional
-        Name use to define the model, by default "detr-r50-panoptic"
+        Name use to define the model, by default ``detr-r50-panoptic``
     model : torch.nn, optional
         Custom model to train
 
@@ -104,7 +104,7 @@ class LitPanopticDetr(alonet.deformable_detr.LitDeformableDetr):
         Raises
         ------
         Exception
-            Only :attr:`detr-r50-panoptic` models are supported yet.
+            Only ``detr-r50-panoptic`` models are supported yet.
         """
         if self.model_name == "detr-r50-panoptic":
             model = alonet.detr_panoptic.DetrR50Panoptic(
@@ -154,14 +154,14 @@ class LitPanopticDetr(alonet.deformable_detr.LitDeformableDetr):
             Weighting factor in range (0,1) to balance positive vs negative examples. -1 for no weighting,
             by default 0.25
         losses : list, optional
-            List of losses to take into account in total loss, by default ["labels", "boxes", "masks"].
-            Possible values: ["labels", "boxes", "masks"] (use the latest in segmentation tasks)
+            List of losses to take into account in total loss, by default [``labels``, ``boxes``, ``masks``] (uses all
+            the possible values).
         aux_loss_stage : int, optional
             Size of stages from :attr:`aux_outputs` key in forward ouputs, by default 6
 
         Returns
         -------
-        :mod:`DetrCriterion <alonet.detr.criterion>`
+        :mod:`DetrPanopticCriterion <alonet.detr_panoptic.criterion>`
             Criterion use to train the model
         """
         return alonet.detr_panoptic.DetrPanopticCriterion(
@@ -178,6 +178,22 @@ class LitPanopticDetr(alonet.deformable_detr.LitDeformableDetr):
         )
 
     def build_matcher(self, cost_class: float = 1, cost_boxes: float = 5, cost_giou: float = 2):
+        """Build the default matcher
+
+        Parameters
+        ----------
+        cost_class : float, optional
+            Weight of class cost in Hungarian Matcher, by default 1
+        cost_boxes : float, optional
+            Weight of boxes cost in Hungarian Matcher, by default 5
+        cost_giou : float, optional
+            Weight of GIoU cost in Hungarian Matcher, by default 2
+
+        Returns
+        -------
+        :mod:`DetrHungarianMatcher <alonet.detr.matcher>`
+            Hungarian Matcher, as a Pytorch model
+        """
         return alonet.detr.DetrHungarianMatcher(cost_class=cost_class, cost_boxes=cost_boxes, cost_giou=cost_giou)
 
     def callbacks(self, data_loader: Frame):

@@ -122,8 +122,8 @@ class PanopticHead(nn.Module):
               each individual image (disregarding possible padding).
             - :attr:`enc_outputs` : Transformer encoder outputs.
             - :attr:`dec_outputs` : Transformer decoder outputs.
-            - :attr:`bb_outputs` : Backbone outputs, in `attr`:`bb_lvl{i}_src_outputs`,`attr`:`bb_lvl{i}_mask_outputs`
-              and `attr`:`bb_lvl{i}_pos_outputs` format, with {i} the backbone level.
+            - :attr:`bb_outputs` : Backbone outputs, in :attr:`bb_lvl{i}_src_outputs`, :attr:`bb_lvl{i}_mask_outputs`
+              and :attr:`bb_lvl{i}_pos_outputs` format, with **{i}** the backbone level.
 
         get_filter_fn : Callable
             Function that must return two parameters : the :attr:`dec_outputs` tensor filtered by a boolean mask per
@@ -141,7 +141,8 @@ class PanopticHead(nn.Module):
             - :attr:`pred_masks_info` : Parameters to use in inference procedure
             - :attr:`aux_outputs` : Optional, only returned when auxilary losses are activated. It is a list of
               dictionnaries containing the two above keys for each decoder layer.
-            - **:attr:`DETR_outputs`, such as :attr:`pred_logits` and :attr:`pred_boxes`.
+            - :attr:`pred_logits` and :attr:`pred_boxes`, Optional, if :attr:`return_pred_outputs` = ``True``
+            - **:attr:`DETR_forward_outputs`, Optional, if :attr:`return_detr_outputs` = ``True``
         """
         # DETR model forward to obtain box embeddings
         if self.tracing and isinstance(frames, dict):  # Expected export only panoptic Head (without detr)

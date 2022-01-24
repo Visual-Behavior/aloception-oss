@@ -12,6 +12,7 @@ model = alonet.deformable_detr_panoptic.DeformableDetrR50Panoptic(weights="defor
 model = alonet.deformable_detr_panoptic.DeformableDetrR50Panoptic(
     with_box_refine=True,
     weights="deformable-detr-r50-refinement-panoptic",
+    activation_fn="softmax,
 ).eval()
 
 # Open and normalized frame

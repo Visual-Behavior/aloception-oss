@@ -110,7 +110,7 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         tensor.add_child("boxes3d", boxes3d, align_dim=["B", "T"], mergeable=False)
         tensor.add_child("flow", flow, align_dim=["B", "T"], mergeable=False)
         tensor.add_child("disparity", disparity, align_dim=["B", "T"], mergeable=True)
-        tensor.add_child("depth", depth, align_dim=["B", "T"], mergeable=False)
+        tensor.add_child("depth", depth, align_dim=["B", "T"], mergeable=True)
         tensor.add_child("segmentation", segmentation, align_dim=["B", "T"], mergeable=False)
         tensor.add_child("labels", labels, align_dim=["B", "T"], mergeable=True)
 

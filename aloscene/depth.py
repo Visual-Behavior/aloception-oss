@@ -47,13 +47,13 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         """
         self._append_child("occlusion", occlusion, name)
 
-    def __get_view__(self, cmap="nipy_spectral", min_depth=0, max_depth=200, title=None):
+    def __get_view__(self, cmap="nipy_spectral", min_depth=0, max_depth=200, title=None, reverse=True):
         assert all(dim not in self.names for dim in ["B", "T"]), "Depth should not have batch or time dimension"
         cmap = matplotlib.cm.get_cmap(cmap)
         depth = self.rename(None).permute([1, 2, 0]).detach().cpu().contiguous().numpy()
-
-        depth = max_depth - np.clip(depth, min_depth, max_depth)
-        depth = matplotlib.colors.Normalize(vmax=max_depth)(depth)
+        depth = matplotlib.colors.Normalize(vmin=min_depth, vmax=max_depth, clip=True)(depth)
+        if reverse:
+            depth = 1 - depth
         depth_color = cmap(depth)[:, :, 0, :3]
         return View(depth_color, title=title)
 

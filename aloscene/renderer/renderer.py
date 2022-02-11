@@ -179,28 +179,40 @@ class Renderer(object):
         return np.concatenate(lines, axis=0)
 
     def render(
-        self, views: list, renderer: str = "cv", cell_grid_size=None, record_file: str = None, fps=30, grid_size=None
+        self,
+        views: list,
+        renderer: str = "cv",
+        cell_grid_size=None,
+        record_file: str = None,
+        fps=30,
+        grid_size=None,
+        skip_views=False,
     ):
         """Render a list of view using the given renderer.
 
         Parameters
         ----------
-        views: list
+        views : list
             List of np.darray to display
-        renderer: str
+        renderer : str
             String to set the renderer to use. Can be either ("cv" or "matplotlib")
-        cell_grid_size: tuple
+        cell_grid_size : tuple
             Tuple or None. If not None, the tuple values (height, width) will be used
             to set the size of the each grid cell of the display. If only one view is used,
             the view will be resize to the cell grid size.
-        record_file: str
+        record_file : str
             None by default. Used to save the rendering into one video.
+        skip_views : bool, optional
+            Skip views, in order to speed up the render process, by default False
         """
         if renderer not in ["cv", "matplotlib"]:
-            raise Exception("The renderer must be one of the following:{}".format(self.renderer_to_fn.keys()))
-        view = self.get_grid_view(views, cell_grid_size=cell_grid_size, grid_size=grid_size)
-        self.renderer_to_fn[renderer](view)
+            raise ValueError("The renderer must be one of the following:{}".format(self.renderer_to_fn.keys()))
+        if skip_views and record_file is None:
+            raise ValueError("When skip_views is desired, a record_file must be provided.")
 
+        view = self.get_grid_view(views, cell_grid_size=cell_grid_size, grid_size=grid_size)
+        if not skip_views:
+            self.renderer_to_fn[renderer](view)
         if record_file is not None and self.out is None:
             self.out_shape = (view.shape[1], view.shape[0])
             self.out = cv2.VideoWriter(record_file, cv2.VideoWriter_fourcc(*"DIVX"), fps, self.out_shape)

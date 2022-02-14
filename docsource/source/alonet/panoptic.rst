@@ -1,8 +1,7 @@
-Detr panoptic
+Panoptic Head
 ==========================
 
-The module allows the implementation of a neural network that connects the output of a |detr|_ for the prediction of
-segmentation maps, according to the boxes predicted from the base model.
+This module allows the implementation of a neural network based on |detr|_ to make prediction of segmentation maps.
 
 .. toctree::
    :maxdepth: 3

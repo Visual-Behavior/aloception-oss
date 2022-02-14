@@ -112,13 +112,22 @@ class CocoPanopticDataset(BaseDataset, SplitMixin):
             self.items = items
 
             # Fix label_types: If `classes` is desired, remove types that not include this classes and fix indices
+            idx_sort = [icat for icat in self._ids_renamed if icat != -1]
             if self.label_types is not None:
-                for ltype, vtype in self.label_types.items():
-                    vtype = [x for b, x in enumerate(vtype) if self._ids_renamed[b] != -1]
-                    ltn = list(sorted(set([self.label_types_names[ltype][vt] for vt in vtype])))
-                    index = {b: ltn.index(p) for b, p in enumerate(self.label_types_names[ltype]) if p in ltn}
-                    self.label_types[ltype] = [index[idx] for idx in vtype]
-                    self.label_types_names[ltype] = ltn
+                for ltype in self.label_types:
+                    # Update `label_types_names`, removing useless classes
+                    tlist = self.label_types[ltype]
+                    tnamelist = self.label_types_names[ltype]
+                    keeplist = [-1 if icat == -1 else tnamelist[tlist[i]] for i, icat in enumerate(self._ids_renamed)]
+                    self.label_types_names[ltype] = [lbl for lbl in tnamelist if lbl in keeplist]
+
+                    # Update index in `label_types`, according to new position on `label_types_names`
+                    tnamelist = self.label_types_names[ltype]
+                    self.label_types[ltype] = [tnamelist.index(lbl) for lbl in keeplist if lbl != -1]
+
+                    # Align hyperclass position with new label_names position
+                    self.label_types[ltype] = [x for _, x in sorted(zip(idx_sort, self.label_types[ltype]))]
+            self._ids_renamed = torch.from_numpy(self._ids_renamed)
 
         # Fix number of label names if desired
         if fix_classes_len is not None:
@@ -243,33 +252,38 @@ class CocoPanopticDataset(BaseDataset, SplitMixin):
 
         # Clean index by unique classes filtered
         if self._ids_renamed is not None:
-            new_labels = self._ids_renamed[labels.numpy()]
+            new_labels = self._ids_renamed[labels]
 
             # Keep only valid masks
-            idxs = np.where(new_labels >= 0)[0]
+            idxs = torch.where(new_labels >= 0)[0]
             masks = masks[idxs]
-            labels = torch.from_numpy(new_labels[idxs])
+            labels = new_labels[idxs]
 
         # Make aloscene.frame
         frame = Frame(img_path)
         labels_2d = Labels(labels.to(torch.float32), labels_names=self.label_names, names=("N"), encoding="id")
         boxes_2d = BoundingBoxes2D(
-            masks_to_boxes(masks), boxes_format="xyxy", absolute=True, frame_size=frame.HW, names=("N", None),
+            masks_to_boxes(masks),
+            boxes_format="xyxy",
+            absolute=True,
+            frame_size=frame.HW,
+            names=("N", None),
         )
         boxes_2d.append_labels(labels_2d, name="category")
         self._append_type_labels(boxes_2d, labels)
-        frame.append_boxes2d(boxes_2d)
+        frame.boxes2d = boxes_2d
 
         if self.return_masks:
             masks_2d = Mask(masks, names=("N", "H", "W"))
             masks_2d.append_labels(labels_2d, name="category")
             self._append_type_labels(masks_2d, labels)
-            frame.append_segmentation(masks_2d)
+            frame.segmentation = masks_2d
         return frame
 
 
 if __name__ == "__main__":
-    coco_seg = CocoPanopticDataset(sample=True)
+    # coco_seg = CocoPanopticDataset(sample=True)
+    coco_seg = CocoPanopticDataset()  # test
     for f, frames in enumerate(coco_seg.train_loader(batch_size=2)):
         frames = Frame.batch_list(frames)
         labels_set = "category" if isinstance(frames.boxes2d[0].labels, dict) else None

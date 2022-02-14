@@ -5,8 +5,6 @@ Panoptic module to use in object detection/segmentation tasks.
 """
 from typing import Callable, Dict, Union
 from collections import namedtuple
-import argparse
-import time
 
 import torch
 import torch.nn.functional as F
@@ -124,8 +122,8 @@ class PanopticHead(nn.Module):
               each individual image (disregarding possible padding).
             - :attr:`enc_outputs` : Transformer encoder outputs.
             - :attr:`dec_outputs` : Transformer decoder outputs.
-            - :attr:`bb_outputs` : Backbone outputs, in `attr`:`bb_lvl{i}_src_outputs`,`attr`:`bb_lvl{i}_mask_outputs`
-              and `attr`:`bb_lvl{i}_pos_outputs` format, with {i} the backbone level.
+            - :attr:`bb_outputs` : Backbone outputs, in :attr:`bb_lvl{i}_src_outputs`, :attr:`bb_lvl{i}_mask_outputs`
+              and :attr:`bb_lvl{i}_pos_outputs` format, with **{i}** the backbone level.
 
         get_filter_fn : Callable
             Function that must return two parameters : the :attr:`dec_outputs` tensor filtered by a boolean mask per
@@ -143,13 +141,12 @@ class PanopticHead(nn.Module):
             - :attr:`pred_masks_info` : Parameters to use in inference procedure
             - :attr:`aux_outputs` : Optional, only returned when auxilary losses are activated. It is a list of
               dictionnaries containing the two above keys for each decoder layer.
-            - **:attr:`DETR_outputs`, such as :attr:`pred_logits` and :attr:`pred_boxes`.
+            - :attr:`pred_logits` and :attr:`pred_boxes`, Optional, if :attr:`return_pred_outputs` = ``True``
+            - **:attr:`DETR_forward_outputs`, Optional, if :attr:`return_detr_outputs` = ``True``
         """
         # DETR model forward to obtain box embeddings
         if self.tracing and isinstance(frames, dict):  # Expected export only panoptic Head (without detr)
-            assert all([x in frames for x in ["dec_outputs", "enc_outputs", "bb_lvl3_mask_outputs"]])
-            assert all([x in frames for x in [f"bb_lvl{i}_src_outputs" for i in range(4)]])
-            detr_out = frames  # Expected encode/decode/backbone tensors in frames"
+            detr_out = frames
         else:
             detr_out = self.detr_forward(frames, **kwargs)
 
@@ -314,43 +311,3 @@ class PanopticHead(nn.Module):
             preds_masks.append(masks)
 
         return preds_boxes, preds_masks
-
-
-def main(image_path):
-    from alonet.detr import DetrR50Finetune
-
-    device = torch.device("cuda")
-
-    # Load model
-    model = PanopticHead(DetrR50Finetune(num_classes=250), weights="detr-r50-panoptic")
-    model.to(device).eval()
-
-    # Open and prepare a batch for the model
-    frame = aloscene.Frame(image_path).norm_resnet()
-    frames = aloscene.Frame.batch_list([frame])
-    frames = frames.to(device)
-
-    # GPU warm up
-    [model(frames) for _ in range(3)]
-
-    tic = time.time()
-    with torch.no_grad():
-        [model(frames) for _ in range(20)]
-    toc = time.time()
-    print(f"{(toc - tic)/20*1000} ms")
-
-    # Predict boxes/masks
-    m_outputs = model(frames)  # Pred of size (B, NQ, H//4, W//4)
-    pred_boxes, pred_masks = model.inference(m_outputs, frame_size=frames.HW, threshold=0.85)
-
-    # Add and display the boxes/masks predicted
-    frame.append_boxes2d(pred_boxes[0], "pred_boxes")
-    frame.append_segmentation(pred_masks[0], "pred_masks")
-    frame.get_view().render()
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Detr R50 Panoptic inference on image")
-    parser.add_argument("image_path", type=str, help="Path to the image for inference")
-    args = parser.parse_args()
-    main(args.image_path)

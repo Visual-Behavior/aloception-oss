@@ -8,7 +8,7 @@ information about to create data modules from
 """
 
 import torch
-from argparse import Namespace, ArgumentParser
+from argparse import Namespace, ArgumentParser, _ArgumentGroup
 from typing import Optional
 
 from alodataset import transforms as T  # , Split
@@ -49,7 +49,6 @@ class Data2Detr(pl.LightningDataModule):
 
     def __init__(self, args: Namespace = None, **kwargs):
         # Update class attributes with args and kwargs inputs
-
         super().__init__()
         alonet.common.pl_helpers.params_update(self, args, kwargs)
 
@@ -64,23 +63,44 @@ class Data2Detr(pl.LightningDataModule):
             raise Exception("Must be provided one or two elements in size argument.")
 
         self.args = args
-        self.setup()  # Set train/val loader and some previous parameters
+
+    @property
+    def train_dataset(self):
+        if not hasattr(self, "_train_dataset"):
+            self.setup()
+        return self._train_dataset
+
+    @train_dataset.setter
+    def train_dataset(self, new_dataset):
+        self._train_dataset = new_dataset
+
+    @property
+    def val_dataset(self):
+        if not hasattr(self, "_val_dataset"):
+            self.setup()
+        return self._val_dataset
+
+    @val_dataset.setter
+    def val_dataset(self, new_dataset):
+        self._val_dataset = new_dataset
 
     @staticmethod
-    def add_argparse_args(parent_parser: ArgumentParser):
+    def add_argparse_args(parent_parser: ArgumentParser, parser: _ArgumentGroup = None):
         """Append the respect arguments to parser object
 
         Parameters
         ----------
         parent_parser : ArgumentParser
             Object with previous arguments to append
+        parser : ArgumentParser._ArgumentGroup, optional
+            Argument group to append the parameters, by default None
 
         Returns
         -------
         ArgumentParser
             Arguments updated
         """
-        parser = parent_parser.add_argument_group("DataModule")
+        parser = parent_parser.add_argument_group("DataModule") if parser is None else parser
         parser.add_argument("--batch_size", type=int, default=2, help="Batch size to use (default %(default)s)")
         parser.add_argument("--train_on_val", action="store_true")
         parser.add_argument(
@@ -148,10 +168,7 @@ class Data2Detr(pl.LightningDataModule):
         return frame.norm_resnet()
 
     def val_transform(
-        self,
-        frame: aloscene.Frame,
-        same_on_sequence: bool = True,
-        same_on_frames: bool = False,
+        self, frame: aloscene.Frame, same_on_sequence: bool = True, same_on_frames: bool = False,
     ):
         """Transform requered to valid on each frame
 

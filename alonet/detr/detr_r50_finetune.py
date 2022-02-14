@@ -58,4 +58,4 @@ class DetrR50Finetune(DetrR50):
 if __name__ == "__main__":
     # Setup a new Detr Model with 2 class and the background class equal to 0.
     # Additionally, we're gonna load the pretrained detr-r50 weights.
-    detr_r50_finetune = DetrR50Finetune(num_classes=2, weights="detr-r50")
+    detr_r50_finetune = DetrR50Finetune(num_classes=2, base_weights="detr-r50")

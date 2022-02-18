@@ -173,7 +173,8 @@ def load_training(
     if run_id is not None and project_run_id is not None:
         run_id_project_dir = os.path.join(vb_folder(), f"project_{project_run_id}", run_id)
         ckpt_path = kwargs.get("checkpoint") or getattr(args, "checkpoint", "last.ckpt")  # Highest priority on kwargs
-        ckpt_path = checkpoint_handler(ckpt_path, run_id_project_dir)
+        monitor = kwargs.get("monitor") or getattr(args, "monitor", "val_loss")
+        ckpt_path = checkpoint_handler(ckpt_path, run_id_project_dir, monitor)
         ckpt_path = os.path.join(run_id_project_dir, ckpt_path)
         if not os.path.exists(ckpt_path):
             raise Exception(f"Impossible to load the ckpt at the following destination:{ckpt_path}")

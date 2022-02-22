@@ -67,20 +67,20 @@ class Data2Detr(pl.LightningDataModule):
         self.setup()  # Set train/val loader and some previous parameters
 
     @staticmethod
-    def add_argparse_args(parent_parser: ArgumentParser):
+    def add_argparse_args(parent_parser: ArgumentParser, parser: _ArgumentGroup = None):
         """Append the respect arguments to parser object
-
         Parameters
         ----------
         parent_parser : ArgumentParser
             Object with previous arguments to append
-
+        parser : ArgumentParser._ArgumentGroup, optional
+            Argument group to append the parameters, by default None
         Returns
         -------
         ArgumentParser
             Arguments updated
         """
-        parser = parent_parser.add_argument_group("DataModule")
+        parser = parent_parser.add_argument_group("DataModule") if parser is None else parser
         parser.add_argument("--batch_size", type=int, default=2, help="Batch size to use (default %(default)s)")
         parser.add_argument("--train_on_val", action="store_true")
         parser.add_argument(

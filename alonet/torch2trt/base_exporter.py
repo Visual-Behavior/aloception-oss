@@ -2,13 +2,23 @@ import io
 import os
 import time
 from typing import Dict, List, Tuple, Union
-import onnx
-import tensorrt as trt
+
+
 import torch
 import numpy as np
-import onnx_graphsurgeon as gs
-from contextlib import redirect_stdout, ExitStack
 
+
+try:
+    import onnx
+    import onnx_graphsurgeon as gs
+    import tensorrt as trt
+
+    prod_package_error = None
+except Exception as prod_package_error:
+    pass
+
+
+from contextlib import redirect_stdout, ExitStack
 from alonet.torch2trt.onnx_hack import scope_name_workaround, get_scope_names, rename_tensors_
 from alonet.torch2trt import TRTEngineBuilder, TRTExecutor, utils
 
@@ -38,7 +48,7 @@ class BaseTRTExporter:
         device: torch.device = torch.device("cpu"),
         verbose: bool = False,
         use_scope_names: bool = False,
-        operator_export_type: torch.onnx.OperatorExportTypes = None,
+        operator_export_type=None,
         dynamic_axes: Union[Dict[str, Dict[int, str]], Dict[str, List[int]]] = None,
         opt_profiles: Dict[str, Tuple[List[int]]] = None,
         **kwargs,
@@ -69,6 +79,7 @@ class BaseTRTExporter:
             `https://pytorch.org/docs/stable/onnx.html#functions <torch.onnx.export>`_.
         opt_profiles : Dict[str, Tuple[List[int]]], by default None
             Optimization profiles (one by each dynamic axis).
+        operator_export_type: torch.onnx.OperatorExportTypes
 
         Raises
         ------
@@ -77,6 +88,13 @@ class BaseTRTExporter:
             * If :attr:`dynamic_axes` is desired, :attr:`opt_profiles` must be provided with sames keys as
               :attr:`dynamic_axes`.
         """
+        if prod_package_error is not None:
+            raise prod_package_error
+        if prod_package_error is not None:
+            raise prod_package_error
+        if prod_package_error is not None:
+            raise prod_package_error
+
         assert hasattr(model, "tracing") and model.tracing, "Model must be instantiated with tracing=True"
         self.model = model
         self.input_names = input_names
@@ -129,7 +147,7 @@ class BaseTRTExporter:
         pass
         raise Exception("Child class should implement this method")
 
-    def adapt_graph(self, graph: gs.Graph) -> gs.Graph:
+    def adapt_graph(self, graph):
         """Modify ONNX graph to ensure compability between ONNX and TensorRT
 
         Returns
@@ -170,6 +188,9 @@ class BaseTRTExporter:
         sample_outputs: dict[str: np.ndarray]
 
         """
+        if prod_package_error is not None:
+            raise prod_package_error
+
         # Prepare dummy input for tracing
         inputs, kwargs = self.prepare_sample_inputs()
 
@@ -233,7 +254,7 @@ class BaseTRTExporter:
         torch.cuda.empty_cache()
         return np_inputs, np_m_outputs
 
-    def _onnx2engine(self, **kwargs) -> trt.ICudaEngine:
+    def _onnx2engine(self, **kwargs):
         """
         Export TensorRT engine from an ONNX file
 
@@ -241,6 +262,9 @@ class BaseTRTExporter:
         -------
         engine: tensorrt.ICudaEngine
         """
+        if prod_package_error is not None:
+            raise prod_package_error
+
         graph = gs.import_onnx(onnx.load(self.onnx_path))
         graph.toposort()
 

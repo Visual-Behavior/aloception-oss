@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import math
 import torchvision.transforms.functional as F
+from torchvision.transforms import InterpolationMode
 import torch
 
 from aloscene.renderer import View, Renderer
@@ -433,7 +434,7 @@ class SpatialAugmentedTensor(AugmentedTensor):
         assert self.names[-2] == "H" and self.names[-1] == "W", f"expected format: […, H, W], got: {self.names}"
         return F.vflip(self.rename(None)).reset_names()
 
-    def _resize(self, size, **kwargs):
+    def _resize(self, size, interpolation=InterpolationMode.BILINEAR, **kwargs):
         """Resize SpatialAugmentedTensor, but not its labels
 
         Parameters
@@ -455,7 +456,7 @@ class SpatialAugmentedTensor(AugmentedTensor):
         if ("N" in self.names and self.size("N") == 0) or ("C" in self.names and self.size("C") == 0):
             shapes = list(self.shape)[:-2] + [h, w]
             return self.rename(None).view(shapes).reset_names()
-        return F.resize(self.rename(None), (h, w)).reset_names()
+        return F.resize(self.rename(None), (h, w), interpolation=interpolation).reset_names()
 
     def _rotate(self, angle, **kwargs):
         """Rotate SpatialAugmentedTensor, but not its labels

@@ -70,7 +70,7 @@ class Points3D(aloscene.tensors.AugmentedTensor):
     def __init__(self, x, *args, **kwargs):
         super().__init__(x)
 
-    def as_depth(self, base_depth: aloscene.Depth, camera_intrinsic: aloscene.CameraIntrinsic):
+    def as_depth(self, base_depth: aloscene.Depth, camera_intrinsic: aloscene.CameraIntrinsic, return_mapping=False):
         """Project back the points onto the image plane. The results image will
         be returns as an aloscene.Depth map.
 
@@ -82,6 +82,7 @@ class Points3D(aloscene.tensors.AugmentedTensor):
         camera_intrinsic: aloscene.CameraIntrinsic
             CameraIntrinsic to use to unproject the points to 3D. If not, will try to use the instance
             `cam_intrinsic` if set.
+        return_mapping: return mapping (slice, valid_points) used to write into the base depth map
         """
         principal_points = camera_intrinsic.principal_points.unsqueeze(-2)
         focal_length = camera_intrinsic.focal_length.unsqueeze(-2)
@@ -125,11 +126,22 @@ class Points3D(aloscene.tensors.AugmentedTensor):
         else:
             n_base_depth[depth_slice] = flattened_projected_points[valid_points][..., 2:]
 
-        return aloscene.Depth(
-            n_base_depth,
-            cam_intrinsic=camera_intrinsic,
-            names=n_base_depth_names,
-        )
+        if not return_mapping:
+            return aloscene.Depth(
+                n_base_depth,
+                cam_intrinsic=camera_intrinsic,
+                names=n_base_depth_names,
+            )
+        else:
+            return (
+                aloscene.Depth(
+                    n_base_depth,
+                    cam_intrinsic=camera_intrinsic,
+                    names=n_base_depth_names,
+                ),
+                depth_slice,
+                valid_points,
+            )
 
     def get_view(self, **kwargs):
         return None

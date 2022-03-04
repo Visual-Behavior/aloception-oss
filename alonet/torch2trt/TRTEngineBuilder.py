@@ -1,8 +1,14 @@
-import tensorrt as trt
-from typing import Dict, List, Tuple
+try:
+    import tensorrt as trt
 
-TRT_LOGGER = trt.Logger(trt.Logger.VERBOSE)
-network_creation_flag = 1 << int(trt.NetworkDefinitionCreationFlag.EXPLICIT_BATCH)
+    TRT_LOGGER = trt.Logger(trt.Logger.VERBOSE)
+    network_creation_flag = 1 << int(trt.NetworkDefinitionCreationFlag.EXPLICIT_BATCH)
+    trt_import_error = None
+except Exception as trt_import_error:
+    pass
+
+
+from typing import Dict, List, Tuple
 
 
 def GiB(val):
@@ -25,7 +31,7 @@ class TRTEngineBuilder:
         INT8_allowed: bool = False,
         strict_type: bool = False,
         calibrator: bool = None,
-        logger: trt.Logger = TRT_LOGGER,
+        logger=None,
         opt_profiles: Dict[str, Tuple[List[int]]] = None,
     ):
         """
@@ -50,6 +56,9 @@ class TRTEngineBuilder:
             If :attr:`opt_profiles` is desired, each profile must be a set of
             [:value:`min_shape`/:value:`optimal_shape`/:value:`max_shape`]
         """
+        if trt_import_error is not None:
+            raise trt_import_error
+        logger = logger if logger is not None else trt.Logger
         self.FP16_allowed = FP16_allowed
         self.INT8_allowed = INT8_allowed
         self.onnx_file_path = onnx_file_path
@@ -66,8 +75,8 @@ class TRTEngineBuilder:
     def set_workspace_size(self, workspace_size_GiB: int):
         self.max_workspace_size = GiB(workspace_size_GiB)
 
-    def setup_profile(self, builder: trt.Builder, config: trt.IBuilderConfig):
-        """ Setup builder engine to add custom optimization profiles
+    def setup_profile(self, builder, config):
+        """Setup builder engine to add custom optimization profiles
 
         Parameters
         ----------
@@ -86,7 +95,7 @@ class TRTEngineBuilder:
             profile.set_shape(tname, *profiles)
         config.add_optimization_profile(profile)
 
-    def check_dynamic_axes(self, engine: trt.ICudaEngine):
+    def check_dynamic_axes(self, engine):
         """Setup each dynamic axis on engine with their profiles to check whether or not they are dynamic
 
         Parameters

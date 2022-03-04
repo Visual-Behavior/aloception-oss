@@ -1,7 +1,26 @@
 import os
-import pycuda.driver as cuda
-import tensorrt as trt
-import onnx_graphsurgeon as gs
+
+try:
+    import pycuda.driver as cuda
+
+    cuda_error = None
+except Exception as cuda_error:
+    pass
+
+try:
+    import tensorrt as trt
+
+    tensorrt_error = None
+except Exception as tensorrt_error:
+    pass
+
+try:
+    import onnx_graphsurgeon as gs
+
+    onnx_graphsurgeon_error = None
+except Exception as onnx_graphsurgeon:
+    pass
+
 import ctypes
 from alonet import ALONET_ROOT
 
@@ -18,6 +37,9 @@ def load_trt_custom_plugins(lib_path: str):
     lib_path: str
         Path relative to aloception root, point to built plugin
     """
+    if tensorrt_error is not None:
+        raise tensorrt_error
+
     if not os.path.isfile(lib_path):
         import subprocess
 
@@ -27,7 +49,14 @@ def load_trt_custom_plugins(lib_path: str):
     trt.init_libnvinfer_plugins(trt.Logger(trt.Logger.INFO), "")
 
 
-def print_graph_io(graph: gs.Graph):
+def print_graph_io(graph):
+    """
+    Parameters
+    ----------
+    graph: gs.Graph
+    """
+    if onnx_graphsurgeon_error is not None:
+        raise onnx_graphsurgeon_error
     # Print inputs:
     print("\n=====ONNX graph inputs =====")
     for i in graph.inputs:
@@ -39,12 +68,24 @@ def print_graph_io(graph: gs.Graph):
     print("\n")
 
 
-def io_name_handler(graph: gs.Graph):
+def io_name_handler(graph):
+    """
+    Parameters
+    ----------
+    graph: gs.Graph
+    """
+    if onnx_graphsurgeon_error is not None:
+        raise onnx_graphsurgeon_error
     # for now, no need to handle IO names
     return graph
 
 
-def get_node_by_name(name, onnx_graph: gs.Graph):
+def get_node_by_name(name, onnx_graph):
+    """
+    Parameters
+    ----------
+    graph: gs.Graph
+    """
     for n in onnx_graph.nodes:
         if name in n.name:
             return n
@@ -59,7 +100,12 @@ def get_nodes_by_op(op_name, onnx_graph):
     return nodes
 
 
-def get_nodes_by_prefix(prefix, onnx_graph: gs.Graph):
+def get_nodes_by_prefix(prefix, onnx_graph):
+    """
+    Parameters
+    ----------
+    graph: gs.Graph
+    """
     nodes = []
     for n in onnx_graph.nodes:
         if n.name.startswith(prefix):
@@ -139,6 +185,10 @@ class DynamicHostDeviceMem(HostDeviceMem):
         self._host = new_host
 
     def allocate_mem(self, new_shape: tuple):
+
+        if cuda_error is not None:
+            raise cuda_error
+
         if self._host is None or not hasattr(self.shape, "__iter__") or tuple(new_shape) != tuple(self.shape):
             # Allocate buffer with new shape, after release memory
             self.release()
@@ -178,6 +228,9 @@ def allocate_buffers(context, stream=None, sync_mode=True):
     (new host will set this properties)
 
     """
+    if tensorrt_error is not None:
+        raise tensorrt_error
+
     inputs = []
     outputs = []
     has_dynamic_axes = False

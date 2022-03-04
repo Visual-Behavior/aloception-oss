@@ -2,24 +2,13 @@ import os
 
 try:
     import pycuda.driver as cuda
-
-    cuda_error = None
-except Exception as cuda_error:
-    pass
-
-try:
+    import onnx_graphsurgeon as gs
     import tensorrt as trt
 
-    tensorrt_error = None
-except Exception as tensorrt_error:
+    prod_package_error = None
+except Exception as prod_package_error:
     pass
 
-try:
-    import onnx_graphsurgeon as gs
-
-    onnx_graphsurgeon_error = None
-except Exception as onnx_graphsurgeon:
-    pass
 
 import ctypes
 from alonet import ALONET_ROOT
@@ -37,8 +26,8 @@ def load_trt_custom_plugins(lib_path: str):
     lib_path: str
         Path relative to aloception root, point to built plugin
     """
-    if tensorrt_error is not None:
-        raise tensorrt_error
+    if prod_package_error is not None:
+        raise prod_package_error
 
     if not os.path.isfile(lib_path):
         import subprocess
@@ -55,8 +44,8 @@ def print_graph_io(graph):
     ----------
     graph: gs.Graph
     """
-    if onnx_graphsurgeon_error is not None:
-        raise onnx_graphsurgeon_error
+    if prod_package_error is not None:
+        raise prod_package_error
     # Print inputs:
     print("\n=====ONNX graph inputs =====")
     for i in graph.inputs:
@@ -74,8 +63,8 @@ def io_name_handler(graph):
     ----------
     graph: gs.Graph
     """
-    if onnx_graphsurgeon_error is not None:
-        raise onnx_graphsurgeon_error
+    if prod_package_error is not None:
+        raise prod_package_error
     # for now, no need to handle IO names
     return graph
 
@@ -186,8 +175,8 @@ class DynamicHostDeviceMem(HostDeviceMem):
 
     def allocate_mem(self, new_shape: tuple):
 
-        if cuda_error is not None:
-            raise cuda_error
+        if prod_package_error is not None:
+            raise prod_package_error
 
         if self._host is None or not hasattr(self.shape, "__iter__") or tuple(new_shape) != tuple(self.shape):
             # Allocate buffer with new shape, after release memory
@@ -228,8 +217,8 @@ def allocate_buffers(context, stream=None, sync_mode=True):
     (new host will set this properties)
 
     """
-    if tensorrt_error is not None:
-        raise tensorrt_error
+    if prod_package_error is not None:
+        raise prod_package_error
 
     inputs = []
     outputs = []

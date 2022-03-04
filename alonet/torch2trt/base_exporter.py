@@ -10,27 +10,15 @@ import numpy as np
 
 try:
     import onnx
-
-    onnx_import_error = None
-except Exception as onnx_import_error:
-    pass
-
-try:
+    import onnx_graphsurgeon as gs
     import tensorrt as trt
 
-    trt_import_error = None
-except Exception as trt_import_error:
+    prod_package_error = None
+except Exception as prod_package_error:
     pass
 
-try:
-    import onnx_graphsurgeon as gs
-
-    onnx_graphsurgeon_error = None
-except Exception as onnx_graphsurgeon_error:
-    pass
 
 from contextlib import redirect_stdout, ExitStack
-
 from alonet.torch2trt.onnx_hack import scope_name_workaround, get_scope_names, rename_tensors_
 from alonet.torch2trt import TRTEngineBuilder, TRTExecutor, utils
 
@@ -100,12 +88,12 @@ class BaseTRTExporter:
             * If :attr:`dynamic_axes` is desired, :attr:`opt_profiles` must be provided with sames keys as
               :attr:`dynamic_axes`.
         """
-        if trt_import_error is not None:
-            raise trt_import_error
-        if onnx_graphsurgeon_error is not None:
-            raise onnx_graphsurgeon_error
-        if onnx_import_error is not None:
-            raise onnx_import_error
+        if prod_package_error is not None:
+            raise prod_package_error
+        if prod_package_error is not None:
+            raise prod_package_error
+        if prod_package_error is not None:
+            raise prod_package_error
 
         assert hasattr(model, "tracing") and model.tracing, "Model must be instantiated with tracing=True"
         self.model = model
@@ -200,8 +188,8 @@ class BaseTRTExporter:
         sample_outputs: dict[str: np.ndarray]
 
         """
-        if onnx_import_error is not None:
-            raise onnx_import_error
+        if prod_package_error is not None:
+            raise prod_package_error
 
         # Prepare dummy input for tracing
         inputs, kwargs = self.prepare_sample_inputs()
@@ -274,8 +262,8 @@ class BaseTRTExporter:
         -------
         engine: tensorrt.ICudaEngine
         """
-        if onnx_import_error is not None:
-            raise onnx_import_error
+        if prod_package_error is not None:
+            raise prod_package_error
 
         graph = gs.import_onnx(onnx.load(self.onnx_path))
         graph.toposort()

@@ -3,8 +3,8 @@ try:
 
     TRT_LOGGER = trt.Logger(trt.Logger.VERBOSE)
     network_creation_flag = 1 << int(trt.NetworkDefinitionCreationFlag.EXPLICIT_BATCH)
-    trt_import_error = None
-except Exception as trt_import_error:
+    prod_package_error = None
+except Exception as prod_package_error:
     pass
 
 
@@ -56,8 +56,8 @@ class TRTEngineBuilder:
             If :attr:`opt_profiles` is desired, each profile must be a set of
             [:value:`min_shape`/:value:`optimal_shape`/:value:`max_shape`]
         """
-        if trt_import_error is not None:
-            raise trt_import_error
+        if prod_package_error is not None:
+            raise prod_package_error
         logger = logger if logger is not None else trt.Logger
         self.FP16_allowed = FP16_allowed
         self.INT8_allowed = INT8_allowed

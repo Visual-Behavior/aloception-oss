@@ -2,18 +2,12 @@ from collections import defaultdict
 from typing import Union
 
 try:
+    import tensorrt as trt
     import pycuda
     import pycuda.autoinit as cuda_init
 
-    pycuda_error = None
-except Exception as pycuda_error:
-    pass
-
-try:
-    import tensorrt as trt
-
     TRT_LOGGER = trt.Logger(trt.Logger.INFO)
-    tensorrt_error = None
+    prod_package_error = None
 
     class CustomProfiler(trt.IProfiler):
         def __init__(self):
@@ -27,7 +21,7 @@ try:
             self.timing = defaultdict(list)
 
 
-except Exception as tensorrt_error:
+except Exception as prod_package_error:
     pass
 
 from alonet.torch2trt.utils import allocate_buffers, allocate_dynamic_mem, execute_async, execute_sync, get_bindings
@@ -76,8 +70,8 @@ class TRTExecutor:
             True/False enable the synchronized/asynchonized execution of TensorRT engine
         logger: tensorrt.ILogger, logger to print info in terminal
         """
-        if tensorrt_error is not None:
-            raise tensorrt_error
+        if prod_package_error is not None:
+            raise prod_package_error
         self.sync_mode = sync_mode
         self.stream = stream
         if verbose_logger:

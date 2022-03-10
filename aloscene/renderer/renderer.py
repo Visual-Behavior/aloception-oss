@@ -114,7 +114,13 @@ class View(object):
         return View(Renderer.get_grid_view([self, view]))
 
     def save(self, location):
-        """Save the current view into the given location"""
+        """Save the current view into the given location
+
+        Parameters
+        ----------
+        location: (str)
+            Path to the image to save
+        """
         cv2.imwrite(location, self.image[:, :, ::-1] * 255)
 
 

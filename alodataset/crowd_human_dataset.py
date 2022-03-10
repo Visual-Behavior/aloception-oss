@@ -149,39 +149,22 @@ class CrowdHumanDataset(BaseDataset):
 
         return frame
 
-    def prepare(self):
-        """Prepare the dataset. The human crowd dataset has a lot of huge 4k images that drasticly slow down
-        the training. To be more effective, this method will go through all images from the dataset and will
-        save a new version of the dataset under `{self.dataset_dir_prepared}`. Once the dataset is prepared,
-        the path to the dir in /.aloception/alodataset_config.json will be replace by the new prepared one.
-
-        Notes
-        -----
-        If the dataset is already prepared, this method will simply check that all file
-        are prepared and stored into the prepared folder. Otherwise, if the original directory is no longer
-        on the disk, the method will simply use the prepared dir as it is and the prepare step will be skiped.
-        """
+    def _prepare(self, img_folder, ann_file, dataset_dir, idx):
         from alodataset import transforms as T
 
-        if self.sample is not None:  # Nothing to do. Samples are ready
-            return
-
-        if self.dataset_dir.endswith("_prepared") and not os.path.exists(self.dataset_dir.replace("_prepared", "")):
-            return
-
-        dataset_dir_name = os.path.basename(os.path.normpath(self.dataset_dir))
+        dataset_dir_name = os.path.basename(os.path.normpath(dataset_dir))
         if "_prepared" not in dataset_dir_name:
             wip_dir = f".wip_{dataset_dir_name}_prepared"
             prepared_dir = f"{dataset_dir_name}_prepared"
-            img_folder = self.img_folder
-            ann_file = self.ann_file
+            img_folder = img_folder
+            ann_file = ann_file
         else:
             wip_dir = f".wip_{dataset_dir_name}"
             prepared_dir = dataset_dir_name
-            img_folder = os.path.join(self.dataset_dir.replace("_prepared", ""), self._img_folder, "Images")
-            ann_file = os.path.join(self.dataset_dir.replace("_prepared", ""), self._ann_file)
+            img_folder = os.path.join(dataset_dir.replace("_prepared", ""), img_folder, "Images")
+            ann_file = os.path.join(dataset_dir.replace("_prepared", ""), ann_file)
 
-        base_datadir = Path(os.path.normpath(self.dataset_dir)).parent
+        base_datadir = Path(os.path.normpath(dataset_dir)).parent
 
         # Setup a new directory to work with to prepare the dataset
         n_wip_dir = os.path.join(base_datadir, wip_dir)
@@ -194,7 +177,7 @@ class CrowdHumanDataset(BaseDataset):
         if not os.path.exists(n_wip_dir):
             os.makedirs(n_wip_dir)
 
-        p = Path(self.dataset_dir)
+        p = Path(dataset_dir)
         p_parts = list(p.parts)
         p_parts[p_parts.index(dataset_dir_name)] = wip_dir
 
@@ -236,7 +219,7 @@ class CrowdHumanDataset(BaseDataset):
 
         if not os.path.exists(tgt_ann_file) and not os.path.exists(final_tgt_ann_file):
             # Write back the file with all boxes in relative position instead of absolute.
-            content = self.load_json_lines(ann_file)
+            content = self.load_json_lines(ann_file, idx)
             nb_line = len(content)
             for c in range(len(content)):
                 line = content[c]
@@ -270,16 +253,48 @@ class CrowdHumanDataset(BaseDataset):
 
         print("Preparing dataset: Moving the whole structure into the final prepared directory (if needed)")
         fs.move_and_replace(n_wip_dir, prepared_dir)
-
         self.set_dataset_dir(prepared_dir)
-        self.ann_file = final_tgt_ann_file
-        self.img_folder = final_tgt_image_dir
-        self.items = self.load_json_lines(self.ann_file)
+
+        return final_tgt_image_dir, final_tgt_ann_file
+
+    def prepare(self):
+        """Prepare the dataset. The human crowd dataset has a lot of huge 4k images that drasticly slow down
+        the training. To be more effective, this method will go through all images from the dataset and will
+        save a new version of the dataset under `{self.dataset_dir_prepared}`. Once the dataset is prepared,
+        the path to the dir in /.aloception/alodataset_config.json will be replace by the new prepared one.
+
+        Notes
+        -----
+        If the dataset is already prepared, this method will simply check that all file
+        are prepared and stored into the prepared folder. Otherwise, if the original directory is no longer
+        on the disk, the method will simply use the prepared dir as it is and the prepare step will be skiped.
+        """
+        if self.sample is not None and self.sample is not False:  # Nothing to do. Samples are ready
+            return
+
+        if self.dataset_dir.endswith("_prepared") and not os.path.exists(self.dataset_dir.replace("_prepared", "")):
+            return
+
+        dataset_dir = self.dataset_dir
+        dataset_dir_name = os.path.basename(os.path.normpath(self.dataset_dir))
+        for idx, (img_folder, ann_file) in enumerate(zip(self.img_folder, self.ann_file)):
+            if "_prepared" not in dataset_dir_name:
+                n_img_folder, n_ann_file = self._prepare(img_folder, ann_file, dataset_dir, idx)
+            else:
+                n_img_folder, n_ann_file = self._prepare(self._img_folder[idx], self._ann_file[idx], dataset_dir, idx)
+            self.img_folder[idx] = n_img_folder
+            self.ann_file[idx] = n_ann_file
+
+        # Set back the items with the annotation files
+        self.items = []
+        for a, ann_file in enumerate(self.ann_file):
+            line = self.load_json_lines(ann_file, a)
+            self.items += line
 
 
 def main():
     """Main"""
-    crowd_human_dataset = CrowdHumanDataset(sample=True)
+    crowd_human_dataset = CrowdHumanDataset(img_folder="CrowdHuman_train", ann_file="annotation_train.odgt")
 
     crowd_human_dataset.prepare()
     for i, frames in enumerate(crowd_human_dataset.train_loader(batch_size=2, sampler=None, num_workers=0)):

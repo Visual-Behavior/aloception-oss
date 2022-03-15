@@ -284,6 +284,8 @@ class BaseTRTExporter:
             path_split[-1] = "trt_" + path_split[-1]
             self.onnx_path = "/".join(path_split)
 
+        print("self.onnx_path", self.onnx_path)
+
         # === Build engine
         self.engine_builder.export_engine(self.engine_path)
         return self.engine_builder.engine

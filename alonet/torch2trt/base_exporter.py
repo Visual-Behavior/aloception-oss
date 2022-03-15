@@ -270,10 +270,10 @@ class BaseTRTExporter:
         if prod_package_error is not None:
             raise prod_package_error
 
-        graph = gs.import_onnx(onnx.load(self.onnx_path))
-        graph.toposort()
-
         if not self.skip_adapt_graph:
+            graph = gs.import_onnx(onnx.load(self.onnx_path))
+            graph.toposort()
+
             # === Modify ONNX graph for TensorRT compability
             graph = self.adapt_graph(graph, **kwargs)
             utils.print_graph_io(graph)
@@ -283,8 +283,6 @@ class BaseTRTExporter:
             path_split = self.onnx_path.split("/")
             path_split[-1] = "trt_" + path_split[-1]
             self.onnx_path = "/".join(path_split)
-
-        print("self.onnx_path", self.onnx_path)
 
         # === Build engine
         self.engine_builder.export_engine(self.engine_path)

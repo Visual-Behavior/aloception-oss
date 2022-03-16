@@ -13,7 +13,7 @@ try:
     import onnx
     import onnx_graphsurgeon as gs
     import tensorrt as trt
-
+    import pycuda.driver as cuda
     prod_package_error = None
 except Exception as prod_package_error:
     pass
@@ -24,7 +24,7 @@ from alonet.torch2trt.onnx_hack import scope_name_workaround, get_scope_names, r
 from alonet.torch2trt import TRTEngineBuilder, TRTExecutor, utils
 
 
-import pycuda.driver as cuda
+
 
 class BaseTRTExporter:
     """

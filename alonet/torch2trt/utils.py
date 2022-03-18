@@ -368,3 +368,37 @@ def execute_sync(context, bindings, inputs, outputs):
     for out in outputs:
         out.host = out.host.reshape(out.shape)
     return [out.host for out in outputs]
+
+
+
+def rename_nodes_(graph, verbose=False):
+
+    dont_rename = [v.name for v in graph.inputs + graph.outputs]
+
+    for node in graph.nodes:
+        if node.name not in dont_rename:
+            # Replace name by output name to include in profiling
+            node.name = node.outputs[0].name
+            # If the node does not have name, try to replace by inputs tensors to it
+            try:
+                id_node = int(node.name)
+                node_is_int = True
+            except:
+                node_is_int = False
+
+            if node_is_int:
+                for inode in node.inputs:
+                    try:  # Only for named inputs
+                        int(inode.name)
+                        inode_is_int = True
+                    except:
+                        inode_is_int = False
+
+                    # Input named, change tensor name
+                    if not inode_is_int:
+                        new_name = inode.name + "_" + str(id_node)
+                        if verbose:
+                            print(f"  changed {node.name} to {new_name}")
+                        node.name = new_name
+
+    return graph

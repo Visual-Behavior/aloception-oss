@@ -158,8 +158,7 @@ class BaseTRTExporter:
         raise Exception("Child class should implement this method")
 
 
-
-    def adapt_graph(self, graph: gs.Graph):
+    def adapt_graph(self, graph):
         """Modify ONNX graph to ensure compability between ONNX and TensorRT
 
         Returns
@@ -207,8 +206,6 @@ class BaseTRTExporter:
         else:
             print("\n[INFO] ONNX model was not validated.")
 
-        if self.use_scope_names:  # Rename nodes to correct profiling
-            graph = rename_nodes_(graph, True)
 
         # Call the child class for specific graph adapation
         graph = self.adapt_graph(graph)
@@ -304,6 +301,7 @@ class BaseTRTExporter:
             number2scope = get_scope_names(onnx_export_log, strict=False)
             graph = gs.import_onnx(onnx.load(self.onnx_path))
             graph = rename_tensors_(graph, number2scope, verbose=True)
+            graph = rename_nodes_(graph, True)
             onnx.save(gs.export_onnx(graph), self.onnx_path)
 
         print("Saved ONNX at:", self.onnx_path)

@@ -105,7 +105,7 @@ def add_argparse_args(parent_parser, add_pl_args=True, mode="training"):
         action="store_true",
         help="load from checkpoint to run a model with different weights names (default False)",
     )
-
+    parser.add_argument("--store_run_id", nargs=1, help="temporary file to run current run_id")
     return parent_parser
 
 
@@ -243,6 +243,10 @@ def run_pl_training(
             expe_name = args.run_id
             resume_from_checkpoint = ckpt_path
             expe_dir = os.path.join(run_id_project_dir, args.run_id)
+
+    if args.store_run_id is not None:
+        with open(args.store_run_id[0], "w") as f:
+            f.write(expe_name)
 
     if args.log is not None:
         if args.log == "wandb":

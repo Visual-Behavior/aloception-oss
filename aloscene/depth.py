@@ -1,6 +1,8 @@
+from logging import warning
 import matplotlib
+from matplotlib.pyplot import sca
 import torch
-
+import warnings
 import aloscene
 from aloscene import Mask
 from aloscene.renderer import View
@@ -22,17 +24,54 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
     """
 
     @staticmethod
-    def __new__(cls, x, occlusion: Mask = None, *args, names=("C", "H", "W"), **kwargs):
+    def __new__(
+            cls, 
+            x, 
+            occlusion: Mask = None, 
+            is_inverse=False, 
+            scale=None, 
+            shift=None, 
+            *args, 
+            names=("C", "H", "W"), 
+            **kwargs):
+        if is_inverse and not (shift and scale):
+            raise AttributeError('inversed depth requires shift and scale arguments')
         if isinstance(x, str):
             x = load_depth(x)
             names = ("C", "H", "W")
         tensor = super().__new__(cls, x, *args, names=names, **kwargs)
         tensor.add_child("occlusion", occlusion, align_dim=["B", "T"], mergeable=True)
-
+        tensor.add_property('_scale', scale)
+        tensor.add_property('_shift', shift)
+        tensor.add_property('_is_inverse', is_inverse)
         return tensor
 
     def __init__(self, x, *args, **kwargs):
         super().__init__(x)
+
+    def encode_inverse(self, scale: float, shift: float):
+        """Shift and scales the depth values"""
+        depth = self.detach().cpu()
+        if depth._is_inverse:
+            depth = self.encode_absolute()
+        depth.add_property('_scale', scale)
+        depth.add_property('_shift', shift)
+        depth.add_property('_is_inverse', True)
+        depth = depth * scale + shift
+        return 1 / depth
+    
+    def encode_absolute(self):
+        """Undo inverse encoding"""
+        depth = self.detach().cpu()
+        if not depth._is_inverse:
+            warnings.warn('depth already encoded in absolute mode')
+            return depth
+        depth = 1 / depth
+        depth = depth / self.scale - self.shift
+        depth.add_property('_scale', None)
+        depth.add_property('_shift', None)
+        depth.add_property('_is_inverse', False)
+        return depth
 
     def append_occlusion(self, occlusion: Mask, name: str = None):
         """Attach an occlusion mask to the depth tensor.

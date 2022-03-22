@@ -700,9 +700,10 @@ class AugmentedTensor(torch.Tensor):
         n_tensor.rename_(None)
         return n_tensor
     
-    def to_squeezed_numpy(self):
+    def as_numpy(self, dtype=np.float16):
         """Returns squeezed numpy array"""
-        return self.squeeze().cpu().detach().numpy().astype(np.float16)
+        tensor = self
+        return np.squeeze(tensor.detach().cpu().numpy()).astype(dtype)
 
     def __repr__(self):
         _str = self.as_tensor().__repr__()

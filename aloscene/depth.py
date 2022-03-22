@@ -41,9 +41,9 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
             names = ("C", "H", "W")
         tensor = super().__new__(cls, x, *args, names=names, **kwargs)
         tensor.add_child("occlusion", occlusion, align_dim=["B", "T"], mergeable=True)
-        tensor.add_property('_scale', scale)
-        tensor.add_property('_shift', shift)
-        tensor.add_property('_is_inverse', is_inverse)
+        tensor.add_property('scale', scale)
+        tensor.add_property('shift', shift)
+        tensor.add_property('is_inverse', is_inverse)
         return tensor
 
     def __init__(self, x, *args, **kwargs):
@@ -71,9 +71,9 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         depth = self
         if depth._is_inverse:
             depth = self.encode_absolute()
-        depth.add_property('_scale', scale)
-        depth.add_property('_shift', shift)
-        depth.add_property('_is_inverse', True)
+        depth.add_property('scale', scale)
+        depth.add_property('shift', shift)
+        depth.add_property('is_inverse', True)
         depth = depth * scale + shift
         return 1 / depth
     

@@ -49,11 +49,25 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
     def __init__(self, x, *args, **kwargs):
         super().__init__(x)
 
-    def encode_inverse(
-            self, 
-            scale: float = 1, 
-            shift: float = 0):
-        """Shift and scales the depth values"""
+    def encode_inverse(self, scale=1, shift=0):
+        """Scales and shifts the inverse depth
+        
+        Parameters
+        ----------
+            scale: (: float)
+                Multiplication factor. Default is 1.
+            
+            shift: (: float)
+                Addition intercept. Default is 0.
+        
+        Exemples
+        -------
+        >>> # Create a non inverted depth
+        >>> depth = aloscene.Depth(np.random.normal((1, 20, 20)))
+        >>> inverted_depth = depth.encode_inverse(scale=0.03, shift=1)
+        >>> depth.is_inverse, inverted_depth.is_inverse
+        >>> False, True
+        """
         depth = self
         if depth._is_inverse:
             depth = self.encode_absolute()
@@ -64,7 +78,16 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         return 1 / depth
     
     def encode_absolute(self):
-        """Undo inverse encoding"""
+        """Encodes inverted depth to absolute depth
+        
+        Exemples
+        --------
+        >>> # Create an already inverted depth
+        >>> invert_depth = aloscene.Depth(np.random.normal((1, 20, 20)), scale=0.5, shift=1)
+        >>> depth = depth.encode_absolute(scale=0.03, shift=1)
+        >>> depth.is_inverse, inverted_depth.is_inverse
+        >>> False, True
+        """
         depth = self
         if not depth._is_inverse:
             warnings.warn('depth already encoded in absolute mode')

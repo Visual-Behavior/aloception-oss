@@ -21,6 +21,12 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         loaded Depth tensor or path to the Depth file from which Depth will be loaded.
     occlusion : aloscene.Mask
         Occlusion mask for this Depth map. Default value : None.
+    is_inverse: bool
+        Either the depth is already or not inverted.
+    scale: float
+        Scale used to to shift depth. Pass this argument only if is_inverse is set to True
+    shift: float
+        Intercept used to shift depth. Pass this argument only if is_inverse is set to True
     """
 
     @staticmethod

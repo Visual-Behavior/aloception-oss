@@ -77,9 +77,9 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         depth = self
         if depth._is_inverse:
             depth = self.encode_absolute()
-        depth.add_property('scale', scale)
-        depth.add_property('shift', shift)
-        depth.add_property('is_inverse', True)
+        depth.scale = scale
+        depth.shift = shift
+        depth.is_inverse = True
         depth = depth * scale + shift
         return 1 / depth
     
@@ -100,9 +100,9 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
             return depth
         depth = 1 / depth
         depth = depth / self.scale - self.shift
-        depth.add_property('_scale', None)
-        depth.add_property('_shift', None)
-        depth.add_property('_is_inverse', False)
+        depth.scale = None
+        depth.shift = None
+        depth.is_inverse = False
         return depth
 
     def append_occlusion(self, occlusion: Mask, name: str = None):

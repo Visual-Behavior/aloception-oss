@@ -49,7 +49,10 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
     def __init__(self, x, *args, **kwargs):
         super().__init__(x)
 
-    def encode_inverse(self, scale: float, shift: float):
+    def encode_inverse(
+            self, 
+            scale: float = 1, 
+            shift: float = 0):
         """Shift and scales the depth values"""
         depth = self.detach().cpu()
         if depth._is_inverse:

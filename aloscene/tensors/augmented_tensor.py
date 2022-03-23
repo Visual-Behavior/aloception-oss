@@ -709,7 +709,7 @@ class AugmentedTensor(torch.Tensor):
                 The output dtype. Default np.float16.
         """
         tensor = self
-        return np.squeeze(tensor.detach().cpu().numpy()).astype(dtype)
+        return tensor.detach().cpu().numpy().astype(dtype)
 
     def __repr__(self):
         _str = self.as_tensor().__repr__()

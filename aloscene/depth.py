@@ -75,7 +75,7 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         >>> False, True
         """
         depth = self
-        if depth._is_inverse:
+        if depth.is_inverse:
             depth = self.encode_absolute()
         depth.scale = scale
         depth.shift = shift
@@ -95,11 +95,11 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         >>> False, True
         """
         depth = self
-        if not depth._is_inverse:
+        if not depth.is_inverse:
             warnings.warn('depth already encoded in absolute mode')
             return depth
         depth = 1 / depth
-        depth = depth / self.scale - self.shift
+        depth = (depth - self.shift) / self.scale
         depth.scale = None
         depth.shift = None
         depth.is_inverse = False

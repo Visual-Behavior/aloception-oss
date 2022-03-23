@@ -701,7 +701,13 @@ class AugmentedTensor(torch.Tensor):
         return n_tensor
     
     def as_numpy(self, dtype=np.float16):
-        """Returns squeezed numpy array"""
+        """Returns squeezed numpy array
+        
+        Parameters
+        ----------
+            dtype: (: np.dtype)
+                The output dtype. Default np.float16.
+        """
         tensor = self
         return np.squeeze(tensor.detach().cpu().numpy()).astype(dtype)
 

@@ -59,7 +59,7 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         super().__init__(x)
 
     def encode_inverse(self):
-        """Undo encode_absolute rtansformation
+        """Undo encode_absolute tansformation
         
         Exemples
         -------
@@ -97,15 +97,15 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         >>> absolute_depth.is_absolute, not_absolute_depth.is_absolute
         >>> True, False
         """
-        depth = self
+        depth, names = self.rename(None), self.names
         if depth.is_absolute:
             raise ExecError('depth already in absolute state, call encode_inverse first')
         depth = depth * scale + shift
-        depth[depth < 1e-8] = 1e-8
+        depth[torch.unsqueeze(depth < 1e-8, dim=0)] = 1e-8
         depth.scale = scale
         depth.shift = shift
         depth.is_absolute = True
-        return 1 / depth
+        return (1 / depth).rename(*names)
 
     def append_occlusion(self, occlusion: Mask, name: str = None):
         """Attach an occlusion mask to the depth tensor.

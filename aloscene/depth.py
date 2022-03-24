@@ -101,6 +101,7 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         if depth.is_absolute:
             raise ExecError('depth already in absolute state, call encode_inverse first')
         depth = depth * scale + shift
+        depth[depth < 1e-8] = 1e-8
         depth.scale = scale
         depth.shift = shift
         depth.is_absolute = True

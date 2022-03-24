@@ -69,7 +69,7 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         >>> (undo_depth == not_absolute_depth).item()
         >>> True
         """
-        depth = self.clone()
+        depth = self
         if not depth.is_absolute:
             raise ExecError('can not inverse depth, already inversed')
         depth = 1 / depth
@@ -97,7 +97,7 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         >>> absolute_depth.is_absolute, not_absolute_depth.is_absolute
         >>> True, False
         """
-        depth = self.clone()
+        depth = self
         if depth.is_absolute:
             raise ExecError('depth already in absolute state, call encode_inverse first')
         depth = depth * scale + shift

@@ -1,6 +1,9 @@
+from logging import warning
+from shutil import ExecError
 import matplotlib
+from matplotlib.pyplot import sca
 import torch
-
+import warnings
 import aloscene
 from aloscene import Mask
 from aloscene.renderer import View
@@ -19,20 +22,90 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         loaded Depth tensor or path to the Depth file from which Depth will be loaded.
     occlusion : aloscene.Mask
         Occlusion mask for this Depth map. Default value : None.
+    is_bsolute: bool
+        Either depth values refer to real values or shifted and scaled ones. 
+    scale: float
+        Scale used to to shift depth. Pass this argument only if is_bsolute is set to True
+    shift: float
+        Intercept used to shift depth. Pass this argument only if is_bsolute is set to True
     """
 
     @staticmethod
-    def __new__(cls, x, occlusion: Mask = None, *args, names=("C", "H", "W"), **kwargs):
+    def __new__(
+            cls, 
+            x, 
+            occlusion: Mask = None, 
+            is_absolute=False, 
+            scale=None, 
+            shift=None, 
+            *args, 
+            names=("C", "H", "W"), 
+            **kwargs):
+        if is_absolute and not (shift and scale):
+            raise AttributeError('absolute depth requires shift and scale arguments')
+        if not is_absolute and (shift or scale):
+            raise AttributeError('depth not in inverse state, can not pass scale or shift')
         if isinstance(x, str):
             x = load_depth(x)
             names = ("C", "H", "W")
         tensor = super().__new__(cls, x, *args, names=names, **kwargs)
         tensor.add_child("occlusion", occlusion, align_dim=["B", "T"], mergeable=True)
-
+        tensor.add_property('scale', scale)
+        tensor.add_property('shift', shift)
+        tensor.add_property('is_absolute', is_absolute)
         return tensor
 
     def __init__(self, x, *args, **kwargs):
         super().__init__(x)
+
+    def encode_inverse(self):
+        """Undo encode_absolute tansformation
+        
+        Exemples
+        -------
+        >>> not_absolute_depth = Depth(torch.ones((1, 1, 1)), is_absolute=False)
+        >>> absolute_depth = not_absolute_depth.encode_absolute()
+        >>> undo_depth = absolute_depth.encode_inverse()
+        >>> (undo_depth == not_absolute_depth).item()
+        >>> True
+        """
+        depth = self
+        if not depth.is_absolute:
+            raise ExecError('can not inverse depth, already inversed')
+        depth = 1 / depth
+        depth = (depth - depth.shift) / depth.scale
+        depth.scale = None
+        depth.shift = None
+        depth.is_absolute = False
+        return depth
+    
+    def encode_absolute(self, scale=1, shift=0):
+        """Transforms inverted depth to absolute depth
+        
+        Parameters
+        ----------
+            scale: (: float)
+                Multiplication factor. Default is 1.
+            
+            shift: (: float)
+                Addition intercept. Default is 0.
+
+        Exemples
+        --------
+        >>> not_absolute_depth = Depth(torch.ones((1, 20, 20)), is_absolute=False)
+        >>> absolute_depth = not_absolute_depth.encode_absolute()
+        >>> absolute_depth.is_absolute, not_absolute_depth.is_absolute
+        >>> True, False
+        """
+        depth, names = self.rename(None), self.names
+        if depth.is_absolute:
+            raise ExecError('depth already in absolute state, call encode_inverse first')
+        depth = depth * scale + shift
+        depth[torch.unsqueeze(depth < 1e-8, dim=0)] = 1e-8
+        depth.scale = scale
+        depth.shift = shift
+        depth.is_absolute = True
+        return (1 / depth).rename(*names)
 
     def append_occlusion(self, occlusion: Mask, name: str = None):
         """Attach an occlusion mask to the depth tensor.

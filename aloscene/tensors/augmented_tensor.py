@@ -1,7 +1,7 @@
-import aloscene
 import torch
-from typing import *
 import inspect
+import numpy as np
+from typing import *
 
 
 class AugmentedTensor(torch.Tensor):
@@ -699,6 +699,17 @@ class AugmentedTensor(torch.Tensor):
         n_tensor.__class__ = torch.Tensor
         n_tensor.rename_(None)
         return n_tensor
+    
+    def as_numpy(self, dtype=np.float16):
+        """Returns squeezed numpy array
+        
+        Parameters
+        ----------
+            dtype: (: np.dtype)
+                The output dtype. Default np.float16.
+        """
+        tensor = self
+        return tensor.detach().cpu().numpy().astype(dtype)
 
     def __repr__(self):
         _str = self.as_tensor().__repr__()

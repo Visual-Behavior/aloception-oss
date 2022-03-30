@@ -68,7 +68,7 @@ class Disparity(aloscene.tensors.SpatialAugmentedTensor):
             cmap = matplotlib.colors.LinearSegmentedColormap.from_list("rg", ["r", "w", "g"], N=256)
         elif isinstance(cmap, str):
             cmap = matplotlib.cm.get_cmap(cmap)
-        disp = self.unsigned().rename(None).permute([1, 2, 0]).detach().contiguous().numpy()
+        disp = self.unsigned().rename(None).permute([1, 2, 0]).as_numpy()
         disp = matplotlib.colors.Normalize(vmin=min_disp, vmax=max_disp, clip=True)(disp)
         if reverse:
             disp = 1 - disp

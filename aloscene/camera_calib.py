@@ -119,8 +119,8 @@ class CameraIntrinsic(AugmentedTensor):
 
     def _resize(self, size, **kwargs):
         cam_intrinsic = self.clone()
-        resize_ratio_w = size[0]
-        resize_ratio_h = size[1]
+        resize_ratio_w = size[1]
+        resize_ratio_h = size[0]
         cam_intrinsic[..., 0, 0] *= resize_ratio_w  # fx
         cam_intrinsic[..., 1, 1] *= resize_ratio_h  # fy
         cam_intrinsic[..., 0, 2] *= resize_ratio_w  # x0

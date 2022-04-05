@@ -14,7 +14,8 @@ try:
     import tensorrt as trt
     import pycuda.driver as cuda
     prod_package_error = None
-except Exception as prod_package_error:
+except Exception as e:
+    prod_package_error = e
     pass
 
 
@@ -91,10 +92,6 @@ class BaseTRTExporter:
             * If :attr:`dynamic_axes` is desired, :attr:`opt_profiles` must be provided with sames keys as
               :attr:`dynamic_axes`.
         """
-        if prod_package_error is not None:
-            raise prod_package_error
-        if prod_package_error is not None:
-            raise prod_package_error
         if prod_package_error is not None:
             raise prod_package_error
 

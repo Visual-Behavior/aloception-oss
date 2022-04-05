@@ -187,8 +187,13 @@ class SpatialAugmentedTensor(AugmentedTensor):
             assert x.is_integer(), f"relative coordinates {x} have produced non-integer absolute coordinates"
         return round(x)
 
-    def temporal(self):
+    def temporal(self, dim=0):
         """Add a temporal dimension on the tensor
+
+        Parameters
+        ----------
+        dim : int
+            The dim on which to add the temporal dimension. Can be 0 or 1
 
         Returns
         -------
@@ -198,13 +203,20 @@ class SpatialAugmentedTensor(AugmentedTensor):
         if "T" in self.names:  # Already a temporal frame
             return self
 
+        def set_n_names(names):
+            pass
+
         tensor = self.rename(None)
-        tensor = torch.unsqueeze(tensor, dim=0)
-        tensor.rename_(*tuple(["T"] + list(tensor._saved_names)))
+        tensor = torch.unsqueeze(tensor, dim=dim)
+        n_names = list(tensor._saved_names)
+        n_names.insert(dim, "T")
+        tensor.rename_(*tuple(n_names))
 
         def batch_label(tensor, label, name):
             if tensor._child_property[name]["mergeable"]:
-                label.rename_(*tuple(["T"] + list(label._saved_names)))
+                n_label_names = list(label._saved_names)
+                n_label_names.insert(dim, "T")
+                label.rename_(*tuple(n_label_names))
                 for sub_name in label._children_list:
                     sub_label = getattr(label, sub_name)
                     if sub_label is not None:
@@ -220,8 +232,13 @@ class SpatialAugmentedTensor(AugmentedTensor):
 
         return tensor
 
-    def batch(self):
+    def batch(self, dim=0):
         """Add a batch dimension on the tensor
+
+        Parameters
+        ----------
+        dim : int
+            The dim on which to add the batch dimension. Can be 0 or 1.
 
         Returns
         -------
@@ -233,7 +250,10 @@ class SpatialAugmentedTensor(AugmentedTensor):
 
         tensor = self.rename(None)
         tensor = torch.unsqueeze(tensor, dim=0)
-        tensor.rename_(*tuple(["B"] + list(tensor._saved_names)))
+
+        n_names = list(tensor._saved_names)
+        n_names.insert(dim, "B")
+        tensor.rename_(*tuple(n_names))
 
         def batch_label(tensor, label, name):
             """
@@ -242,7 +262,9 @@ class SpatialAugmentedTensor(AugmentedTensor):
             - else, the previous name are restored.
             """
             if tensor._child_property[name]["mergeable"]:
-                label.rename_(*tuple(["B"] + list(label._saved_names)))
+                n_label_names = list(label._saved_names)
+                n_label_names.insert(dim, "B")
+                label.rename_(*tuple(n_label_names))
                 for sub_name in label._children_list:
                     sub_label = getattr(label, sub_name)
                     if sub_label is not None:

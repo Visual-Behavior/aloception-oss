@@ -519,7 +519,7 @@ class AugmentedTensor(torch.Tensor):
         """
         dim = kwargs["dim"] if "dim" in kwargs else 0
 
-        if dim != 0:
+        if dim != 0 and dim !=1:
             raise Exception(
                 f"Impossible to expand the labeld tensor on the given dim: {dim}. Export your labeled tensor into tensor before to do it."
             )

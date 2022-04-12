@@ -97,6 +97,7 @@ class BaseTRTExporter:
 
         if hasattr(model, 'tracing'):
             assert model.tracing, "Model must be instantiated with tracing=True"
+
         self.model = model
         self.input_names = input_names
         self.onnx_path = onnx_path

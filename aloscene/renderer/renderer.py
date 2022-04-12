@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import matplotlib
 from abc import ABC, abstractmethod
 import numpy as np
+import cv2
 
 
 def adapt_text_size_to_frame(size, frame_size):
@@ -111,6 +112,16 @@ class View(object):
     def add(self, view):
         """Extend the view with an other view"""
         return View(Renderer.get_grid_view([self, view]))
+
+    def save(self, location):
+        """Save the current view into the given location
+
+        Parameters
+        ----------
+        location: (str)
+            Path to the image to save
+        """
+        cv2.imwrite(location, self.image[:, :, ::-1] * 255)
 
 
 class Renderer(object):

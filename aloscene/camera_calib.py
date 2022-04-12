@@ -119,8 +119,8 @@ class CameraIntrinsic(AugmentedTensor):
 
     def _resize(self, size, **kwargs):
         cam_intrinsic = self.clone()
-        resize_ratio_w = size[0]
-        resize_ratio_h = size[1]
+        resize_ratio_w = size[1]
+        resize_ratio_h = size[0]
         cam_intrinsic[..., 0, 0] *= resize_ratio_w  # fx
         cam_intrinsic[..., 1, 1] *= resize_ratio_h  # fy
         cam_intrinsic[..., 0, 2] *= resize_ratio_w  # x0
@@ -186,6 +186,23 @@ class CameraExtrinsic(AugmentedTensor):
     def __new__(cls, x, *args, **kwargs):
         tensor = super().__new__(cls, x, *args, **kwargs)
         return tensor
+
+    def translation_with(self, tgt_pos):
+        """ Compute the translation with an other pos
+
+        Parameters
+        ----------
+        tgt_pos: aloscene.Pose
+            Target pose to compute the translation with
+
+        Returns
+        -------
+        n_pos: torch.tensor
+            Translation tensor of shape (..., 3)
+        """
+        Ttgt2self = torch.linalg.solve(self.as_tensor(), tgt_pos.as_tensor())
+        translation = Ttgt2self[..., :3, -1]
+        return translation
 
     def __init__(self, x, *args, **kwargs):
         assert x.shape[-2] == 4 and x.shape[-1] == 4

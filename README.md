@@ -4,6 +4,8 @@
 
 <a href="https://visual-behavior.github.io/aloception/">Documentation</a>
 
+[![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-0.2.0-green.svg)](https://conventionalcommits.org)
+
 # Aloception
 
 **Aloception** is a set of packages for computer vision built on top of popular deep learning libraries:

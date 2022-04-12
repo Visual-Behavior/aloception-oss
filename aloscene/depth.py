@@ -23,7 +23,7 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
     occlusion : aloscene.Mask
         Occlusion mask for this Depth map. Default value : None.
     is_bsolute: bool
-        Either depth values refer to real values or shifted and scaled ones. 
+        Either depth values refer to real values or shifted and scaled ones.
     scale: float
         Scale used to to shift depth. Pass this argument only if is_bsolute is set to True
     shift: float
@@ -32,14 +32,14 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
 
     @staticmethod
     def __new__(
-            cls, 
-            x, 
-            occlusion: Mask = None, 
-            is_absolute=False, 
-            scale=None, 
-            shift=None, 
-            *args, 
-            names=("C", "H", "W"), 
+            cls,
+            x,
+            occlusion: Mask = None,
+            is_absolute=False,
+            scale=None,
+            shift=None,
+            *args,
+            names=("C", "H", "W"),
             **kwargs):
         if is_absolute and not (shift and scale):
             raise AttributeError('absolute depth requires shift and scale arguments')
@@ -58,9 +58,20 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
     def __init__(self, x, *args, **kwargs):
         super().__init__(x)
 
-    def encode_inverse(self):
+    def encode_inverse(self, prior_clamp_min=None, prior_clamp_max=None, post_clamp_min=None, post_clamp_max=None):
         """Undo encode_absolute tansformation
-        
+
+        Parameters
+        ----------
+        prior_clamp_min: float | None
+            Clamp min depth before to convert to idepth
+        prior_clamp_max: float | None
+            Clamp max depth before to convert to idepth
+        post_clamp_min: float | None
+            Clamp min output idepth
+        post_clamp_max: float | None
+            Clamp max output idepth
+
         Exemples
         -------
         >>> not_absolute_depth = Depth(torch.ones((1, 1, 1)), is_absolute=False)
@@ -72,23 +83,40 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         depth = self
         if not depth.is_absolute:
             raise ExecError('can not inverse depth, already inversed')
+        shift = depth.shift if depth.shift is not None else 0
+        scale = depth.scale if depth.scale is not None else 1
+
+        if prior_clamp_min is not None or prior_clamp_max is not None:
+            depth = torch.clamp(depth, min=prior_clamp_min, max=prior_clamp_max)
+
         depth = 1 / depth
-        depth = (depth - depth.shift) / depth.scale
+        depth = (depth - shift) / scale
+
+        if post_clamp_min is not None or post_clamp_max is not None:
+            depth = torch.clamp(depth, min=post_clamp_min, max=post_clamp_max)
+
         depth.scale = None
         depth.shift = None
         depth.is_absolute = False
         return depth
-    
-    def encode_absolute(self, scale=1, shift=0):
+
+    def encode_absolute(self, scale=1, shift=0, prior_clamp_min=None, prior_clamp_max=None, post_clamp_min=None, post_clamp_max=None):
         """Transforms inverted depth to absolute depth
-        
+
         Parameters
         ----------
             scale: (: float)
                 Multiplication factor. Default is 1.
-            
             shift: (: float)
                 Addition intercept. Default is 0.
+            prior_clamp_min: float | None
+                Clamp min idepth before to convert to depth
+            prior_clamp_max: float | None
+                Clamp max idepth before to convert to depth
+            post_clamp_min: float | None
+                Clamp min output idepth
+            post_clamp_max: float | None
+                Clamp max output idepth
 
         Exemples
         --------
@@ -100,12 +128,24 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         depth, names = self.rename(None), self.names
         if depth.is_absolute:
             raise ExecError('depth already in absolute state, call encode_inverse first')
+
         depth = depth * scale + shift
+
+        if prior_clamp_min is not None or prior_clamp_max is not None:
+            depth = torch.clamp(depth, min=prior_clamp_min, max=prior_clamp_max)
+
         depth[torch.unsqueeze(depth < 1e-8, dim=0)] = 1e-8
         depth.scale = scale
         depth.shift = shift
         depth.is_absolute = True
-        return (1 / depth).rename(*names)
+
+        n_depth = (1 / depth).rename(*names)
+
+        if post_clamp_min is not None or post_clamp_max is not None:
+            n_depth = torch.clamp(n_depth, min=post_clamp_min, max=post_clamp_max)
+
+        return n_depth
+
 
     def append_occlusion(self, occlusion: Mask, name: str = None):
         """Attach an occlusion mask to the depth tensor.

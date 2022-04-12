@@ -622,13 +622,14 @@ class RealisticNoise(AloTransform):
     def apply(self, frame: Frame):
         n_frame = frame.norm01()
 
-        gaussian_noise = torch.normal(mean=0, std=self.gaussian_std, size=frame.shape)
-        shot_noise = torch.normal(mean=0, std=self.shot_std, size=frame.shape)
+        gaussian_noise = torch.normal(mean=0, std=self.gaussian_std, size=frame.shape, device=frame.device)
+        shot_noise = torch.normal(mean=0, std=self.shot_std, size=frame.shape, device=frame.device)
         noisy_frame = n_frame + n_frame * n_frame * shot_noise + gaussian_noise
         noisy_frame = torch.clip(noisy_frame, 0, 1)
 
-        if n_frame.normalization != frame.normalization:
-            n_frame = n_frame.norm_as(frame)
+        if noisy_frame.normalization != frame.normalization:
+            noisy_frame = noisy_frame.norm_as(frame)
+
         return noisy_frame
 
 

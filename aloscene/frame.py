@@ -6,7 +6,7 @@ from typing import TypeVar, Union
 
 import aloscene
 from aloscene.renderer import View
-from aloscene import BoundingBoxes2D, BoundingBoxes3D, Depth, Disparity, Flow, Mask, Labels, Points2D, Points3D
+from aloscene import BoundingBoxes2D, BoundingBoxes3D, Depth, Disparity, Flow, Mask, Labels, Points2D, Points3D, Pose
 
 # from aloscene.camera_calib import CameraExtrinsic, CameraIntrinsic
 from aloscene.io.image import load_image
@@ -113,6 +113,7 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         tensor.add_child("depth", depth, align_dim=["B", "T"], mergeable=True)
         tensor.add_child("segmentation", segmentation, align_dim=["B", "T"], mergeable=False)
         tensor.add_child("labels", labels, align_dim=["B", "T"], mergeable=True)
+        tensor.add_child("pose", labels, align_dim=["B", "T"], mergeable=True)
 
         # Add other tensor property
         tensor.add_property("normalization", normalization)
@@ -303,6 +304,19 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
             mask are attached to the frame, the mask will be added to the set of mask.
         """
         self._append_child("segmentation", segmentation, name)
+
+    def append_pose(self, pose: Pose, name: str = None):
+        """Attach a pose to the frame.
+
+        Parameters
+        ----------
+        pose : :mod:`Pose <aloscene.pose>`
+            Depth to attach to the Frame
+        name : str
+            If none, the pose will be attached without name (if possible). Otherwise if no other unnamed
+            pose is attached to the frame, the pose will be added to the set of poses.
+        """
+        self._append_child("pose", pose, name)
 
     @staticmethod
     def _get_mean_std_tensor(shape, names, mean_std: tuple, device="cpu"):

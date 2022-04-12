@@ -187,6 +187,23 @@ class CameraExtrinsic(AugmentedTensor):
         tensor = super().__new__(cls, x, *args, **kwargs)
         return tensor
 
+    def translation_with(self, tgt_pos):
+        """ Compute the translation with an other pos
+
+        Parameters
+        ----------
+        tgt_pos: aloscene.Pose
+            Target pose to compute the translation with
+
+        Returns
+        -------
+        n_pos: torch.tensor
+            Translation tensor of shape (..., 3)
+        """
+        Ttgt2self = torch.linalg.solve(self.as_tensor(), tgt_pos.as_tensor())
+        translation = Ttgt2self[..., :3, -1]
+        return translation
+
     def __init__(self, x, *args, **kwargs):
         assert x.shape[-2] == 4 and x.shape[-1] == 4
         super().__init__(x)

@@ -98,7 +98,7 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         depth.is_absolute = False
         return depth
 
-    def encode_absolute(self, scale=1, shift=0, prior_clamp_min=None, prior_clamp_max=None, post_clamp_min=None, post_clamp_max=None):
+    def encode_absolute(self, scale=1, shift=0, prior_clamp_min=None, prior_clamp_max=None, post_clamp_min=None, post_clamp_max=None, keep_negative=False):
         """Transforms inverted depth to absolute depth
 
         Parameters
@@ -115,6 +115,8 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
                 Clamp min output idepth
             post_clamp_max: float | None
                 Clamp max output idepth
+            keep_negative: bool | False
+                Keep negative plannar depth (points behind camera, useful for wide angle lens with FoV bigger than 180 degree)
 
         Exemples
         --------
@@ -132,7 +134,11 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         if prior_clamp_min is not None or prior_clamp_max is not None:
             depth = torch.clamp(depth, min=prior_clamp_min, max=prior_clamp_max)
 
-        depth[torch.unsqueeze(depth < 1e-8, dim=0)] = 1e-8
+        if not keep_negative:
+            depth[torch.unsqueeze(depth < 1e-8, dim=0)] = 1e-8
+        else:
+            depth[torch.unsqueeze((depth < 1e-8) & (depth >= 0), dim=0)] = 1e-8
+            depth[torch.unsqueeze((depth >= -1e-8) & (depth < 0), dim=0)] = -1e-8
         depth.scale = scale
         depth.shift = shift
         depth.is_absolute = True

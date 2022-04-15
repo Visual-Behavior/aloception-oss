@@ -35,14 +35,12 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
             cls,
             x,
             occlusion: Mask = None,
-            is_absolute=False,
+            is_absolute=True,
             scale=None,
             shift=None,
             *args,
             names=("C", "H", "W"),
             **kwargs):
-        if is_absolute and not (shift and scale):
-            raise AttributeError('absolute depth requires shift and scale arguments')
         if not is_absolute and (shift or scale):
             raise AttributeError('depth not in inverse state, can not pass scale or shift')
         if isinstance(x, str):

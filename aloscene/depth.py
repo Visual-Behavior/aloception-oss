@@ -7,6 +7,7 @@ import warnings
 import aloscene
 from aloscene import Mask
 from aloscene.renderer import View
+from aloscene.utils.depth_utils import coords2rtheta
 import numpy as np
 
 from aloscene.io.depth import load_depth
@@ -36,6 +37,7 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
             x,
             occlusion: Mask = None,
             is_absolute=True,
+            is_distance=False,
             scale=None,
             shift=None,
             *args,
@@ -51,6 +53,7 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         tensor.add_property('scale', scale)
         tensor.add_property('shift', shift)
         tensor.add_property('is_absolute', is_absolute)
+        tensor.add_property('is_distance', is_distance)
         return tensor
 
     def __init__(self, x, *args, **kwargs):
@@ -149,7 +152,6 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
             n_depth = torch.clamp(n_depth, min=post_clamp_min, max=post_clamp_max)
 
         return n_depth
-
 
     def append_occlusion(self, occlusion: Mask, name: str = None):
         """Attach an occlusion mask to the depth tensor.
@@ -280,3 +282,69 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
             names=self.names,
         )
         return depth
+
+    def as_distance(self, camera_intrinsic: aloscene.CameraIntrinsic = None, projection="pinhole", distortion=1.0):
+        """Create a new Depth augmented tensor whose data is the distance from camera to world points with corresponding depth.
+        To use this method, we must know intrinsic matrix of camera, projection model and distortion coefficient (if exists).
+
+        Parameters
+        ----------
+        camera_intrinsic: aloscene.CameraIntrinsic
+        projection: str | pinhole
+            At this moment, only 2 projections models are supported: pinhole (f*tan(theta)) and equidistant (f*theta: which is
+            used for wide range camera).
+        distortion: float | 1.0
+            Distortion coefficient for equidistant model. Only linear distortion supported (sensor_angle=distortion*theta).
+        
+        Returns
+        -------
+        aloscene.Depth
+        """
+        depth = self
+        if depth.is_distance:
+            raise ExecError('Cannot transform to distance because this tensor is already a Distance.')
+        assert projection in ["pinhole", "equidistant"], "Only pinhole and equidistant projection are supported"
+
+        camera_intrinsic = camera_intrinsic if camera_intrinsic is not None else self.cam_intrinsic
+        if camera_intrinsic is None:
+            err_msg = "The `camera_intrinsic` must be given either from the current depth tensor or from "
+            err_msg += "the as_disp(camera_intrinsic=...) method."
+            raise Exception(err_msg)
+
+        _, theta = coords2rtheta(camera_intrinsic, depth.HW, distortion, projection)
+        distance = depth / (torch.cos(theta) + 1e-8)
+        distance.is_distance = True
+        return distance
+
+    def as_depth(self, camera_intrinsic: aloscene.CameraIntrinsic = None, projection="pinhole", distortion=1.0):
+        """Create a new Depth augmented tensor from the distance between camera to world points with corresponding depth.
+        To use this method, we must know intrinsic matrix of camera, projection model and distortion coefficient (if exists).
+
+        Parameters
+        ----------
+        camera_intrinsic: aloscene.CameraIntrinsic
+        projection: str | pinhole
+            At this moment, only 2 projections models are supported: pinhole (f*tan(theta)) and equidistant (f*theta: which is
+            used for wide range camera).
+        distortion: float | 1.0
+            Distortion coefficient for equidistant model. Only linear distortion supported (sensor_angle=distortion*theta).
+        
+        Returns
+        -------
+        aloscene.Depth
+        """
+        depth = self
+        if not depth.is_distance:
+            raise ExecError('Cannot transform to distance because this tensor is already a Depth.')
+        assert projection in ["pinhole", "equidistant"], "Only pinhole and equidistant projection are supported"
+
+        camera_intrinsic = camera_intrinsic if camera_intrinsic is not None else self.cam_intrinsic
+        if camera_intrinsic is None:
+            err_msg = "The `camera_intrinsic` must be given either from the current depth tensor or from "
+            err_msg += "the as_disp(camera_intrinsic=...) method."
+            raise Exception(err_msg)
+
+        _, theta = coords2rtheta(camera_intrinsic, depth.HW, distortion, projection)
+        distance = depth * torch.cos(theta)
+        distance.is_distance = False
+        return distance

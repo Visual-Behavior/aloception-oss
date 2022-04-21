@@ -35,12 +35,13 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
             cls,
             x,
             occlusion: Mask = None,
-            is_absolute=False,
+            is_absolute=True,
             scale=None,
             shift=None,
             *args,
             names=("C", "H", "W"),
             **kwargs):
+
         if isinstance(x, str):
             x = load_depth(x)
             names = ("C", "H", "W")

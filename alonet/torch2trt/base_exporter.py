@@ -23,7 +23,7 @@ from contextlib import redirect_stdout, ExitStack
 from alonet.torch2trt.onnx_hack import scope_name_workaround, get_scope_names, rename_tensors_
 from alonet.torch2trt import TRTEngineBuilder, TRTExecutor, utils
 from alonet.torch2trt.utils import get_nodes_by_op, rename_nodes_
-
+from alonet.torch2trt.calibrator import BaseCalibrator
 
 
 class BaseTRTExporter:
@@ -54,7 +54,7 @@ class BaseTRTExporter:
         operator_export_type=None,
         dynamic_axes: Union[Dict[str, Dict[int, str]], Dict[str, List[int]]] = None,
         opt_profiles: Dict[str, Tuple[List[int]]] = None,
-        skip_adapt_graph=False,
+        calibrator: BaseCalibrator = None,
         **kwargs,
     ):
         """
@@ -110,7 +110,6 @@ class BaseTRTExporter:
         self.custom_opset = None  # to be redefine in child class if needed
         self.use_scope_names = use_scope_names
         self.operator_export_type = operator_export_type
-        self.skip_adapt_graph = skip_adapt_graph
         if dynamic_axes is not None:
             assert opt_profiles is not None, "If dynamic_axes are to be used, opt_profiles must be provided"
             assert isinstance(dynamic_axes, dict)
@@ -121,11 +120,6 @@ class BaseTRTExporter:
         onnx_file_name = os.path.split(onnx_path)[1]
         model_name = onnx_file_name.split(".")[0]
 
-        if not self.skip_adapt_graph:
-            self.adapted_onnx_path = os.path.join(onnx_dir, "trt_" + onnx_file_name)
-        else:
-            self.adapted_onnx_path = os.path.join(onnx_dir, onnx_file_name)
-
         self.engine_path = os.path.join(onnx_dir, model_name + f"_{precision.lower()}.engine")
 
         if self.verbose:
@@ -133,12 +127,15 @@ class BaseTRTExporter:
         else:
             trt_logger = trt.Logger(trt.Logger.WARNING)
 
-        self.engine_builder = TRTEngineBuilder(self.adapted_onnx_path, logger=trt_logger, opt_profiles=opt_profiles)
+        self.engine_builder = TRTEngineBuilder(self.onnx_path, logger=trt_logger, opt_profiles=opt_profiles, calibrator=calibrator)
 
         if precision.lower() == "fp32":
             pass
         elif precision.lower() == "fp16":
             self.engine_builder.FP16_allowed = True
+            self.engine_builder.strict_type = True
+        elif precision.lower() == "int8":
+            self.engine_builder.INT8_allowed = True
             self.engine_builder.strict_type = True
         elif precision.lower() == "mix":
             self.engine_builder.FP16_allowed = True
@@ -258,11 +255,9 @@ class BaseTRTExporter:
         else:
             with torch.no_grad():
                 m_outputs = self.model(*inputs, **kwargs)
-
             # Prepare inputs for torch.export.onnx and sanity check
             np_inputs = tuple(np.array(i.cpu()) for i in inputs)
         inputs = (*inputs, kwargs)
-
         onames = m_outputs._fields if hasattr(m_outputs, "_fields") else [f"out_{i}" for i in range(len(m_outputs))]
         np_m_outputs = {key: val.cpu().numpy() for key, val in zip(onames, m_outputs) if isinstance(val, torch.Tensor)}
         # print("Model input shapes:", [val.shape for val in np_inputs])
@@ -275,6 +270,7 @@ class BaseTRTExporter:
                 buffer = stack.enter_context(io.StringIO())
                 stack.enter_context(redirect_stdout(buffer))
                 stack.enter_context(scope_name_workaround())
+            
             torch.onnx.export(
                 self.model,  # model being run
                 inputs,  # model input (or a tuple for multiple inputs)
@@ -293,6 +289,16 @@ class BaseTRTExporter:
 
             if self.use_scope_names:
                 onnx_export_log = buffer.getvalue()
+            
+
+        graph = gs.import_onnx(onnx.load(self.onnx_path))
+        graph.toposort()
+
+        # === Modify ONNX graph for TensorRT compability
+        graph = self._adapt_graph(graph, **kwargs)
+        utils.print_graph_io(graph)
+        # === Export adapted onnx for TRT engine
+        onnx.save(gs.export_onnx(graph), self.onnx_path)
 
         # rewrite onnx graph with new scope names
         if self.use_scope_names:
@@ -318,16 +324,6 @@ class BaseTRTExporter:
         """
         if prod_package_error is not None:
             raise prod_package_error
-
-        if not self.skip_adapt_graph:
-            graph = gs.import_onnx(onnx.load(self.onnx_path))
-            graph.toposort()
-
-            # === Modify ONNX graph for TensorRT compability
-            graph = self._adapt_graph(graph, **kwargs)
-            utils.print_graph_io(graph)
-            # === Export adapted onnx for TRT engine
-            onnx.save(gs.export_onnx(graph), self.adapted_onnx_path)
 
         # === Build engine
         self.engine_builder.export_engine(self.engine_path)
@@ -387,7 +383,6 @@ class BaseTRTExporter:
             default=None,
             help="/path/onnx/will/be/exported, by default set as ~/.aloception/weights/MODEL/MODEL.onnx",
         )
-        parser.add_argument("--skip_adapt_graph", action="store_true", help="Skip the adapt graph")
         parser.add_argument("--batch_size", type=int, default=1, help="Engine batch size, default = 1")
         parser.add_argument("--precision", type=str, default="fp32", help="fp32/fp16/mix, default FP32")
         parser.add_argument("--verbose", action="store_true", help="Helpful when debugging")

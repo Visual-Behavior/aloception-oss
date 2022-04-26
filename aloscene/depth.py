@@ -83,7 +83,7 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         """
         if not depth.is_absolute:
             print('No need to inverse depth, already inversed')
-            return self
+            return self.clone()
         depth = self
         shift = depth.shift if depth.shift is not None else 0
         scale = depth.scale if depth.scale is not None else 1
@@ -132,7 +132,7 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         """
         if depth.is_absolute:
             print('Depth already in absolute value.')
-            return self
+            return self.clone()
         depth, names = self.rename(None), self.names
 
         depth = depth * scale + shift
@@ -307,12 +307,12 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         -------
         aloscene.Depth
         """
-        planar = self
-        if not planar.is_planar:
+        if not self.is_planar:
             print("This tensor is already a euclidian depth tensor so no transform is performed")
-            return planar
+            return self.clone()
         assert projection in ["pinhole", "equidistant"], "Only pinhole and equidistant projection are supported"
 
+        planar = self
         camera_intrinsic = camera_intrinsic if camera_intrinsic is not None else self.cam_intrinsic
         if camera_intrinsic is None:
             err_msg = "The `camera_intrinsic` must be given either from the current depth tensor or from "
@@ -343,12 +343,12 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         -------
         aloscene.Depth
         """
-        euclidean = self
-        if euclidean.is_planar:
+        if self.is_planar:
             print("This tensor is already a planar depth tensor so no transform is done.")
-            return euclidean
+            return self.clone()
         assert projection in ["pinhole", "equidistant"], "Only pinhole and equidistant projection are supported"
 
+        euclidean = self
         camera_intrinsic = camera_intrinsic if camera_intrinsic is not None else self.cam_intrinsic
         if camera_intrinsic is None:
             err_msg = "The `camera_intrinsic` must be given either from the current depth tensor or from "

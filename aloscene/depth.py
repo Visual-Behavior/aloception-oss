@@ -138,11 +138,12 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         if prior_clamp_min is not None or prior_clamp_max is not None:
             depth = torch.clamp(depth, min=prior_clamp_min, max=prior_clamp_max)
 
-        if not keep_negative:
-            depth[torch.unsqueeze(depth < 1e-8, dim=0)] = 1e-8
-        else:
+        if keep_negative and self.is_planar:
             depth[torch.unsqueeze((depth < 1e-8) & (depth >= 0), dim=0)] = 1e-8
             depth[torch.unsqueeze((depth >= -1e-8) & (depth < 0), dim=0)] = -1e-8
+        else:
+            depth[torch.unsqueeze(depth < 1e-8, dim=0)] = 1e-8
+
         depth.scale = scale
         depth.shift = shift
         depth.is_absolute = True
@@ -306,7 +307,8 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         """
         planar = self
         if not planar.is_planar:
-            raise ExecError("Cannot transform to euclidian because this is already a euclidian depth tensor.")
+            print("This tensor is already a euclidian depth tensor so no transform is performed")
+            return planar
         assert projection in ["pinhole", "equidistant"], "Only pinhole and equidistant projection are supported"
 
         camera_intrinsic = camera_intrinsic if camera_intrinsic is not None else self.cam_intrinsic
@@ -341,7 +343,8 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         """
         euclidean = self
         if euclidean.is_planar:
-            raise ExecError("Cannot transform to planar because this is already a planar depth tensor.")
+            print("This tensor is already a planar depth tensor so no transform is done.")
+            return euclidean
         assert projection in ["pinhole", "equidistant"], "Only pinhole and equidistant projection are supported"
 
         camera_intrinsic = camera_intrinsic if camera_intrinsic is not None else self.cam_intrinsic

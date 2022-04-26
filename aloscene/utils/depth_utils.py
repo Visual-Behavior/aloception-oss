@@ -17,8 +17,8 @@ def coords2rtheta(K, size, distortion, projection="pinhole"):
         Projection model: Only pinhole and equidistant projection are supported.
     """
     h, w = size
-    focal = K.focal_length[0, 0]
-    principal_point = K.principal_points.permute((1, 0)).unsqueeze(-1)
+    focal = K.focal_length[..., 0]
+    principal_point = K.principal_points[..., :][:, None, None]
 
     coords = torch.meshgrid(torch.arange(h), torch.arange(w))
     coords = torch.stack(coords[::-1], dim=0).float().to(K.device)

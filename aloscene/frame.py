@@ -92,6 +92,7 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         normalization="255",
         mean_std=None,
         names=("C", "H", "W"),
+        use_frame=None,
         *args,
         **kwargs,
     ):
@@ -114,6 +115,7 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         tensor.add_child("segmentation", segmentation, align_dim=["B", "T"], mergeable=False)
         tensor.add_child("labels", labels, align_dim=["B", "T"], mergeable=True)
         tensor.add_child("pose", labels, align_dim=["B", "T"], mergeable=True)
+        tensor.add_child("use_frame", use_frame, align_dim=["B", "T"], mergeable=True)
 
         # Add other tensor property
         tensor.add_property("normalization", normalization)

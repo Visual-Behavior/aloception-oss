@@ -7,6 +7,7 @@ import warnings
 import aloscene
 from aloscene import Mask
 from aloscene.renderer import View
+from aloscene.utils.depth_utils import coords2rtheta
 import numpy as np
 
 from aloscene.io.depth import load_depth
@@ -36,6 +37,7 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
             x,
             occlusion: Mask = None,
             is_absolute=True,
+            is_planar=True,
             scale=None,
             shift=None,
             *args,
@@ -50,6 +52,7 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         tensor.add_property('scale', scale)
         tensor.add_property('shift', shift)
         tensor.add_property('is_absolute', is_absolute)
+        tensor.add_property('is_planar', is_planar)
         return tensor
 
     def __init__(self, x, *args, **kwargs):
@@ -77,9 +80,10 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         >>> (undo_depth == not_absolute_depth).item()
         >>> True
         """
+        if not self.is_absolute:
+            print('No need to inverse depth, already inversed')
+            return self.clone()
         depth = self
-        if not depth.is_absolute:
-            raise ExecError('can not inverse depth, already inversed')
         shift = depth.shift if depth.shift is not None else 0
         scale = depth.scale if depth.scale is not None else 1
 
@@ -97,7 +101,7 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         depth.is_absolute = False
         return depth
 
-    def encode_absolute(self, scale=1, shift=0, prior_clamp_min=None, prior_clamp_max=None, post_clamp_min=None, post_clamp_max=None):
+    def encode_absolute(self, scale=1, shift=0, prior_clamp_min=None, prior_clamp_max=None, post_clamp_min=None, post_clamp_max=None, keep_negative=False):
         """Transforms inverted depth to absolute depth
 
         Parameters
@@ -114,6 +118,9 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
                 Clamp min output idepth
             post_clamp_max: float | None
                 Clamp max output idepth
+            keep_negative: bool | False
+                Keep negative plannar depth (points behind camera, useful for wide angle lens with FoV bigger
+                than 180 degree)
 
         Exemples
         --------
@@ -122,16 +129,22 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         >>> absolute_depth.is_absolute, not_absolute_depth.is_absolute
         >>> True, False
         """
+        if self.is_absolute:
+            print('Depth already in absolute value.')
+            return self.clone()
         depth, names = self.rename(None), self.names
-        if depth.is_absolute:
-            raise ExecError('depth already in absolute state, call encode_inverse first')
 
         depth = depth * scale + shift
 
         if prior_clamp_min is not None or prior_clamp_max is not None:
             depth = torch.clamp(depth, min=prior_clamp_min, max=prior_clamp_max)
 
-        depth[torch.unsqueeze(depth < 1e-8, dim=0)] = 1e-8
+        if keep_negative and self.is_planar:
+            depth[torch.unsqueeze((depth < 1e-8) & (depth >= 0), dim=0)] = 1e-8
+            depth[torch.unsqueeze((depth >= -1e-8) & (depth < 0), dim=0)] = -1e-8
+        else:
+            depth[torch.unsqueeze(depth < 1e-8, dim=0)] = 1e-8
+
         depth.scale = scale
         depth.shift = shift
         depth.is_absolute = True
@@ -142,7 +155,6 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
             n_depth = torch.clamp(n_depth, min=post_clamp_min, max=post_clamp_max)
 
         return n_depth
-
 
     def append_occlusion(self, occlusion: Mask, name: str = None):
         """Attach an occlusion mask to the depth tensor.
@@ -273,3 +285,76 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
             names=self.names,
         )
         return depth
+
+    def as_euclidean(self, camera_intrinsic: aloscene.CameraIntrinsic = None, projection="pinhole", distortion=1.0):
+        """Create a new Depth augmented tensor whose data is the euclidean depth (distance) from camera to world points.
+        To use this method, we must know intrinsic matrix of camera, projection model and distortion coefficient
+        (if exists).
+
+        Parameters
+        ----------
+        camera_intrinsic: aloscene.CameraIntrinsic
+        projection: str | pinhole
+            At this moment, only 2 projections models are supported: pinhole (f*tan(theta)) and equidistant (f*theta:
+            which is
+            used for wide range camera).
+        distortion: float | 1.0
+            Distortion coefficient for equidistant model. Only linear distortion supported
+            (sensor_angle=distortion*theta).
+
+        Returns
+        -------
+        aloscene.Depth
+        """
+        if not self.is_planar:
+            print("This tensor is already a euclidian depth tensor so no transform is performed")
+            return self.clone()
+        assert projection in ["pinhole", "equidistant"], "Only pinhole and equidistant projection are supported"
+
+        planar = self
+        camera_intrinsic = camera_intrinsic if camera_intrinsic is not None else self.cam_intrinsic
+        if camera_intrinsic is None:
+            err_msg = "The `camera_intrinsic` must be given either from the current depth tensor or from "
+            err_msg += "the as_disp(camera_intrinsic=...) method."
+            raise Exception(err_msg)
+
+        _, theta = coords2rtheta(camera_intrinsic, planar.HW, distortion, projection)
+        euclidean = planar / (torch.cos(theta) + 1e-8)
+        euclidean.is_planar = False
+        return euclidean
+
+    def as_planar(self, camera_intrinsic: aloscene.CameraIntrinsic = None, projection="pinhole", distortion=1.0):
+        """Create a new planar depth augmented tensor from the euclidean depth between camera to world points with
+        corresponding depth. To use this method, we must know intrinsic matrix of camera, projection model and
+        distortion coefficient (if exists).
+
+        Parameters
+        ----------
+        camera_intrinsic: aloscene.CameraIntrinsic
+        projection: str | pinhole
+            At this moment, only 2 projections models are supported: pinhole (f*tan(theta)) and equidistant (f*theta:
+            which is used for wide range camera).
+        distortion: float | 1.0
+            Distortion coefficient for equidistant model. Only linear distortion supported
+            (sensor_angle=distortion*theta).
+
+        Returns
+        -------
+        aloscene.Depth
+        """
+        if self.is_planar:
+            print("This tensor is already a planar depth tensor so no transform is done.")
+            return self.clone()
+        assert projection in ["pinhole", "equidistant"], "Only pinhole and equidistant projection are supported"
+
+        euclidean = self
+        camera_intrinsic = camera_intrinsic if camera_intrinsic is not None else self.cam_intrinsic
+        if camera_intrinsic is None:
+            err_msg = "The `camera_intrinsic` must be given either from the current depth tensor or from "
+            err_msg += "the as_disp(camera_intrinsic=...) method."
+            raise Exception(err_msg)
+
+        _, theta = coords2rtheta(camera_intrinsic, euclidean.HW, distortion, projection)
+        planar = euclidean * torch.cos(theta)
+        planar.is_planar = True
+        return planar

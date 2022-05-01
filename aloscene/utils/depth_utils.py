@@ -18,7 +18,10 @@ def coords2rtheta(K, size, distortion, projection="pinhole"):
     """
     h, w = size
     focal = K.focal_length[..., 0]
-    principal_point = K.principal_points[..., :][:, None, None]
+    principal_point = K.principal_points[..., :]
+    if len(principal_point.shape) > 1:
+        principal_point = principal_point[0, :]
+    principal_point = principal_point[:, None, None]
 
     coords = torch.meshgrid(torch.arange(h), torch.arange(w))
     coords = torch.stack(coords[::-1], dim=0).float().to(K.device)

@@ -179,7 +179,7 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         depth_color = cmap(depth)[:, :, 0, :3]
         return View(depth_color, title=title)
 
-    def as_points3d(self, camera_intrinsic: aloscene.CameraIntrinsic = None):
+    def as_points3d(self, camera_intrinsic: aloscene.CameraIntrinsic = None, projection=None, distortion=None):
         """Compute the 3D coordinates of points 2D points based on their respective depth.
 
         Parameters
@@ -193,6 +193,9 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
             (n, 3) with the 3d coordinates [x, y, z] of each provided 2d point.
         """
         intrinsic = camera_intrinsic if camera_intrinsic is not None else self.cam_intrinsic
+        projection = projection if projection is not None else self.projection
+        distortion = distortion if distortion is not None else self.distortion
+        assert projection in ["pinhole", "equidistant"], "Only pinhole and equidistant are supported."
 
         y_points, x_points = torch.meshgrid(
             torch.arange(self.H, device=self.device), torch.arange(self.W, device=self.device)
@@ -226,11 +229,32 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         if len(intrinsic.shape) > 2:
             principal_points = principal_points.flatten(0, -2)
             focal_length = focal_length.flatten(0, -2)
+        focal_length = focal_length.unsqueeze(-2)
+
+        if projection != "pinhole":
+            _, theta = coords2rtheta(intrinsic, self.HW, distortion, projection)
+            theta = theta.as_tensor().reshape((-1, 1))
+            # Append batch and temporal dim
+            for _ in range(len(target_shape[:-1])):
+                theta = theta.unsqueeze(0)
+            r = torch.tan(theta)
+            focal_length = focal_length * theta * distortion / r.abs()
+
+            # find points behind camera
+            behind = theta > (np.pi / 2)
+            xy = torch.zeros([*behind.shape[:-1], 2], dtype=torch.bool, device=behind.device)
+            behind = torch.cat([xy, behind], dim=-1)
 
         points_3d[..., 0] = x_points - principal_points[..., 0:1]
         points_3d[..., 1] = y_points - principal_points[..., 1:]
         points_3d[..., 2] = z_points
-        points_3d[..., :2] = points_3d[..., :2] * points_3d[..., 2:] / focal_length.unsqueeze(-2)
+        points_3d[..., :2] = points_3d[..., :2] * points_3d[..., 2:] / focal_length
+
+        if projection != "pinhole":
+            points_3d[behind] *= -1
+            
+            # image center coordinate is NaN after the projection. We need to set it manually here
+            points_3d = torch.nan_to_num(points_3d, 0, 0, 0)
 
         return aloscene.Points3D(points_3d, names=target_names, device=self.device)
 

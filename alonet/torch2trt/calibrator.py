@@ -1,4 +1,5 @@
 import os
+import torch
 import numpy as np
 import tensorrt as trt
 
@@ -18,7 +19,7 @@ class DataBatchStreamer:
         batch_size: (int)
             Streaming batch size. Default 8.
         limit_batches: (int)
-            Maximum baches to use.
+            Maximum batches to use.
     
     Attributes
     ----------
@@ -29,15 +30,53 @@ class DataBatchStreamer:
         max_batch: (int)
             Number of batches used for calibration.
 
+    Raises
+    ------
+        AssertionError
+            If return
+        TypeError
+            If a dataset sample is not torch.Tensor, ndarray or Frame
+
+    Exemples
+    --------
+        >>> class MultiInputCalibData:
+        >>>     def __init__(self):
+        >>>         input1 = np.ones((10, 3, 28, 28))
+        >>>         input2 = np.ones((10, 3, 28, 28))
+        >>>
+        >>>     def __getitem__(self, idx):
+        >>>         return input1[idx], input2[idx]
+        >>>     
+        >>>     def __len__(self):
+        >>>         return 10
+        >>>
+        >>> class SingleInputCalibData:
+        >>>     def __init__(self):
+        >>>         input_ = np.ones((10, 3, 28, 28))
+        >>>
+        >>>     def __getitem__(self, idx):
+        >>>         ## should return samples in tuple or list
+        >>>         return (input_[idx],)
+        >>>
+        >>>     def __len__(self):
+        >>>         return 10
+        >>>
+        >>> s_calib, m_calib = SingleInputCalibData(), MultiInputCalibData()
+        >>> s_dataStreamer = DataBatchStreamer(dataset=s_calib)
+        >>> m_dataStreamer = DataBatchStreamer(dataset=m_calib)
     """
+    FTYPES = ["torch.Tensor", "ndarray", "aloscene.Frame"]
     def __init__(
             self,
             dataset=None,
             batch_size=8,
             limit_batches=None,
+            **kwargs,
             ):
-        assert isinstance(dataset[0], tuple), "Calibration dataset should return a tuple of images"
-        
+        for sample in dataset[0]:
+            if not isinstance(sample, (torch.Tensor, np.ndarray, Frame)):
+                raise TypeError(f"unknown sample type, expected samples to be instance of {' or '.join(self.FTYPES)} got {sample.__class__.__name__} instead")
+
         self.batch_idx = 0
         self.dataset = dataset
         self.batch_size = batch_size
@@ -56,17 +95,28 @@ class DataBatchStreamer:
         """Resets batch index"""
         self.batch_idx = 0
     
+    @staticmethod
+    def convert_frame(frame):
+        if isinstance(frame, Frame):
+            frame = frame.as_numpy()
+        elif isinstance(frame, torch.Tensor):
+            frame = frame.numpy()
+        elif isinstance(frame, np.ndarray):
+            pass
+        else:
+            raise TypeError(f"Unknown sample type, expected samples to be instance of {' or '.join(self.FTYPES)} got {frame.__class__.__name__}.")
+        return frame
+    
     def next_(self):
         """Returns next batch"""
         if self.batch_idx < self.max_batch:
             bidx = self.batch_idx * self.batch_size
-            eidx = self.batch_idx * (self.batch_size + 1)
+            eidx = self.batch_idx * self.batch_size + self.batch_size
             for i, j in enumerate(range(bidx, eidx)):
                 frames = self.dataset[j]
+                assert isinstance(frames, (list, tuple)), f"dataset should return samples of type list or tuple. got {frames.__class__.__name__} instead"
                 for k in range(self.n_inputs):
-                    frame = frames[k]
-                    if isinstance(frame, Frame):
-                        frame = frame.as_numpy()
+                    frame = self.convert_frame(frames[k])
                     self.calib_ds[k][i] = frame
 
             self.batch_idx += 1
@@ -98,6 +148,7 @@ class BaseCalibrator:
             self,
             data_streamer,
             cache_file=None,
+            **kwargs,
         ):
         ## Avoid confusing: Deleting calibration file as the read funtion comes first.
         if os.path.exists(cache_file):

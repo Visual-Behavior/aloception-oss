@@ -167,7 +167,7 @@ class BaseTRTExporter:
         """
         return graph
     
-    def _adapt_graph(self, graph):
+    def _adapt_graph(self, graph, **kwargs):
         """Modify ONNX graph to ensure compability between ONNX and TensorRT
 
         Returns

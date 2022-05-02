@@ -14,7 +14,7 @@ class DataBatchStreamer:
     Parameters
     ----------
         dataset: Iterable dataset.
-            Calibration dataset. Default None.
+            Calibration dataset. Should return a tuple of samples. Default None.
         batch_size: (int)
             Streaming batch size. Default 8.
         limit_batches: (int)
@@ -36,13 +36,18 @@ class DataBatchStreamer:
             batch_size=8,
             limit_batches=None,
             ):
-        C, H, W = dataset[0].shape[-3:]
-        self.batch_size = batch_size
+        assert isinstance(dataset[0], tuple), "Calibration dataset should return a tuple of images"
+        
         self.batch_idx = 0
-        self.calib_ds = np.ones((batch_size, C, H, W))
         self.dataset = dataset
+        self.batch_size = batch_size
+        self.n_inputs = len(dataset[0])
 
-        dlength = len(self.dataset)
+        ## instantiate calibration data holders
+        shapes = [dataset[0][i].shape[-3:] for i in range(self.n_inputs)]
+        self.calib_ds = [np.ones((batch_size, *shapes[i])) for i in range(self.n_inputs)]
+
+        dlength = len(dataset)
         self.max_batch = dlength // batch_size + (1 if dlength % batch_size else 0)
         if limit_batches is not None:
             self.max_batch = min(self.max_batch, limit_batches)
@@ -52,20 +57,22 @@ class DataBatchStreamer:
         self.batch_idx = 0
     
     def next_(self):
-        """Returns next batch """
+        """Returns next batch"""
         if self.batch_idx < self.max_batch:
             bidx = self.batch_idx * self.batch_size
             eidx = self.batch_idx * (self.batch_size + 1)
             for i, j in enumerate(range(bidx, eidx)):
-                frame = self.dataset[j]
-                if isinstance(frame, Frame):
-                    frame = frame.as_numpy()
-                self.calib_ds[i] = frame
+                frames = self.dataset[j]
+                for k in range(self.n_inputs):
+                    frame = frames[k]
+                    if isinstance(frame, Frame):
+                        frame = frame.as_numpy()
+                    self.calib_ds[k][i] = frame
 
             self.batch_idx += 1
-            return np.ascontiguousarray(self.calib_ds, dtype=np.float32)
+            return [np.ascontiguousarray(self.calib_ds[i], dtype=np.float32) for i in range(self.n_inputs)]
         else:
-            return np.array([])
+            return None
     
     def __len__(self):
         return max_batch
@@ -80,6 +87,11 @@ class BaseCalibrator:
             Data streamer.
         cache_file: (str)
             Path to calibration cache file. Default None.
+    
+    Attributes
+    ----------
+        nbytes: List[int]
+            List of number of bytes occupied by each dataset batch.
 
     """
     def __init__(
@@ -93,7 +105,9 @@ class BaseCalibrator:
             os.remove(cache_file)
         self.cache_file = cache_file
         self.data_streamer = data_streamer
-        self.d_input = cuda.mem_alloc(self.data_streamer.calib_ds.nbytes)
+        self.n_inputs = data_streamer.n_inputs
+        self.nbytes = [self.data_streamer.calib_ds[i].nbytes for i in range(self.n_inputs)]
+        self.d_input = [cuda.mem_alloc(nbyte) for nbyte in self.nbytes]
         data_streamer.reset()
 
     def get_batch_size(self):
@@ -101,12 +115,15 @@ class BaseCalibrator:
 
     def get_batch(self, names):
         batch = self.data_streamer.next_()
-        if not batch.size:   
+
+        ## return None if the batch is empty
+        if batch is None:
             return None
         
-        cuda.memcpy_htod(self.d_input, batch)
-        return [int(self.d_input)]
-         
+        for i in range(self.n_inputs):
+            cuda.memcpy_htod(self.d_input[i], batch[i])
+        return self.d_input
+        
     def read_calibration_cache(self):
         ## expilicitly returns None if cache file does not exist.
         if os.path.exists(self.cache_file):
@@ -120,6 +137,10 @@ class BaseCalibrator:
         with open(self.cache_file, 'wb') as f:
             f.write(cache)
     
+    def free(self):
+        for d in self.d_input:
+            d.free()
+
 
 class MinMaxCalibrator(BaseCalibrator, trt.IInt8MinMaxCalibrator):
     def __init__(

@@ -14,10 +14,9 @@ class QuantizedModel:
     Transforms each model Layer to QuantLayer for quantization aware training.
     Performs calibration for post training quantization.
     
-    Exemples
+    Examples
     --------
         >>> from ... import Model
-        >>> from ... import Dataset
         >>> class QModel(QuantizedModel, Model):
         .       def __init__(self, ..., **kwargs):
         .           ## set QuantizedLayers description first
@@ -27,7 +26,20 @@ class QuantizedModel:
         >>> ## for QAT just fine tune the model as layers are converted
         >>> print(quant_model.cuda())
         >>> ## for PTQ
-        >>> calib_data = Dataset()
+        >>> class CalibDataset:
+        >>>     def __init__(self):
+        >>>         self.ds1 = Dataset1(...)    ## iterable dataset
+        >>>         self.ds2 = Dataset2(...)    ## iterable dataset
+        >>>         self.length = min(len(self.ds1), len(self.ds2))
+        >>>         self.model_kwargs = dict(...)
+        >>>
+        >>>     def __getitem__(self, idx):
+        >>>         return (self.ds1[idx].as_tensor(), self.ds2[idx].as_tensor()), self.model_kwargs
+        >>>
+        >>>     def __len__(self):
+        >>>         return self.length
+        >>>
+        >>> calib_data = CalibDataset()
         >>> quant_model.calibrate(calib_data=calib_data, max_samples=10)
         
     """
@@ -79,7 +91,7 @@ class QuantizedModel:
             max_samples: int
                 maximum samples to use.
         """
-        max_samples = len(calib_data) if max_samples is None else max_samples
+        max_samples = len(calib_data) if max_samples is None else min(max_samples, len(calib_data))
         # Enable calibrators
         for name, module in self.named_modules():
             if isinstance(module, quant_nn.TensorQuantizer):
@@ -90,11 +102,9 @@ class QuantizedModel:
                     module.disable()
 
         print('collecting stats...')
-        for i, image in tqdm(enumerate(calib_data), total=max_samples): ## FIXME
-            if isinstance(image, np.ndarray):
-                image = np.expand_dims(image, axis=0)
-                image = torch.Tensor(image)
-            self(image)
+        for i in tqdm(range(max_samples)):
+            args, kwargs = calib_data[i]
+            self(*args, **kwargs)
             if i + 1>= max_samples:
                 break
 
@@ -144,7 +154,8 @@ class QuantizedModel:
         Raises
         ------
             ValueError
-                When method is not "mse" or "percentile"
+                When method is not "mse" or "percentile".
+
         """
         if method not in ["mse", "percentile"]:
             raise ValueError("Method should be \"mse\" | \"percentile\"")

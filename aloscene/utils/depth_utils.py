@@ -1,5 +1,7 @@
 import torch
 from aloscene.tensors import AugmentedTensor
+import matplotlib.pyplot as plt
+import numpy as np
 
 
 def coords2rtheta(K, size, distortion, projection="pinhole"):
@@ -40,3 +42,17 @@ def coords2rtheta(K, size, distortion, projection="pinhole"):
     r_d = AugmentedTensor(r_d, names=("C", "H", "W"))
 
     return r_d, theta
+
+
+def add_colorbar(data, vmin, vmax, colormap):
+    fig = plt.figure()
+    pos = plt.imshow(data, cmap=colormap, interpolation='none')
+    plt.axis('off')
+    fig.colorbar(pos)
+    pos.set_clim(vmin=vmin, vmax=vmax)
+    fig.tight_layout(pad=0)
+    fig.canvas.draw()
+    data = np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)
+    data = data.reshape(fig.canvas.get_width_height()[::-1] + (3,)) / 255.
+
+    return data

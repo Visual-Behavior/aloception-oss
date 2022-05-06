@@ -171,19 +171,18 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
 
     def __get_view__(self, cmap="nipy_spectral", min_depth=0, max_depth=200, title=None, reverse=True, legend=False, min_legend=None, max_legend=None):
         assert all(dim not in self.names for dim in ["B", "T"]), "Depth should not have batch or time dimension"
-        cmap = matplotlib.cm.get_cmap(cmap)
+        cmap_m = matplotlib.cm.get_cmap(cmap)
         depth = self.rename(None).permute([1, 2, 0]).detach().cpu().contiguous().numpy()
-        v_min = np.min(depth)
-        v_max = np.max(depth)
         depth = matplotlib.colors.Normalize(vmin=min_depth, vmax=max_depth, clip=True)(depth)
         if reverse:
             depth = 1 - depth
-        depth_color = cmap(depth)[:, :, 0, :3]
+            cmap += "_r"
+        depth_color = cmap_m(depth)[:, :, 0, :3]
         if legend:
             if min_legend is None:
-                min_legend = v_min
+                min_legend = min_depth
             if max_legend is None:
-                max_legend = v_max
+                max_legend = max_depth
             depth_color = add_colorbar(depth_color, min_legend, max_legend, cmap)
 
         return View(depth_color, title=title)

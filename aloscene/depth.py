@@ -338,6 +338,9 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         -------
         aloscene.Depth
         """
+        projection = projection if projection is not None else self.projection
+        distortion = distortion if distortion is not None else self.distortion
+
         if not self.is_planar:
             print("This tensor is already a euclidian depth tensor so no transform is performed")
             return self.clone()
@@ -374,6 +377,9 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         -------
         aloscene.Depth
         """
+        projection = projection if projection is not None else self.projection
+        distortion = distortion if distortion is not None else self.distortion
+
         if self.is_planar:
             print("This tensor is already a planar depth tensor so no transform is done.")
             return self.clone()

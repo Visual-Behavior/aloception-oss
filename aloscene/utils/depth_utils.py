@@ -1,5 +1,7 @@
 import torch
 from aloscene.tensors import AugmentedTensor
+import matplotlib.pyplot as plt
+import numpy as np
 
 
 def coords2rtheta(K, size, distortion, projection="pinhole"):
@@ -18,7 +20,12 @@ def coords2rtheta(K, size, distortion, projection="pinhole"):
     """
     h, w = size
     focal = K.focal_length[..., 0]
-    principal_point = K.principal_points[..., :][:, None, None]
+    principal_point = K.principal_points[..., :]
+    for name in K.names:
+        if name in ["B", "T"]:
+            focal = focal[0, ...]
+            principal_point = principal_point[0, ...]
+    principal_point = principal_point[:, None, None]
 
     coords = torch.meshgrid(torch.arange(h), torch.arange(w))
     coords = torch.stack(coords[::-1], dim=0).float().to(K.device)
@@ -37,3 +44,17 @@ def coords2rtheta(K, size, distortion, projection="pinhole"):
     r_d = AugmentedTensor(r_d, names=("C", "H", "W"))
 
     return r_d, theta
+
+
+def add_colorbar(data, vmin, vmax, colormap):
+    fig = plt.figure()
+    pos = plt.imshow(data, cmap=colormap, interpolation='none')
+    plt.axis('off')
+    fig.colorbar(pos)
+    pos.set_clim(vmin=vmin, vmax=vmax)
+    fig.tight_layout(pad=0)
+    fig.canvas.draw()
+    data = np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)
+    data = data.reshape(fig.canvas.get_width_height()[::-1] + (3,)) / 255.
+
+    return data

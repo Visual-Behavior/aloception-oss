@@ -29,6 +29,8 @@ class DataBatchStreamer:
             Batch of data of calibration (size: (batch_size, C, H, W)).
         max_batch: (int)
             Number of batches used for calibration.
+        dlength: (int)
+            Number of samples.
 
     Raises
     ------
@@ -66,6 +68,7 @@ class DataBatchStreamer:
         >>> m_dataStreamer = DataBatchStreamer(dataset=m_calib)
     """
     FTYPES = ["torch.Tensor", "ndarray", "aloscene.Frame"]
+
     def __init__(
             self,
             dataset=None,
@@ -86,7 +89,7 @@ class DataBatchStreamer:
         shapes = [dataset[0][i].shape[-3:] for i in range(self.n_inputs)]
         self.calib_ds = [np.ones((batch_size, *shapes[i])) for i in range(self.n_inputs)]
 
-        dlength = len(dataset)
+        self.dlength = len(dataset)
         self.max_batch = dlength // batch_size + (1 if dlength % batch_size else 0)
         if limit_batches is not None:
             self.max_batch = min(self.max_batch, limit_batches)
@@ -100,7 +103,7 @@ class DataBatchStreamer:
         if isinstance(frame, Frame):
             frame = frame.as_numpy()
         elif isinstance(frame, torch.Tensor):
-            frame = frame.numpy()
+            frame = frame.cpu().numpy()
         elif isinstance(frame, np.ndarray):
             pass
         else:
@@ -111,7 +114,8 @@ class DataBatchStreamer:
         """Returns next batch"""
         if self.batch_idx < self.max_batch:
             bidx = self.batch_idx * self.batch_size
-            eidx = self.batch_idx * self.batch_size + self.batch_size
+            eidx = min(self.batch_idx * self.batch_size + self.batch_size, self.dlength)
+
             for i, j in enumerate(range(bidx, eidx)):
                 frames = self.dataset[j]
                 assert isinstance(frames, (list, tuple)), f"dataset should return samples of type list or tuple. got {frames.__class__.__name__} instead"

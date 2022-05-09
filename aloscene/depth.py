@@ -318,7 +318,7 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         )
         return depth
 
-    def as_euclidean(self, camera_intrinsic: aloscene.CameraIntrinsic = None, projection="pinhole", distortion=1.0):
+    def as_euclidean(self, camera_intrinsic: aloscene.CameraIntrinsic = None, projection=None, distortion=None):
         """Create a new Depth augmented tensor whose data is the euclidean depth (distance) from camera to world points.
         To use this method, we must know intrinsic matrix of camera, projection model and distortion coefficient
         (if exists).
@@ -358,7 +358,7 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         euclidean.is_planar = False
         return euclidean
 
-    def as_planar(self, camera_intrinsic: aloscene.CameraIntrinsic = None, projection="pinhole", distortion=1.0):
+    def as_planar(self, camera_intrinsic: aloscene.CameraIntrinsic = None, projection=None, distortion=None):
         """Create a new planar depth augmented tensor from the euclidean depth between camera to world points with
         corresponding depth. To use this method, we must know intrinsic matrix of camera, projection model and
         distortion coefficient (if exists).

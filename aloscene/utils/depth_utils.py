@@ -21,8 +21,10 @@ def coords2rtheta(K, size, distortion, projection="pinhole"):
     h, w = size
     focal = K.focal_length[..., 0]
     principal_point = K.principal_points[..., :]
-    if len(principal_point.shape) > 1:
-        principal_point = principal_point[0, :]
+    for name in K.names:
+        if name in ["B", "T"]:
+            focal = focal[0, ...]
+            principal_point = principal_point[0, ...]
     principal_point = principal_point[:, None, None]
 
     coords = torch.meshgrid(torch.arange(h), torch.arange(w))

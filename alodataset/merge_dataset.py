@@ -20,18 +20,32 @@ class MergeDataset(torch.utils.data.Dataset):
         List of datasets
     transform_fn : function
         transformation applied to each sample
+    weights: List[int] | None
+        For N datasets, a list of N integer weights.
+        The samples from a dataset with weight `w` will appear `w` times in the MergeDataset.
     """
 
-    def __init__(self, datasets, transform_fn=None):
+    def __init__(self, datasets, transform_fn=None, weights=None):
         self.datasets = datasets
+        self.weights = self._init_weights(weights)
         self.indices = self._init_indices()
         self.transform_fn = transform_fn
+
+    def _init_weights(self, weights):
+        n_datasets = len(self.datasets)
+        if weights is None:
+            return [1] * n_datasets
+        else:
+            assert len(weights) == n_datasets
+            assert all(type(w) == int for w in weights)
+            return weights
 
     def _init_indices(self):
         indices = []
         for dset_idx, dset in enumerate(self.datasets):
-            for idx in range(len(dset)):
-                indices.append((dset_idx, idx))
+            for _ in range(self.weights[dset_idx]):
+                for idx in range(len(dset)):
+                    indices.append((dset_idx, idx))
         return indices
 
     def __len__(self):

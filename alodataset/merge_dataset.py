@@ -35,10 +35,13 @@ class MergeDataset(torch.utils.data.Dataset):
         n_datasets = len(self.datasets)
         if weights is None:
             return [1] * n_datasets
-        else:
-            assert len(weights) == n_datasets
-            assert all(type(w) == int for w in weights)
-            return weights
+
+        if len(weights) != n_datasets:
+            raise RuntimeError("The number of weights should be equal to the number of datasets.")
+
+        if any(type(w) != int for w in weights):
+            raise RuntimeError("weights should be a list of int.")
+        return weights
 
     def _init_indices(self):
         indices = []

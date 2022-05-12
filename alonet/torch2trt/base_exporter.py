@@ -57,6 +57,7 @@ class BaseTRTExporter:
         dynamic_axes: Union[Dict[str, Dict[int, str]], Dict[str, List[int]]] = None,
         opt_profiles: Dict[str, Tuple[List[int]]] = None,
         calibrator: BaseCalibrator = None,
+        profiling_verbosity: int = 0,
         **kwargs,
     ):
         """
@@ -86,6 +87,13 @@ class BaseTRTExporter:
         opt_profiles : Dict[str, Tuple[List[int]]], by default None
             Optimization profiles (one by each dynamic axis).
         operator_export_type: torch.onnx.OperatorExportTypes
+            TODO
+        profiling_verbosity : int
+            Profiling verbosity in NVTX annotations and the engine inspector (Default 0)
+                0 : LAYER_NAMES_ONLY (Print only the layer names. This is the default setting).
+                1 : NONE (Do not print any layer information).
+                2 : DETAILED : (Print detailed layer information including layer names and layer parameters).
+            Set to 2 for more layers details (preicision, type, kernel ...) when calling the EngineInspector
 
         Raises
         ------
@@ -130,6 +138,15 @@ class BaseTRTExporter:
             trt_logger = trt.Logger(trt.Logger.WARNING)
 
         self.engine_builder = TRTEngineBuilder(self.onnx_path, logger=trt_logger, opt_profiles=opt_profiles, calibrator=calibrator)
+
+        if profiling_verbosity == 0:
+            self.engine_builder.profiling_verbosity = "LAYER_NAMES_ONLY"
+        elif profiling_verbosity == 1:
+            self.engine_builder.profiling_verbosity = "NONE"
+        elif profiling_verbosity == 2:
+            self.engine_builder.profiling_verbosity = "DETAILED"
+        else:
+            raise AttributeError('unknown profiling_verbosity')
 
         if precision.lower() == "fp32":
             pass
@@ -390,6 +407,7 @@ class BaseTRTExporter:
         parser.add_argument("--batch_size", type=int, default=1, help="Engine batch size, default = 1")
         parser.add_argument("--precision", type=str, default="fp32", help="fp32/fp16/mix, default FP32")
         parser.add_argument("--verbose", action="store_true", help="Helpful when debugging")
+        parser.add_argument("--profiling_verbosity", default=0, type=int, help="Helpful when profiling the engine")
         parser.add_argument(
             "--use_scope_names",
             action="store_true",

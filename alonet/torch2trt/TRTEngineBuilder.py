@@ -33,6 +33,7 @@ class TRTEngineBuilder:
         calibrator: bool = None,
         logger=None,
         opt_profiles: Dict[str, Tuple[List[int]]] = None,
+        profiling_verbosity: str = "LAYER_NAMES_ONLY",
     ):
         """
         Parameters
@@ -71,6 +72,7 @@ class TRTEngineBuilder:
             assert isinstance(opt_profiles, dict)
             assert all([len(op) == 3 for op in opt_profiles.values()]), "Each profile must be a set of min/opt/max"
         self.opt_profiles = opt_profiles
+        self.profiling_verbosity = profiling_verbosity
 
     def set_workspace_size(self, workspace_size_GiB: int):
         self.max_workspace_size = GiB(workspace_size_GiB)
@@ -143,6 +145,15 @@ class TRTEngineBuilder:
             builder.max_batch_size = 1
             config = builder.create_builder_config()
             config.max_workspace_size = self.max_workspace_size
+            # Setting the profiling verbosity
+            if self.profiling_verbosity == "LAYER_NAMES_ONLY":
+                pass
+            elif self.profiling_verbosity == "DETAILED":
+                config.profiling_verbosity = trt.ProfilingVerbosity.DETAILED
+            elif self.profiling_verbosity == "NONE":
+                config.profiling_verbosity = trt.ProfilingVerbosity.NONE
+            else:
+                raise AttributeError("unknown profiling_verbosity")
             # FP16
             if self.FP16_allowed:
                 config.set_flag(trt.BuilderFlag.FP16)

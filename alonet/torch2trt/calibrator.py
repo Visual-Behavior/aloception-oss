@@ -90,7 +90,7 @@ class DataBatchStreamer:
         self.calib_ds = [np.ones((batch_size, *shapes[i])) for i in range(self.n_inputs)]
 
         self.dlength = len(dataset)
-        self.max_batch = dlength // batch_size + (1 if dlength % batch_size else 0)
+        self.max_batch = self.dlength // batch_size + (1 if self.dlength % batch_size else 0)
         if limit_batches is not None:
             self.max_batch = min(self.max_batch, limit_batches)
     

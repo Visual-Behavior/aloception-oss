@@ -25,8 +25,6 @@ from alonet.torch2trt import TRTEngineBuilder, TRTExecutor, utils
 from alonet.torch2trt.utils import get_nodes_by_op, rename_nodes_
 from alonet.torch2trt.calibrator import BaseCalibrator
 
-from pytorch_quantization import nn as quant_nn
-
 
 class BaseTRTExporter:
     """
@@ -151,8 +149,6 @@ class BaseTRTExporter:
         if precision.lower() == "fp32":
             pass
         elif precision.lower() == "int8":
-            ## set fake quantization to True before torch2onnx
-            quant_nn.TensorQuantizer.use_fb_fake_quant = True
             self.engine_builder.INT8_allowed = True
             self.engine_builder.FP16_allowed = True
             self.engine_builder.strict_type = True

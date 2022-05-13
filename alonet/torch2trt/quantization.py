@@ -81,6 +81,9 @@ class QuantizedModel:
         ## convert Layers to QuantLayers
         quant_modules.initialize()
 
+        ## set fake quantization to True before torch2onnx
+        quant_nn.TensorQuantizer.use_fb_fake_quant = True
+
     def collect_stats(self, calib_data, max_samples=None):
         """Feed data to the network and collect statistic
         

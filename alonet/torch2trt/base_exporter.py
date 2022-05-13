@@ -408,6 +408,15 @@ class BaseTRTExporter:
         parser.add_argument("--precision", type=str, default="fp32", help="fp32/fp16/mix, default FP32")
         parser.add_argument("--verbose", action="store_true", help="Helpful when debugging")
         parser.add_argument("--profiling_verbosity", default=0, type=int, help="Helpful when profiling the engine")
+        parser.add_argument("--calibration_batch_size", type=int, default=8, help="Calibration data batch size.")
+        parser.add_argument("--limit_calibration_batches", type=int, default=10, help="Limits number of batches.")
+        parser.add_argument("--cache_file", type=str, default="calib.bin", help="Path to caliaration cache file.")
+        parser.add_argument(
+            "--calibrator", 
+            type=str, 
+            choices=['base', 'minmax', 'entropy', 'entropy2', 'legacy'], 
+            default='minmax',
+            help="Calibrator to use with int8 precision.")
         parser.add_argument(
             "--use_scope_names",
             action="store_true",

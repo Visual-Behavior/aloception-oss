@@ -48,9 +48,11 @@ def coords2rtheta(K, size, distortion, projection="pinhole"):
 
 def add_colorbar(data, vmin, vmax, colormap):
     fig = plt.figure()
+    ax = fig.add_subplot(111)
     pos = plt.imshow(data, cmap=colormap, interpolation='none')
+    axins1 = ax.inset_axes([0.8, 0.2, 0.04, 0.6])
     plt.axis('off')
-    fig.colorbar(pos)
+    fig.colorbar(pos, cax=axins1, orientation="vertical")
     pos.set_clim(vmin=vmin, vmax=vmax)
     fig.tight_layout(pad=0)
     fig.canvas.draw()

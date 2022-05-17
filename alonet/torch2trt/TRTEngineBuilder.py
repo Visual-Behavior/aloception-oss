@@ -127,12 +127,12 @@ class TRTEngineBuilder:
         Returns
         -------
         trt.ICudaEngine
-            Engine created from ONNX graph
+            Engine created from ONNX graph.
 
         Raises
         ------
-        NotImplementedError
-            INT8 flag not implemented yet
+        RuntimeError
+            INT8 not supported by the platform.
         Exception
             TRT export engine error. It was not possible to export the engine.
         """
@@ -148,7 +148,11 @@ class TRTEngineBuilder:
                 config.set_flag(trt.BuilderFlag.FP16)
             # INT8
             if self.INT8_allowed:
-                raise NotImplementedError()
+                if not builder.platform_has_fast_int8:
+                    raise RuntimeError('INT8 not supported on this platform')
+                config.set_quantization_flag(trt.QuantizationFlag.CALIBRATE_BEFORE_FUSION)
+                config.set_flag(trt.BuilderFlag.INT8)
+                config.int8_calibrator = self.calibrator
             if self.strict_type:
                 config.set_flag(trt.BuilderFlag.STRICT_TYPES)
             # Add optimization profile (used for dynamic shapes)

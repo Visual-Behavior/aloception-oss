@@ -7,6 +7,7 @@ import warnings
 import aloscene
 from aloscene import Mask
 from aloscene.renderer import View
+from aloscene.utils.depth_utils import coords2rtheta, add_colorbar
 import numpy as np
 
 from aloscene.io.depth import load_depth
@@ -36,14 +37,14 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         x,
         occlusion: Mask = None,
         is_absolute=True,
+        is_planar=True,
         scale=None,
         shift=None,
         *args,
         names=("C", "H", "W"),
         **kwargs
     ):
-        if not is_absolute and (shift or scale):
-            raise AttributeError("depth not in inverse state, can not pass scale or shift")
+
         if isinstance(x, str):
             x = load_depth(x)
             names = ("C", "H", "W")
@@ -52,6 +53,7 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         tensor.add_property("scale", scale)
         tensor.add_property("shift", shift)
         tensor.add_property("is_absolute", is_absolute)
+        tensor.add_property("is_planar", is_planar)
         return tensor
 
     def __init__(self, x, *args, **kwargs):
@@ -79,9 +81,10 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         >>> (undo_depth == not_absolute_depth).item()
         >>> True
         """
+        if not self.is_absolute:
+            print("No need to inverse depth, already inversed")
+            return self.clone()
         depth = self
-        if not depth.is_absolute:
-            raise ExecError("can not inverse depth, already inversed")
         shift = depth.shift if depth.shift is not None else 0
         scale = depth.scale if depth.scale is not None else 1
 
@@ -100,7 +103,14 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         return depth
 
     def encode_absolute(
-        self, scale=1, shift=0, prior_clamp_min=None, prior_clamp_max=None, post_clamp_min=None, post_clamp_max=None
+        self,
+        scale=1,
+        shift=0,
+        prior_clamp_min=None,
+        prior_clamp_max=None,
+        post_clamp_min=None,
+        post_clamp_max=None,
+        keep_negative=False,
     ):
         """Transforms inverted depth to absolute depth
 
@@ -118,6 +128,9 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
                 Clamp min output idepth
             post_clamp_max: float | None
                 Clamp max output idepth
+            keep_negative: bool | False
+                Keep negative plannar depth (points behind camera, useful for wide angle lens with FoV bigger
+                than 180 degree)
 
         Exemples
         --------
@@ -126,16 +139,22 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         >>> absolute_depth.is_absolute, not_absolute_depth.is_absolute
         >>> True, False
         """
+        if self.is_absolute:
+            print("Depth already in absolute value.")
+            return self.clone()
         depth, names = self.rename(None), self.names
-        if depth.is_absolute:
-            raise ExecError("depth already in absolute state, call encode_inverse first")
 
         depth = depth * scale + shift
 
         if prior_clamp_min is not None or prior_clamp_max is not None:
             depth = torch.clamp(depth, min=prior_clamp_min, max=prior_clamp_max)
 
-        depth[torch.unsqueeze(depth < 1e-8, dim=0)] = 1e-8
+        if keep_negative and self.is_planar:
+            depth[torch.unsqueeze((depth < 1e-8) & (depth >= 0), dim=0)] = 1e-8
+            depth[torch.unsqueeze((depth >= -1e-8) & (depth < 0), dim=0)] = -1e-8
+        else:
+            depth[torch.unsqueeze(depth < 1e-8, dim=0)] = 1e-8
+
         depth.scale = scale
         depth.shift = shift
         depth.is_absolute = True
@@ -160,17 +179,35 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         """
         self._append_child("occlusion", occlusion, name)
 
-    def __get_view__(self, cmap="nipy_spectral", min_depth=0, max_depth=200, title=None, reverse=True):
+    def __get_view__(
+        self,
+        cmap="nipy_spectral",
+        min_depth=0,
+        max_depth=200,
+        title=None,
+        reverse=True,
+        legend=False,
+        min_legend=None,
+        max_legend=None,
+    ):
         assert all(dim not in self.names for dim in ["B", "T"]), "Depth should not have batch or time dimension"
-        cmap = matplotlib.cm.get_cmap(cmap)
+        cmap_m = matplotlib.cm.get_cmap(cmap)
         depth = self.rename(None).permute([1, 2, 0]).detach().cpu().contiguous().numpy()
         depth = matplotlib.colors.Normalize(vmin=min_depth, vmax=max_depth, clip=True)(depth)
         if reverse:
             depth = 1 - depth
-        depth_color = cmap(depth)[:, :, 0, :3]
+            cmap += "_r"
+        depth_color = cmap_m(depth)[:, :, 0, :3]
+        if legend:
+            if min_legend is None:
+                min_legend = min_depth
+            if max_legend is None:
+                max_legend = max_depth
+            depth_color = add_colorbar(depth_color, min_legend, max_legend, cmap)
+
         return View(depth_color, title=title)
 
-    def as_points3d(self, camera_intrinsic: aloscene.CameraIntrinsic = None):
+    def as_points3d(self, camera_intrinsic: aloscene.CameraIntrinsic = None, projection=None, distortion=None):
         """Compute the 3D coordinates of points 2D points based on their respective depth.
 
         Parameters
@@ -184,12 +221,20 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
             (n, 3) with the 3d coordinates [x, y, z] of each provided 2d point.
         """
         intrinsic = camera_intrinsic if camera_intrinsic is not None else self.cam_intrinsic
+        projection = projection if projection is not None else self.projection
+        distortion = distortion if distortion is not None else self.distortion
+        assert projection in ["pinhole", "equidistant"], "Only pinhole and equidistant are supported."
 
         y_points, x_points = torch.meshgrid(
             torch.arange(self.H, device=self.device), torch.arange(self.W, device=self.device)
         )
 
-        z_points = self.as_tensor().view((-1, self.H * self.W))
+        # if self is not planar depth, we must convert to planar depth before projecting to 3d points
+        if self.is_planar:
+            z_points = self.as_tensor().view((-1, self.H * self.W))
+        else:
+            planar = self.as_planar(cam_intrinsic=intrinsic, projection=projection, distortion=distortion)
+            z_points = planar.as_tensor().view((-1, self.H * self.W))
 
         if intrinsic is None:
             err_msg = "The `camera_intrinsic` must be given either from the current depth tensor or from "
@@ -217,11 +262,32 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         if len(intrinsic.shape) > 2:
             principal_points = principal_points.flatten(0, -2)
             focal_length = focal_length.flatten(0, -2)
+        focal_length = focal_length.unsqueeze(-2)
+
+        if projection != "pinhole":
+            _, theta = coords2rtheta(intrinsic, self.HW, distortion, projection)
+            theta = theta.as_tensor().reshape((-1, 1))
+            # Append batch and temporal dim
+            for _ in range(len(target_shape[:-1])):
+                theta = theta.unsqueeze(0)
+            r = torch.tan(theta)
+            focal_length = focal_length * theta * distortion / r.abs()
+
+            # find points behind camera
+            behind = theta > (np.pi / 2)
+            xy = torch.zeros([*behind.shape[:-1], 2], dtype=torch.bool, device=behind.device)
+            behind = torch.cat([xy, behind], dim=-1)
 
         points_3d[..., 0] = x_points - principal_points[..., 0:1]
         points_3d[..., 1] = y_points - principal_points[..., 1:]
         points_3d[..., 2] = z_points
-        points_3d[..., :2] = points_3d[..., :2] * points_3d[..., 2:] / focal_length.unsqueeze(-2)
+        points_3d[..., :2] = points_3d[..., :2] * points_3d[..., 2:] / focal_length
+
+        if projection != "pinhole":
+            points_3d[behind] *= -1
+
+            # image center coordinate is NaN after the projection. We need to set it manually here
+            points_3d = torch.nan_to_num(points_3d, 0, 0, 0)
 
         return aloscene.Points3D(points_3d, names=target_names, device=self.device)
 
@@ -277,3 +343,82 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
             names=self.names,
         )
         return disp
+
+    def as_euclidean(self, camera_intrinsic: aloscene.CameraIntrinsic = None, projection=None, distortion=None):
+        """Create a new Depth augmented tensor whose data is the euclidean depth (distance) from camera to world points.
+        To use this method, we must know intrinsic matrix of camera, projection model and distortion coefficient
+        (if exists).
+
+        Parameters
+        ----------
+        camera_intrinsic: aloscene.CameraIntrinsic
+        projection: str | pinhole
+            At this moment, only 2 projections models are supported: pinhole (f*tan(theta)) and equidistant (f*theta:
+            which is
+            used for wide range camera).
+        distortion: float | 1.0
+            Distortion coefficient for equidistant model. Only linear distortion supported
+            (sensor_angle=distortion*theta).
+
+        Returns
+        -------
+        aloscene.Depth
+        """
+        projection = projection if projection is not None else self.projection
+        distortion = distortion if distortion is not None else self.distortion
+
+        if not self.is_planar:
+            print("This tensor is already a euclidian depth tensor so no transform is performed")
+            return self.clone()
+        assert projection in ["pinhole", "equidistant"], "Only pinhole and equidistant projection are supported"
+
+        planar = self
+        camera_intrinsic = camera_intrinsic if camera_intrinsic is not None else self.cam_intrinsic
+        if camera_intrinsic is None:
+            err_msg = "The `camera_intrinsic` must be given either from the current depth tensor or from "
+            err_msg += "the as_disp(camera_intrinsic=...) method."
+            raise Exception(err_msg)
+
+        _, theta = coords2rtheta(camera_intrinsic, planar.HW, distortion, projection)
+        euclidean = planar / (torch.cos(theta) + 1e-8)
+        euclidean.is_planar = False
+        return euclidean
+
+    def as_planar(self, camera_intrinsic: aloscene.CameraIntrinsic = None, projection=None, distortion=None):
+        """Create a new planar depth augmented tensor from the euclidean depth between camera to world points with
+        corresponding depth. To use this method, we must know intrinsic matrix of camera, projection model and
+        distortion coefficient (if exists).
+
+        Parameters
+        ----------
+        camera_intrinsic: aloscene.CameraIntrinsic
+        projection: str | pinhole
+            At this moment, only 2 projections models are supported: pinhole (f*tan(theta)) and equidistant (f*theta:
+            which is used for wide range camera).
+        distortion: float | 1.0
+            Distortion coefficient for equidistant model. Only linear distortion supported
+            (sensor_angle=distortion*theta).
+
+        Returns
+        -------
+        aloscene.Depth
+        """
+        projection = projection if projection is not None else self.projection
+        distortion = distortion if distortion is not None else self.distortion
+
+        if self.is_planar:
+            print("This tensor is already a planar depth tensor so no transform is done.")
+            return self.clone()
+        assert projection in ["pinhole", "equidistant"], "Only pinhole and equidistant projection are supported"
+
+        euclidean = self
+        camera_intrinsic = camera_intrinsic if camera_intrinsic is not None else self.cam_intrinsic
+        if camera_intrinsic is None:
+            err_msg = "The `camera_intrinsic` must be given either from the current depth tensor or from "
+            err_msg += "the as_disp(camera_intrinsic=...) method."
+            raise Exception(err_msg)
+
+        _, theta = coords2rtheta(camera_intrinsic, euclidean.HW, distortion, projection)
+        planar = euclidean * torch.cos(theta)
+        planar.is_planar = True
+        return planar

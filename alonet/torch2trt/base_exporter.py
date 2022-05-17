@@ -103,8 +103,8 @@ class BaseTRTExporter:
         if prod_package_error is not None:
             raise prod_package_error
 
-        if hasattr(model, 'tracing'):
-            assert model.tracing, "Model must be instantiated with tracing=True"
+        # if hasattr(model, 'tracing'):
+        #     assert model.tracing, "Model must be instantiated with tracing=True"
             
         self.model = model
         self.input_names = input_names
@@ -287,7 +287,6 @@ class BaseTRTExporter:
                 buffer = stack.enter_context(io.StringIO())
                 stack.enter_context(redirect_stdout(buffer))
                 stack.enter_context(scope_name_workaround())
-            
             torch.onnx.export(
                 self.model,  # model being run
                 inputs,  # model input (or a tuple for multiple inputs)
@@ -403,16 +402,16 @@ class BaseTRTExporter:
         parser.add_argument("--batch_size", type=int, default=1, help="Engine batch size, default = 1")
         parser.add_argument("--precision", type=str, default="fp32", help="fp32/fp16/mix, default FP32")
         parser.add_argument("--verbose", action="store_true", help="Helpful when debugging")
-        parser.add_argument("--profiling_verbosity", default=0, type=int, help="Helpful when profiling the engine")
-        parser.add_argument("--calibration_batch_size", type=int, default=8, help="Calibration data batch size.")
-        parser.add_argument("--limit_calibration_batches", type=int, default=10, help="Limits number of batches.")
-        parser.add_argument("--cache_file", type=str, default="calib.bin", help="Path to caliaration cache file.")
+        parser.add_argument("--profiling_verbosity", default=0, type=int, help="Helpful when profiling the engine (default: %(default)s)")
+        parser.add_argument("--calibration_batch_size", type=int, default=8, help="Calibration data batch size (default: %(default)s)")
+        parser.add_argument("--limit_calibration_batches", type=int, default=10, help="Limits number of batches (default: %(default)s)")
+        parser.add_argument("--cache_file", type=str, default="calib.bin", help="Path to caliaration cache file (default: %(default)s)")
         parser.add_argument(
             "--calibrator", 
             type=str, 
             choices=['base', 'minmax', 'entropy', 'entropy2', 'legacy'], 
             default='minmax',
-            help="Calibrator to use with int8 precision.")
+            help="Calibrator to use with int8 precision (default: %(default)s)")
         parser.add_argument(
             "--use_scope_names",
             action="store_true",

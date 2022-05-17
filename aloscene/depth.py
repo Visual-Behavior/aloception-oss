@@ -32,25 +32,26 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
 
     @staticmethod
     def __new__(
-            cls,
-            x,
-            occlusion: Mask = None,
-            is_absolute=True,
-            scale=None,
-            shift=None,
-            *args,
-            names=("C", "H", "W"),
-            **kwargs):
+        cls,
+        x,
+        occlusion: Mask = None,
+        is_absolute=True,
+        scale=None,
+        shift=None,
+        *args,
+        names=("C", "H", "W"),
+        **kwargs
+    ):
         if not is_absolute and (shift or scale):
-            raise AttributeError('depth not in inverse state, can not pass scale or shift')
+            raise AttributeError("depth not in inverse state, can not pass scale or shift")
         if isinstance(x, str):
             x = load_depth(x)
             names = ("C", "H", "W")
         tensor = super().__new__(cls, x, *args, names=names, **kwargs)
         tensor.add_child("occlusion", occlusion, align_dim=["B", "T"], mergeable=True)
-        tensor.add_property('scale', scale)
-        tensor.add_property('shift', shift)
-        tensor.add_property('is_absolute', is_absolute)
+        tensor.add_property("scale", scale)
+        tensor.add_property("shift", shift)
+        tensor.add_property("is_absolute", is_absolute)
         return tensor
 
     def __init__(self, x, *args, **kwargs):
@@ -80,7 +81,7 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         """
         depth = self
         if not depth.is_absolute:
-            raise ExecError('can not inverse depth, already inversed')
+            raise ExecError("can not inverse depth, already inversed")
         shift = depth.shift if depth.shift is not None else 0
         scale = depth.scale if depth.scale is not None else 1
 
@@ -98,7 +99,9 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         depth.is_absolute = False
         return depth
 
-    def encode_absolute(self, scale=1, shift=0, prior_clamp_min=None, prior_clamp_max=None, post_clamp_min=None, post_clamp_max=None):
+    def encode_absolute(
+        self, scale=1, shift=0, prior_clamp_min=None, prior_clamp_max=None, post_clamp_min=None, post_clamp_max=None
+    ):
         """Transforms inverted depth to absolute depth
 
         Parameters
@@ -125,7 +128,7 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         """
         depth, names = self.rename(None), self.names
         if depth.is_absolute:
-            raise ExecError('depth already in absolute state, call encode_inverse first')
+            raise ExecError("depth already in absolute state, call encode_inverse first")
 
         depth = depth * scale + shift
 
@@ -143,7 +146,6 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
             n_depth = torch.clamp(n_depth, min=post_clamp_min, max=post_clamp_max)
 
         return n_depth
-
 
     def append_occlusion(self, occlusion: Mask, name: str = None):
         """Attach an occlusion mask to the depth tensor.
@@ -263,9 +265,10 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         # unsqueeze on the Spatial H,W Dimension. On the dimension before "C", the focal_length is already supposed
         # to be aligned properly.
         focal_length = intrinsic.focal_length[..., 0:1].unsqueeze(-1).unsqueeze(-1)
-
-        depth = aloscene.Disparity(
-            baseline * focal_length / self.clone().as_tensor(),
+        depth = self.clone().as_tensor()
+        depth[depth < 1e-8] = 1e-8
+        disp = aloscene.Disparity(
+            baseline * focal_length / depth,
             baseline=baseline,
             camera_side=camera_side,
             disp_format="unsigned",
@@ -273,4 +276,4 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
             cam_extrinsic=self.cam_extrinsic,
             names=self.names,
         )
-        return depth
+        return disp

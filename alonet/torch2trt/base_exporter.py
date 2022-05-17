@@ -23,7 +23,6 @@ from contextlib import redirect_stdout, ExitStack
 from alonet.torch2trt.onnx_hack import scope_name_workaround, get_scope_names, rename_tensors_
 from alonet.torch2trt import TRTEngineBuilder, TRTExecutor, utils
 from alonet.torch2trt.utils import get_nodes_by_op, rename_nodes_
-from alonet.torch2trt.calibrator import BaseCalibrator
 
 
 class BaseTRTExporter:
@@ -54,8 +53,8 @@ class BaseTRTExporter:
         operator_export_type=None,
         dynamic_axes: Union[Dict[str, Dict[int, str]], Dict[str, List[int]]] = None,
         opt_profiles: Dict[str, Tuple[List[int]]] = None,
-        calibrator: BaseCalibrator = None,
         profiling_verbosity: int = 0,
+        calibrator=None,
         **kwargs,
     ):
         """
@@ -86,6 +85,8 @@ class BaseTRTExporter:
             Optimization profiles (one by each dynamic axis).
         operator_export_type: torch.onnx.OperatorExportTypes
             TODO
+        calibrator : torch2trt.calibrator.BaseCalibrator
+            Quantization calibrator.
         profiling_verbosity : int
             Profiling verbosity in NVTX annotations and the engine inspector (Default 0)
                 0 : LAYER_NAMES_ONLY (Print only the layer names. This is the default setting).

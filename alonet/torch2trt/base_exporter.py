@@ -103,8 +103,8 @@ class BaseTRTExporter:
         if prod_package_error is not None:
             raise prod_package_error
 
-        # if hasattr(model, 'tracing'):
-        #     assert model.tracing, "Model must be instantiated with tracing=True"
+        if hasattr(model, 'tracing'):
+            assert model.tracing, "Model must be instantiated with tracing=True"
             
         self.model = model
         self.input_names = input_names

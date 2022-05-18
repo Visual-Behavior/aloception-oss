@@ -213,7 +213,7 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         if self.is_planar:
             z_points = self.as_tensor().view((-1, self.H * self.W))
         else:
-            planar = self.as_planar(cam_intrinsic=intrinsic, projection=projection, distortion=distortion)
+            planar = self.as_planar(camera_intrinsic=intrinsic, projection=projection, distortion=distortion)
             z_points = planar.as_tensor().view((-1, self.H * self.W))
 
         if intrinsic is None:

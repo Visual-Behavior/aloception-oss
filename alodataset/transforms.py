@@ -664,7 +664,7 @@ class CustomRandomColoring(AloTransform):
     def apply(self, frame: Frame):
         assert frame.normalization == "01", "frame should be normalized between 0 and 1 before color modification"
 
-        frame = frame ** self.gamma
+        frame = frame**self.gamma
         frame = frame * self.brightness
         # change color by applying different coefficients to R, G, and B channels
         C = frame.shape[frame.names.index("C")]
@@ -786,3 +786,75 @@ class ColorJitter(AloTransform, torchvision.transforms.ColorJitter):
             n_frame = n_frame.norm_as(frame)
 
         return n_frame
+
+
+class RandomDownScale(AloTransform):
+    """
+    Downscale the image with random ratio.
+
+    Parameters
+    ----------
+    min_size (tuple of python:int)
+        minimum values (Hmin, Wmin) for downsampled image shape
+    preserve_ratio : python:bool
+        if true, the aspect ratio of downsample image will be the same as the original.
+    """
+
+    def __init__(self, min_size, preserve_ratio=False, *args, **kwargs):
+        self.min_size = min_size
+        self.preserve_ratio = preserve_ratio
+        super().__init__(*args, **kwargs)
+
+    def sample_params(self):
+        self.h_coef = np.random.uniform()
+        self.w_coef = self.h_coef if self.preserve_ratio else np.random.uniform()
+        return (self.h_coef, self.w_coef)
+
+    def set_params(self, h_coef, w_coef):
+        """Given predefined params, set the params on the class"""
+        self.h_coef = h_coef
+        self.w_coef = w_coef
+
+    def apply(self, frame: Frame):
+        """Apply the transformation
+
+        Parameters
+        ----------
+        frame: Frame
+            Frame to apply the transformation on
+        """
+        H, W = frame.HW
+        Hmin, Wmin = self.min_size
+        # minimum ratio to respect min size (max ratio is 1 to force downsample)
+        rh_min = Hmin / H
+        rw_min = Wmin / W
+        if self.preserve_ratio:
+            rh_min = rw_min = max(rw_min, rh_min)
+        # actual ratio
+        rh = rh_min + self.h_coef * (1 - rh_min)
+        rw = rw_min + self.w_coef * (1 - rw_min)
+        # new size
+        Hnew = int(rh * H)
+        Wnew = int(rw * W)
+        return frame.resize((Hnew, Wnew))
+
+
+class RandomDownScaleCrop(Compose):
+    """
+    Randomly downscale image and crop it.
+
+    For a chosen size of crop, the image is successively:
+    - randomly downsampled between original size and crop size
+    - cropped to crop size
+
+    Parameters
+    ----------
+    size (tuple of python:int)
+        size of cropped image
+    preserve_ratio : python:bool
+        if true, the aspect ratio of downsample image will be the same as the original.
+    """
+
+    def __init__(self, size, preserve_ratio=False, *args, **kwargs):
+        transforms = [RandomDownScale(size, preserve_ratio), RandomCrop(size)]
+        super().__init__(transforms, *args, **kwargs)

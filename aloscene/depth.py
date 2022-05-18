@@ -209,7 +209,12 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
             torch.arange(self.H, device=self.device), torch.arange(self.W, device=self.device)
         )
 
-        z_points = self.as_tensor().view((-1, self.H * self.W))
+        # if self is not planar depth, we must convert to planar depth before projecting to 3d points
+        if self.is_planar:
+            z_points = self.as_tensor().view((-1, self.H * self.W))
+        else:
+            planar = self.as_planar(camera_intrinsic=intrinsic, projection=projection, distortion=distortion)
+            z_points = planar.as_tensor().view((-1, self.H * self.W))
 
         if intrinsic is None:
             err_msg = "The `camera_intrinsic` must be given either from the current depth tensor or from "

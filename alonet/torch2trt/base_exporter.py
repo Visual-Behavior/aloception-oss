@@ -13,6 +13,7 @@ try:
     import onnx_graphsurgeon as gs
     import tensorrt as trt
     import pycuda.driver as cuda
+    from pytorch_quantization import nn as quant_nn
     prod_package_error = None
 except Exception as e:
     prod_package_error = e
@@ -25,7 +26,7 @@ from alonet.torch2trt import TRTEngineBuilder, TRTExecutor, utils
 from alonet.torch2trt.utils import get_nodes_by_op, rename_nodes_
 from alonet.torch2trt.calibrator import BaseCalibrator
 
-from pytorch_quantization import nn as quant_nn
+
 
 
 class BaseTRTExporter:

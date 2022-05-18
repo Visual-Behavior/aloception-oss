@@ -23,9 +23,6 @@ from contextlib import redirect_stdout, ExitStack
 from alonet.torch2trt.onnx_hack import scope_name_workaround, get_scope_names, rename_tensors_
 from alonet.torch2trt import TRTEngineBuilder, TRTExecutor, utils
 from alonet.torch2trt.utils import get_nodes_by_op, rename_nodes_
-from alonet.torch2trt.calibrator import BaseCalibrator
-
-from pytorch_quantization import nn as quant_nn
 
 
 class BaseTRTExporter:
@@ -56,7 +53,8 @@ class BaseTRTExporter:
         operator_export_type=None,
         dynamic_axes: Union[Dict[str, Dict[int, str]], Dict[str, List[int]]] = None,
         opt_profiles: Dict[str, Tuple[List[int]]] = None,
-        calibrator: BaseCalibrator = None,
+        profiling_verbosity: int = 0,
+        calibrator=None,
         **kwargs,
     ):
         """
@@ -86,6 +84,15 @@ class BaseTRTExporter:
         opt_profiles : Dict[str, Tuple[List[int]]], by default None
             Optimization profiles (one by each dynamic axis).
         operator_export_type: torch.onnx.OperatorExportTypes
+            TODO
+        calibrator : torch2trt.calibrator.BaseCalibrator
+            Quantization calibrator.
+        profiling_verbosity : int
+            Profiling verbosity in NVTX annotations and the engine inspector (Default 0)
+                0 : LAYER_NAMES_ONLY (Print only the layer names. This is the default setting).
+                1 : NONE (Do not print any layer information).
+                2 : DETAILED : (Print detailed layer information including layer names and layer parameters).
+            Set to 2 for more layers details (preicision, type, kernel ...) when calling the EngineInspector
 
         Raises
         ------
@@ -131,11 +138,18 @@ class BaseTRTExporter:
 
         self.engine_builder = TRTEngineBuilder(self.onnx_path, logger=trt_logger, opt_profiles=opt_profiles, calibrator=calibrator)
 
+        if profiling_verbosity == 0:
+            self.engine_builder.profiling_verbosity = "LAYER_NAMES_ONLY"
+        elif profiling_verbosity == 1:
+            self.engine_builder.profiling_verbosity = "NONE"
+        elif profiling_verbosity == 2:
+            self.engine_builder.profiling_verbosity = "DETAILED"
+        else:
+            raise AttributeError('unknown profiling_verbosity')
+
         if precision.lower() == "fp32":
             pass
         elif precision.lower() == "int8":
-            ## set fake quantization to True before torch2onnx
-            quant_nn.TensorQuantizer.use_fb_fake_quant = True
             self.engine_builder.INT8_allowed = True
             self.engine_builder.FP16_allowed = True
             self.engine_builder.strict_type = True
@@ -274,7 +288,6 @@ class BaseTRTExporter:
                 buffer = stack.enter_context(io.StringIO())
                 stack.enter_context(redirect_stdout(buffer))
                 stack.enter_context(scope_name_workaround())
-            
             torch.onnx.export(
                 self.model,  # model being run
                 inputs,  # model input (or a tuple for multiple inputs)
@@ -390,6 +403,16 @@ class BaseTRTExporter:
         parser.add_argument("--batch_size", type=int, default=1, help="Engine batch size, default = 1")
         parser.add_argument("--precision", type=str, default="fp32", help="fp32/fp16/mix, default FP32")
         parser.add_argument("--verbose", action="store_true", help="Helpful when debugging")
+        parser.add_argument("--profiling_verbosity", default=0, type=int, help="Helpful when profiling the engine (default: %(default)s)")
+        parser.add_argument("--calibration_batch_size", type=int, default=8, help="Calibration data batch size (default: %(default)s)")
+        parser.add_argument("--limit_calibration_batches", type=int, default=10, help="Limits number of batches (default: %(default)s)")
+        parser.add_argument("--cache_file", type=str, default="calib.bin", help="Path to caliaration cache file (default: %(default)s)")
+        parser.add_argument(
+            "--calibrator", 
+            type=str, 
+            choices=['base', 'minmax', 'entropy', 'entropy2', 'legacy'], 
+            default='minmax',
+            help="Calibrator to use with int8 precision (default: %(default)s)")
         parser.add_argument(
             "--use_scope_names",
             action="store_true",

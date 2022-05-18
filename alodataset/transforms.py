@@ -786,3 +786,71 @@ class ColorJitter(AloTransform, torchvision.transforms.ColorJitter):
             n_frame = n_frame.norm_as(frame)
 
         return n_frame
+
+
+class RandomSizeCropWithRatio(AloTransform):
+    def __init__(self, min_size: Union[int, float], max_size: Union[int, float], *args, **kwargs):
+        if type(min_size) != type(max_size):
+            raise Exception("Both `min_size` and `max_size` but be of the same type (float or int)")
+        self.min_size = min_size
+        self.max_size = max_size
+        super().__init__(*args, **kwargs)
+
+    def sample_params(self):
+        """Sample a `number` between and 1. The transformation
+        will be aply if  `number` is < `self.p`
+        """
+        if isinstance(self.min_size, int):
+            self._size = random.randint(self.min_size, self.max_size)
+        else:
+            self._size = np.random.uniform(self.min_size, self.max_size)
+        return (self._size,)
+
+    def set_params(self, _size):
+        """Given predefined params, set the params on the class"""
+        self._size = _size
+
+    @staticmethod
+    def get_size_with_aspect_ratio(frame: Frame, size: int):
+        """Given a `frame` and a `size` this method compute a new size  so that the largest
+        side is equal to `size` and always < to `max_size` (if given).
+        Parameters
+        ----------
+        frame : Frame
+            Frame to resize. Used only to get the width and the height of the target frame to resize.
+        size: int
+            Desired size
+        max_size: int
+            Maximum size of the largest side.
+        """
+        h, w = frame.H, frame.W
+
+        max_original_size = float(max((w, h)))
+        if isinstance(size, float):
+            size = int(round(size * max_original_size))
+        if size > max_original_size:
+            size = max_original_size
+
+        if (w <= h and w == size) or (h <= w and h == size):
+            return (h, w)
+
+        if w < h:
+            ow = size
+            oh = int(size * h / w)
+        else:
+            oh = size
+            ow = int(size * w / h)
+
+        return (oh, ow)
+
+    def apply(self, frame: Frame):
+        """Apply the transformation
+        Parameters
+        ----------
+        frame: Frame
+            Frame to apply the transformation on
+        """
+        h, w = self.get_size_with_aspect_ratio(frame, self._size)
+        region = T.RandomCrop.get_params(frame, [h, w])
+        frame = F.crop(frame, *region)
+        return frame

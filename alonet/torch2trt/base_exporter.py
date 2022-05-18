@@ -103,7 +103,7 @@ class BaseTRTExporter:
         """
         if prod_package_error is not None:
             raise prod_package_error
-            
+
         self.model = model
         self.input_names = input_names
         self.onnx_path = onnx_path

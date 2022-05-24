@@ -33,26 +33,27 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
 
     @staticmethod
     def __new__(
-            cls,
-            x,
-            occlusion: Mask = None,
-            is_absolute=True,
-            is_planar=True,
-            scale=None,
-            shift=None,
-            *args,
-            names=("C", "H", "W"),
-            **kwargs):
+        cls,
+        x,
+        occlusion: Mask = None,
+        is_absolute=True,
+        is_planar=True,
+        scale=None,
+        shift=None,
+        *args,
+        names=("C", "H", "W"),
+        **kwargs
+    ):
 
         if isinstance(x, str):
             x = load_depth(x)
             names = ("C", "H", "W")
         tensor = super().__new__(cls, x, *args, names=names, **kwargs)
         tensor.add_child("occlusion", occlusion, align_dim=["B", "T"], mergeable=True)
-        tensor.add_property('scale', scale)
-        tensor.add_property('shift', shift)
-        tensor.add_property('is_absolute', is_absolute)
-        tensor.add_property('is_planar', is_planar)
+        tensor.add_property("scale", scale)
+        tensor.add_property("shift", shift)
+        tensor.add_property("is_absolute", is_absolute)
+        tensor.add_property("is_planar", is_planar)
         return tensor
 
     def __init__(self, x, *args, **kwargs):
@@ -81,7 +82,7 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         >>> True
         """
         if not self.is_absolute:
-            print('No need to inverse depth, already inversed')
+            print("No need to inverse depth, already inversed")
             return self.clone()
         depth = self
         shift = depth.shift if depth.shift is not None else 0
@@ -101,7 +102,16 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         depth.is_absolute = False
         return depth
 
-    def encode_absolute(self, scale=1, shift=0, prior_clamp_min=None, prior_clamp_max=None, post_clamp_min=None, post_clamp_max=None, keep_negative=False):
+    def encode_absolute(
+        self,
+        scale=1,
+        shift=0,
+        prior_clamp_min=None,
+        prior_clamp_max=None,
+        post_clamp_min=None,
+        post_clamp_max=None,
+        keep_negative=False,
+    ):
         """Transforms inverted depth to absolute depth
 
         Parameters
@@ -130,7 +140,7 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         >>> True, False
         """
         if self.is_absolute:
-            print('Depth already in absolute value.')
+            print("Depth already in absolute value.")
             return self.clone()
         depth, names = self.rename(None), self.names
 
@@ -169,7 +179,17 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         """
         self._append_child("occlusion", occlusion, name)
 
-    def __get_view__(self, cmap="nipy_spectral", min_depth=0, max_depth=200, title=None, reverse=True, legend=False, min_legend=None, max_legend=None):
+    def __get_view__(
+        self,
+        cmap="nipy_spectral",
+        min_depth=0,
+        max_depth=200,
+        title=None,
+        reverse=True,
+        legend=False,
+        min_legend=None,
+        max_legend=None,
+    ):
         assert all(dim not in self.names for dim in ["B", "T"]), "Depth should not have batch or time dimension"
         cmap_m = matplotlib.cm.get_cmap(cmap)
         depth = self.rename(None).permute([1, 2, 0]).detach().cpu().contiguous().numpy()
@@ -265,7 +285,7 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
 
         if projection != "pinhole":
             points_3d[behind] *= -1
-            
+
             # image center coordinate is NaN after the projection. We need to set it manually here
             points_3d = torch.nan_to_num(points_3d, 0, 0, 0)
 
@@ -311,9 +331,10 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         # unsqueeze on the Spatial H,W Dimension. On the dimension before "C", the focal_length is already supposed
         # to be aligned properly.
         focal_length = intrinsic.focal_length[..., 0:1].unsqueeze(-1).unsqueeze(-1)
-
-        depth = aloscene.Disparity(
-            baseline * focal_length / self.clone().as_tensor(),
+        depth = self.clone().as_tensor()
+        depth[depth < 1e-8] = 1e-8
+        disp = aloscene.Disparity(
+            baseline * focal_length / depth,
             baseline=baseline,
             camera_side=camera_side,
             disp_format="unsigned",
@@ -321,7 +342,7 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
             cam_extrinsic=self.cam_extrinsic,
             names=self.names,
         )
-        return depth
+        return disp
 
     def as_euclidean(self, camera_intrinsic: aloscene.CameraIntrinsic = None, projection=None, distortion=None):
         """Create a new Depth augmented tensor whose data is the euclidean depth (distance) from camera to world points.

@@ -70,7 +70,7 @@ class Points3D(aloscene.tensors.AugmentedTensor):
     def __init__(self, x, *args, **kwargs):
         super().__init__(x)
 
-    def as_depth(self, base_depth: aloscene.Depth, camera_intrinsic: aloscene.CameraIntrinsic, return_mapping=False):
+    def as_depth(self, base_depth: aloscene.Depth, camera_intrinsic: aloscene.CameraIntrinsic, return_mapping=False, projection="pinhole", distortion=1.0):
         """Project back the points onto the image plane. The results image will
         be returns as an aloscene.Depth map.
 
@@ -83,18 +83,27 @@ class Points3D(aloscene.tensors.AugmentedTensor):
             CameraIntrinsic to use to unproject the points to 3D. If not, will try to use the instance
             `cam_intrinsic` if set.
         return_mapping: return mapping (slice, valid_points) used to write into the base depth map
+        projection: str | pinhole
+            Projection model used for depth projection. Only pinhole and equidistant are supported at this time.
+        distortion: float | 1.0
+            Distortion coeficient when using equidistant projection.
         """
+        assert projection in ["pinhole", "equidistant"], f"Only pinhole and equidistant are supported at this time, receive {projection}"
+
         principal_points = camera_intrinsic.principal_points.unsqueeze(-2)
         focal_length = camera_intrinsic.focal_length.unsqueeze(-2)
 
         # Project
         # coordinates in image plane, (in pixels)
         projected_points = self.as_tensor()
-        projected_points[..., :2] = projected_points[..., :2] / projected_points[..., 2:3] * focal_length
+        if projection == "pinhole":
+            projected_points[..., :2] = projected_points[..., :2] / projected_points[..., 2:3] * focal_length
 
-        # move frame origin from image center to top-left corner
-        projected_points[..., 0] = projected_points[..., 0] + principal_points[..., 0]
-        projected_points[..., 1] = projected_points[..., 1] + principal_points[..., 1]
+            # move frame origin from image center to top-left corner
+            projected_points[..., 0] = projected_points[..., 0] + principal_points[..., 0]
+            projected_points[..., 1] = projected_points[..., 1] + principal_points[..., 1]
+        elif projection == "equidistant":
+            pass
 
         slice_dim = {}
         N = self.shape[self.names.index("N")]

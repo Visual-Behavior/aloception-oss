@@ -59,6 +59,7 @@ class TRTExecutor:
         sync_mode: bool = False,
         verbose_logger: bool = False,
         profiling: bool = False,
+        shared_mem: dict = None,
     ):
         """
         Parameters
@@ -69,11 +70,19 @@ class TRTExecutor:
         sync_mode: bool, default = False.
             True/False enable the synchronized/asynchonized execution of TensorRT engine
         logger: tensorrt.ILogger, logger to print info in terminal
+        shared_mem: dict, input and output that share the same memory. Default {}.
+                    Output is redirected to the input after each execution.
+                    Exemple : shared_mem = {0: 1} makes input of index 0 share memory with output of index 1.
         """
+        if shared_mem is None:
+            shared_mem = {}
+        else:
+            print("[WARNING] outputs with shared memory are static, please set outputs_to_cpu=True when executing if you want to retrieve them.")
         if prod_package_error is not None:
             raise prod_package_error
         self.sync_mode = sync_mode
         self.stream = stream
+        self.shared_mem = shared_mem
         if verbose_logger:
             self.logger = trt.Logger(trt.Logger.VERBOSE)
         else:
@@ -91,7 +100,7 @@ class TRTExecutor:
             self.context.profiler = CustomProfiler()
         # Allocate_buffer take into account if engine has dynamic axes
         self.inputs, self.outputs, self.stream, self.has_dynamic_axes = allocate_buffers(
-            self.context, self.stream, self.sync_mode
+            self.context, self.stream, self.sync_mode, self.shared_mem,
         )
         self.dict_inputs = {mem_obj.name: mem_obj for mem_obj in self.inputs}
         self.dict_outputs = {mem_obj.name: mem_obj for mem_obj in self.outputs}
@@ -111,17 +120,61 @@ class TRTExecutor:
                     shape: {self.engine.get_binding_shape(i)}, dtype: {self.engine.get_binding_dtype(i)}"
             )
 
-    def execute(self):
+    def execute(self, inputs_from_cpu=False, outputs_to_cpu=False):
+        """Executes engine
+        
+        Parameters
+        ----------
+        inputs_from_cpu: bool, reload inputs from CPU again.
+        outputs_from_cpu: bool, transfer back all outputs back from GPU to CPU.
+
+        Examples
+        --------
+        ~ Example of engine with 2 inputs eand 2 outputs ~
+        >>> # Normal use.
+        >>> engine = TRTExecutor(**kwrags)
+        >>> engine.inputs[0].host, engine.inpts[1].host = np.ones(1), np.ones(1)
+        >>> outputs = engine.execute()
+        >>>
+        >>> # Engine with shared memory: redirecting output of index 1 to input of index 0.
+        >>> engine = TRTExecutor(shared_mem={0: 1}, **kwargs)
+        >>> for i, inp in enumerate(inputs):
+        >>>     engine.inputs[1].host = inp
+        >>>     ekwargs = {}
+        >>>     if i == 0:
+        >>>         ## First time only
+        >>>         engine.input[0].host = np.zeros(0)
+        >>>         ekawrgs["inputs_from_cpu"] = True
+        >>>     engine.execute(**ekwargs)
+        >>> # Retieve last output 1 from gpu
+        >>> engine.execute(outputs_to_cpu)
+        >>> print(engine.outputs.host[1])
+        """
         if self.has_dynamic_axes:
             # Set input shape in context to update output shapes
             allocate_dynamic_mem(self.context, self.dict_inputs, self.dict_outputs)
 
         if self.sync_mode:
-            execute_sync(self.context, bindings=self.bindings, inputs=self.inputs, outputs=self.outputs)
+            execute_sync(
+                self.context,
+                bindings=self.bindings,
+                inputs=self.inputs,
+                outputs=self.outputs,
+                shared_mem=self.shared_mem,
+                inputs_from_cpu=inputs_from_cpu,
+                outputs_to_cpu=outputs_to_cpu,
+                )
         else:
             execute_async(
-                self.context, bindings=self.bindings, inputs=self.inputs, outputs=self.outputs, stream=self.stream
-            )
+                self.context,
+                bindings=self.bindings,
+                inputs=self.inputs,
+                outputs=self.outputs,
+                stream=self.stream,
+                shared_mem=self.shared_mem,
+                inputs_from_cpu=inputs_from_cpu,
+                outputs_to_cpu=outputs_to_cpu,
+                )
         return {out.name: out.host for out in self.outputs}
 
     def set_binding_shape(self, binding: int, shape: tuple):

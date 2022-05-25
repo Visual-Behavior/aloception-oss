@@ -77,13 +77,14 @@ class CocoDetectionDataset(CocoBaseDataset, SplitMixin):
         include_stuff_cats: bool = False,
         fix_classes_len: int = None,
         split=Split.TRAIN,
+        ann_file=None,
         **kwargs,
     ):
         SplitMixin.__init__(self, split)
         super(CocoDetectionDataset, self).__init__(
             name=name,
             img_folder=self.get_split_folder(),
-            ann_file=self.get_split_ann_file(),
+            ann_file=ann_file or self.get_split_ann_file(),
             classes=None if include_stuff_cats else classes,
             fix_classes_len=fix_classes_len,
             **kwargs,

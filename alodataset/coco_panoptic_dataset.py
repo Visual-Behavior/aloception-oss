@@ -71,6 +71,7 @@ class CocoPanopticDataset(BaseDataset, SplitMixin):
         split=Split.TRAIN,
         return_masks: bool = True,
         classes: list = None,
+        ignore_classes: list=None,
         fix_classes_len: int = None,  # Match with pre-trained weights
         **kwargs,
     ):
@@ -85,6 +86,12 @@ class CocoPanopticDataset(BaseDataset, SplitMixin):
         self.return_masks = return_masks
         self.label_names, self.label_types, self.label_types_names = None, None, None
         self.items = self._get_sequences()
+
+        #print('label_names', self.label_names)
+        if classes is not None and ignore_classes is not None:
+            raise Exception("Can't considere both classes & ignore_classes at the same time.")
+        if ignore_classes is not None:
+            classes = [l for l in self.label_names if l not in ignore_classes and l != 'N/A']
 
         # Fix classes if it is desired
         self._ids_renamed = classes

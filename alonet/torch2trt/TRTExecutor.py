@@ -77,6 +77,7 @@ class TRTExecutor:
         if shared_mem is None:
             shared_mem = {}
         else:
+            assert isinstance(shared_mem, dict), f"shared_mem argument should be of type dict but got {shared_mem.__class__.__name__} instead"
             print("[WARNING] outputs with shared memory are static, please set outputs_to_cpu=True when executing if you want to retrieve them.")
         if prod_package_error is not None:
             raise prod_package_error

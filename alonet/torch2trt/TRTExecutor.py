@@ -59,7 +59,7 @@ class TRTExecutor:
         sync_mode: bool = False,
         verbose_logger: bool = False,
         profiling: bool = False,
-        shared_mem: dict = None,
+        shared_mem: dict = {},
     ):
         """
         Parameters
@@ -74,11 +74,11 @@ class TRTExecutor:
                     Output is redirected to the input after each execution.
                     Exemple : shared_mem = {0: 1} makes input of index 0 share memory with output of index 1.
         """
-        if shared_mem is None:
-            shared_mem = {}
-        else:
-            assert isinstance(shared_mem, dict), f"shared_mem argument should be of type dict but got {shared_mem.__class__.__name__} instead"
+        assert isinstance(shared_mem, dict), f"shared_mem argument should be of type dict but got {shared_mem.__class__.__name__} instead"
+        if shared_mem != {}:
             print("[WARNING] outputs with shared memory are static, please set outputs_to_cpu=True when executing if you want to retrieve them.")
+            for inp, out in shared_mem.items():
+                print(f"[INFO] input od index {inp} has shred memory with output of index {out}.")
         if prod_package_error is not None:
             raise prod_package_error
         self.sync_mode = sync_mode

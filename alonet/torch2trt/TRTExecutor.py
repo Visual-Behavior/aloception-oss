@@ -78,7 +78,7 @@ class TRTExecutor:
         if shared_mem != {}:
             print("[WARNING] outputs with shared memory are static, please set outputs_to_cpu=True when executing if you want to retrieve them.")
             for inp, out in shared_mem.items():
-                print(f"[INFO] input od index {inp} has shred memory with output of index {out}.")
+                print(f"[INFO] input of index {inp} has shared memory with output of index {out}.")
         if prod_package_error is not None:
             raise prod_package_error
         self.sync_mode = sync_mode

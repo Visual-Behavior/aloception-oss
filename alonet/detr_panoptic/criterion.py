@@ -89,7 +89,7 @@ class PanopticCriterion(nn.Module):
         Weighting factor in range (0,1) to balance positive vs negative examples. -1 for no weighting, by default 0.25
     """
 
-    def __init__(self, loss_dice_weight: float, loss_focal_weight: float, focal_alpha: float = 0.25, **kwargs):
+    def __init__(self, loss_dice_weight: float, loss_focal_weight: float, focal_alpha: float = 0.25, upscale_interpolate=True, **kwargs):
         super().__init__(**kwargs)
 
         # Define the weight dict
@@ -101,6 +101,7 @@ class PanopticCriterion(nn.Module):
                 self.loss_weights.update({f"loss_DICE_{i}": loss_dice_weight})
 
         self.focal_alpha = focal_alpha
+        self.upscale_interpolate = upscale_interpolate
 
     def loss_masks(self, outputs: dict, frames: aloscene.Frame, indices: list, num_boxes: torch.Tensor, **kwargs):
         """Compute the losses related to the masks, used sigmoid focal and DICE/F-1 losses
@@ -133,14 +134,23 @@ class PanopticCriterion(nn.Module):
 
         # Masks resize
         fr_shape = frames.shape[-2:]  # (H,W)
-        outputs_masks = F.interpolate(outputs["pred_masks"], size=fr_shape, mode="bilinear", align_corners=False)
+
+        if self.upscale_interpolate:
+            outputs_masks = F.interpolate(outputs["pred_masks"], size=fr_shape, mode="bilinear", align_corners=False)
+        else:
+            outputs_masks = outputs["pred_masks"]
+            o_shape = outputs_masks.shape[-2:]
+            pass
 
         # Masks alignment with indices
         pred_masks, target_masks = [], []
-        zero_masks = torch.zeros_like(frames[0][0:1]).as_tensor()
+        zero_masks = torch.unsqueeze(torch.zeros_like(outputs_masks[0][0]), dim=0)
         for gt_masks, p_masks, m_filters, b_index in zip(
             frames.segmentation, outputs_masks, outputs["pred_masks_info"]["filters"], indices
         ):
+            if not self.upscale_interpolate:
+                gt_masks = F.interpolate(torch.unsqueeze(gt_masks.as_tensor(), dim=0), size=o_shape, mode="bilinear", align_corners=False)[0]
+
             # Get pred_masks by indices matcher and append zero mask if it is necessary
             m_index = torch.where(m_filters)[0]
             for ib in b_index[0].to(m_index.device):
@@ -151,11 +161,17 @@ class PanopticCriterion(nn.Module):
                 else:
                     pred_masks.append(zero_masks)
 
-            target_masks.append(gt_masks.as_tensor()[b_index[1]])
 
+            target_masks.append(gt_masks[b_index[1]])
+
+
+
+        #plt.imshow(target_masks[0][6].cpu().detach().numpy()); plt.savefig("target_mask.png");  plt.imshow(pred_masks[6][0].cpu().detach().numpy()); plt.savefig("pred_mask.png")
         # Reshape for loss process
         pred_masks = torch.cat(pred_masks, dim=0).flatten(1)
         target_masks = torch.cat(target_masks, dim=0).flatten(1).view(pred_masks.shape)
+
+        
 
         # DICE/F-1 loss
         losses["loss_DICE"] = dice_loss(pred_masks, target_masks, num_boxes)

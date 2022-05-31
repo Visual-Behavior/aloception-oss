@@ -870,10 +870,10 @@ class DynamicCropTransform(AloTransform):
         super().__init__(*args, **kwargs)
 
     def sample_params(self):
-        return tuple()
+        return (self.crop_size,)
 
-    def set_params(self):
-        pass
+    def set_params(self, size):
+        self.crop_size = size
 
     def apply(self, frame: Frame, center: Union[Tuple[int, int], Tuple[float, float]] = (0.5, 0.5)):
         """
@@ -894,7 +894,7 @@ class DynamicCropTransform(AloTransform):
         bot = center_y + crop_h // 2
 
         if left < 0 or top < 0 or right > (frame.W - 1) or bot > (frame.H - 1):
-            raise ValueError(f"Crop size coordinates out of image border.\
+            raise ValueError(f"Crop coordinates out of image border.\
                 Image size: {frame.HW}, Crop coordinate (top, left, bot, right): ({top}, {left}, {bot}, {right}")
 
         return F.crop(frame, top, left, crop_h, crop_w)

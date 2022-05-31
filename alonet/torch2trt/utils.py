@@ -191,7 +191,7 @@ class DynamicHostDeviceMem(HostDeviceMem):
         self.shape = None
 
 
-def allocate_buffers(context, stream=None, sync_mode=True):
+def allocate_buffers(context, stream=None, sync_mode=True, shared_mem={}):
     """
     Read bindings' information in ExecutionContext, create pagelocked np.ndarray in CPU,
     allocate corresponding memory in GPU.
@@ -222,7 +222,10 @@ def allocate_buffers(context, stream=None, sync_mode=True):
 
     inputs = []
     outputs = []
+    out_pointer = 0
     has_dynamic_axes = False
+    inv_shared_mem = {v: k for k, v in shared_mem.items()}
+
     if stream is None and not sync_mode:
         stream = cuda.Stream()
     for binding in context.engine:
@@ -237,14 +240,27 @@ def allocate_buffers(context, stream=None, sync_mode=True):
         else:
             size = trt.volume(shape) * context.engine.max_batch_size
             # Allocate host and device buffers
-            host_mem = cuda.pagelocked_empty(size, dtype)
-            device_mem = cuda.mem_alloc(host_mem.nbytes)
+            if not context.engine.binding_is_input(binding):
+                if out_pointer in shared_mem.values():
+                    # avoid allocating memory in gpu, just pass the same device_mem and host that corresponds.
+                    input_idx = inv_shared_mem[out_pointer]
+                    device_mem = inputs[input_idx].device
+                    host_mem = inputs[input_idx].host
+                else:
+                    host_mem = cuda.pagelocked_empty(size, dtype)
+                    device_mem = cuda.mem_alloc(host_mem.nbytes)
+                out_pointer += 1
+                
+            else:
+                host_mem = cuda.pagelocked_empty(size, dtype)
+                device_mem = cuda.mem_alloc(host_mem.nbytes)
             mem_obj = HostDeviceMem(host_mem, device_mem, shape, dtype, binding)
         # Append to the appropriate list.
         if context.engine.binding_is_input(binding):
             inputs.append(mem_obj)
         else:
             outputs.append(mem_obj)
+
     return inputs, outputs, stream, has_dynamic_axes
 
 
@@ -305,7 +321,7 @@ def get_bindings(context, dict_inputs, dict_outputs):
     return bindings
 
 
-def execute_async(context, bindings, inputs, outputs, stream):
+def execute_async(context, bindings, inputs, outputs, stream, shared_mem, inputs_from_cpu, outputs_to_cpu):
     """
     Execute an TensorRT engine.
 
@@ -318,6 +334,8 @@ def execute_async(context, bindings, inputs, outputs, stream):
     outputs: list[HostDeviceMem]
     stream: pycuda.driver.Stream
         used for memory transfers between CPU-GPU
+    inputs_from_cpu: bool, reload inputs from CPU again.
+    outputs_from_cpu: bool, transfer back all outputs back from GPU to CPU.
 
     Returns
     -------
@@ -325,12 +343,23 @@ def execute_async(context, bindings, inputs, outputs, stream):
         For each outputs of the engine
     """
     # Transfer input data to the GPU.
-    [cuda.memcpy_htod_async(inp.device, inp.host, stream) for inp in inputs]
+    if inputs_from_cpu:
+        # Reload all inputs from "inputs"
+        [cuda.memcpy_htod_async(inp.device, inp.host, stream) for inp in inputs]
+    else:
+        # Reload all inputs from "inputs" except the ones with shared memory.
+        [cuda.memcpy_htod_async(inp.device, inp.host, stream) for i, inp in enumerate(inputs) if i not in shared_mem.keys()]
+
     # Run inference.
     check = context.execute_async(bindings=bindings, stream_handle=stream.handle)
     assert check, "Kernel execution failed"
     # Transfer predictions back from the GPU.
-    [cuda.memcpy_dtoh_async(out.host, out.device, stream) for out in outputs]
+    if outputs_to_cpu:
+        # All outputs
+        [cuda.memcpy_dtoh(out.host, out.device) for out in outputs]
+    else:
+        # only outputs with no memory shared
+        [cuda.memcpy_dtoh_async(out.host, out.device, stream) for i, out in enumerate(outputs) if i not in shared_mem.values()]
     # Synchronize the stream
     stream.synchronize()
     # Return only the host outputs.
@@ -339,7 +368,7 @@ def execute_async(context, bindings, inputs, outputs, stream):
     return [out.host for out in outputs]
 
 
-def execute_sync(context, bindings, inputs, outputs):
+def execute_sync(context, bindings, inputs, outputs, shared_mem, inputs_from_cpu, outputs_to_cpu):
     """
     Execute an TensorRT engine.
 
@@ -352,23 +381,34 @@ def execute_sync(context, bindings, inputs, outputs):
     outputs: list[HostDeviceMem]
     stream: pycuda.driver.Stream
         used for memory transfers between CPU-GPU
+    inputs_from_cpu: bool, reload inputs from CPU again.
+    outputs_to_cpu: bool, transfer back all outputs back from GPU to CPU.
 
     Parameters
     ----------
     list[np.ndarray] for each outputs of the engine
     """
     # Transfer input data to the GPU.
-    [cuda.memcpy_htod(inp.device, inp.host) for inp in inputs]
+    if inputs_from_cpu:
+        # Reload all inputs from "inputs".
+        [cuda.memcpy_htod(inp.device, inp.host) for inp in inputs]
+    else:
+        # Reload all inputs from "inputs" except the ones with shared memory.
+        [cuda.memcpy_htod(inp.device, inp.host) for i, inp in enumerate(inputs) if i not in shared_mem.keys()]
     # Run inference.
     check = context.execute_v2(bindings=bindings)
     assert check, "Kernel execution failed"
     # Transfer predictions back from the GPU.
-    [cuda.memcpy_dtoh(out.host, out.device) for out in outputs]
+    if outputs_to_cpu:
+        # All outputs
+        [cuda.memcpy_dtoh(out.host, out.device) for out in outputs]
+    else:
+        # only outputs with no memory shared
+        [cuda.memcpy_dtoh(out.host, out.device) for i, out in enumerate(outputs) if i not in shared_mem.values()]
     # Return only the host outputs.
     for out in outputs:
         out.host = out.host.reshape(out.shape)
     return [out.host for out in outputs]
-
 
 
 def rename_nodes_(graph, verbose=False):

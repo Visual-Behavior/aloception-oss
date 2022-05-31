@@ -870,7 +870,7 @@ class DynamicCropTransform(AloTransform):
         super().__init__(*args, **kwargs)
 
     def sample_params(self):
-        return ()
+        return tuple()
 
     def set_params(self):
         pass

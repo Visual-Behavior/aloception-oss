@@ -881,20 +881,20 @@ class DynamicCropTransform(AloTransform):
                 Default: (0.5, 0.5)
         """
         if isinstance(center[0], float):
-            center_x = int(frame.W * center[0]) - 1
-            center_y = int(frame.H * center[1]) - 1
+            center_x = frame.W * center[0]
+            center_y = frame.H * center[1]
         else:
             center_x = center[0]
             center_y = center[1]
 
         crop_h, crop_w = self.crop_size[0], self.crop_size[1]
-        left = center_x - crop_w // 2
-        top = center_y - crop_h // 2
-        right = center_x + crop_w // 2
-        bot = center_y + crop_h // 2
+        left = int(center_x - crop_w / 2)
+        top = int(center_y - crop_h / 2)
+        right = left + crop_w - 1
+        bot = top + crop_h - 1
 
         if left < 0 or top < 0 or right > (frame.W - 1) or bot > (frame.H - 1):
             raise ValueError(f"Crop coordinates out of image border.\
-                Image size: {frame.HW}, Crop coordinate (top, left, bot, right): ({top}, {left}, {bot}, {right}")
+                Image size: {frame.HW}, Crop coordinate (top, left, bot, right): ({top}, {left}, {bot}, {right})")
 
         return F.crop(frame, top, left, crop_h, crop_w)

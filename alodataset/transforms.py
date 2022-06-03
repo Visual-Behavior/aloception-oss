@@ -881,8 +881,8 @@ class DynamicCropTransform(AloTransform):
                 Default: (0.5, 0.5)
         """
         if isinstance(center[0], float):
-            center_x = int(frame.W * center[0])
-            center_y = int(frame.H * center[1])
+            center_x = int(frame.W * center[0]) - 1
+            center_y = int(frame.H * center[1]) - 1
         else:
             center_x = center[0]
             center_y = center[1]

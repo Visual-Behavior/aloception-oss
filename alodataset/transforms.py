@@ -51,7 +51,7 @@ class AloTransform(object):
     def set_params(self):
         raise Exception("Must be implement by a child class")
 
-    def __call__(self, frames: Union[Mapping[str, Frame], List[Frame], Frame]):
+    def __call__(self, frames: Union[Mapping[str, Frame], List[Frame], Frame], **kwargs):
         """Iter on the given frame(s) or return the frame.
         Based on `same_on_sequence` and  `same_on_frames` parameters
         the method will return and call the `sample_params` method at different time.
@@ -91,7 +91,7 @@ class AloTransform(object):
                         else:  # Used the params sampled from the previous sequence
                             self.set_params(*seqid2params[t])
 
-                        result = self.apply(frames[key][t])
+                        result = self.apply(frames[key][t], **kwargs)
                         if result.HW != frames[key][t].HW:
                             raise Exception(
                                 "Impossible to apply non-deterministic augmentations on the sequence if the augmentations sample different frame size"
@@ -107,7 +107,7 @@ class AloTransform(object):
 
                     for t in range(0, frames[key].shape[0]):
                         self.set_params(*self.sample_params())
-                        result = self.apply(frames[key][t])
+                        result = self.apply(frames[key][t], **kwargs)
                         if result.HW != frames[key][t].HW:
                             raise Exception(
                                 "Impossible to apply non-deterministic augmentations on the sequence if the augmentations sample different frame size"
@@ -119,12 +119,12 @@ class AloTransform(object):
                     frame_params = self.sample_params() if frame_params is None else frame_params
                     # print('same_on_frames.....', frame_params)
                     self.set_params(*frame_params)
-                    n_set[key] = self.apply(frames[key])
+                    n_set[key] = self.apply(frames[key], **kwargs)
 
                 elif not same_on_frames and same_on_sequence:
                     # print("not same on frames")
                     self.set_params(*self.sample_params())
-                    n_set[key] = self.apply(frames[key])
+                    n_set[key] = self.apply(frames[key], **kwargs)
                 else:
                     raise Exception("Not handle error")
 
@@ -136,12 +136,12 @@ class AloTransform(object):
                 for t in range(0, frames.shape[0]):
                     frame_params = self.sample_params() if frame_params is None else frame_params
                     self.set_params(*self.sample_params())
-                    result = self.apply(frames[t])
+                    result = self.apply(frames[t], **kwargs)
                     n_frames.append(result.temporal())
                 frames = torch.cat(n_frames, dim=0)
             else:
                 self.set_params(*self.sample_params())
-                frames = self.apply(frames)
+                frames = self.apply(frames, **kwargs)
 
             return frames
 
@@ -858,3 +858,43 @@ class RandomDownScaleCrop(Compose):
     def __init__(self, size, preserve_ratio=False, *args, **kwargs):
         transforms = [RandomDownScale(size, preserve_ratio), RandomCrop(size)]
         super().__init__(transforms, *args, **kwargs)
+
+
+class DynamicCropTransform(AloTransform):
+    """ Crop image to target crop size at chosen position.
+    """
+    def __init__(self, crop_size, *args, **kwargs):
+        assert all([isinstance(s, int) for s in crop_size])
+        self.crop_size = crop_size
+
+        super().__init__(*args, **kwargs)
+
+    def sample_params(self):
+        return (self.crop_size,)
+
+    def set_params(self, size):
+        self.crop_size = size
+
+    def apply(self, frame: Frame, center: Union[Tuple[int, int], Tuple[float, float]] = (0.5, 0.5)):
+        """
+        center: Coordinate of cropped image center. This coordinate is tuple of int or tuple of float.
+                Default: (0.5, 0.5)
+        """
+        if isinstance(center[0], float):
+            center_x = frame.W * center[0]
+            center_y = frame.H * center[1]
+        else:
+            center_x = center[0]
+            center_y = center[1]
+
+        crop_h, crop_w = self.crop_size[0], self.crop_size[1]
+        left = int(center_x - crop_w / 2)
+        top = int(center_y - crop_h / 2)
+        right = left + crop_w - 1
+        bot = top + crop_h - 1
+
+        if left < 0 or top < 0 or right > (frame.W - 1) or bot > (frame.H - 1):
+            raise ValueError(f"Crop coordinates out of image border.\
+                Image size: {frame.HW}, Crop coordinate (top, left, bot, right): ({top}, {left}, {bot}, {right})")
+
+        return F.crop(frame, top, left, crop_h, crop_w)

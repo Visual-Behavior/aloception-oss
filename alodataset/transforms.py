@@ -664,7 +664,7 @@ class CustomRandomColoring(AloTransform):
     def apply(self, frame: Frame):
         assert frame.normalization == "01", "frame should be normalized between 0 and 1 before color modification"
 
-        frame = frame**self.gamma
+        frame = frame ** self.gamma
         frame = frame * self.brightness
         # change color by applying different coefficients to R, G, and B channels
         C = frame.shape[frame.names.index("C")]
@@ -718,7 +718,7 @@ class ColorJitter(AloTransform, torchvision.transforms.ColorJitter):
         contrast: tuple = 0.2,
         saturation: tuple = 0.2,
         hue: tuple = 0.2,
-        **kwargs
+        **kwargs,
     ):
         """Reszie the given frame to the target frame size.
 
@@ -856,13 +856,13 @@ class RandomDownScaleCrop(Compose):
     """
 
     def __init__(self, size, preserve_ratio=False, *args, **kwargs):
-        transforms = [RandomDownScale(size, preserve_ratio), RandomCrop(size)]
+        transforms = [RandomDownScale(size, preserve_ratio, *args, **kwargs), RandomCrop(size, *args, **kwargs)]
         super().__init__(transforms, *args, **kwargs)
 
 
 class DynamicCropTransform(AloTransform):
-    """ Crop image to target crop size at chosen position.
-    """
+    """Crop image to target crop size at chosen position."""
+
     def __init__(self, crop_size, *args, **kwargs):
         assert all([isinstance(s, int) for s in crop_size])
         self.crop_size = crop_size
@@ -894,7 +894,9 @@ class DynamicCropTransform(AloTransform):
         bot = top + crop_h - 1
 
         if left < 0 or top < 0 or right > (frame.W - 1) or bot > (frame.H - 1):
-            raise ValueError(f"Crop coordinates out of image border.\
-                Image size: {frame.HW}, Crop coordinate (top, left, bot, right): ({top}, {left}, {bot}, {right})")
+            raise ValueError(
+                f"Crop coordinates out of image border.\
+                Image size: {frame.HW}, Crop coordinate (top, left, bot, right): ({top}, {left}, {bot}, {right})"
+            )
 
         return F.crop(frame, top, left, crop_h, crop_w)

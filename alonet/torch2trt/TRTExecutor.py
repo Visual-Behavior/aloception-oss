@@ -97,6 +97,9 @@ class TRTExecutor:
         else:
             self.engine = engine
         self.context = self.engine.create_execution_context()
+        if self.context is None:
+            raise Exception("Execution context creation failed")
+
         if profiling:
             self.context.profiler = CustomProfiler()
         # Allocate_buffer take into account if engine has dynamic axes
@@ -127,13 +130,13 @@ class TRTExecutor:
         Parameters
         ----------
         inputs_from_cpu: bool, reload inputs from CPU again.
-        outputs_from_cpu: bool, transfer back all outputs back from GPU to CPU.
+        outputs_to_cpu: bool, transfer back all outputs back from GPU to CPU.
 
         Examples
         --------
         ~ Example of engine with 2 inputs eand 2 outputs ~
         >>> # Normal use.
-        >>> engine = TRTExecutor(**kwrags)
+        >>> engine = TRTExecutor(shared_mem={}, **kwrags)
         >>> engine.inputs[0].host, engine.inpts[1].host = np.ones(1), np.ones(1)
         >>> outputs = engine.execute()
         >>>
@@ -145,10 +148,10 @@ class TRTExecutor:
         >>>     if i == 0:
         >>>         ## First time only
         >>>         engine.input[0].host = np.zeros(0)
-        >>>         ekawrgs["inputs_from_cpu"] = True
+        >>>         ekwargs["inputs_from_cpu"] = True
         >>>     engine.execute(**ekwargs)
-        >>> # Retieve last output 1 from gpu
-        >>> engine.execute(outputs_to_cpu)
+        >>> # Retieve last output of index 1 from gpu
+        >>> engine.execute(outputs_to_cpu=True)
         >>> print(engine.outputs.host[1])
         """
         if self.has_dynamic_axes:

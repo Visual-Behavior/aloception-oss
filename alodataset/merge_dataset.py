@@ -1,4 +1,5 @@
 import torch
+import numpy as np
 
 from alodataset.base_dataset import rename_data_to_none
 from alodataset.base_dataset import stream_loader, train_loader
@@ -18,20 +19,58 @@ class MergeDataset(torch.utils.data.Dataset):
     ----------
     datasets : List[alodataset.BaseDataset]
         List of datasets
+    order : List[int]
+        How to order samples.
+            Example: MergeDataset([ds1, ds2, ds3], order=[1, 2, 1]) will order samples
+                     as follow : sample_ds1, sample_ds2, sample_ds2, sample_ds3, sample_ds1 ...
+    lim_samples : int
+        Maximum number of samples. Only when order is not None.
     transform_fn : function
         transformation applied to each sample
     """
 
-    def __init__(self, datasets, transform_fn=None):
+    def __init__(
+            self,
+            datasets,
+            order=None,
+            lim_samples=None,
+            transform_fn=None,
+            ):
+        self.order = order
         self.datasets = datasets
-        self.indices = self._init_indices()
+
+        if order is not None:
+            assert len(order) == len(datasets), "order and datasets must have the same length"
+            max_length = self._init_max_length()
+            lim_samples = max_length if lim_samples is None else min(lim_samples, max_length)
+            print("WARNING: merging order is not None. Some samples might be dropped")
+
+        self.lim_samples = lim_samples
         self.transform_fn = transform_fn
+        self.indices = self._init_indices()
+
+    def _init_max_length(self):
+        occ_rates = [len(ds) / occ for ds, occ in zip(self.datasets, self.order)]
+        short_idx = np.argmin(occ_rates)
+        repeat_ds = len(self.datasets[short_idx]) // self.order[short_idx]
+        return sum([repeat_ds * occ for occ in self.order])
 
     def _init_indices(self):
         indices = []
-        for dset_idx, dset in enumerate(self.datasets):
-            for idx in range(len(dset)):
-                indices.append((dset_idx, idx))
+        if self.order is None:
+            for dset_idx, dset in enumerate(self.datasets):
+                for idx in range(len(dset)):
+                    indices.append((dset_idx, idx))
+        else:
+            sample = 0
+            ds_pointer = [0 for _ in range(len(self.datasets))]
+            while(sample < self.lim_samples):
+                for dset_idx, occ in enumerate(self.order):
+                    for _ in range(occ):
+                        indices.append((dset_idx, ds_pointer[dset_idx]))
+                        ds_pointer[dset_idx] += 1
+                        sample += 1
+
         return indices
 
     def __len__(self):

@@ -43,7 +43,9 @@ class MergeDataset(torch.utils.data.Dataset):
             assert len(order) == len(datasets), "order and datasets must have the same length"
             max_length = self._init_max_length()
             lim_samples = max_length if lim_samples is None else min(lim_samples, max_length)
-            print("WARNING: merging order is not None. Some samples might be dropped")
+            for d in datasets:
+                print(f"[INFO] merging {len(datasets)} datasets or length \
+                    {' & '.join(map(lambda x: len(x), datasets))}. Total length set to {lim_samples}")
 
         self.lim_samples = lim_samples
         self.transform_fn = transform_fn

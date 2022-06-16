@@ -1,4 +1,5 @@
 import torch
+import random
 import numpy as np
 
 from alodataset.base_dataset import rename_data_to_none
@@ -33,19 +34,21 @@ class MergeDataset(torch.utils.data.Dataset):
             self,
             datasets,
             order=None,
+            shuffle=False,
             lim_samples=None,
             transform_fn=None,
             ):
         self.order = order
+        self.shuffle = shuffle
         self.datasets = datasets
+        self.ds_lengths = list(map(lambda x: len(x), datasets))
 
         if order is not None:
             assert len(order) == len(datasets), "order and datasets must have the same length"
             max_length = self._init_max_length()
             lim_samples = max_length if lim_samples is None else min(lim_samples, max_length)
-            for d in datasets:
-                print(f"[INFO] merging {len(datasets)} datasets or length \
-                    {' & '.join(map(lambda x: len(x), datasets))}. Total length set to {lim_samples}")
+            print(f"[INFO] merging {len(datasets)} datasets of lengths" +
+                "{' & '.join(map(lambda x: str(len(x)), datasets))}. Total length set to {lim_samples}")
 
         self.lim_samples = lim_samples
         self.transform_fn = transform_fn
@@ -65,12 +68,15 @@ class MergeDataset(torch.utils.data.Dataset):
                     indices.append((dset_idx, idx))
         else:
             sample = 0
-            ds_pointer = [0 for _ in range(len(self.datasets))]
+            ds_ranges = [list(range(l)) for l in self.ds_lengths]
+            ds_pointers = [0 for _ in range(len(self.datasets))]
+            if self.shuffle:
+                [random.shuffle(l) for l in ds_ranges]
             while(sample < self.lim_samples):
                 for dset_idx, occ in enumerate(self.order):
                     for _ in range(occ):
-                        indices.append((dset_idx, ds_pointer[dset_idx]))
-                        ds_pointer[dset_idx] += 1
+                        indices.append((dset_idx, ds_ranges[dset_idx][ds_pointers[dset_idx]]))
+                        ds_pointers[dset_idx] += 1
                         sample += 1
 
         return indices

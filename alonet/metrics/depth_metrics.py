@@ -2,7 +2,7 @@ import torch
 import numpy as np
 
 
-class DxScoreMetric:
+class DepthMetrics:
     """Computs depth dx score
 
     Parameters
@@ -24,23 +24,26 @@ class DxScoreMetric:
             assert isinstance(xi, int)
         
         self.x = sorted(x)
-        self.dx = {f"d{i}": [] for i in x}
         self.alpha = alpha
+        self.metrics = {"RMSE": [], "RMSE_log": [], "Log10": [], "AbsRel": []}
+
+        dx = {f"d{i}": [] for i in x}
+        self.metrics.update(dx)
     
     def __getitem__(self, idx):
-        return  self.dx[idx]
+        return  self.metrics[idx]
     
     def __iadd__(self, di):
-        if sorted(self.dx.keys()) != sorted(di.keys()):
+        if sorted(self.metrics.keys()) != sorted(di.keys()):
             raise KeyError("keys are not compatible")
         
         assert all(isinstance(i, type(list(di.values())[0])) for i in di.values()), "Values are not of the same instance"
 
         for k, v in di.items():
             if isinstance(v, float):
-                self.dx[k].append(v)
+                self.metrics[k].append(v)
             elif isinstance(v, list):
-                self.dx[k] +=  v
+                self.metrics[k] +=  v
             else:
                 raise Exception(f"Expected values to be list or float, got {v.__class__.__name__} instead")
     
@@ -67,12 +70,34 @@ class DxScoreMetric:
             t_depth = t_depth[mask]
             p_depth = p_depth[mask]
 
+        # dx scores
         ratio = np.maximum(p_depth / t_depth, t_depth / p_depth)
 
         for xi in self.x:
             th = self.alpha ** xi
             dx = (ratio < th).mean()
-            self.dx[f"d{xi}"].append(dx)
+            self.metrics[f"d{xi}"].append(dx)
+        
+        # RMSE
+        rmse = (p_depth - t_depth) ** 2
+        rmse = np.sqrt(rmse.mean())
+        self.metrics["RMSE"].append(rmse)
+
+        # RMSE LOG
+        rmse_log = (np.log(p_depth) - np.log(t_depth)) ** 2
+        rmse_log = np.sqrt(rmse_log.mean())
+        self.metrics["RMSE_log"].append(rmse_log)
+
+        # ABS REL
+        abs_rel = (np.abs(t_depth - p_depth) / t_depth).mean()
+        self.metrics["AbsRel"].append(abs_rel)
+
+
+        # LOG 10
+        err = np.abs(np.log10(p_depth) - np.log10(t_depth))
+        log10 = np.mean(err)
+        self.metrics["Log10"].append(log10)
+
 
     @staticmethod
     def set_values(depth, fillnan=0., fillinf=0.):
@@ -94,10 +119,10 @@ class DxScoreMetric:
         """Prints dx scores
         
         """
-        scores = [np.mean(d) * 100 for d in self.dx.values()]
+        scores = [np.mean(d) * 100 for d in self.metrics.values()]
 
-        hdr = "{:>7} " * len(self.dx)
-        res = "{:>7.2f} " * len(self.dx)
+        hdr = "{:>8} " * len(self.metrics)
+        res = "{:>8.2f} " * len(self.metrics)
 
-        print(hdr.format(*self.dx.keys()))
+        print(hdr.format(*self.metrics.keys()))
         print(res.format(*scores))

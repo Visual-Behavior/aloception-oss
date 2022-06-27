@@ -1,4 +1,4 @@
 from .compute_map import ApMetrics
 from .compute_map_3d import ApMetrics3D
 from .compute_pq import PQMetrics
-from .compute_dx import DxScoreMetric
+from .depth_metrics import DepthMetrics

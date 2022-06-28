@@ -59,7 +59,7 @@ class DepthMetrics:
     def __len__(self):
         return len(self.metrics["RMSE"])
         
-    def add_errors(self, t_depth, p_depth, mask=None):
+    def add_errors(self, t_depth, p_depth, mask=None, epsilon=1e-5):
         """Computes sample depth metrics
 
         Parameters
@@ -69,6 +69,9 @@ class DepthMetrics:
             p_depth : aloscene.Depth
                 predicted depth.
             mask : Union[aloscene.Mask, np.ndarray]
+                mask.
+            epsilon : float
+                Value to avoid zero division.
         
         """
         metrics = {}
@@ -106,17 +109,17 @@ class DepthMetrics:
         rmse = np.sqrt(rmse.mean())
         metrics["RMSE"] = float(rmse)
 
+        # ABS REL
+        abs_rel = (np.abs(t_depth - p_depth) / (t_depth + epsilon)).mean()
+        metrics["AbsRel"] = float(abs_rel)
+
         # RMSE LOG
-        rmse_log = (np.log(p_depth) - np.log(t_depth)) ** 2
+        rmse_log = (np.log(p_depth + epsilon) - np.log(t_depth + epsilon)) ** 2
         rmse_log = np.sqrt(rmse_log.mean())
         metrics["RMSE_log"] = float(rmse_log)
 
-        # ABS REL
-        abs_rel = (np.abs(t_depth - p_depth) / t_depth).mean()
-        metrics["AbsRel"] = float(abs_rel)
-
         # LOG 10
-        log10 = np.abs(np.log10(p_depth) - np.log10(t_depth)).mean()
+        log10 = np.abs(np.log10(p_depth + epsilon) - np.log10(t_depth + epsilon)).mean()
         metrics["Log10"] = float(log10)
 
         self += metrics
@@ -145,10 +148,10 @@ class DepthMetrics:
             v_ = [i for i in v if not np.isnan(i)]
             self.metrics[k] = v_
 
-        scores = [np.mean(d) * 100 for d in self.metrics.values()]
+        scores = [np.mean(d) for d in self.metrics.values()]
 
-        hdr = "{:>8} " * len(self.metrics)
-        res = "{:>8.2f} " * len(self.metrics)
+        hdr = "{:>9} " * len(self.metrics)
+        res = "{:>9.3f} " * len(self.metrics)
 
         print(hdr.format(*self.metrics.keys()))
         print(res.format(*scores))

@@ -1,16 +1,18 @@
+import aloscene
+
 import torch
 import numpy as np
 
 
 class DepthMetrics:
-    """Computs depth dx score
+    """Computes depth metrics
 
     Parameters
     ----------
         x : List[int]
-            permissivety levels. Default [1, 2, 3].
+            Permissivety levels. Default [1, 2, 3].
         alpha : float
-            permissivety percentage. Default 1.25 (25%).
+            Permissivety percentage. Default 1.25 (25%).
     
     Raises
     ------
@@ -57,8 +59,8 @@ class DepthMetrics:
     def __len__(self):
         return len(self.metrics["RMSE"])
         
-    def add_score(self, t_depth, p_depth, mask=None):
-        """Computes dx scores
+    def add_errors(self, t_depth, p_depth, mask=None):
+        """Computes sample depth metrics
 
         Parameters
         ----------
@@ -66,20 +68,30 @@ class DepthMetrics:
                 ground truth depth.
             p_depth : aloscene.Depth
                 predicted depth.
+            mask : Union[aloscene.Mask, np.ndarray]
         
         """
         metrics = {}
         assert t_depth.shape == p_depth.shape, "Input depths must have the same dimensions"
 
-        p_depth = p_depth.to(torch.device("cpu")).detach().numpy()
-        t_depth = t_depth.to(torch.device("cpu")).detach().numpy()
-        
+        p_depth = p_depth.to(torch.device("cpu")).as_numpy()
+        t_depth = t_depth.to(torch.device("cpu")).as_numpy()
+
+        p_depth = np.squeeze(p_depth)
+        t_depth = np.squeeze(t_depth)
+
         if mask is None:
             t_depth = self.set_values(t_depth)
             p_depth = self.set_values(p_depth)
         else:
-            t_depth = t_depth[mask]
-            p_depth = p_depth[mask]
+            if isinstance(mask, aloscene.Mask):
+                mask = mask.as_numpy().astype(int)
+
+            # FIXME : MASK WITH PR #194            
+            assert all(i in [0, 1] for i in np.unique(mask)), "unvalid mask"
+
+            t_depth = t_depth * mask
+            p_depth = p_depth * mask
 
         # dx scores
         ratio = np.maximum(p_depth / t_depth, t_depth / p_depth)

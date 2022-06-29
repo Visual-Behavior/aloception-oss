@@ -89,8 +89,8 @@ class DepthMetrics:
         metrics = {}
         assert t_depth.shape == p_depth.shape, "Input depths must have the same dimensions"
 
-        p_depth = p_depth.to(torch.device("cpu")).as_numpy()
-        t_depth = t_depth.to(torch.device("cpu")).as_numpy()
+        p_depth = p_depth.to(torch.device("cpu")).as_numpy(np.float32)
+        t_depth = t_depth.to(torch.device("cpu")).as_numpy(np.float32)
 
         p_depth = np.squeeze(p_depth)
         t_depth = np.squeeze(t_depth)

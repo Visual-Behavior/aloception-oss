@@ -2,6 +2,8 @@ import aloscene
 
 import torch
 import numpy as np
+from typing import List
+from alonet.metrics.utils import _print_body, _print_head, _print_map
 
 
 class DepthMetrics:
@@ -20,7 +22,11 @@ class DepthMetrics:
             x not in [1, 2, 3]
     
     """
-    def __init__(self, x=[1, 2, 3], alpha=1.25):
+    def __init__(
+            self,
+            x: List[int] = [1, 2, 3],
+            alpha: float = 1.25
+            ):
         assert isinstance(x, list)
         for xi in x:
             assert isinstance(xi, int)
@@ -59,7 +65,13 @@ class DepthMetrics:
     def __len__(self):
         return len(self.metrics["RMSE"])
         
-    def add_errors(self, t_depth, p_depth, mask=None, epsilon=1e-5):
+    def add_sample(
+            self,
+            p_depth: aloscene.Depth,
+            t_depth: aloscene.Depth,
+            mask: aloscene.Mask = None,
+            epsilon: float = 1e-5
+            ):
         """Computes sample depth metrics
 
         Parameters
@@ -97,7 +109,7 @@ class DepthMetrics:
             p_depth = p_depth * mask
 
         # dx scores
-        ratio = np.maximum(p_depth / t_depth, t_depth / p_depth)
+        ratio = np.maximum(p_depth / (t_depth + epsilon), t_depth / (p_depth + epsilon))
 
         for xi in self.x:
             th = self.alpha ** xi
@@ -125,7 +137,7 @@ class DepthMetrics:
         self += metrics
 
     @staticmethod
-    def set_values(depth, fillnan=0., fillinf=0.):
+    def set_values(depth: np.ndarray, fillnan: float = 0., fillinf: float = 0.):
         """Sets inf and Nan values to custom value
         
         Parameters
@@ -140,7 +152,7 @@ class DepthMetrics:
         depth[np.isinf(depth)] = fillinf
         return depth
     
-    def log_scores(self):
+    def calc_map(self, print_result: bool = False):
         """Prints depth metrics
         
         """
@@ -148,10 +160,13 @@ class DepthMetrics:
             v_ = [i for i in v if not np.isnan(i)]
             self.metrics[k] = v_
 
-        scores = [np.mean(d) for d in self.metrics.values()]
+        scores = {k: np.mean(v) for k, v in self.metrics.items()}
+        scores["n"] = len(self)
 
         hdr = "{:>9} " * len(self.metrics)
         res = "{:>9.3f} " * len(self.metrics)
 
-        print(hdr.format(*self.metrics.keys()))
-        print(res.format(*scores))
+        clm_size = 11
+        _print_head(head_elm=self.metrics.keys(), clm_size=clm_size)
+        _print_body(average_pq=scores, pq_per_class=None, clm_size=clm_size)
+        return scores

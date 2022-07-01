@@ -587,7 +587,7 @@ class Rotate(AloTransform):
 
 
 class RealisticNoise(AloTransform):
-    def __init__(self, gaussian_std: float = 0.02, shot_std: float = 0.2, *args, **kwargs):
+    def __init__(self, gaussian_std: float = 0.02, shot_std: float = 0.05, *args, **kwargs):
         """Add an approximation of a realistic noise to the image.
 
         More precisely, we add a gaussian noise and a shot noise to the image.
@@ -607,9 +607,6 @@ class RealisticNoise(AloTransform):
         self.gaussian_std = gaussian_std
         self.shot_std = shot_std
         super().__init__(*args, **kwargs)
-        assert (
-            not self.same_on_sequence and not self.same_on_frames
-        ), "Noise should be different for all images at all time steps"
 
     def sample_params(self):
         """No parameters to sample"""
@@ -664,7 +661,7 @@ class CustomRandomColoring(AloTransform):
     def apply(self, frame: Frame):
         assert frame.normalization == "01", "frame should be normalized between 0 and 1 before color modification"
 
-        frame = frame ** self.gamma
+        frame = frame**self.gamma
         frame = frame * self.brightness
         # change color by applying different coefficients to R, G, and B channels
         C = frame.shape[frame.names.index("C")]

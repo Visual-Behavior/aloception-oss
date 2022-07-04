@@ -163,10 +163,8 @@ class DepthMetrics:
         scores = {k: np.mean(v) for k, v in self.metrics.items()}
         scores["n"] = len(self)
 
-        hdr = "{:>9} " * len(self.metrics)
-        res = "{:>9.3f} " * len(self.metrics)
-
-        clm_size = 11
-        _print_head(head_elm=self.metrics.keys(), clm_size=clm_size)
-        _print_body(average_pq=scores, pq_per_class=None, clm_size=clm_size)
+        if print_result:
+            clm_size = 11
+            _print_head(head_elm=self.metrics.keys(), clm_size=clm_size)
+            _print_body(average_pq=scores, pq_per_class=None, clm_size=clm_size)
         return scores

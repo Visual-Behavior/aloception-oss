@@ -1,4 +1,3 @@
-from pickle import NONE
 import aloscene
 from alonet.metrics.utils import _print_body, _print_head
 

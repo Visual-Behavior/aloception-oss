@@ -20,12 +20,12 @@ class MergeDataset(torch.utils.data.Dataset):
     ----------
     datasets : List[alodataset.BaseDataset]
         List of datasets
-    order : List[int]
+    weights : List[int]
         How to order samples.
-            Example: MergeDataset([ds1, ds2, ds3], order=[1, 2, 1]) will order samples
+            Example: MergeDataset([ds1, ds2, ds3], weights=[1, 2, 1]) will order samples
                      as follow : sample_ds1, sample_ds2, sample_ds2, sample_ds3, sample_ds1 ...
     lim_samples : int
-        Maximum number of samples. Only when order is not None.
+        Maximum number of samples. Only when weights is not None.
     transform_fn : function
         transformation applied to each sample
     """
@@ -33,18 +33,18 @@ class MergeDataset(torch.utils.data.Dataset):
     def __init__(
             self,
             datasets,
-            order=None,
+            weights=None,
             shuffle=False,
             lim_samples=None,
             transform_fn=None,
             ):
-        self.order = order
+        self.weights = weights
         self.shuffle = shuffle
         self.datasets = datasets
         self.ds_lengths = list(map(lambda x: len(x), datasets))
 
-        if order is not None:
-            assert len(order) == len(datasets), "order and datasets must have the same length"
+        if weights is not None:
+            assert len(weights) == len(datasets), "weights and datasets must have the same length"
             max_length = self._init_max_length()
             lim_samples = max_length if lim_samples is None else min(lim_samples, max_length)
             print(f"[INFO] merging {len(datasets)} datasets of lengths" +
@@ -55,14 +55,14 @@ class MergeDataset(torch.utils.data.Dataset):
         self.indices = self._init_indices()
 
     def _init_max_length(self):
-        occ_rates = [len(ds) / occ for ds, occ in zip(self.datasets, self.order)]
+        occ_rates = [len(ds) / occ for ds, occ in zip(self.datasets, self.weights)]
         short_idx = np.argmin(occ_rates)
-        repeat_ds = len(self.datasets[short_idx]) // self.order[short_idx]
-        return sum([repeat_ds * occ for occ in self.order])
+        repeat_ds = len(self.datasets[short_idx]) // self.weights[short_idx]
+        return sum([repeat_ds * occ for occ in self.weights])
 
     def _init_indices(self):
         indices = []
-        if self.order is None:
+        if self.weights is None:
             for dset_idx, dset in enumerate(self.datasets):
                 for idx in range(len(dset)):
                     indices.append((dset_idx, idx))
@@ -73,7 +73,7 @@ class MergeDataset(torch.utils.data.Dataset):
             if self.shuffle:
                 [random.shuffle(l) for l in ds_ranges]
             while(sample < self.lim_samples):
-                for dset_idx, occ in enumerate(self.order):
+                for dset_idx, occ in enumerate(self.weights):
                     for _ in range(occ):
                         indices.append((dset_idx, ds_ranges[dset_idx][ds_pointers[dset_idx]]))
                         ds_pointers[dset_idx] += 1

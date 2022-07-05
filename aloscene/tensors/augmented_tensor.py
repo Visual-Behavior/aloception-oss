@@ -302,8 +302,9 @@ class AugmentedTensor(torch.Tensor):
                 )
 
         if isinstance(idx, torch.Tensor):
-            if not all(e in [0, 1] for e in idx.unique().int()): 
-                raise IndexError(f"Unvalid mask. Expected mask elements to be in [0, 1, True, False]")
+            if not idx.dtype == torch.bool:
+                if torch.equal(idx ** 3, idx):
+                    raise IndexError(f"Unvalid mask. Expected mask elements to be in [0, 1, True, False]")
             tensor = self * idx
         else:
             tensor = torch.Tensor.__getitem__(self, idx)

@@ -40,6 +40,8 @@ class SpatialAugmentedTensor(AugmentedTensor):
         camera_side: str = None,
         baseline: float = None,
         mask=None,
+        projection="pinhole",
+        distortion=1.0,
         **kwargs,
     ):
         tensor = super().__new__(cls, x, *args, **kwargs)
@@ -47,6 +49,8 @@ class SpatialAugmentedTensor(AugmentedTensor):
         tensor.add_child("mask", mask, align_dim=["B", "T"], mergeable=True)
         tensor.add_property("baseline", baseline)
         tensor.add_property("camera_side", camera_side)
+        tensor.add_property("projection", projection)
+        tensor.add_property("distortion", distortion)
 
         # Intrisic and extrinsic parameters are cloned by default, to prevent having multiple reference
         # of the same intrisic/extrinsic across nodes.

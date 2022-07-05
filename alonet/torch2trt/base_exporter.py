@@ -13,6 +13,7 @@ try:
     import onnx_graphsurgeon as gs
     import tensorrt as trt
     import pycuda.driver as cuda
+    from pytorch_quantization import nn as quant_nn
     prod_package_error = None
 except Exception as e:
     prod_package_error = e
@@ -103,7 +104,7 @@ class BaseTRTExporter:
         """
         if prod_package_error is not None:
             raise prod_package_error
-            
+
         self.model = model
         self.input_names = input_names
         self.onnx_path = onnx_path

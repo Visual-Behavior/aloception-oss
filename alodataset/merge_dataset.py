@@ -28,6 +28,9 @@ class MergeDataset(torch.utils.data.Dataset):
         Maximum number of samples. Only when weights is not None.
     transform_fn : function
         transformation applied to each sample
+    weights: List[int] | None
+        For N datasets, a list of N integer weights.
+        The samples from a dataset with weight `w` will appear `w` times in the MergeDataset.
     """
 
     def __init__(
@@ -60,6 +63,18 @@ class MergeDataset(torch.utils.data.Dataset):
         repeat_ds = len(self.datasets[short_idx]) // self.weights[short_idx]
         return sum([repeat_ds * occ for occ in self.weights])
 
+    def _init_weights(self, weights):
+        n_datasets = len(self.datasets)
+        if weights is None:
+            return [1] * n_datasets
+
+        if len(weights) != n_datasets:
+            raise RuntimeError("The number of weights should be equal to the number of datasets.")
+
+        if any(type(w) != int for w in weights):
+            raise RuntimeError("weights should be a list of int.")
+        return weights
+
     def _init_indices(self):
         indices = []
         if self.weights is None:
@@ -78,6 +93,7 @@ class MergeDataset(torch.utils.data.Dataset):
                         indices.append((dset_idx, ds_ranges[dset_idx][ds_pointers[dset_idx]]))
                         ds_pointers[dset_idx] += 1
                         sample += 1
+
 
         return indices
 

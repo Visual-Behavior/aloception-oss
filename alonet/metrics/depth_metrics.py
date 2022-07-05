@@ -1,9 +1,10 @@
+from pickle import NONE
 import aloscene
+from alonet.metrics.utils import _print_body, _print_head
 
 import torch
 import numpy as np
-from typing import List
-from alonet.metrics.utils import _print_body, _print_head, _print_map
+from typing import List, Union
 
 
 class DepthMetrics:
@@ -69,8 +70,8 @@ class DepthMetrics:
             self,
             p_depth: aloscene.Depth,
             t_depth: aloscene.Depth,
-            mask: aloscene.Mask = None,
-            epsilon: float = 1e-5
+            epsilon: float = 1e-5,
+            mask: Union[aloscene.Mask, np.ndarray] = None,
             ):
         """Computes sample depth metrics
 
@@ -87,7 +88,15 @@ class DepthMetrics:
         
         """
         metrics = {}
-        assert t_depth.shape == p_depth.shape, "Input depths must have the same dimensions"
+        assert isinstance(p_depth, aloscene.Depth)
+        assert isinstance(t_depth, aloscene.Depth)
+        if mask is not None:
+            assert isinstance(mask, (aloscene.Mask, np.ndarray))
+
+        assert p_depth.names == tuple("BCHW")
+        assert t_depth.names == tuple("BCHW")
+
+        assert t_depth.shape == p_depth.shape, "Ground truth and predicted depth sizes are not the same"
 
         p_depth = p_depth.to(torch.device("cpu")).as_numpy(np.float32)
         t_depth = t_depth.to(torch.device("cpu")).as_numpy(np.float32)

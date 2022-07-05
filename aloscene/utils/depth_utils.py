@@ -49,14 +49,15 @@ def coords2rtheta(K, size, distortion, projection="pinhole"):
 def add_colorbar(data, vmin, vmax, colormap):
     fig = plt.figure()
     ax = fig.add_subplot(111)
-    pos = plt.imshow(data, cmap=colormap, interpolation='none')
+    pos = plt.imshow(data, cmap=colormap, interpolation="none")
     axins1 = ax.inset_axes([0.8, 0.2, 0.04, 0.6])
-    plt.axis('off')
+    plt.axis("off")
     fig.colorbar(pos, cax=axins1, orientation="vertical")
     pos.set_clim(vmin=vmin, vmax=vmax)
     fig.tight_layout(pad=0)
     fig.canvas.draw()
     data = np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)
-    data = data.reshape(fig.canvas.get_width_height()[::-1] + (3,)) / 255.
+    data = data.reshape(fig.canvas.get_width_height()[::-1] + (3,)) / 255.0
+    plt.close(fig)
 
     return data

@@ -8,6 +8,7 @@ from typing import Dict
 
 import aloscene
 from alodataset.utils.panoptic_utils import VOID_CLASS_ID, OFFSET
+from alonet.metrics.utils import _print_body, _print_head, _print_map
 
 
 class PQStatCat(object):
@@ -74,7 +75,7 @@ class PQMetrics(object):
             )
             self.isfull = False
 
-    def pq_average(self, isthing: bool = None, print_result: bool = False):
+    def pq_average(self, isthing: bool = None, print_result: bool = False, **kwargs):
         """Calculate SQ, RQ and PQ metrics from the categories, and thing/stuff/all if desired
 
         Parameters
@@ -120,7 +121,7 @@ class PQMetrics(object):
                 suffix = "th"
             elif isthing is not None and not isthing:
                 suffix = "st"
-            _print_map(result, per_class_results, suffix=suffix)
+            _print_map(result, per_class_results, suffix=suffix, **kwargs)
         return result, per_class_results
 
     def add_sample(
@@ -266,57 +267,16 @@ class PQMetrics(object):
             keys, cats = ["all"], [None]
         for key, cat in zip(keys, cats):
             if cat is not None or not self.isfull:
-                all_maps[key], all_maps_per_class[key] = self.pq_average(cat, print_result)
+                all_maps[key], all_maps_per_class[key] = self.pq_average(cat,
+                                                                        print_result,
+                                                                        clm_size=9,
+                                                                        head_elm=["PQ", "SQ", "RQ"],
+                                                                        )
             else:
                 all_maps[key], all_maps_per_class[key] = self.pq_average(cat)
 
         if print_result and self.isfull:
-            _print_head()
+            _print_head(head_elm=["PQ", "SQ", "RQ"], clm_size=9)
             _print_body(all_maps["all"], {})
 
         return all_maps, all_maps_per_class
-
-
-def _print_map(average_pq: Dict, pq_per_class: Dict, suffix: str = ""):
-    _print_head(suffix)
-    _print_body(average_pq, pq_per_class)
-
-
-def _print_head(suffix: str = ""):
-    make_row = lambda vals: (" %5s |" * len(vals)) % tuple(vals)
-    make_sep = lambda n: ("-------+" * (n + 1))
-
-    print()
-    print(make_sep(5))
-    print(" " * 23 + "|" + make_row([v + suffix for v in ["PQ", "SQ", "RQ"]]))
-    print(make_sep(5))
-
-
-def _print_body(average_pq: Dict, pq_per_class: Dict):
-    make_row = lambda vals: (" %5s |" * len(vals)) % tuple(vals)
-    make_sep = lambda n: ("-------+" * (n + 1))
-
-    for cat, metrics in pq_per_class.items():
-        print(
-            make_row(
-                [
-                    cat[:21] if len(cat) > 20 else cat + " " * (21 - len(cat)),
-                    "%.3f" % metrics["pq"],
-                    "%.3f" % metrics["sq"],
-                    "%.3f" % metrics["rq"],
-                ]
-            )
-        )
-    print(make_sep(5))
-    n = "%d" % average_pq["n"]
-    print(
-        make_row(
-            [
-                "total = %s" % n + " " * (13 - len(n)),
-                "%.3f" % average_pq["pq"],
-                "%.3f" % average_pq["sq"],
-                "%.3f" % average_pq["rq"],
-            ]
-        )
-    )
-    print(make_sep(5))

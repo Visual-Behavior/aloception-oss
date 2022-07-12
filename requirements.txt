@@ -2,7 +2,7 @@ pycocotools==2.0.2
 PyYAML==5.4.1
 chardet==4.0.0
 idna==2.10
-scipy==1.6.3
+scipy==1.4.1
 more_itertools==8.8.0
 requests==2.25.1
 protobuf==3.17.3

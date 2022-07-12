@@ -45,6 +45,8 @@ class CocoPanopticDataset(BaseDataset, SplitMixin):
         Include masks labels in the output, by default True
     classes : list, optional
         List of classes to be filtered in the annotation reading process, by default None
+    ignore_classes: list, optional
+        List of classed to ignore in the annotation reading process, by default None.
     fix_classes_len : int, optional
         Fix to a specific number the number of classes, filling the rest with "N/A" value.
         Use when the number of model outputs does not match with the number of classes in the dataset, by default 250
@@ -87,7 +89,6 @@ class CocoPanopticDataset(BaseDataset, SplitMixin):
         self.label_names, self.label_types, self.label_types_names = None, None, None
         self.items = self._get_sequences()
 
-        #print('label_names', self.label_names)
         if classes is not None and ignore_classes is not None:
             raise Exception("Can't considere both classes & ignore_classes at the same time.")
         if ignore_classes is not None:

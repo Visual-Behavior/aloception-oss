@@ -164,14 +164,9 @@ class PanopticCriterion(nn.Module):
 
             target_masks.append(gt_masks[b_index[1]])
 
-
-
-        #plt.imshow(target_masks[0][6].cpu().detach().numpy()); plt.savefig("target_mask.png");  plt.imshow(pred_masks[6][0].cpu().detach().numpy()); plt.savefig("pred_mask.png")
         # Reshape for loss process
         pred_masks = torch.cat(pred_masks, dim=0).flatten(1)
         target_masks = torch.cat(target_masks, dim=0).flatten(1).view(pred_masks.shape)
-
-        
 
         # DICE/F-1 loss
         losses["loss_DICE"] = dice_loss(pred_masks, target_masks, num_boxes)

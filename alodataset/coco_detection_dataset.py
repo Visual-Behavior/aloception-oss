@@ -40,6 +40,8 @@ class CocoDetectionDataset(CocoBaseDataset, SplitMixin):
         Include :attr:`STUFF` objects in reading process, by default False
     return_multiple_labels : bool, optional
         Return Labels as a dictionary, with all posible categories found in annotations file, by default False
+    ann_file : str
+        Start from a fixe given annotation file where the path is relative to the `dataset_dir`
     **kwargs : dict
         :mod:`BaseDataset <base_dataset>` optional parameters
 

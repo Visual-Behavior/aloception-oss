@@ -65,7 +65,7 @@ class LitPanopticDetr(alonet.deformable_detr.LitDeformableDetr):
         self.assert_input(frames)
         get_filter_fn = lambda *args, **kwargs: get_mask_queries(
             *args, matcher=self.matcher, **kwargs
-        ) #  model=self.model.detr, 
+        )
         m_outputs = self.model(frames, get_filter_fn=get_filter_fn)
 
         total_loss, losses = self.criterion(m_outputs, frames, compute_statistical_metrics=batch_idx < 100)

@@ -115,13 +115,13 @@ class AloTransform(object):
                         n_set[key].append(result.temporal())
                     n_set[key] = torch.cat(n_set[key], dim=0)
                 # Same on all frames and same on sequence
-                elif same_on_frames and same_on_sequence:
+                elif same_on_frames:
                     frame_params = self.sample_params() if frame_params is None else frame_params
                     # print('same_on_frames.....', frame_params)
                     self.set_params(*frame_params)
                     n_set[key] = self.apply(frames[key], **kwargs)
 
-                elif not same_on_frames and same_on_sequence:
+                elif not same_on_frames:
                     # print("not same on frames")
                     self.set_params(*self.sample_params())
                     n_set[key] = self.apply(frames[key], **kwargs)
@@ -664,7 +664,7 @@ class CustomRandomColoring(AloTransform):
     def apply(self, frame: Frame):
         assert frame.normalization == "01", "frame should be normalized between 0 and 1 before color modification"
 
-        frame = frame ** self.gamma
+        frame = frame**self.gamma
         frame = frame * self.brightness
         # change color by applying different coefficients to R, G, and B channels
         C = frame.shape[frame.names.index("C")]

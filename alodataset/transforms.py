@@ -114,19 +114,17 @@ class AloTransform(object):
                             )
                         n_set[key].append(result.temporal())
                     n_set[key] = torch.cat(n_set[key], dim=0)
-                # Same on all frames and same on sequence
+                # Same on all frames
                 elif same_on_frames:
                     frame_params = self.sample_params() if frame_params is None else frame_params
                     # print('same_on_frames.....', frame_params)
                     self.set_params(*frame_params)
                     n_set[key] = self.apply(frames[key], **kwargs)
 
-                elif not same_on_frames:
+                else:
                     # print("not same on frames")
                     self.set_params(*self.sample_params())
                     n_set[key] = self.apply(frames[key], **kwargs)
-                else:
-                    raise Exception("Not handle error")
 
             return n_set
         else:

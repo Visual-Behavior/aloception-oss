@@ -17,19 +17,24 @@ from .tensors.spatial_augmented_tensor import SpatialAugmentedTensor
 
 from .renderer import Renderer
 
+
 def batch_list(tensors):
     return SpatialAugmentedTensor.batch_list(tensors)
 
+
 _renderer = None
+
+
 def render(
-        views: list,
-        renderer: str = "cv",
-        size=None,
-        record_file: str = None,
-        fps=30,
-        grid_size=None,
-        skip_views=False,
-    ):
+    views: list,
+    renderer: str = "cv",
+    size=None,
+    record_file: str = None,
+    fps=30,
+    grid_size=None,
+    skip_views=False,
+    **kwargs,
+):
     """Render a list of view.
 
     Parameters
@@ -57,7 +62,8 @@ def render(
         record_file=record_file,
         fps=fps,
         grid_size=grid_size,
-        skip_views=skip_views
+        skip_views=skip_views,
+        **kwargs,
     )
 
 

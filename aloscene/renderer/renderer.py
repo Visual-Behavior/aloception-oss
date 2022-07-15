@@ -189,6 +189,36 @@ class Renderer(object):
 
         return np.concatenate(lines, axis=0)
 
+    @staticmethod
+    def get_user_defined_grid_view(views):
+        """
+        Create grid_view from list of list, without resizing views
+
+        view : list of list of views with view[i][j] = view for line i, colomun j
+        """
+
+        # create blank image
+        Hf, Wf = 0, 0
+        for line in views:
+            hmax = max(v.image.shape[0] for v in line)
+            w = sum(v.image.shape[1] for v in line)
+            Hf += hmax
+            Wf = max(Wf, w)
+        final_view = np.zeros((Hf, Wf, 3))
+
+        # write each view on the image
+        y = 0
+        for line in views:
+            x = 0
+            hmax = 0
+            for v in line:
+                h, w = v.image.shape[:2]
+                final_view[y : y + h, x : x + w, :] = v.image
+                x += w
+                hmax = max(hmax, h)
+            y += hmax
+        return final_view
+
     def render(
         self,
         views: list,
@@ -198,6 +228,7 @@ class Renderer(object):
         fps=30,
         grid_size=None,
         skip_views=False,
+        from_list_of_list=False,
     ):
         """Render a list of view using the given renderer.
 
@@ -220,8 +251,10 @@ class Renderer(object):
             raise ValueError("The renderer must be one of the following:{}".format(self.renderer_to_fn.keys()))
         if skip_views and record_file is None:
             raise ValueError("When skip_views is desired, a record_file must be provided.")
-
-        view = self.get_grid_view(views, cell_grid_size=cell_grid_size, grid_size=grid_size)
+        if from_list_of_list:
+            view = self.get_user_defined_grid_view(views)
+        else:
+            view = self.get_grid_view(views, cell_grid_size=cell_grid_size, grid_size=grid_size)
         if not skip_views:
             self.renderer_to_fn[renderer](view)
         if record_file is not None and self.out is None:

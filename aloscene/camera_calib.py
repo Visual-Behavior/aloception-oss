@@ -64,10 +64,6 @@ class CameraIntrinsic(AugmentedTensor):
             x[0][1] = skew if skew is not None else 0
 
             if principal_point is None and plane_size is not None:
-                if plane_size[0] % 2 != 0 or plane_size[1] % 2 != 0:
-                    err = "The principal points (center of the plane) can't be infer automaticly."
-                    err += " The latter must be given when creating the CameraIntrinsic tensor."
-                    raise Exception(err)
                 principal_point = (plane_size[0] / 2, plane_size[1] / 2)
             elif principal_point is None:
                 principal_point = (0, 0)
@@ -188,7 +184,7 @@ class CameraExtrinsic(AugmentedTensor):
         return tensor
 
     def translation_with(self, tgt_pos):
-        """ Compute the translation with an other pos
+        """Compute the translation with an other pos
 
         Parameters
         ----------
@@ -205,7 +201,7 @@ class CameraExtrinsic(AugmentedTensor):
         return translation
 
     def distance_with(self, tgt_pos):
-        """ Compute the distance with an other pos
+        """Compute the distance with an other pos
 
         Parameters
         ----------

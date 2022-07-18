@@ -178,6 +178,18 @@ class Renderer(object):
 
     @staticmethod
     def add_title(array, start, title):
+        """
+        Add a box with view title
+
+        Parameters
+        ----------
+        array : np.ndarray
+            grid view array (will be modified inplace)
+        start : tuple
+            top-left corner of title box
+        title : str
+            title of the view
+        """
         if title is None:
             return
         else:

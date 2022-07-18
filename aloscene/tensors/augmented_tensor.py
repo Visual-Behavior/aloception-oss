@@ -299,7 +299,10 @@ class AugmentedTensor(torch.Tensor):
                 )
 
         if isinstance(idx, torch.Tensor):
-            tensor = torch.Tensor.__getitem__(self.rename(None), idx).reset_names()
+            if not idx.dtype == torch.bool:
+                if not torch.equal(idx ** 3, idx):
+                    raise IndexError(f"Unvalid mask. Expected mask elements to be in [0, 1, True, False]")
+            tensor = self * idx
         else:
             tensor = torch.Tensor.__getitem__(self, idx)
 

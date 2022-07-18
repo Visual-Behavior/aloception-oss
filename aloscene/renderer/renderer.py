@@ -142,8 +142,8 @@ class Renderer(object):
         plt.imshow(view)
         plt.show()
 
-    @staticmethod
-    def get_grid_view(views: list, cell_grid_size=None, grid_size=None, **kwargs):
+    @classmethod
+    def get_grid_view(cls, views: list, cell_grid_size=None, grid_size=None, **kwargs):
         """Get a grid of view from multiple view"""
 
         smallest_view = None
@@ -167,20 +167,7 @@ class Renderer(object):
         while v < len(views):
             start = int(v % grid_size) * target_display_shape[1]
             line[:, start : start + target_display_shape[1], :] = views[v].image
-
-            if views[v].title is not None:
-                cv2.rectangle(line, (start, 0), (start + 10 + (len(views[v].title) * 6), 10), (0, 0, 0), -1)
-                cv2.putText(
-                    line,
-                    views[v].title,
-                    (start + 10, 8),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    0.3,
-                    (0.8, 0.8, 0.8),
-                    1,
-                    cv2.LINE_AA,
-                )
-                pass
+            cls.add_title(line, (start, 0), views[v].title)
 
             v += 1
             if v % grid_size == 0 or v == len(views):
@@ -190,7 +177,16 @@ class Renderer(object):
         return np.concatenate(lines, axis=0)
 
     @staticmethod
-    def get_user_defined_grid_view(views):
+    def add_title(array, start, title):
+        if title is None:
+            return
+        else:
+            x, y = start
+            cv2.rectangle(array, (x, y), (x + 10 + (len(title) * 6), y + 10), (0, 0, 0), -1)
+            cv2.putText(array, title, (x + 10, y + 8), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (0.8, 0.8, 0.8), 1, cv2.LINE_AA)
+
+    @classmethod
+    def get_user_defined_grid_view(cls, views):
         """
         Create grid_view from list of list, without resizing views
 
@@ -214,6 +210,7 @@ class Renderer(object):
             for v in line:
                 h, w = v.image.shape[:2]
                 final_view[y : y + h, x : x + w, :] = v.image
+                cls.add_title(final_view, (x, y), v.title)
                 x += w
                 hmax = max(hmax, h)
             y += hmax
@@ -228,7 +225,6 @@ class Renderer(object):
         fps=30,
         grid_size=None,
         skip_views=False,
-        from_list_of_list=False,
     ):
         """Render a list of view using the given renderer.
 
@@ -251,7 +247,7 @@ class Renderer(object):
             raise ValueError("The renderer must be one of the following:{}".format(self.renderer_to_fn.keys()))
         if skip_views and record_file is None:
             raise ValueError("When skip_views is desired, a record_file must be provided.")
-        if from_list_of_list:
+        if isinstance(views[0], list):
             view = self.get_user_defined_grid_view(views)
         else:
             view = self.get_grid_view(views, cell_grid_size=cell_grid_size, grid_size=grid_size)

@@ -92,7 +92,7 @@ class CocoPanopticDataset(BaseDataset, SplitMixin):
         if classes is not None and ignore_classes is not None:
             raise Exception("Can't considere both classes & ignore_classes at the same time.")
         if ignore_classes is not None:
-            classes = [l for l in self.label_names if l not in ignore_classes and l != 'N/A']
+            classes = [l for l in self.label_names if l not in set(ignore_classes + [""N/A""])]
 
         # Fix classes if it is desired
         self._ids_renamed = classes

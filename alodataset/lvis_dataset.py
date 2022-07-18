@@ -2,7 +2,6 @@
 """Read a dataset in **COCO JSON** format and transform each element
 in a :mod:`Frame object <aloscene.frame>`. Ideal for object detection applications.
 """
-
 import torch
 import torch.utils.data
 from pycocotools import mask as coco_mask
@@ -10,13 +9,10 @@ import numpy as np
 import os
 import random
 
-# import detr.datasets.transforms as T
-
 from torchvision.datasets.coco import CocoDetection
 from PIL import Image
 from alodataset import BaseDataset, CocoDetectionDataset
 from aloscene import BoundingBoxes2D, Frame, Labels, Mask
-
 
 
 class LvisDataset(CocoDetectionDataset):
@@ -45,13 +41,17 @@ class LvisDataset(CocoDetectionDataset):
         self.items = filtered_item
 
 
-
     def load_anns(self, index):
         """
-        Args:
-            index (int): Index
-        Returns:
-            tuple: Tuple (image, target). target is a list of captions for the image.
+        Parameters
+        ----------
+            index : (int): 
+                Index ann to load
+
+        Returns
+        -------
+            tuple: Tuple 
+                (image, target) target is a list of captions for the image.
         """
         coco = self.coco
         img_id = self.items[index]
@@ -71,10 +71,12 @@ class LvisDataset(CocoDetectionDataset):
 
     def getitem(self, idx):
         """Get the :mod:`Frame <aloscene.frame>` corresponds to *idx* index
+
         Parameters
         ----------
         idx : int
             Index of the frame to be returned
+
         Returns
         -------
         aloscene.Frame
@@ -108,7 +110,6 @@ class LvisDataset(CocoDetectionDataset):
         if self.prepare.return_masks:
             segmentation = Mask(target["masks"], names=("N", "H", "W"), labels=labels_2d)
             frame.append_segmentation(segmentation)
-
 
         return frame
 

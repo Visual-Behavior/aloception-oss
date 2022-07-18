@@ -135,12 +135,10 @@ class PanopticCriterion(nn.Module):
         # Masks resize
         fr_shape = frames.shape[-2:]  # (H,W)
 
+        outputs_masks = outputs["pred_masks"]
         if self.upscale_interpolate:
-            outputs_masks = F.interpolate(outputs["pred_masks"], size=fr_shape, mode="bilinear", align_corners=False)
-        else:
-            outputs_masks = outputs["pred_masks"]
-            o_shape = outputs_masks.shape[-2:]
-            pass
+            outputs_masks = F.interpolate(outputs_masks, size=fr_shape, mode="bilinear", align_corners=False)
+        o_shape = outputs_masks.shape[-2:]
 
         # Masks alignment with indices
         pred_masks, target_masks = [], []

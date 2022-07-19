@@ -66,9 +66,15 @@ class SceneFlow(aloscene.tensors.SpatialAugmentedTensor):
         start_vector = depth.as_points3d(camera_intrinsic=intrinsic).cpu().numpy()
         end_vector = next_depth.as_points3d(camera_intrinsic=intrinsic).cpu().numpy()
 
-        scene_flow_vector = end_vector - start_vector
-        scene_flow_vector = np.reshape(scene_flow_vector, (3, depth.H, depth.W))
+        flow = np.round(optical_flow.numpy(), 0).astype(int)
+        hide = optical_flow.occlusion.numpy()
 
+        scene_flow_vector = np.zeros((depth.H, depth.W, 3))
+        for height in range(depth.H):
+            for width in range(depth.W):
+                if hide[height][width] == 1:
+                    scene_flow_vector[height][width] = end_vector[(height + flow[height][width][0]) * depth.W + width + flow[height][width][1]] - start_vector[height * depth.W + width]
+        scene_flow_vector = np.reshape(scene_flow_vector, (3, depth.H, depth.W))
         masked_points = Mask(np.isfinite(scene_flow_vector).all(0), names=("H", "W"))
 
         result = torch.from_numpy(scene_flow_vector)
@@ -102,9 +108,7 @@ class SceneFlow(aloscene.tensors.SpatialAugmentedTensor):
         # invert x axis of flow vector
         labels = flow_flipped.drop_children()
         sl_x = flow_flipped.get_slices({"C": 0})
-        sl_z = flow_flipped.get_slices({"C": 2})
         flow_flipped[sl_x] = -1 * flow_flipped[sl_x]
-        flow_flipped[sl_z] = -1 * flow_flipped[sl_z]
         flow_flipped.set_children(labels)
         return flow_flipped
 
@@ -120,8 +124,6 @@ class SceneFlow(aloscene.tensors.SpatialAugmentedTensor):
         # invert y axis of flow vector
         labels = flow_flipped.drop_children()
         sl_y = flow_flipped.get_slices({"C": 1})
-        sl_z = flow_flipped.get_slices({"C": 2})
         flow_flipped[sl_y] = -1 * flow_flipped[sl_y]
-        flow_flipped[sl_z] = -1 * flow_flipped[sl_z]
         flow_flipped.set_children(labels)
         return flow_flipped

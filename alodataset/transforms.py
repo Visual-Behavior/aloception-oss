@@ -585,7 +585,7 @@ class Rotate(AloTransform):
 
 
 class RealisticNoise(AloTransform):
-    def __init__(self, gaussian_std: float = 0.02, shot_std: float = 0.2, *args, **kwargs):
+    def __init__(self, gaussian_std: float = 0.02, shot_std: float = 0.05, same_on_sequence=False, *args, **kwargs):
         """Add an approximation of a realistic noise to the image.
 
         More precisely, we add a gaussian noise and a shot noise to the image.
@@ -604,10 +604,7 @@ class RealisticNoise(AloTransform):
         """
         self.gaussian_std = gaussian_std
         self.shot_std = shot_std
-        super().__init__(*args, **kwargs)
-        assert (
-            not self.same_on_sequence and not self.same_on_frames
-        ), "Noise should be different for all images at all time steps"
+        super().__init__(*args, same_on_sequence=same_on_sequence, **kwargs)
 
     def sample_params(self):
         """No parameters to sample"""

@@ -155,10 +155,8 @@ class PanopticHead(nn.Module):
 
         if not self.tracing:
             # Filter boxes and get mask indices
-            get_filter_fn = get_filter_fn or (
-                lambda *args, **kwargs: get_mask_queries(*args, model=self.detr, **kwargs)
-            )
-            dec_outputs, filters = get_filter_fn(frames=frames, m_outputs=detr_out, **kwargs)
+            get_filter_fn = get_filter_fn or (lambda *args, **kwargs: get_mask_queries(*args,  **kwargs))
+            dec_outputs, filters = get_filter_fn(frames=frames, m_outputs=detr_out,  model=self.detr, **kwargs)
         else:
             # Assume that boxes were filtered previosly / Pass all boxes through network
             dec_outputs, filters = detr_out["dec_outputs"], None

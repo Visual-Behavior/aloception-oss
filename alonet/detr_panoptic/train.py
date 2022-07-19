@@ -64,7 +64,7 @@ class LitPanopticDetr(alonet.deformable_detr.LitDeformableDetr):
         frames = get_base_model_frame(frames)
         self.assert_input(frames)
         get_filter_fn = lambda *args, **kwargs: get_mask_queries(
-            *args, model=self.model.detr, matcher=self.matcher, **kwargs
+            *args, matcher=self.matcher, **kwargs
         )
         m_outputs = self.model(frames, get_filter_fn=get_filter_fn)
 

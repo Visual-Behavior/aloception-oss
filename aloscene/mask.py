@@ -119,6 +119,7 @@ class Mask(aloscene.tensors.SpatialAugmentedTensor):
             frame = Frame(frame, names=("C", "H", "W"), normalization="01")
 
         masks = self.__get_view__(labels_set=labels_set, color_by_cat=color_by_cat, **kwargs).image
+
         frame = frame.norm01().cpu().rename(None).permute([1, 2, 0]).detach().contiguous().numpy()
         frame = cv2.resize(frame, (self.shape[-1], self.shape[-2]))
         if masks.shape[-1] > 0:

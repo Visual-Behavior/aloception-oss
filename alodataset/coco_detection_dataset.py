@@ -40,6 +40,8 @@ class CocoDetectionDataset(CocoBaseDataset, SplitMixin):
         Include :attr:`STUFF` objects in reading process, by default False
     return_multiple_labels : bool, optional
         Return Labels as a dictionary, with all posible categories found in annotations file, by default False
+    ann_file : str
+        Start from a fixe given annotation file where the path is relative to the `dataset_dir`
     **kwargs : dict
         :mod:`BaseDataset <base_dataset>` optional parameters
 
@@ -77,13 +79,14 @@ class CocoDetectionDataset(CocoBaseDataset, SplitMixin):
         include_stuff_cats: bool = False,
         fix_classes_len: int = None,
         split=Split.TRAIN,
+        ann_file=None,
         **kwargs,
     ):
         SplitMixin.__init__(self, split)
         super(CocoDetectionDataset, self).__init__(
             name=name,
             img_folder=self.get_split_folder(),
-            ann_file=self.get_split_ann_file(),
+            ann_file=ann_file or self.get_split_ann_file(),
             classes=None if include_stuff_cats else classes,
             fix_classes_len=fix_classes_len,
             **kwargs,

@@ -63,29 +63,19 @@ class SceneFlow(aloscene.tensors.SpatialAugmentedTensor):
         intrinsic : aloscene.CameraIntrinsic
             The intrinsic of the image at T.
         """
-        start_vector = create_point_3d(depth, intrinsic)
-        new_coord = np.mgrid[0 : depth.H : 1, 0 : depth.W : 1].reshape(2, -1).T
-        new_coord = np.reshape(new_coord, (depth.H, depth.W, 2))
-        new_coord = np.round(new_coord + optical_flow.as_numpy(), 0).astype(int)
-        end_vector = create_point_3d(next_depth, intrinsic)
+        start_vector = depth.as_points3d(camera_intrinsic=intrinsic).cpu().numpy()
+        end_vector = next_depth.as_points3d(camera_intrinsic=intrinsic).cpu().numpy()
 
-        mask: np.ndarray = optical_flow.occlusion.numpy()
+        scene_flow_vector = end_vector - start_vector
+        scene_flow_vector = np.reshape(scene_flow_vector, (3, depth.H, depth.W))
 
-        result = np.zeros((depth.H, depth.W, 3))
-        for height in range(depth.H):
-            for width in range(depth.W):
-                if mask[height][width] == 1:
-                    result[height][width] = (
-                        end_vector[
-                            new_coord[height][width][0] * 640
-                            + new_coord[height][width][1]
-                        ]
-                        - start_vector[height * 640 + width]
-                    )
-        result = torch.from_numpy(result)
-        cls = cls(result)
-        cls.append_occlusion(optical_flow.occlusion.clone(), "occlusion")
-        return cls
+        masked_points = Mask(np.isfinite(scene_flow_vector).all(0), names=("H", "W"))
+
+        result = torch.from_numpy(scene_flow_vector)
+        tensor = cls(result)
+        tensor.append_mask(masked_points)
+        tensor.append_occlusion(optical_flow.occlusion.clone(), "occlusion")
+        return tensor
 
     def append_occlusion(self, occlusion: Mask, name: Union[str, None] = None):
         """Attach an occlusion mask to the scene flow.
@@ -99,3 +89,39 @@ class SceneFlow(aloscene.tensors.SpatialAugmentedTensor):
             occlusion mask are attached to the scene flow, the mask will be added to the set of mask.
         """
         self._append_child("occlusion", occlusion, name)
+
+    def _hflip(self, **kwargs):
+        """Flip scene flow horizontally.
+
+        Returns
+        -------
+        flipped_scene_flow : aloscene.SceneFlow
+            horizontally flipped scene flow map
+        """
+        flow_flipped = super()._hflip(**kwargs)
+        # invert x axis of flow vector
+        labels = flow_flipped.drop_children()
+        sl_x = flow_flipped.get_slices({"C": 0})
+        sl_z = flow_flipped.get_slices({"C": 2})
+        flow_flipped[sl_x] = -1 * flow_flipped[sl_x]
+        flow_flipped[sl_z] = -1 * flow_flipped[sl_z]
+        flow_flipped.set_children(labels)
+        return flow_flipped
+
+    def _vflip(self, **kwargs):
+        """Flip scene flow vertically.
+
+        Returns
+        -------
+        flipped_scene_flow : aloscene.SceneFlow
+            vertically flipped scene flow map
+        """
+        flow_flipped = super()._vflip(**kwargs)
+        # invert y axis of flow vector
+        labels = flow_flipped.drop_children()
+        sl_y = flow_flipped.get_slices({"C": 1})
+        sl_z = flow_flipped.get_slices({"C": 2})
+        flow_flipped[sl_y] = -1 * flow_flipped[sl_y]
+        flow_flipped[sl_z] = -1 * flow_flipped[sl_z]
+        flow_flipped.set_children(labels)
+        return flow_flipped

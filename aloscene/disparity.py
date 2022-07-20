@@ -41,9 +41,18 @@ class Disparity(aloscene.tensors.SpatialAugmentedTensor):
         if isinstance(x, str):
             x = load_disp(x, png_negate)
             names = ("C", "H", "W")
+
         tensor = super().__new__(cls, x, *args, names=names, **kwargs)
         tensor.add_child("occlusion", occlusion, align_dim=["B", "T"], mergeable=True)
         tensor.add_property("disp_format", disp_format)
+
+        if tensor.disp_format == "unsigned" and (tensor.as_tensor() < 0).any():
+            raise ValueError("All disparity values should be positive for disp_format='unsigned'")
+        if tensor.disp_format == "signed" and tensor.camera_side is None:
+            raise ValueError("camera_side is needed for signed disparity")
+        if tensor.disp_format == "signed":
+            vmin, vmax = (None, 0) if tensor.camera_side == "left" else (0, None)
+            tensor = torch.clamp(tensor, vmin, vmax)
         return tensor
 
     def __init__(self, x, *args, **kwargs):
@@ -149,6 +158,7 @@ class Disparity(aloscene.tensors.SpatialAugmentedTensor):
         focal_length: float = None,
         camera_side: float = None,
         camera_intrinsic: aloscene.CameraIntrinsic = None,
+        max_depth=np.inf,
     ):
         """Return a Depth augmented tensor based on the given `baseline` & `focal_length`.
 
@@ -184,11 +194,8 @@ class Disparity(aloscene.tensors.SpatialAugmentedTensor):
         # to be aligned properly.
         focal_length = intrinsic.focal_length[..., 0:1].unsqueeze(-1).unsqueeze(-1)
 
-        zero_filter = disparity == 0
-
-        disparity[zero_filter] = 1
         depth = baseline * focal_length / disparity
-        depth[zero_filter] = np.inf
+        depth = torch.clamp(depth, 0, max_depth)
         return aloscene.Depth(
             depth,
             baseline=self.baseline,

@@ -1,0 +1,37 @@
+name: name
+on:
+  push:
+    branches:
+       - 'master'
+       - 'github_actions'
+  pull_request:
+    branches:
+      - 'master'
+
+jobs: 
+  unit_tests:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Install packages
+      run : |
+        pip install numpy==1.21.6
+        pip install torch==1.9.1+cpu torchvision==0.10.1+cpu torchaudio==0.9.1 -f https://download.pytorch.org/whl/torch_stable.html
+        pip install -r requirements.txt
+      shell: bash
+    - name: Run python unit tests
+      run: |
+        for file in unittest/*;
+        do
+          echo "Testing : $file"
+          res=$(grep "cuda" "$file" | wc -l || true)
+          if [ "$res" = "0" ]
+          then
+            PYTHONPATH=${GITHUB_WORKSPACE} python3 "$file"
+            echo "::notice file=$file::Tests : ok"
+          else
+            echo "::warning file=$file::Cuda is not available on github action."
+          fi
+        done
+        echo "::notice title="All possible tests are valid"::Congratulation !"
+      shell: bash

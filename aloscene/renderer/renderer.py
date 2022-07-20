@@ -142,8 +142,8 @@ class Renderer(object):
         plt.imshow(view)
         plt.show()
 
-    @staticmethod
-    def get_grid_view(views: list, cell_grid_size=None, grid_size=None, **kwargs):
+    @classmethod
+    def get_grid_view(cls, views: list, cell_grid_size=None, grid_size=None, **kwargs):
         """Get a grid of view from multiple view"""
 
         smallest_view = None
@@ -167,20 +167,7 @@ class Renderer(object):
         while v < len(views):
             start = int(v % grid_size) * target_display_shape[1]
             line[:, start : start + target_display_shape[1], :] = views[v].image
-
-            if views[v].title is not None:
-                cv2.rectangle(line, (start, 0), (start + 10 + (len(views[v].title) * 6), 10), (0, 0, 0), -1)
-                cv2.putText(
-                    line,
-                    views[v].title,
-                    (start + 10, 8),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    0.3,
-                    (0.8, 0.8, 0.8),
-                    1,
-                    cv2.LINE_AA,
-                )
-                pass
+            cls.add_title(line, (start, 0), views[v].title)
 
             v += 1
             if v % grid_size == 0 or v == len(views):
@@ -188,6 +175,58 @@ class Renderer(object):
                 line = np.zeros((target_display_shape[0], target_display_shape[1] * int(grid_size), 3))
 
         return np.concatenate(lines, axis=0)
+
+    @staticmethod
+    def add_title(array, start, title):
+        """
+        Add a box with view title
+
+        Parameters
+        ----------
+        array : np.ndarray
+            grid view array (will be modified inplace)
+        start : tuple
+            top-left corner of title box
+        title : str
+            title of the view
+        """
+        if title is None:
+            return
+        else:
+            x, y = start
+            cv2.rectangle(array, (x, y), (x + 10 + (len(title) * 6), y + 10), (0, 0, 0), -1)
+            cv2.putText(array, title, (x + 10, y + 8), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (0.8, 0.8, 0.8), 1, cv2.LINE_AA)
+
+    @classmethod
+    def get_user_defined_grid_view(cls, views):
+        """
+        Create grid_view from list of list, without resizing views
+
+        view : list of list of views with view[i][j] = view for line i, colomun j
+        """
+
+        # create blank image
+        Hf, Wf = 0, 0
+        for line in views:
+            hmax = max(v.image.shape[0] for v in line)
+            w = sum(v.image.shape[1] for v in line)
+            Hf += hmax
+            Wf = max(Wf, w)
+        final_view = np.zeros((Hf, Wf, 3))
+
+        # write each view on the image
+        y = 0
+        for line in views:
+            x = 0
+            hmax = 0
+            for v in line:
+                h, w = v.image.shape[:2]
+                final_view[y : y + h, x : x + w, :] = v.image
+                cls.add_title(final_view, (x, y), v.title)
+                x += w
+                hmax = max(hmax, h)
+            y += hmax
+        return final_view
 
     def render(
         self,
@@ -220,8 +259,10 @@ class Renderer(object):
             raise ValueError("The renderer must be one of the following:{}".format(self.renderer_to_fn.keys()))
         if skip_views and record_file is None:
             raise ValueError("When skip_views is desired, a record_file must be provided.")
-
-        view = self.get_grid_view(views, cell_grid_size=cell_grid_size, grid_size=grid_size)
+        if isinstance(views[0], list):
+            view = self.get_user_defined_grid_view(views)
+        else:
+            view = self.get_grid_view(views, cell_grid_size=cell_grid_size, grid_size=grid_size)
         if not skip_views:
             self.renderer_to_fn[renderer](view)
         if record_file is not None and self.out is None:

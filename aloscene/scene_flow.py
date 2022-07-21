@@ -63,18 +63,20 @@ class SceneFlow(aloscene.tensors.SpatialAugmentedTensor):
         intrinsic : aloscene.CameraIntrinsic
             The intrinsic of the image at T.
         """
-        start_vector = depth.as_points3d(camera_intrinsic=intrinsic).cpu().numpy()
-        end_vector = next_depth.as_points3d(camera_intrinsic=intrinsic).cpu().numpy()
+        start_vector = np.reshape(depth.as_points3d(camera_intrinsic=intrinsic).cpu().numpy(), (depth.H, depth.W, 3))
+        next_vector = np.reshape(next_depth.as_points3d(camera_intrinsic=intrinsic).cpu().numpy(), (depth.H, depth.W, 3))
 
         flow = np.round(optical_flow.numpy(), 0).astype(int)
-        hide = optical_flow.occlusion.numpy()
 
-        scene_flow_vector = np.zeros((depth.H, depth.W, 3))
-        for height in range(depth.H):
-            for width in range(depth.W):
-                if hide[height][width] == 1:
-                    scene_flow_vector[height][width] = end_vector[(height + flow[height][width][0]) * depth.W + width + flow[height][width][1]] - start_vector[height * depth.W + width]
-        scene_flow_vector = np.reshape(scene_flow_vector, (3, depth.H, depth.W))
+        y_coords, x_coords = np.mgrid[: depth.H, : depth.W]
+
+        # How to handle this
+        new_x = np.clip(x_coords + flow[:, :, 0], 0, depth.W - 1)
+        new_y = np.clip(y_coords + flow[:, :, 1], 0, depth.H - 1)
+
+        final_points = next_vector[new_y, new_x, :] - start_vector
+
+        scene_flow_vector = np.transpose(final_points, (2, 0, 1))
         masked_points = Mask(np.isfinite(scene_flow_vector).all(0), names=("H", "W"))
 
         result = torch.from_numpy(scene_flow_vector)

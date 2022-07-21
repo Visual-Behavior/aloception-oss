@@ -3,19 +3,13 @@ from aloscene import Depth, CameraIntrinsic, Flow, Mask
 from typing import Union
 import numpy as np
 import torch
+import torch.nn.functional as F
 
 
 def load_scene_flow(path: str) -> torch.Tensor:
     with open(path, "rb") as file:
         data = np.load(file)
         return torch.from_numpy(data)
-
-
-def create_point_3d(depth: Depth, intrinsic: CameraIntrinsic) -> np.ndarray:
-    points3d = depth.as_points3d(camera_intrinsic=intrinsic).cpu().numpy()
-    mask_points = np.isfinite(points3d).all(1)
-    points3d = points3d[mask_points]
-    return points3d
 
 
 class SceneFlow(aloscene.tensors.SpatialAugmentedTensor):
@@ -63,24 +57,41 @@ class SceneFlow(aloscene.tensors.SpatialAugmentedTensor):
         intrinsic : aloscene.CameraIntrinsic
             The intrinsic of the image at T.
         """
-        start_vector = np.reshape(depth.as_points3d(camera_intrinsic=intrinsic).cpu().numpy(), (depth.H, depth.W, 3))
-        next_vector = np.reshape(next_depth.as_points3d(camera_intrinsic=intrinsic).cpu().numpy(), (depth.H, depth.W, 3))
+        start_vector = (
+            depth.as_points3d(camera_intrinsic=intrinsic)
+            .cpu()
+            .numpy()
+            .reshape((depth.H, depth.W, 3))
+        )
 
-        flow = np.round(optical_flow.numpy(), 0).astype(int)
+        next_vector = (
+            next_depth.as_points3d(camera_intrinsic=intrinsic)
+            .cpu()
+            .numpy()
+            .reshape((next_depth.H, next_depth.W, 3))
+        )
+
+        ceilflow = np.ceil(optical_flow.numpy()).astype(int)
+        floorflow = np.floor(optical_flow.numpy()).astype(int)
 
         y_coords, x_coords = np.mgrid[: depth.H, : depth.W]
 
-        # How to handle this
-        new_x = np.clip(x_coords + flow[:, :, 0], 0, depth.W - 1)
-        new_y = np.clip(y_coords + flow[:, :, 1], 0, depth.H - 1)
+        ceil_new_x = np.clip(x_coords + ceilflow[:, :, 0], 0, depth.W - 1)
+        ceil_new_y = np.clip(y_coords + ceilflow[:, :, 1], 0, depth.H - 1)
+        floor_new_x = np.clip(x_coords + floorflow[:, :, 0], 0, depth.W - 1)
+        floor_new_y = np.clip(y_coords + floorflow[:, :, 1], 0, depth.H - 1)
 
-        final_points = next_vector[new_y, new_x, :] - start_vector
+        scene_flow_vector = (
+            next_vector[ceil_new_y, ceil_new_x, :]
+            + next_vector[floor_new_y, ceil_new_x, :]
+            + next_vector[ceil_new_y, floor_new_x, :]
+            + next_vector[floor_new_y, floor_new_x, :]
+        ) / 4 - start_vector
 
-        scene_flow_vector = np.transpose(final_points, (2, 0, 1))
+        scene_flow_vector = np.transpose(scene_flow_vector, (2, 0, 1))
         masked_points = Mask(np.isfinite(scene_flow_vector).all(0), names=("H", "W"))
 
-        result = torch.from_numpy(scene_flow_vector)
-        tensor = cls(result)
+        tensor = cls(scene_flow_vector)
         tensor.append_mask(masked_points)
         tensor.append_occlusion(optical_flow.occlusion.clone(), "occlusion")
         return tensor

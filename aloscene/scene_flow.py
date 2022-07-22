@@ -51,12 +51,36 @@ class SceneFlow(aloscene.tensors.SpatialAugmentedTensor):
         optical flow: aloscene.Flow
             The optical flow at T.
         depth: aloscene.Depth
-            The depth at T."
+            The depth at T.
         next_depth: aloscene.Depth
             The depth at T + 1
         intrinsic : aloscene.CameraIntrinsic
             The intrinsic of the image at T.
         """
+
+        has_batch = True if len(optical_flow.names) == 4 else False
+
+        if optical_flow.names != depth.names or optical_flow.names != next_depth.names:
+            raise ValueError(
+                "The optical flow, depth and next_depth must have the same names"
+            )
+
+        if optical_flow.names != ("C", "H", "W") and optical_flow.names != (
+            "B",
+            "C",
+            "H",
+            "W",
+        ):
+            raise ValueError(
+                "The optical flow must have the names (C, H, W) or (B, C, H, W)"
+            )
+
+        # Artifical batch dimension
+        optical_flow = optical_flow.batch()
+        depth = depth.batch()
+        next_depth = next_depth.batch()
+
+        # Generate points3d at T and T + 1
         start_vector = (
             depth.as_points3d(camera_intrinsic=intrinsic)
             .cpu()
@@ -76,24 +100,38 @@ class SceneFlow(aloscene.tensors.SpatialAugmentedTensor):
 
         y_coords, x_coords = np.mgrid[: depth.H, : depth.W]
 
-        ceil_new_x = np.clip(x_coords + ceilflow[:, :, 0], 0, depth.W - 1)
-        ceil_new_y = np.clip(y_coords + ceilflow[:, :, 1], 0, depth.H - 1)
-        floor_new_x = np.clip(x_coords + floorflow[:, :, 0], 0, depth.W - 1)
-        floor_new_y = np.clip(y_coords + floorflow[:, :, 1], 0, depth.H - 1)
+        # Create 4 arrays to get mean value of each pixel
+        ceil_new_x = np.clip(x_coords + ceilflow[..., 0], 0, depth.W - 1)
+        ceil_new_y = np.clip(y_coords + ceilflow[..., 1], 0, depth.H - 1)
+        floor_new_x = np.clip(x_coords + floorflow[..., 0], 0, depth.W - 1)
+        floor_new_y = np.clip(y_coords + floorflow[..., 1], 0, depth.H - 1)
 
+        # Create the scene flow with the mean value of each pixel
         scene_flow_vector = (
             next_vector[ceil_new_y, ceil_new_x, :]
             + next_vector[floor_new_y, ceil_new_x, :]
             + next_vector[ceil_new_y, floor_new_x, :]
             + next_vector[floor_new_y, floor_new_x, :]
-        ) / 4 - start_vector
+        ) / 4 - start_vector  # type: ignore
 
-        scene_flow_vector = np.transpose(scene_flow_vector, (2, 0, 1))
-        masked_points = Mask(np.isfinite(scene_flow_vector).all(0), names=("H", "W"))
+        # Transpose the dimmentions to match the pytorch convention
+        scene_flow_vector = np.transpose(scene_flow_vector, (0, 3, 1, 2))
 
-        tensor = cls(scene_flow_vector)
+        if not has_batch:
+            # Remove the artificial batch dimension
+            optical_flow = optical_flow.squeeze(0)
+            depth = depth.squeeze(0)
+            next_depth = next_depth.squeeze(0)
+            scene_flow_vector = scene_flow_vector.squeeze(0)
+        
+        masked_points = Mask(np.isfinite(scene_flow_vector).all(0), names=("B", "H", "W") if has_batch else ("H", "W"))  # type: ignore
+
+        tensor = cls(
+            scene_flow_vector,
+            names=("B", "C", "H", "W") if has_batch else ("C", "H", "W"),
+            occlusion=optical_flow.occlusion.clone(),
+        )
         tensor.append_mask(masked_points)
-        tensor.append_occlusion(optical_flow.occlusion.clone(), "occlusion")
         return tensor
 
     def append_occlusion(self, occlusion: Mask, name: Union[str, None] = None):

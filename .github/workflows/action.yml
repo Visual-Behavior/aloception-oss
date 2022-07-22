@@ -1,9 +1,8 @@
-name: name
+name: Aloscene unit tests
 on:
   push:
-    branches:
-       - 'master'
-       - 'github_actions'
+    branches-ignore:
+      - 'dsf'
   pull_request:
     branches:
       - 'master'
@@ -21,17 +20,29 @@ jobs:
       shell: bash
     - name: Run python unit tests
       run: |
+        invalid=0
         for file in unittest/*;
         do
           echo "Testing : $file"
           res=$(grep "cuda" "$file" | wc -l || true)
           if [ "$res" = "0" ]
           then
-            PYTHONPATH=${GITHUB_WORKSPACE} python3 "$file"
-            echo "::notice file=$file::Tests : ok"
+            if PYTHONPATH=${GITHUB_WORKSPACE} python3 "$file"; then
+              echo "::notice file=$file::Tests : ok"
+            else
+              echo "::error file=$file::Something wrong happened during execution"
+              invalid=$((invalid+1))
+            fi
           else
             echo "::warning file=$file::Cuda is not available on github action."
           fi
         done
-        echo "::notice title="All possible tests are valid"::Congratulation !"
+        if [ "$invalid" -eq 0 ]
+        then
+            echo "::notice title="All possible tests are valid"::Congratulation !"
+            exit 0
+        else
+            echo "::error title="Final review"::Some tests return errors"
+            exit 1
+        fi
       shell: bash

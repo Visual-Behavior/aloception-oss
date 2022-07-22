@@ -1,8 +1,9 @@
 name: Aloscene unit tests
 on:
   push:
-    branches-ignore:
-      - 'dsf'
+    branches:
+      - 'master'
+      - 'github_actions'
   pull_request:
     branches:
       - 'master'

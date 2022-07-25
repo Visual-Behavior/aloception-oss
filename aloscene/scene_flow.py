@@ -80,42 +80,45 @@ class SceneFlow(aloscene.tensors.SpatialAugmentedTensor):
         depth = depth.batch()
         next_depth = next_depth.batch()
 
-        # Generate points3d at T and T + 1
+        # Generate points3d at T and T + 1 with the correct dimension
         start_vector = (
             depth.as_points3d(camera_intrinsic=intrinsic)
-            .cpu()
-            .numpy()
+            .as_tensor()
             .reshape((depth.H, depth.W, 3))
+            .unsqueeze(0)
+            .transpose(3,1)
+            .transpose(2,3)
         )
 
         next_vector = (
             next_depth.as_points3d(camera_intrinsic=intrinsic)
-            .cpu()
-            .numpy()
+            .as_tensor()
             .reshape((next_depth.H, next_depth.W, 3))
+            .unsqueeze(0)
+            .transpose(3,1)
+            .transpose(2,3)
         )
 
-        ceilflow = np.ceil(optical_flow.numpy()).astype(int)
-        floorflow = np.floor(optical_flow.numpy()).astype(int)
-
+        # Generate the absolute position of the next_vector at T + 1
         y_coords, x_coords = np.mgrid[: depth.H, : depth.W]
 
-        # Create 4 arrays to get mean value of each pixel
-        ceil_new_x = np.clip(x_coords + ceilflow[..., 0], 0, depth.W - 1)
-        ceil_new_y = np.clip(y_coords + ceilflow[..., 1], 0, depth.H - 1)
-        floor_new_x = np.clip(x_coords + floorflow[..., 0], 0, depth.W - 1)
-        floor_new_y = np.clip(y_coords + floorflow[..., 1], 0, depth.H - 1)
+        flow = optical_flow.numpy()
 
-        # Create the scene flow with the mean value of each pixel
-        scene_flow_vector = (
-            next_vector[ceil_new_y, ceil_new_x, :]
-            + next_vector[floor_new_y, ceil_new_x, :]
-            + next_vector[ceil_new_y, floor_new_x, :]
-            + next_vector[floor_new_y, floor_new_x, :]
-        ) / 4 - start_vector  # type: ignore
+        flow[..., 0] += x_coords
+        flow[..., 1] += y_coords
 
-        # Transpose the dimmentions to match the pytorch convention
-        scene_flow_vector = np.transpose(scene_flow_vector, (0, 3, 1, 2))
+        flow[..., 0] = (flow[..., 0] / depth.W * 2) - 1
+        flow[..., 1] = (flow[..., 1] / depth.H * 2) - 1
+
+        flow = torch.tensor(flow)
+
+        # Move all the element of next_vector to the correct position
+        r = F.grid_sample(
+            next_vector, flow, mode="bilinear", padding_mode="zeros", align_corners=True
+        )
+
+        # Create the scene flow
+        scene_flow_vector = r - start_vector
 
         if not has_batch:
             # Remove the artificial batch dimension
@@ -123,7 +126,7 @@ class SceneFlow(aloscene.tensors.SpatialAugmentedTensor):
             depth = depth.squeeze(0)
             next_depth = next_depth.squeeze(0)
             scene_flow_vector = scene_flow_vector.squeeze(0)
-        
+
         masked_points = Mask(np.isfinite(scene_flow_vector).all(0), names=("B", "H", "W") if has_batch else ("H", "W"))  # type: ignore
 
         tensor = cls(

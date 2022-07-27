@@ -57,84 +57,40 @@ class SceneFlow(aloscene.tensors.SpatialAugmentedTensor):
         intrinsic : aloscene.CameraIntrinsic
             The intrinsic of the image at T.
         """
-
         has_batch = True if len(optical_flow.names) == 4 else False
 
         if optical_flow.names != depth.names or optical_flow.names != next_depth.names:
-            raise ValueError(
-                "The optical flow, depth and next_depth must have the same names"
-            )
+            raise ValueError("The optical flow, depth and next_depth must have the same names")
 
-        if optical_flow.names != ("C", "H", "W") and optical_flow.names != (
-            "B",
-            "C",
-            "H",
-            "W",
-        ):
-            raise ValueError(
-                "The optical flow must have the names (C, H, W) or (B, C, H, W)"
-            )
+        if optical_flow.names != ("C", "H", "W") and optical_flow.names != ("B", "C", "H", "W"):
+            raise ValueError("The optical flow must have the names (C, H, W) or (B, C, H, W)")
 
         # Artifical batch dimension
         optical_flow = optical_flow.batch()
         depth = depth.batch()
         next_depth = next_depth.batch()
 
-        # Generate points3d at T and T + 1 with the correct dimension
-        start_vector = (
-            depth.as_points3d(camera_intrinsic=intrinsic)
-            .as_tensor()
-            .reshape((depth.H, depth.W, 3))
-            .unsqueeze(0)
-            .transpose(3,1)
-            .transpose(2,3)
-        )
-
-        next_vector = (
-            next_depth.as_points3d(camera_intrinsic=intrinsic)
-            .as_tensor()
-            .reshape((next_depth.H, next_depth.W, 3))
-            .unsqueeze(0)
-            .transpose(3,1)
-            .transpose(2,3)
-        )
-
-        # Generate the absolute position of the next_vector at T + 1
-        y_coords, x_coords = np.mgrid[: depth.H, : depth.W]
-
-        flow = optical_flow.numpy()
-
-        flow[..., 0] += x_coords
-        flow[..., 1] += y_coords
-
-        flow[..., 0] = (flow[..., 0] / depth.W * 2) - 1
-        flow[..., 1] = (flow[..., 1] / depth.H * 2) - 1
-
-        flow = torch.tensor(flow)
-
-        # Move all the element of next_vector to the correct position
-        r = F.grid_sample(
-            next_vector, flow, mode="bilinear", padding_mode="zeros", align_corners=True
-        )
-
-        # Create the scene flow
-        scene_flow_vector = r - start_vector
+        H, W = depth.HW
+        start_vector = depth.as_points3d(intrinsic).as_tensor().reshape(-1, H, W, 3).permute(0, 3, 1, 2)
+        next_vector = next_depth.as_points3d(intrinsic).as_tensor().reshape(-1, H, W, 3).permute(0, 3, 1, 2)
+        y_coords, x_coords = torch.meshgrid(torch.arange(H), torch.arange(W))
+        new_x = x_coords + optical_flow.as_tensor()[:, 0, :, :]
+        new_y = y_coords + optical_flow.as_tensor()[:, 1, :, :]
+        new_x = new_x / W * 2 - 1
+        new_y = new_y / H * 2 - 1
+        new_coords = torch.stack([new_x, new_y], dim=3)
+        end_vector = F.grid_sample(next_vector, new_coords, mode="bilinear", padding_mode="zeros", align_corners=True)
+        scene_flow_vector = end_vector - start_vector
 
         if not has_batch:
-            # Remove the artificial batch dimension
-            optical_flow = optical_flow.squeeze(0)
-            depth = depth.squeeze(0)
-            next_depth = next_depth.squeeze(0)
             scene_flow_vector = scene_flow_vector.squeeze(0)
-
-        masked_points = Mask(np.isfinite(scene_flow_vector).all(0), names=("B", "H", "W") if has_batch else ("H", "W"))  # type: ignore
+            optical_flow = optical_flow.squeeze(0)
 
         tensor = cls(
             scene_flow_vector,
             names=("B", "C", "H", "W") if has_batch else ("C", "H", "W"),
             occlusion=optical_flow.occlusion.clone(),
         )
-        tensor.append_mask(masked_points)
         return tensor
 
     def append_occlusion(self, occlusion: Mask, name: Union[str, None] = None):

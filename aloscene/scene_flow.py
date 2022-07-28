@@ -12,12 +12,12 @@ class SceneFlow(aloscene.tensors.SpatialAugmentedTensor):
 
     Parameters
     ----------
-    x : str or tensor
+    x : str or tensor or ndarray
         load scene flow from a numpy file
     """
 
     @staticmethod
-    def __new__(cls, x, occlusion: Union[Mask, None], *args, names=("C", "H", "W"), **kwargs):
+    def __new__(cls, x, occlusion: Union[Mask, None] = None, *args, names=("C", "H", "W"), **kwargs):
         if isinstance(x, str):
             # load flow from path
             x = load_scene_flow(x)

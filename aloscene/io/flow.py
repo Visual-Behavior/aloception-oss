@@ -45,5 +45,4 @@ def load_scene_flow(path: str) -> np.ndarray:
             f"Scene flow file should be of type .npy, but {path} has the extension .{path.split('.')[-1]}"
         )
     with open(path, "rb") as file:
-        data = np.load(file)
-        return data
+        return np.load(file)

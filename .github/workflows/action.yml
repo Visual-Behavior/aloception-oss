@@ -8,15 +8,15 @@ on:
     branches:
       - 'master'
 
-jobs: 
+jobs:
   unit_tests:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
     - name: Install packages
       run : |
-        pip install numpy==1.21.6
-        pip install torch==1.9.1+cpu torchvision==0.10.1+cpu torchaudio==0.9.1 -f https://download.pytorch.org/whl/torch_stable.html
+        pip install numpy==1.22.2
+        pip install torch==1.10.2+cpu torchvision==0.11.3+cpu torchaudio==0.10.2 -f https://download.pytorch.org/whl/torch_stable.html
         pip install -r requirements.txt
       shell: bash
     - name: Run python unit tests

@@ -1,5 +1,5 @@
-import aloscene
-from aloscene import Depth, CameraIntrinsic, Flow, Mask
+from aloception.aloscene import Depth, CameraIntrinsic, Mask, Flow
+import aloception.aloscene as aloscene
 from typing import Union
 import numpy as np
 import torch
@@ -23,7 +23,7 @@ class SceneFlow(aloscene.tensors.SpatialAugmentedTensor):
     """
 
     @staticmethod
-    def __new__(cls, x, occlusion: Mask = None, *args, names=("C", "H", "W"), **kwargs):
+    def __new__(cls, x, occlusion: Union[Mask, None], *args, names=("C", "H", "W"), **kwargs):
         if isinstance(x, str):
             # load flow from path
             x = load_scene_flow(x)
@@ -43,7 +43,7 @@ class SceneFlow(aloscene.tensors.SpatialAugmentedTensor):
         depth: Depth,
         next_depth: Depth,
         intrinsic: CameraIntrinsic,
-        mode: str = "bilinear",
+        sampling: str = "bilinear",
     ):
         """Create scene flow from optical flow, depth a T, depth at T + 1 and the intrinsic
 
@@ -57,6 +57,8 @@ class SceneFlow(aloscene.tensors.SpatialAugmentedTensor):
             The depth at T + 1
         intrinsic : aloscene.CameraIntrinsic
             The intrinsic of the image at T.
+        sampling: str
+            The sampling method to use for the scene flow.
         """
         has_batch = True if len(optical_flow.names) == 4 else False
 
@@ -72,6 +74,7 @@ class SceneFlow(aloscene.tensors.SpatialAugmentedTensor):
         next_depth = next_depth.batch()
 
         H, W = depth.HW
+        B = depth.shape[0]
 
         # Compute the point cloud at T and T + 1
         start_vector = depth.as_points3d(intrinsic).as_tensor().reshape(-1, H, W, 3).permute(0, 3, 1, 2)
@@ -88,39 +91,39 @@ class SceneFlow(aloscene.tensors.SpatialAugmentedTensor):
         new_coords = torch.stack([new_x, new_y], dim=3)
 
         # Move the point cloud at T + 1 to the new position
-        end_vector = F.grid_sample(next_vector, new_coords, mode=mode, padding_mode="zeros", align_corners=True)
+        end_vector = F.grid_sample(next_vector, new_coords, mode=sampling, padding_mode="zeros", align_corners=True)
 
         # Compute the scene flow
         scene_flow_vector = end_vector - start_vector
 
-        # Create the occlusion mask
-        occlusion = torch.zeros(H, W, dtype=torch.bool)
+        # Create the occlusion mask if needed
+        occlusion = None
+        if optical_flow.occlusion is not None or depth.occlusion is not None or next_depth.occlusion is not None:
+            occlusion = torch.zeros(B, H, W, dtype=torch.bool)
 
-        # Add depth and optical flow occlusion to main occlusion mask
-        if optical_flow.occlusion is not None:
-            occlusion = occlusion | optical_flow.occlusion.as_tensor().bool() == 1
-        if depth.occlusion is not None:
-            occlusion = occlusion | depth.occlusion.as_tensor().bool() == 1
-        if next_depth.occlusion is not None:
-            occlusion = occlusion | next_depth.occlusion.as_tensor().bool() == 1
+            # Add depth and optical flow occlusion to main occlusion mask
+            if optical_flow.occlusion is not None:
+                occlusion = occlusion | optical_flow.occlusion.as_tensor().bool()
+            if depth.occlusion is not None:
+                occlusion = occlusion | depth.occlusion.as_tensor().bool()
+            if next_depth.occlusion is not None:
+                next_depth_tensor = next_depth.occlusion.as_tensor().bool().unsqueeze(1)
 
-        occlusion = occlusion.unsqueeze(1)
+                # Use of 'not' needed because the grid_sample has padding_mode="zeros" and
+                # the 0 from this function mean that the pixel is occluded
+                next_depth_tensor = ~next_depth_tensor
 
-        # Use of 'not' needed because the grid_sample has padding_mode="zeros" and
-        # the 0 from this function mean that the pixel is occluded
-        occlusion = ~occlusion
+                # Move the occlusion mask like the scene flow to check if occluded pixel are used in the calculation
+                moved_occlusion = F.grid_sample(
+                    next_depth_tensor.float(), new_coords, mode=sampling, padding_mode="zeros", align_corners=True
+                )
+                next_depth_tensor = ~next_depth_tensor
+                # Sometimes moved_occlusion is not exactly 1 even if the pixels around are not occluded
+                moved_occlusion = ~(moved_occlusion >= 0.99999)
 
-        # Move the occlusion mask like the scene flow to check if occluded pixel are used in the calculation
-        moved_occlusion = F.grid_sample(
-            occlusion.float(), new_coords, mode=mode, padding_mode="zeros", align_corners=True
-        )
-        occlusion = ~occlusion
-        # Sometimes moved_occlusion is not exactly 1 even if the pixels around are not occluded
-        moved_occlusion = ~(moved_occlusion >= 0.99999)
-
-        # Fusion of the 2 occlusion mask
-        occlusion = occlusion | moved_occlusion == 1
-        occlusion = occlusion.squeeze(1)
+                # Fusion of the 2 occlusion mask
+                moved_occlusion = moved_occlusion.squeeze(1)
+                occlusion = occlusion | moved_occlusion
 
         # Remove the artificial batch dimension
         if not has_batch:
@@ -132,7 +135,9 @@ class SceneFlow(aloscene.tensors.SpatialAugmentedTensor):
         tensor = cls(
             scene_flow_vector,
             names=("B", "C", "H", "W") if has_batch else ("C", "H", "W"),
-            occlusion=Mask(occlusion, names=("B", "H", "W") if has_batch else ("H", "W")),
+            occlusion=None
+            if occlusion is None
+            else Mask(occlusion, names=("B", "H", "W") if has_batch else ("H", "W")),
         )
         return tensor
 

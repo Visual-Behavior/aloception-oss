@@ -117,7 +117,7 @@ class SceneFlow(aloscene.tensors.SpatialAugmentedTensor):
                 moved_occlusion = F.grid_sample(
                     next_depth_tensor.float(), new_coords, mode=sampling, padding_mode="zeros", align_corners=True
                 )
-                next_depth_tensor = ~next_depth_tensor
+
                 # Sometimes moved_occlusion is not exactly 1 even if the pixels around are not occluded
                 moved_occlusion = ~(moved_occlusion >= 0.99999)
 

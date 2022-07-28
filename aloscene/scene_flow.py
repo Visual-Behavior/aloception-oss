@@ -1,15 +1,9 @@
-from aloception.aloscene import Depth, CameraIntrinsic, Mask, Flow
-import aloception.aloscene as aloscene
+import aloscene
+from aloscene import Depth, CameraIntrinsic, Mask, Flow
+from aloscene.io.flow import load_scene_flow
 from typing import Union
-import numpy as np
 import torch
 import torch.nn.functional as F
-
-
-def load_scene_flow(path: str) -> torch.Tensor:
-    with open(path, "rb") as file:
-        data = np.load(file)
-        return torch.from_numpy(data)
 
 
 class SceneFlow(aloscene.tensors.SpatialAugmentedTensor):
@@ -18,7 +12,7 @@ class SceneFlow(aloscene.tensors.SpatialAugmentedTensor):
 
     Parameters
     ----------
-    x : str
+    x : str or tensor
         load scene flow from a numpy file
     """
 
@@ -60,7 +54,7 @@ class SceneFlow(aloscene.tensors.SpatialAugmentedTensor):
         sampling: str
             The sampling method to use for the scene flow.
         """
-        has_batch = True if len(optical_flow.names) == 4 else False
+        has_batch = "B" in optical_flow.names
 
         if optical_flow.names != depth.names or optical_flow.names != next_depth.names:
             raise ValueError("The optical flow, depth and next_depth must have the same names")

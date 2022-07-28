@@ -2,7 +2,6 @@ import numpy as np
 import torch
 
 
-
 def load_flow_flo(flo_path):
     """
     Load a 2D flow map with pytorch in float32 format
@@ -31,12 +30,16 @@ def load_flow_flo(flo_path):
     return flow
 
 
-
-
 def load_flow(flow_path):
     if flow_path.endswith(".flo"):
         return load_flow_flo(flow_path)
     elif flow_path.endswith(".zfd"):
         raise Exception("zfd format is not supported.")
-    else :
+    else:
         raise ValueError(f"Unknown extension for flow file: {flow_path}")
+
+
+def load_scene_flow(path: str) -> np.ndarray:
+    with open(path, "rb") as file:
+        data = np.load(file)
+        return data

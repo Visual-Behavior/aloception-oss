@@ -1,4 +1,4 @@
-name: Aloscene unit tests
+name: Aloception unit tests
 on:
   push:
     branches:
@@ -24,7 +24,7 @@ jobs:
         for file in unittest/*;
         do
           echo "Testing : $file"
-          res=$(grep "cuda" "$file" | wc -l || true)
+          res=$(grep "GithubActionsIgnore" "$file" | wc -l || true)
           if [ "$res" = "0" ]
           then
             if PYTHONPATH=${GITHUB_WORKSPACE} python3 "$file"; then
@@ -34,7 +34,7 @@ jobs:
               invalid=$((invalid+1))
             fi
           else
-            echo "::warning file=$file::Cuda is not available on github action."
+            echo "::warning file=$file::This file should be ignore on github actions"
           fi
         done
         if [ "$invalid" -eq 0 ]

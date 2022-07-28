@@ -504,14 +504,15 @@ def test_device_propagation():
     assert frame.disparity.occlusion["occ2"].device == torch.device("cpu")
     assert frame.flow[0].occlusion.device == torch.device("cpu")
 
-    cuda_frame = frame.cuda()
-    assert cuda_frame.boxes2d["boxes1"][0].device != torch.device("cpu")
-    assert cuda_frame.boxes2d["boxes2"][0].device != torch.device("cpu")
-    assert cuda_frame.disparity.device != torch.device("cpu")
-    assert cuda_frame.flow[0].device != torch.device("cpu")
-    assert cuda_frame.disparity.occlusion["occ1"].device != torch.device("cpu")
-    assert cuda_frame.disparity.occlusion["occ2"].device != torch.device("cpu")
-    assert cuda_frame.flow[0].occlusion.device != torch.device("cpu")
+    if torch.cuda.is_available():
+        cuda_frame = frame.cuda()
+        assert cuda_frame.boxes2d["boxes1"][0].device != torch.device("cpu")
+        assert cuda_frame.boxes2d["boxes2"][0].device != torch.device("cpu")
+        assert cuda_frame.disparity.device != torch.device("cpu")
+        assert cuda_frame.flow[0].device != torch.device("cpu")
+        assert cuda_frame.disparity.occlusion["occ1"].device != torch.device("cpu")
+        assert cuda_frame.disparity.occlusion["occ2"].device != torch.device("cpu")
+        assert cuda_frame.flow[0].occlusion.device != torch.device("cpu")
 
     cpu_frame = frame.cpu()
     assert cpu_frame.boxes2d["boxes1"][0].device == torch.device("cpu")

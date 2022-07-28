@@ -1,7 +1,7 @@
 import argparse
 from unittest import mock
 
-# This test use cuda. It should be ignore by github actions.
+# GithubActionsIgnore : cuda
 
 def get_argparse_defaults(parser):
     defaults = {}

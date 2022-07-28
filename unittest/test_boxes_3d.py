@@ -6,7 +6,7 @@ from aloscene import BoundingBoxes3D
 
 TEST_FRAME = 0
 CAMERAS = ["front", "front_left", "front_right", "side_left", "side_right"]
-device = torch.device("cuda")
+device = torch.device("cpu")
 
 waymo_dataset = WaymoDataset(sample=True)
 

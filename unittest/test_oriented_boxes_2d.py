@@ -3,7 +3,7 @@ import torch
 import aloscene
 from aloscene import OrientedBoxes2D
 
-device = torch.device("cuda")
+device = torch.device("cpu")
 
 
 def tensor_equal(tensor1, tensor2, threshold=1e-4):

@@ -384,19 +384,7 @@ def test_crop_abs():
         boxes, boxes_format="xcyc", frame_size=(frame.H, frame.W), absolute=True, labels=labels
     )
     frame.append_boxes2d(boxes)
-
-    # get view
-    frame.get_view().render()
-
     frame = frame.crop(H_crop=(0.0, 0.4), W_crop=(0.0, 0.4))
-   
-
-    # get view
-    frame.get_view().render()
-
-    boxes
-
-
     assert torch.allclose(frame.boxes2d[0].as_tensor(), boxes[0].as_tensor())
     assert np.allclose(frame.boxes2d.frame_size[0], frame.HW[0])
     assert np.allclose(frame.boxes2d.frame_size[1], frame.HW[1])

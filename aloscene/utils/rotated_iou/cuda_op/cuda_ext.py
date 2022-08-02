@@ -4,8 +4,9 @@ from torch.autograd import Function
 try:
     import sort_vertices
     sort_vertices_error = None
-except Exception as sort_vertices_error:
+except Exception as e:
     sort_vertices= None
+    sort_vertices_error = e
     pass
 
 
@@ -14,8 +15,7 @@ class SortVertices(Function):
     def forward(ctx, vertices, mask, num_valid):
 
         if sort_vertices is None:
-            print(sort_vertices_error)
-            raise Exception("To install: cd aloception/aloscene/utils/rotated_iou/cuda_op; python setup.py install --user ")
+            raise Exception(f"To install: cd aloception/aloscene/utils/rotated_iou/cuda_op; python setup.py install --user. Error={sort_vertices_error}")
 
         idx = sort_vertices.sort_vertices_forward(vertices, mask, num_valid)
         ctx.mark_non_differentiable(idx)

@@ -3,7 +3,7 @@ import torch
 import aloscene
 from aloscene import OrientedBoxes2D
 
-device = torch.device("cuda")
+device = torch.device("cpu")
 
 
 def tensor_equal(tensor1, tensor2, threshold=1e-4):
@@ -14,6 +14,8 @@ def tensor_equal(tensor1, tensor2, threshold=1e-4):
 
 
 def test_same_box():
+    # if cuda not avaible
+    if not torch.cuda.is_available(): return
     box1 = OrientedBoxes2D(torch.tensor([[0.0, 0.0, 2.0, 2.0, 0.0]], device=device))
     box2 = OrientedBoxes2D(torch.tensor([[0.0, 0.0, 2.0, 2.0, 0.0]], device=device))
     expected_iou = torch.tensor([1.0], device=device)
@@ -24,6 +26,8 @@ def test_same_box():
 
 
 def test_same_edge():
+    # if cuda not avaible
+    if not torch.cuda.is_available(): return
     box1 = OrientedBoxes2D(torch.tensor([[0.0, 0.0, 2.0, 2.0, 0.0]], device=device))
     box2 = OrientedBoxes2D(torch.tensor([[2.0, 0.0, 2.0, 2.0, 0.0]], device=device))
     expected_iou = torch.tensor([0.0], device=device)
@@ -35,6 +39,8 @@ def test_same_edge():
 
 
 def test_1():
+    # if cuda not avaible
+    if not torch.cuda.is_available(): return
     box1 = OrientedBoxes2D(torch.tensor([[0.0, 0.0, 2.0, 2.0, 0.0]], device=device))
     box2 = OrientedBoxes2D(torch.tensor([[1.0, 0.0, 2.0, 2.0, 0.0]], device=device))
     expected_iou = torch.tensor([1 / 3], device=device)
@@ -45,6 +51,8 @@ def test_1():
 
 
 def test_2():
+    # if cuda not avaible
+    if not torch.cuda.is_available(): return
     box1 = OrientedBoxes2D(torch.tensor([[0.0, 0.0, 2.0, 2.0, 0.0]], device=device))
     box2 = OrientedBoxes2D(torch.tensor([[1.0, 1.0, 2.0, 2.0, 0.0]], device=device))
     expected_iou = torch.tensor([1 / 7], device=device)
@@ -55,6 +63,8 @@ def test_2():
 
 
 def test_3():
+    # if cuda not avaible
+    if not torch.cuda.is_available(): return
     box1 = OrientedBoxes2D(torch.tensor([[0.0, 0.0, 2.0, 2.0, 0.0]], device=device))
     box2 = OrientedBoxes2D(torch.tensor([[1.0, 1.0, 2.0, 2.0, np.pi / 2]], device=device))
     expected_iou = torch.tensor([1 / 7], device=device)
@@ -65,6 +75,8 @@ def test_3():
 
 
 def test_4():
+    # if cuda not avaible
+    if not torch.cuda.is_available(): return
     box1 = OrientedBoxes2D(torch.tensor([[0.0, 0.0, 2.0, 2.0, 0.0]], device=device))
     box2 = OrientedBoxes2D(
         torch.tensor([[1.0, 1.0, np.sqrt(2), np.sqrt(2), np.pi / 4]], device=device, dtype=torch.float)

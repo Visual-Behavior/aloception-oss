@@ -6,7 +6,7 @@ from aloscene import BoundingBoxes3D
 
 TEST_FRAME = 0
 CAMERAS = ["front", "front_left", "front_right", "side_left", "side_right"]
-device = torch.device("cuda")
+device = torch.device("cpu")
 
 waymo_dataset = WaymoDataset(sample=True)
 
@@ -133,7 +133,9 @@ if __name__ == "__main__":
     test_shape_vertices_3d_proj()
     test_shape_boxes_3d_proj()
     test_hflip()
-    test_giou3d_same_box()
-    test_giou3d_same_face()
-    test_giou3d_1()
-    test_giou3d_2()
+    # if cuda is available, run the tests on cuda. (giou use custom cuda op to compile)
+    if torch.cuda.is_available():
+        test_giou3d_same_box()
+        test_giou3d_same_face()
+        test_giou3d_1()
+        test_giou3d_2()

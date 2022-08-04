@@ -6,7 +6,19 @@ from typing import TypeVar, Union
 
 import aloscene
 from aloscene.renderer import View
-from aloscene import BoundingBoxes2D, BoundingBoxes3D, Depth, Disparity, Flow, Mask, Labels, Points2D, Points3D, Pose
+from aloscene import (
+    BoundingBoxes2D,
+    BoundingBoxes3D,
+    Depth,
+    Disparity,
+    Flow,
+    Mask,
+    Labels,
+    Points2D,
+    Points3D,
+    Pose,
+    SceneFlow,
+)
 
 # from aloscene.camera_calib import CameraExtrinsic, CameraIntrinsic
 from aloscene.io.image import load_image
@@ -317,6 +329,19 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
             pose is attached to the frame, the pose will be added to the set of poses.
         """
         self._append_child("pose", pose, name)
+
+    def append_scene_flow(self, scene_flow: SceneFlow, name: str = None):
+        """Attach a scene flow to the frame.
+
+        Parameters
+        ----------
+        scene_flow : :mod:`SceneFlow <aloscene.SceneFlow>`
+            Depth to attach to the Frame
+        name : str
+            If none, the scene flow will be attached without name (if possible). Otherwise if no other unnamed
+            scene flow is attached to the frame, the scene flow will be added to the set of scene flows.
+        """
+        self._append_child("scene_flow", scene_flow, name)
 
     @staticmethod
     def _get_mean_std_tensor(shape, names, mean_std: tuple, device="cpu"):

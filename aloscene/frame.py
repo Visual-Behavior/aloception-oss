@@ -126,6 +126,7 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         tensor.add_child("segmentation", segmentation, align_dim=["B", "T"], mergeable=False)
         tensor.add_child("labels", labels, align_dim=["B", "T"], mergeable=True)
         tensor.add_child("pose", labels, align_dim=["B", "T"], mergeable=True)
+        tensor.add_child("scene_flow", labels, align_dim=["B", "T"], mergeable=False)
 
         # Add other tensor property
         tensor.add_property("normalization", normalization)
@@ -340,6 +341,12 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         name : str
             If none, the scene flow will be attached without name (if possible). Otherwise if no other unnamed
             scene flow is attached to the frame, the scene flow will be added to the set of scene flows.
+
+        Examples
+        --------
+        >>> frame = aloscene.Frame("/path/to/image.jpeg")
+        >>> scene_flow = aloscene.SceneFlow(np.random.rand((3, frame.H, frame.W)))
+        >>> frame.append_scene_flow(scene_flow)
         """
         self._append_child("scene_flow", scene_flow, name)
 

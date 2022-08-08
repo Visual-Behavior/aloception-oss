@@ -123,7 +123,7 @@ class SceneFlow(aloscene.tensors.SpatialAugmentedTensor):
         if not has_batch:
             scene_flow_vector = scene_flow_vector.squeeze(0)
             optical_flow = optical_flow.squeeze(0)
-            occlusion = occlusion.squeeze(0)
+            occlusion = occlusion.squeeze(0) if occlusion is not None else None
 
         # Create the scene flow object
         tensor = cls(

@@ -12,6 +12,7 @@ from .pose import Pose
 from .bounding_boxes_2d import BoundingBoxes2D
 from .bounding_boxes_3d import BoundingBoxes3D
 from .oriented_boxes_2d import OrientedBoxes2D
+from .scene_flow import SceneFlow
 from .frame import Frame
 from .tensors.spatial_augmented_tensor import SpatialAugmentedTensor
 

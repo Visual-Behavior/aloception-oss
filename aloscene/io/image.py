@@ -10,10 +10,12 @@ from torchvision.io.image import ImageReadMode
 def load_image(image_path):
     """
     Load an image with pytorch in float32 format
+
     Parameters
     ----------
     image_path : str
         path of the image
+
     Returns
     -------
     image : torch.Tensor

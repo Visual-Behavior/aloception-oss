@@ -56,6 +56,7 @@ class BaseTRTExporter:
         opt_profiles: Dict[str, Tuple[List[int]]] = None,
         profiling_verbosity: int = 0,
         calibrator=None,
+        simplify=True,
         **kwargs,
     ):
         """
@@ -114,6 +115,7 @@ class BaseTRTExporter:
         self.verbose = verbose
         self.device = device
         self.precision = precision
+        self.simplify = simplify
         self.custom_opset = None  # to be redefine in child class if needed
         self.use_scope_names = use_scope_names
         self.operator_export_type = operator_export_type
@@ -205,14 +207,10 @@ class BaseTRTExporter:
         for n in clip_nodes:
             handle_op_Clip(n)
 
-        from onnxsim import simplify
-        model = onnx.load(self.onnx_path)
-        check = False
-        model_simp, check = simplify(model)
-
-        if check:
-            print("\n[INFO] Simplified ONNX model validated. Graph optimized...")
-            graph = gs.import_onnx(model_simp)
+        if self.simplify:
+            # Simplifying graph with onnxsim.
+            os.system(f"onnxsim {self.onnx_path} {self.onnx_path}")
+            graph = gs.import_onnx(onnx.load(self.onnx_path))
             graph.toposort()
             graph.cleanup()
         else:

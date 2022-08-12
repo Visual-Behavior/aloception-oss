@@ -3,22 +3,18 @@ import os
 import time
 from typing import Dict, List, Tuple, Union
 
-
 import torch
 import numpy as np
-
 
 try:
     import onnx
     import onnx_graphsurgeon as gs
     import tensorrt as trt
     import pycuda.driver as cuda
-    from pytorch_quantization import nn as quant_nn
     prod_package_error = None
 except Exception as e:
     prod_package_error = e
     pass
-
 
 from contextlib import redirect_stdout, ExitStack
 from alonet.torch2trt.onnx_hack import scope_name_workaround, get_scope_names, rename_tensors_
@@ -213,9 +209,6 @@ class BaseTRTExporter:
             graph = gs.import_onnx(onnx.load(self.onnx_path))
             graph.toposort()
             graph.cleanup()
-        else:
-            print("\n[INFO] ONNX model was not validated.")
-
 
         # Call the child class for specific graph adapation
         graph = self.adapt_graph(graph)

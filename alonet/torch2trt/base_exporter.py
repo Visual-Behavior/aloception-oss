@@ -52,7 +52,7 @@ class BaseTRTExporter:
         opt_profiles: Dict[str, Tuple[List[int]]] = None,
         profiling_verbosity: int = 0,
         calibrator=None,
-        simplify=True,
+        no_onnxsim=False,
         **kwargs,
     ):
         """
@@ -111,7 +111,7 @@ class BaseTRTExporter:
         self.verbose = verbose
         self.device = device
         self.precision = precision
-        self.simplify = simplify
+        self.no_onnxsim = no_onnxsim
         self.custom_opset = None  # to be redefine in child class if needed
         self.use_scope_names = use_scope_names
         self.operator_export_type = operator_export_type
@@ -203,12 +203,13 @@ class BaseTRTExporter:
         for n in clip_nodes:
             handle_op_Clip(n)
 
-        if self.simplify:
+        if not self.no_onnxsim:
             # Simplifying graph with onnxsim.
             os.system(f"onnxsim {self.onnx_path} {self.onnx_path}")
-            graph = gs.import_onnx(onnx.load(self.onnx_path))
-            graph.toposort()
-            graph.cleanup()
+
+        graph = gs.import_onnx(onnx.load(self.onnx_path))
+        graph.toposort()
+        graph.cleanup()
 
         # Call the child class for specific graph adapation
         graph = self.adapt_graph(graph)
@@ -392,6 +393,7 @@ class BaseTRTExporter:
         parser.add_argument("--batch_size", type=int, default=1, help="Engine batch size, default = 1")
         parser.add_argument("--precision", type=str, default="fp32", help="fp32/fp16/mix, default FP32")
         parser.add_argument("--verbose", action="store_true", help="Helpful when debugging")
+        parser.add_argument("--no_onnxsim", action="store_false", help="Avoid using onnx simplifier")
         parser.add_argument("--profiling_verbosity", default=0, type=int, help="Helpful when profiling the engine (default: %(default)s)")
         parser.add_argument("--calibration_batch_size", type=int, default=8, help="Calibration data batch size (default: %(default)s)")
         parser.add_argument("--limit_calibration_batches", type=int, default=10, help="Limits number of batches (default: %(default)s)")

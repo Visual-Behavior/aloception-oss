@@ -26,6 +26,7 @@ def load_image(image_path):
     except RuntimeError as e:
         try:
             image = cv2.imread(image_path)
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
             image = np.moveaxis(image, 2, 0)
             image = torch.Tensor(image).type(torch.float32)
         except RuntimeError as e:

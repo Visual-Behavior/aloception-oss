@@ -4,7 +4,7 @@
 
 <a href="https://visual-behavior.github.io/aloception/">Documentation</a>
 
-[![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-0.2.1-green.svg)](https://conventionalcommits.org)
+[![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-0.3.1-green.svg)](https://conventionalcommits.org)
 
 # Aloception
 

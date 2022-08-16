@@ -18,8 +18,8 @@ class Labels(aloscene.tensors.AugmentedTensor):
         cls,
         x,
         encoding: str = "id",
-        labels_names: list = None,
-        scores: torch.Tensor = None,
+        labels_names: Union[list, None] = None,
+        scores: Union[torch.Tensor, None] = None,
         names=None,
         *args,
         **kwargs,
@@ -72,7 +72,7 @@ class Labels(aloscene.tensors.AugmentedTensor):
     def __init__(self, x, *args, **kwargs):
         super().__init__(x)
 
-    def get_view(self, frame: Tensor = None, **kwargs):
+    def get_view(self, frame: Union[Tensor, None] = None, **kwargs):
         """Create a view of the boxes a frame
 
         Parameters

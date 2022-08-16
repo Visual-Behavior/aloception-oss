@@ -84,7 +84,7 @@ class Points2D(aloscene.tensors.AugmentedTensor):
         x: Union[list, np.array, torch.Tensor],
         points_format: str,
         absolute: bool,
-        labels: Union[dict, Labels] = None,
+        labels: Union[dict, Labels, None] = None,
         frame_size=None,
         names=("N", None),
         *args,
@@ -115,7 +115,7 @@ class Points2D(aloscene.tensors.AugmentedTensor):
     def __init__(self, x, *args, **kwargs):
         super().__init__(x)
 
-    def append_labels(self, labels: Labels, name: str = None):
+    def append_labels(self, labels: Labels, name: Union[str, None] = None):
         """Attach a set of labels to the points. The attached set of labels are supposed to be equal to the
         number of points. In other words, the N dimensions must match in both tensor.
 
@@ -306,7 +306,7 @@ class Points2D(aloscene.tensors.AugmentedTensor):
 
     _GLOBAL_COLOR_SET = np.random.uniform(0, 1, (300, 3))
 
-    def get_view(self, frame=None, size: tuple = None, labels_set: str = None, **kwargs):
+    def get_view(self, frame=None, size: Union[tuple, None] = None, labels_set: Union[str, None] = None, **kwargs):
         """Create a view of the points on a frame
 
         Parameters

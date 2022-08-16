@@ -23,7 +23,7 @@ class Mask(aloscene.tensors.SpatialAugmentedTensor):
     """
 
     @staticmethod
-    def __new__(cls, x, labels: Union[dict, Labels] = None, *args, **kwargs):
+    def __new__(cls, x, labels: Union[dict, Labels, None] = None, *args, **kwargs):
         # Load frame from path
         if isinstance(x, str):
             x = load_mask(x)
@@ -32,7 +32,7 @@ class Mask(aloscene.tensors.SpatialAugmentedTensor):
         tensor.add_child("labels", labels, align_dim=["N"], mergeable=True)
         return tensor
 
-    def append_labels(self, labels: Labels, name: str = None):
+    def append_labels(self, labels: Labels, name: Union[str, None] = None):
         """Attach a set of labels to the masks.
 
         Parameters
@@ -46,7 +46,7 @@ class Mask(aloscene.tensors.SpatialAugmentedTensor):
         self._append_child("labels", labels, name)
 
     def iou_with(self, mask2) -> torch.Tensor:
-        """ IoU calculation between mask2 and itself
+        """IoU calculation between mask2 and itself
 
         Parameters
         ----------
@@ -79,7 +79,12 @@ class Mask(aloscene.tensors.SpatialAugmentedTensor):
         return intersection / (union - intersection)
 
     def get_view(
-        self, frame: Tensor = None, size: tuple = None, labels_set: str = None, color_by_cat: bool = True, **kwargs
+        self,
+        frame: Union[Tensor, None] = None,
+        size: Union[tuple, None] = None,
+        labels_set: Union[str, None] = None,
+        color_by_cat: bool = True,
+        **kwargs,
     ):
         """Get view of segmentation mask and used it in a input :mod:`Frame <aloscene.frame>`
 
@@ -126,7 +131,9 @@ class Mask(aloscene.tensors.SpatialAugmentedTensor):
             frame = 0.2 * frame + 0.8 * masks
         return View(frame, **kwargs)
 
-    def __get_view__(self, labels_set: str = None, title: str = None, color_by_cat: bool = True, **kwargs):
+    def __get_view__(
+        self, labels_set: Union[str, None] = None, title: Union[str, None] = None, color_by_cat: bool = True, **kwargs
+    ):
         """Create a view of the frame"""
         from alodataset.utils.panoptic_utils import id2rgb
 
@@ -150,7 +157,7 @@ class Mask(aloscene.tensors.SpatialAugmentedTensor):
             )
         return View(frame, title=title)
 
-    def mask2id(self, labels_set: str = None, return_ann: bool = False, return_cats: bool = False):
+    def mask2id(self, labels_set: Union[str, None] = None, return_ann: bool = False, return_cats: bool = False):
         """Create a panoptic view of the frame, where each pixel represent one class
 
         Parameters
@@ -202,7 +209,7 @@ class Mask(aloscene.tensors.SpatialAugmentedTensor):
             return frame, annotations
         return frame
 
-    def _get_set_children(self, labels_set: str = None):
+    def _get_set_children(self, labels_set: Union[str, None] = None):
         if not (labels_set is None or isinstance(self.labels, dict)):
             raise Exception(
                 f"Trying to display a set of labels ({labels_set}) while masks do not have multiple set of labels"

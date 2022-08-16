@@ -1,5 +1,5 @@
 # from __future__ import annotations
-from typing import Tuple
+from typing import Tuple, Union
 from aloscene.tensors.augmented_tensor import AugmentedTensor
 import aloscene
 
@@ -48,10 +48,10 @@ class CameraIntrinsic(AugmentedTensor):
     def __new__(
         cls,
         x=None,
-        focal_length: float = None,
-        plane_size: tuple = None,
-        principal_point: tuple = None,
-        skew: tuple = None,
+        focal_length: Union[float, None] = None,
+        plane_size: Union[tuple, None] = None,
+        principal_point: Union[tuple, None] = None,
+        skew: Union[float, None] = None,
         *args,
         names=(None, None),
         **kwargs,

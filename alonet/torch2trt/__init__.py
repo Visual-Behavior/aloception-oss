@@ -2,6 +2,7 @@ from .TRTEngineBuilder import TRTEngineBuilder
 from .TRTExecutor import TRTExecutor
 from .base_exporter import BaseTRTExporter
 from .utils import load_trt_custom_plugins, create_calibrator
+from .calibrator import DataBatchStreamer
 
 from alonet import ALONET_ROOT
 import os

@@ -1,4 +1,13 @@
+from alonet import ALONET_ROOT
+from alonet.torch2trt.calibrator import (
+    LegacyCalibrator, 
+    MinMaxCalibrator,
+    EntropyCalibrator,
+    EntropyCalibrator2,
+)
+
 import os
+import ctypes
 
 try:
     import pycuda.driver as cuda
@@ -10,8 +19,25 @@ except Exception as prod_package_error:
     pass
 
 
-import ctypes
-from alonet import ALONET_ROOT
+def create_calibrator(name: str, *args, **kwargs):
+    """Creates calibrator from name
+
+    Parameters
+    ----------
+        name : str
+            Calibrator name
+    """
+    CALIBS = ["minmax", "entropy", "entropy2", "legacy"]
+    if name == "entropy2":
+        return EntropyCalibrator2(*args, **kwargs)
+    elif name == "entropy":
+        return EntropyCalibrator(*args, **kwargs)
+    elif name == "minmax":
+        return MinMaxCalibrator(*args, **kwargs)
+    elif name == "legacy":
+        return LegacyCalibrator(*args, **kwargs)
+    else:
+        raise AttributeError(f"Unknown calibrator name, should be one of {' '.join(CALIBS)}")
 
 
 def load_trt_custom_plugins(lib_path: str):

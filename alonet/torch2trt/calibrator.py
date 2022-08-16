@@ -1,12 +1,10 @@
+from aloscene.frame import Frame
+
 import os
 import torch
 import numpy as np
 import tensorrt as trt
-
 import pycuda.driver as cuda
-import pycuda.autoinit
-
-from aloscene.frame import Frame
 
 
 class DataBatchStreamer:

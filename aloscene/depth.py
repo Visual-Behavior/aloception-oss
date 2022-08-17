@@ -9,6 +9,7 @@ from aloscene import Mask
 from aloscene.renderer import View
 from aloscene.utils.depth_utils import coords2rtheta, add_colorbar
 import numpy as np
+from typing import Union
 
 from aloscene.io.depth import load_depth
 
@@ -35,7 +36,7 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
     def __new__(
         cls,
         x,
-        occlusion: Mask = None,
+        occlusion: Union[Mask, None] = None,
         is_absolute=True,
         is_planar=True,
         scale=None,
@@ -166,7 +167,7 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
 
         return n_depth
 
-    def append_occlusion(self, occlusion: Mask, name: str = None):
+    def append_occlusion(self, occlusion: Mask, name: Union[str, None] = None):
         """Attach an occlusion mask to the depth tensor.
 
         Parameters
@@ -207,7 +208,9 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
 
         return View(depth_color, title=title)
 
-    def as_points3d(self, camera_intrinsic: aloscene.CameraIntrinsic = None, projection=None, distortion=None):
+    def as_points3d(
+        self, camera_intrinsic: Union[aloscene.CameraIntrinsic, None] = None, projection=None, distortion=None
+    ):
         """Compute the 3D coordinates of points 2D points based on their respective depth.
 
         Parameters
@@ -292,7 +295,10 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         return aloscene.Points3D(points_3d, names=target_names, device=self.device)
 
     def as_disp(
-        self, camera_side: str = None, baseline: float = None, camera_intrinsic: aloscene.CameraIntrinsic = None
+        self,
+        camera_side: Union[str, None] = None,
+        baseline: Union[float, None] = None,
+        camera_intrinsic: Union[aloscene.CameraIntrinsic, None] = None,
     ):
         """Create a disparity augmented tensor from the current Depth augmented tensor.
         To use this method, one must know the target `camera_side` ("left" or "right"). Also, if not set on the
@@ -344,7 +350,9 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         )
         return disp
 
-    def as_euclidean(self, camera_intrinsic: aloscene.CameraIntrinsic = None, projection=None, distortion=None):
+    def as_euclidean(
+        self, camera_intrinsic: Union[aloscene.CameraIntrinsic, None] = None, projection=None, distortion=None
+    ):
         """Create a new Depth augmented tensor whose data is the euclidean depth (distance) from camera to world points.
         To use this method, we must know intrinsic matrix of camera, projection model and distortion coefficient
         (if exists).
@@ -384,7 +392,9 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         euclidean.is_planar = False
         return euclidean
 
-    def as_planar(self, camera_intrinsic: aloscene.CameraIntrinsic = None, projection=None, distortion=None):
+    def as_planar(
+        self, camera_intrinsic: Union[aloscene.CameraIntrinsic, None] = None, projection=None, distortion=None
+    ):
         """Create a new planar depth augmented tensor from the euclidean depth between camera to world points with
         corresponding depth. To use this method, we must know intrinsic matrix of camera, projection model and
         distortion coefficient (if exists).

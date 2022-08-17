@@ -92,15 +92,15 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
     def __new__(
         cls,
         x,
-        boxes2d: Union[dict, BoundingBoxes2D] = None,
-        boxes3d: Union[dict, BoundingBoxes3D] = None,
-        labels: Union[dict, Labels] = None,
-        flow: Union[dict, Flow] = None,
-        segmentation: Union[dict, Mask] = None,
-        disparity: Union[dict, Disparity] = None,
-        points2d: Union[dict, Points2D] = None,
-        points3d: Union[dict, Points3D] = None,
-        depth: Union[dict, Depth] = None,
+        boxes2d: Union[dict, BoundingBoxes2D, None] = None,
+        boxes3d: Union[dict, BoundingBoxes3D, None] = None,
+        labels: Union[dict, Labels, None] = None,
+        flow: Union[dict, Flow, None] = None,
+        segmentation: Union[dict, Mask, None] = None,
+        disparity: Union[dict, Disparity, None] = None,
+        points2d: Union[dict, Points2D, None] = None,
+        points3d: Union[dict, Points3D, None] = None,
+        depth: Union[dict, Depth, None] = None,
         normalization="255",
         mean_std=None,
         names=("C", "H", "W"),
@@ -152,7 +152,7 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         """
         torchvision.utils.save_image(self.cpu().norm01().as_tensor(), tgt_path)
 
-    def append_labels(self, labels: Labels, name: str = None):
+    def append_labels(self, labels: Labels, name: Union[str, None] = None):
         """Attach a set of labels to the frame. This can be usefull for classification
         or multi label classification. The rank of the label must be >= 1
 
@@ -172,7 +172,7 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         """
         self._append_child("labels", labels, name)
 
-    def append_boxes2d(self, boxes: BoundingBoxes2D, name: str = None):
+    def append_boxes2d(self, boxes: BoundingBoxes2D, name: Union[str, None] = None):
         """Attach a set of BoundingBoxes2D to the frame.
 
         Parameters
@@ -197,7 +197,7 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         """
         self._append_child("boxes2d", boxes, name)
 
-    def append_points2d(self, points: Points2D, name: str = None):
+    def append_points2d(self, points: Points2D, name: Union[str, None] = None):
         """Attach a set of points to the frame.
 
         Parameters
@@ -210,7 +210,7 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         """
         self._append_child("points2d", points, name)
 
-    def append_points3d(self, points_3d: Points3D, name: str = None):
+    def append_points3d(self, points_3d: Points3D, name: Union[str, None] = None):
         """Attach a set of points to the frame.
 
         Parameters
@@ -223,7 +223,7 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         """
         self._append_child("points3d", points_3d, name)
 
-    def append_boxes3d(self, boxes_3d: BoundingBoxes3D, name: str = None):
+    def append_boxes3d(self, boxes_3d: BoundingBoxes3D, name: Union[str, None] = None):
         """Attach BoundingBoxes3D to the frame
 
         Parameters
@@ -247,7 +247,7 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         """
         self._append_child("boxes3d", boxes_3d, name)
 
-    def append_flow(self, flow, name: str = None):
+    def append_flow(self, flow, name: Union[str, None] = None):
         """Attach a flow to the frame.
 
         Parameters
@@ -266,7 +266,7 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         """
         self._append_child("flow", flow, name)
 
-    def append_disparity(self, disparity, name: str = None):
+    def append_disparity(self, disparity, name: Union[str, None] = None):
         """Attach a disparity map to the frame.
 
         Parameters
@@ -285,7 +285,7 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         """
         self._append_child("disparity", disparity, name)
 
-    def append_depth(self, depth, name: str = None):
+    def append_depth(self, depth, name: Union[str, None] = None):
         """Attach a depth map to the frame.
 
         Parameters
@@ -304,7 +304,7 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         """
         self._append_child("depth", depth, name)
 
-    def append_segmentation(self, segmentation: Mask, name: str = None):
+    def append_segmentation(self, segmentation: Mask, name: Union[str, None] = None):
         """Attach a segmentation to the frame.
 
         Parameters
@@ -318,7 +318,7 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         """
         self._append_child("segmentation", segmentation, name)
 
-    def append_pose(self, pose: Pose, name: str = None):
+    def append_pose(self, pose: Pose, name: Union[str, None] = None):
         """Attach a pose to the frame.
 
         Parameters
@@ -331,7 +331,7 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         """
         self._append_child("pose", pose, name)
 
-    def append_scene_flow(self, scene_flow: SceneFlow, name: str = None):
+    def append_scene_flow(self, scene_flow: SceneFlow, name: Union[str, None] = None):
         """Attach a scene flow to the frame.
 
         Parameters

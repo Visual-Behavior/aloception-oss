@@ -1,3 +1,4 @@
+from typing import Union
 import aloscene
 from aloscene import Mask
 from aloscene.io.flow import load_flow
@@ -17,7 +18,7 @@ class Flow(aloscene.tensors.SpatialAugmentedTensor):
     """
 
     @staticmethod
-    def __new__(cls, x, occlusion: Mask = None, *args, names=("C", "H", "W"), **kwargs):
+    def __new__(cls, x, occlusion: Union[Mask, None] = None, *args, names=("C", "H", "W"), **kwargs):
         if isinstance(x, str):
             # load flow from path
             x = load_flow(x)
@@ -29,7 +30,7 @@ class Flow(aloscene.tensors.SpatialAugmentedTensor):
     def __init__(self, x, *args, **kwargs):
         super().__init__(x)
 
-    def append_occlusion(self, occlusion: Mask, name: str = None):
+    def append_occlusion(self, occlusion: Mask, name: Union[str, None] = None):
         """Attach an occlusion mask to the frame.
 
         Parameters

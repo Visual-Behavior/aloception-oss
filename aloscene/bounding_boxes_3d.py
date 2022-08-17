@@ -40,7 +40,7 @@ class BoundingBoxes3D(aloscene.tensors.AugmentedTensor):
     """
 
     @staticmethod
-    def __new__(cls, x, labels: Union[dict, Labels] = None, names=("N", None), *args, **kwargs):
+    def __new__(cls, x, labels: Union[dict, Labels, None] = None, names=("N", None), *args, **kwargs):
         tensor = super().__new__(cls, x, *args, names=names, **kwargs)
         assert tensor.shape[-1] == 7
         tensor.add_child("labels", labels, align_dim=["N"], mergeable=True)
@@ -441,7 +441,7 @@ class BoundingBoxes3D(aloscene.tensors.AugmentedTensor):
         """
         return self.giou3d(self, boxes2, enclosing_type, ret_iou3d)
 
-    def get_view(self, frame, size: tuple = None, mode: str = "3D", **kwargs) -> View:
+    def get_view(self, frame, size: Union[tuple, None] = None, mode: str = "3D", **kwargs) -> View:
         """Create a View instance from a Frame
 
         Parameters

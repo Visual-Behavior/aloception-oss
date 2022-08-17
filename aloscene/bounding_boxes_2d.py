@@ -71,7 +71,7 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
         x,
         boxes_format: str,
         absolute: bool,
-        labels: Union[dict, Labels] = None,
+        labels: Union[dict, Labels, None] = None,
         frame_size=None,
         names=("N", None),
         *args,
@@ -102,7 +102,7 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
     def __init__(self, x, *args, **kwargs):
         super().__init__(x)
 
-    def append_labels(self, labels: Labels, name: str = None):
+    def append_labels(self, labels: Labels, name: Union[str, None] = None):
         """Attach a set of labels to the boxes. The attached set of labels are supposed to be equal to the
         number of points. In other words, the N dimensions must match in both tensor.
         Parameters
@@ -342,7 +342,7 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
         tensor.frame_size = None
         return tensor
 
-    def get_with_format(self, boxes_format: str) :
+    def get_with_format(self, boxes_format: str):
         """Set boxes into the desired format (Inplace operation)
         Parameters
         ----------
@@ -425,7 +425,13 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
 
     _GLOBAL_COLOR_SET = np.random.uniform(0, 1, (300, 3))
 
-    def get_view(self, frame: Tensor = None, size: tuple = None, labels_set: str = None, **kwargs):
+    def get_view(
+        self,
+        frame: Union[Tensor, None] = None,
+        size: Union[tuple, None] = None,
+        labels_set: Union[str, None] = None,
+        **kwargs,
+    ):
         """Create a view of the boxes a frame
         Parameters
         ----------
@@ -890,7 +896,7 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
 
         return n_boxes
 
-    def as_boxes(self, boxes) :
+    def as_boxes(self, boxes):
         """Convert the current boxes state into the given `boxes` state, following the same `boxes_format`, the same
         `frame_size` (if any) and the same `padded_size` (if any).
         Parameters
@@ -915,7 +921,7 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
 
         return n_boxes
 
-    def remove_padding(self) :
+    def remove_padding(self):
         """This method can be usefull when one use a padded Frame but only want to learn on the non-padded area.
         Thefore the target points will remain unpadded while keeping information about the real padded size.
         Thus, this method will simply remove the memorized padded information.

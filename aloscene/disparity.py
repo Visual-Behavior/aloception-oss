@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib
 import torch
+from typing import Union
 
 import aloscene
 from aloscene import Mask
@@ -31,9 +32,9 @@ class Disparity(aloscene.tensors.SpatialAugmentedTensor):
     def __new__(
         cls,
         x,
-        occlusion: Mask = None,
+        occlusion: Union[Mask, None] = None,
         disp_format="unsigned",
-        png_negate: bool = None,
+        png_negate: Union[bool, None] = None,
         *args,
         names=("C", "H", "W"),
         **kwargs,
@@ -58,7 +59,7 @@ class Disparity(aloscene.tensors.SpatialAugmentedTensor):
     def __init__(self, x, *args, **kwargs):
         super().__init__(x)
 
-    def append_occlusion(self, occlusion: Mask, name: str = None):
+    def append_occlusion(self, occlusion: Mask, name: Union[str, None] = None):
         """Attach an occlusion mask to the frame.
 
         Parameters
@@ -136,7 +137,7 @@ class Disparity(aloscene.tensors.SpatialAugmentedTensor):
         disp = torch.absolute(disp)
         return disp
 
-    def signed(self, camera_side: str = None):
+    def signed(self, camera_side: Union[str, None] = None):
         """
         Returns a copy of disparity map in signed disparity format
         """
@@ -154,10 +155,10 @@ class Disparity(aloscene.tensors.SpatialAugmentedTensor):
 
     def as_depth(
         self,
-        baseline: float = None,
-        focal_length: float = None,
-        camera_side: float = None,
-        camera_intrinsic: aloscene.CameraIntrinsic = None,
+        baseline: Union[float, None] = None,
+        focal_length: Union[float, None] = None,
+        camera_side: Union[float, None] = None,
+        camera_intrinsic: Union[aloscene.CameraIntrinsic, None] = None,
         max_depth=np.inf,
     ):
         """Return a Depth augmented tensor based on the given `baseline` & `focal_length`.

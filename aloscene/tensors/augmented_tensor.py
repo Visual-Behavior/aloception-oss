@@ -194,7 +194,7 @@ class AugmentedTensor(torch.Tensor):
 
         setattr(self, child_name, child)
 
-    def _append_child(self, child_name: str, child, set_name: str = None):
+    def _append_child(self, child_name: str, child, set_name: Union[str, None] = None):
         """
         Attach a new value for a given child name.
 

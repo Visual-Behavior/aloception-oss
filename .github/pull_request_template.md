@@ -1,4 +1,4 @@
-General description of your pull request with the list of features includes.
+General description of your pull request with the list of new features and/or bugs.
 
 * ***New feature 1*** : Description
 ```python

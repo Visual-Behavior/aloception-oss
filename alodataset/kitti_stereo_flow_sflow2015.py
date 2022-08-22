@@ -17,7 +17,7 @@ class KittiStereoFlowSFlow2015(BaseDataset, SplitMixin):
         name="kitti_stereo2015",
         sequence_start=10,
         sequence_end=11,
-        grayscale=True,
+        grayscale=False,
         load: list = [
             "right_frame",
             "disp_noc",
@@ -42,10 +42,13 @@ class KittiStereoFlowSFlow2015(BaseDataset, SplitMixin):
 
         if "disp_noc" in load or "disp_occ" in load:
             assert sequence_start <= 11 and sequence_end >= 10, "Disparity is not available for this frame range"
+            assert grayscale is False, "Disparity is only available in RGB"
         if "flow_occ" in load or "flow_noc" in load:
             assert sequence_start <= 10 and sequence_end >= 10, "Flow is not available for this frame range"
+            assert grayscale is False, "Flow is only available in RGB"
         if "scene_flow" in load:
             assert sequence_start <= 10 and sequence_end >= 11, "Scene flow is not available for this frame range"
+            assert grayscale is False, "Scene flow is only available in RGB"
 
         # Load sequence length
         self.split_folder = os.path.join(self.dataset_dir, self.get_split_folder())
@@ -57,13 +60,13 @@ class KittiStereoFlowSFlow2015(BaseDataset, SplitMixin):
             return len(self.items)
         return self.len
 
-    def load_disp(self, disp_path: str):
+    def load_disp(self, disp_path: str, camera_side: str):
         img = cv2.imread(disp_path, cv2.IMREAD_UNCHANGED)
         disp = img / 256.0
         disp = torch.as_tensor(disp[None, ...], dtype=torch.float32)
         valid_mask = disp > 0
         mask = Mask(valid_mask, names=("C", "H", "W"))
-        disp = Disparity(disp, names=("C", "H", "W"), mask=mask)
+        disp = Disparity(disp, names=("C", "H", "W"), mask=mask, camera_side=camera_side).signed()
         return disp
 
     def load_flow(self, flow_path: str):
@@ -83,17 +86,7 @@ class KittiStereoFlowSFlow2015(BaseDataset, SplitMixin):
         # For each unique pixel value correspond a vehicule (execpt for 0)
         for px_value in np.unique(img)[1:]:
             result.append((px_value, Mask(np.array([img == px_value]), names=("C", "H", "W"))))
-
         return result
-
-    @staticmethod
-    def _get_cam_intrinsic(size):
-        return CameraIntrinsic(focal_length=721.0, plane_size=size)
-
-    @staticmethod
-    def _fake_extrinsinc():
-        x = torch.eye(4, dtype=torch.float32)
-        return CameraExtrinsic(x)
 
     def extrinsic(self, idx: int) -> CameraExtrinsic:
         """Load extrinsic from corresponding file"""
@@ -127,25 +120,25 @@ class KittiStereoFlowSFlow2015(BaseDataset, SplitMixin):
 
         # Compute depth from disparity at time T
         disparity = frame.disparity["disp_noc"]
-        depth = disparity.as_depth(baseline=0.54, camera_intrinsic=self._get_cam_intrinsic(size))
+        depth = disparity.as_depth(baseline=0.54, camera_intrinsic=frame.cam_intrinsic)
         depth.occlusion = disparity.mask.clone()
-        depth.append_cam_extrinsic(self._fake_extrinsinc())
+        depth.append_cam_extrinsic(frame.cam_extrinsic)
         frame.append_depth(depth)
 
         # Compute depth from disparity at time T+1
         disparity = next_frame.disparity["disp_noc"]
-        next_depth = disparity.as_depth(baseline=0.54, camera_intrinsic=self._get_cam_intrinsic(size))
+        next_depth = disparity.as_depth(baseline=0.54, camera_intrinsic=next_frame.cam_intrinsic)
         next_depth.occlusion = disparity.mask.clone()
-        next_depth.append_cam_extrinsic(self._fake_extrinsinc())
+        next_depth.append_cam_extrinsic(next_frame.cam_extrinsic)
         next_frame.append_depth(next_depth)
 
         # Compute the points cloud from the depth at time T
-        start_points = depth.as_points3d(camera_intrinsic=self._get_cam_intrinsic(size)).cpu().numpy()
+        start_points = depth.as_points3d(camera_intrinsic=frame.cam_intrinsic).cpu().numpy()
         mask = ~np.isfinite(start_points)
         np.nan_to_num(start_points, copy=False, nan=-0.1, posinf=-0.1, neginf=-0.1)
 
         # Compute the points cloud from the depth at time T+1
-        end_points = next_depth.as_points3d(camera_intrinsic=self._get_cam_intrinsic(size)).cpu().numpy()
+        end_points = next_depth.as_points3d(camera_intrinsic=next_frame.cam_intrinsic).cpu().numpy()
         mask = mask | ~np.isfinite(end_points)
         np.nan_to_num(end_points, copy=False, nan=-0.1, posinf=-0.1, neginf=-0.1)
 
@@ -212,20 +205,24 @@ class KittiStereoFlowSFlow2015(BaseDataset, SplitMixin):
             if index == 11:
                 if "disp_noc" in self.load:
                     sequence[11]["left"].append_disparity(
-                        self.load_disp(os.path.join(self.split_folder, f"disp_noc_1/{idx:06d}_10.png")), "disp_noc"
+                        self.load_disp(os.path.join(self.split_folder, f"disp_noc_1/{idx:06d}_10.png"), "left"),
+                        "disp_noc",
                     )
                 if "disp_occ" in self.load:
                     sequence[11]["left"].append_disparity(
-                        self.load_disp(os.path.join(self.split_folder, f"disp_occ_1/{idx:06d}_10.png")), "disp_occ"
+                        self.load_disp(os.path.join(self.split_folder, f"disp_occ_1/{idx:06d}_10.png"), "left"),
+                        "disp_occ",
                     )
             if index == 10:
                 if "disp_noc" in self.load:
                     sequence[10]["left"].append_disparity(
-                        self.load_disp(os.path.join(self.split_folder, f"disp_noc_0/{idx:06d}_10.png")), "disp_noc"
+                        self.load_disp(os.path.join(self.split_folder, f"disp_noc_0/{idx:06d}_10.png"), "left"),
+                        "disp_noc",
                     )
                 if "disp_occ" in self.load:
                     sequence[10]["left"].append_disparity(
-                        self.load_disp(os.path.join(self.split_folder, f"disp_occ_0/{idx:06d}_10.png")), "disp_occ"
+                        self.load_disp(os.path.join(self.split_folder, f"disp_occ_0/{idx:06d}_10.png"), "left"),
+                        "disp_occ",
                     )
                 if "flow_occ" in self.load:
                     sequence[10]["left"].append_flow(

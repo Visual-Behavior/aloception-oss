@@ -17,9 +17,9 @@ class FromDirectoryDataset(BaseDataset):
         dirs : List[str]
             List of directories paths to load images from. Default None.
         
-        interval : List[flaot]
+        slice : List[flaot]
             Use for restrciting the number of samples. Default [0, 1].
-                Example interval = [0.2, 0.4] will only load samples from 20%th to 40%th.
+                Example slice = [0.2, 0.4] will only load samples from 20%th to 40%th.
 
     Raises
     ------
@@ -68,7 +68,7 @@ class FromDirectoryDataset(BaseDataset):
         assert not self.sample, "Can not sample this dataset"
         assert dirs not in [None, [], {}], "List of directories not provided"
     
-        assert len(slice) == 2, "Slice arg should list of 2 elements"
+        assert len(slice) == 2, "Slice arg should be a list of 2 elements"
         assert slice[0] < slice[1], "Element at index 1 should be greater than elemnt at index 0."
         assert slice[0] >= 0 and slice[1] <=1, "Unvalid slice, values should be between 0 and 1"
 

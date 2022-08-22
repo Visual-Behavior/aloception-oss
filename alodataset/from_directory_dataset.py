@@ -116,8 +116,8 @@ class FromDirectoryDataset(BaseDataset):
     
     @staticmethod
     def _filter_img_path(path):
-        ends = [".png", ".jpg"]
-        return any([path.endswith(e) for e in ends])
+        ends = (".png", ".jpg")
+        return path.endswith(ends)
     
     @staticmethod
     def _load_frame(path):

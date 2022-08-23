@@ -4,7 +4,7 @@ import numpy as np
 from typing import List, Dict, Any
 
 from alodataset import BaseDataset, SplitMixin, Split
-from aloscene import Frame, Pose, CameraIntrinsic
+from aloscene import Frame, Pose, CameraIntrinsic, CameraExtrinsic
 
 
 def sequence_index(start, seq_size, skip):
@@ -181,9 +181,8 @@ class KittiOdometryDataset(BaseDataset, SplitMixin):
                     ).temporal()
                 )
 
-        frames: Dict[str, Frame] = {}
+        frames = {}
         frames["left"] = torch.cat(left, dim=0)
-        # time are incorrect
         frames["left"].timestamp = item["times"]
         frames["left"].baseline = self.seq_params["baseline"]
         frames["left"].append_cam_intrinsic(self.seq_params["left_intrinsic"])

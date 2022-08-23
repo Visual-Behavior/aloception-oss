@@ -206,12 +206,12 @@ class KittiStereoFlowSFlow2015(BaseDataset, SplitMixin):
                 if "disp_noc" in self.load:
                     sequence[11]["left"].append_disparity(
                         self.load_disp(os.path.join(self.split_folder, f"disp_noc_1/{idx:06d}_10.png"), "left"),
-                        "disp_noc",
+                        "warped_disp_noc",
                     )
                 if "disp_occ" in self.load:
                     sequence[11]["left"].append_disparity(
                         self.load_disp(os.path.join(self.split_folder, f"disp_occ_1/{idx:06d}_10.png"), "left"),
-                        "disp_occ",
+                        "warped_disp_occ",
                     )
             if index == 10:
                 if "disp_noc" in self.load:

@@ -58,10 +58,12 @@ class KittiOdometryDataset(BaseDataset, SplitMixin):
             self.seq_params["left_intrinsic"] = CameraIntrinsic(
                 np.c_[calib[f"K_cam{0 if grayscale else 2}"], np.zeros(3)]
             )
+            self.seq_params["left_extrinsic"] = CameraExtrinsic(calib[f"T_cam{0 if grayscale else 2}_rect"])
             if right_frame:
                 self.seq_params["right_intrinsic"] = CameraIntrinsic(
                     np.c_[calib[f"K_cam{1 if grayscale else 3}"], np.zeros(3)]
                 )
+                self.seq_params["right_extrinsic"] = CameraExtrinsic(calib[f"T_cam{1 if grayscale else 3}_rect"])
 
             with open(os.path.join(self.dataset_dir, "sequences", seq, "times.txt"), "r") as f:
                 times = [float(x) for x in f.readlines()]
@@ -186,6 +188,7 @@ class KittiOdometryDataset(BaseDataset, SplitMixin):
         frames["left"].timestamp = item["times"]
         frames["left"].baseline = self.seq_params["baseline"]
         frames["left"].append_cam_intrinsic(self.seq_params["left_intrinsic"])
+        frames["left"].append_cam_extrinsic(self.seq_params["left_extrinsic"])
         if poses:
             frames["left"].append_pose(poses)
 
@@ -194,6 +197,7 @@ class KittiOdometryDataset(BaseDataset, SplitMixin):
             frames["right"].timestamp = item["times"]
             frames["right"].baseline = self.seq_params["baseline"]
             frames["right"].append_cam_intrinsic(self.seq_params["right_intrinsic"])
+            frames["right"].append_cam_extrinsic(self.seq_params["right_extrinsic"])
 
         return frames
 
@@ -235,12 +239,19 @@ class KittiOdometryDataset(BaseDataset, SplitMixin):
         data["P_rect_30"] = P_rect_30
 
         # Compute the rectified extrinsics from cam0 to camN
+        T0 = np.eye(4)
+        T0[0, 3] = P_rect_00[0, 3] / P_rect_00[0, 0]
         T1 = np.eye(4)
         T1[0, 3] = P_rect_10[0, 3] / P_rect_10[0, 0]
         T2 = np.eye(4)
         T2[0, 3] = P_rect_20[0, 3] / P_rect_20[0, 0]
         T3 = np.eye(4)
         T3[0, 3] = P_rect_30[0, 3] / P_rect_30[0, 0]
+
+        data["T_cam0_rect"] = T0
+        data["T_cam1_rect"] = T1
+        data["T_cam2_rect"] = T2
+        data["T_cam3_rect"] = T3
 
         # Compute the velodyne to rectified camera coordinate transforms
         data["T_cam0_velo"] = np.reshape(filedata["Tr"], (3, 4))

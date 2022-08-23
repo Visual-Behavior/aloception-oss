@@ -48,6 +48,10 @@ class AugmentedTensor(torch.Tensor):
     def __init__(self, x, **kwargs):
         super().__init__()
 
+    @classmethod
+    def dummy(cls, size: tuple):
+        return cls(torch.ones(size))
+
     def drop_children(self):
         """Remove all children from this augmented tensor and return
         the removed children.

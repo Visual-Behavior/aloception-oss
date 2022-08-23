@@ -167,6 +167,20 @@ class KittiStereoFlow2012(BaseDataset, SplitMixin):
                     sequence[10]["left"].append_flow(
                         self.load_flow(os.path.join(self.split_folder, f"flow_noc/{idx:06d}_10.png")), "flow_noc"
                     )
+            else:
+                dummy_size = (2, sequence[index]["left"].HW[0], sequence[index]["left"].HW[1])
+                if "disp_noc" in self.load:
+                    sequence[index]["left"].append_disparity(Disparity.dummy(dummy_size), "disp_noc")
+                if "disp_occ" in self.load:
+                    sequence[index]["left"].append_disparity(Disparity.dummy(dummy_size), "disp_occ")
+                if "disp_refl_noc" in self.load:
+                    sequence[index]["left"].append_disparity(Disparity.dummy(dummy_size), "disp_refl_noc")
+                if "disp_refl_occ" in self.load:
+                    sequence[index]["left"].append_disparity(Disparity.dummy(dummy_size), "disp_refl_occ")
+                if "flow_occ" in self.load:
+                    sequence[index]["left"].append_flow(Flow.dummy(dummy_size), "flow_occ")
+                if "flow_noc" in self.load:
+                    sequence[index]["left"].append_flow(Flow.dummy(dummy_size), "flow_noc")
 
         return sequence
 
@@ -239,5 +253,7 @@ class KittiStereoFlow2012(BaseDataset, SplitMixin):
 
 
 if __name__ == "__main__":
-    dataset = KittiStereoFlow2012(grayscale=True)
-    print(dataset.getitem(0))
+    dataset = KittiStereoFlow2012(grayscale=True, sequence_start=9)
+    obj = dataset.getitem(0)
+    print(obj)
+    obj[9]["left"].get_view().render()

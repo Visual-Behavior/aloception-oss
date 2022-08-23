@@ -119,14 +119,14 @@ class KittiStereoFlowSFlow2015(BaseDataset, SplitMixin):
         size = frame.HW
 
         # Compute depth from disparity at time T
-        disparity = frame.disparity["disp_noc"]
+        disparity = frame.disparity["warped_disp_noc"]
         depth = disparity.as_depth(baseline=0.54, camera_intrinsic=frame.cam_intrinsic)
         depth.occlusion = disparity.mask.clone()
         depth.append_cam_extrinsic(frame.cam_extrinsic)
         frame.append_depth(depth)
 
         # Compute depth from disparity at time T+1
-        disparity = next_frame.disparity["disp_noc"]
+        disparity = next_frame.disparity["warped_disp_noc"]
         next_depth = disparity.as_depth(baseline=0.54, camera_intrinsic=next_frame.cam_intrinsic)
         next_depth.occlusion = disparity.mask.clone()
         next_depth.append_cam_extrinsic(next_frame.cam_extrinsic)
@@ -167,9 +167,9 @@ class KittiStereoFlowSFlow2015(BaseDataset, SplitMixin):
         """
         if self.sample:
             return BaseDataset.__getitem__(self, idx)
-        return self.getsequance(idx)
+        return self.getsequence(idx)
 
-    def getsequance(self, idx) -> Dict[int, Dict[str, Frame]]:
+    def getsequence(self, idx) -> Dict[int, Dict[str, Frame]]:
         """
         Load a sequence of frames from the dataset.
 
@@ -213,16 +213,16 @@ class KittiStereoFlowSFlow2015(BaseDataset, SplitMixin):
                         self.load_disp(os.path.join(self.split_folder, f"disp_occ_1/{idx:06d}_10.png"), "left"),
                         "warped_disp_occ",
                     )
-            if index == 10:
+            elif index == 10:
                 if "disp_noc" in self.load:
                     sequence[10]["left"].append_disparity(
                         self.load_disp(os.path.join(self.split_folder, f"disp_noc_0/{idx:06d}_10.png"), "left"),
-                        "disp_noc",
+                        "warped_disp_noc",
                     )
                 if "disp_occ" in self.load:
                     sequence[10]["left"].append_disparity(
                         self.load_disp(os.path.join(self.split_folder, f"disp_occ_0/{idx:06d}_10.png"), "left"),
-                        "disp_occ",
+                        "warped_disp_occ",
                     )
                 if "flow_occ" in self.load:
                     sequence[10]["left"].append_flow(
@@ -239,6 +239,19 @@ class KittiStereoFlowSFlow2015(BaseDataset, SplitMixin):
                 if "obj_map" in self.load:
                     for vehicule in self.load_obj_map(os.path.join(self.split_folder, f"obj_map/{idx:06d}_10.png")):
                         sequence[10]["left"].append_mask(vehicule[1], str(vehicule[0]))
+            else:
+                dummy_size = (2, sequence[10]["left"].H, sequence[10]["left"].W)
+                if "disp_noc" in self.load:
+                    sequence[index]["left"].append_disparity(Disparity.dummy(dummy_size), "disp_noc")
+                if "disp_occ" in self.load:
+                    sequence[index]["left"].append_disparity(Disparity.dummy(dummy_size), "disp_occ")
+                if "flow_occ" in self.load:
+                    sequence[index]["left"].append_flow(Flow.dummy(dummy_size), "flow_occ")
+                if "flow_noc" in self.load:
+                    sequence[index]["left"].append_flow(Flow.dummy(dummy_size), "flow_noc")
+                if "scene_flow" in self.load:
+                    scene_flow_size = (3, sequence[10]["left"].H, sequence[10]["left"].W)
+                    sequence[index]["left"].append_scene_flow(SceneFlow.dummy(scene_flow_size), "scene_flow")
 
         return sequence
 
@@ -378,5 +391,10 @@ class KittiStereoFlowSFlow2015(BaseDataset, SplitMixin):
 
 
 if __name__ == "__main__":
-    dataset = KittiStereoFlowSFlow2015()
-    print(dataset.getitem(0))
+    dataset = KittiStereoFlowSFlow2015(sequence_start=9)
+    obj = dataset.getitem(0)
+    print(obj)
+    # obj[10]["left"].cam_extrinsic = obj[10]["left"].cam_extrinsic + 8
+    # print(obj[11]["left"].cam_extrinsic)
+    # obj[10]["left"].get_view().render()
+    # print(Flow.dummy((2, 10, 10)))

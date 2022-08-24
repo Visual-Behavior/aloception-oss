@@ -3,6 +3,7 @@ import math
 import torchvision.transforms.functional as F
 from torchvision.transforms import InterpolationMode
 import torch
+from typing import Union
 
 from aloscene.renderer import View, Renderer
 from .augmented_tensor import AugmentedTensor
@@ -34,11 +35,11 @@ class SpatialAugmentedTensor(AugmentedTensor):
         cls,
         x,
         *args,
-        cam_intrinsic: CameraIntrinsic = None,
-        cam_extrinsic: CameraExtrinsic = None,
+        cam_intrinsic: Union[CameraIntrinsic, None] = None,
+        cam_extrinsic: Union[CameraExtrinsic, None] = None,
         # For stereo setups
-        camera_side: str = None,
-        baseline: float = None,
+        camera_side: Union[str, None] = None,
+        baseline: Union[float, None] = None,
         mask=None,
         projection="pinhole",
         distortion=1.0,
@@ -76,8 +77,9 @@ class SpatialAugmentedTensor(AugmentedTensor):
     def H(self):
         return self.shape[self.names.index("H")]
 
-    def append_mask(self, mask, name: str = None):
+    def append_mask(self, mask, name: Union[str, None] = None):
         """Attach a mask to the frame.
+        The value 1 mean invalid and 0 mean valid.
 
         Parameters
         ----------

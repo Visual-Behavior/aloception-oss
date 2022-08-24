@@ -65,8 +65,6 @@ class DataBatchStreamer:
         >>> s_dataStreamer = DataBatchStreamer(dataset=s_calib)
         >>> m_dataStreamer = DataBatchStreamer(dataset=m_calib)
     """
-    FTYPES = ["torch.Tensor", "ndarray", "aloscene.Frame"]
-
     def __init__(
             self,
             dataset=None,
@@ -76,7 +74,8 @@ class DataBatchStreamer:
             ):
         for sample in dataset[0]:
             if not isinstance(sample, (torch.Tensor, np.ndarray, Frame)):
-                raise TypeError(f"unknown sample type, expected samples to be instance of {' or '.join(self.FTYPES)} got {sample.__class__.__name__} instead")
+                ftypes = ["torch.Tensor", "ndarray", "aloscene.Frame"]
+                raise TypeError(f"unknown sample type, expected samples to be instance of {' or '.join(ftypes)} got {sample.__class__.__name__} instead")
 
         self.batch_idx = 0
         self.dataset = dataset
@@ -105,7 +104,8 @@ class DataBatchStreamer:
         elif isinstance(frame, np.ndarray):
             pass
         else:
-            raise TypeError(f"Unknown sample type, expected samples to be instance of {' or '.join(self.FTYPES)} got {frame.__class__.__name__}.")
+            ftypes = ["torch.Tensor", "ndarray", "aloscene.Frame"]
+            raise TypeError(f"Unknown sample type, expected samples to be instance of {' or '.join(ftypes)} got {frame.__class__.__name__}.")
         return frame
     
     def next_(self):
@@ -127,7 +127,7 @@ class DataBatchStreamer:
             return None
     
     def __len__(self):
-        return max_batch
+        return self.max_batch
     
 
 class BaseCalibrator:

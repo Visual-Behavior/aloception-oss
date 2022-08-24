@@ -59,18 +59,18 @@ class KittiStereoFlow2012(BaseDataset, SplitMixin):
         img = cv2.imread(disp_path, cv2.IMREAD_UNCHANGED)
         disp = img / 256.0
         disp = torch.as_tensor(disp[None, ...], dtype=torch.float32)
-        valid_mask = disp > 0
-        mask = Mask(valid_mask, names=("C", "H", "W"))
+        mask = disp <= 0
+        mask = Mask(mask, names=("C", "H", "W"))
         disp = Disparity(disp, names=("C", "H", "W"), mask=mask, camera_side=camera_side).signed()
         return disp
 
     def load_flow(self, flow_path: str):
         img = cv2.imread(flow_path, cv2.IMREAD_UNCHANGED)
-        valid_mask = img[..., 0] == 1
+        mask = img[..., 0] == 0
         flow = (img - 2**15) / 64.0
         flow = torch.as_tensor(flow[..., 1:], dtype=torch.float32).permute(2, 0, 1)
-        valid_mask = valid_mask.reshape((1, flow.shape[1], flow.shape[2]))
-        mask = Mask(valid_mask, names=("C", "H", "W"))
+        mask = mask.reshape((1, flow.shape[1], flow.shape[2]))
+        mask = Mask(mask, names=("C", "H", "W"))
         flow = Flow(flow, names=("C", "H", "W"), mask=mask)
         return flow
 
@@ -257,4 +257,4 @@ if __name__ == "__main__":
     dataset = KittiStereoFlow2012(grayscale=True, sequence_start=9)
     obj = dataset.getitem(0)
     print(obj)
-    obj[9]["left"].get_view().render()
+    obj[10]["left"].get_view().render()

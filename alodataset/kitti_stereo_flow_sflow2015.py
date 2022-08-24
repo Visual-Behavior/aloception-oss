@@ -64,18 +64,18 @@ class KittiStereoFlowSFlow2015(BaseDataset, SplitMixin):
         img = cv2.imread(disp_path, cv2.IMREAD_UNCHANGED)
         disp = img / 256.0
         disp = torch.as_tensor(disp[None, ...], dtype=torch.float32)
-        valid_mask = disp > 0
-        mask = Mask(valid_mask, names=("C", "H", "W"))
+        mask = disp <= 0
+        mask = Mask(mask, names=("C", "H", "W"))
         disp = Disparity(disp, names=("C", "H", "W"), mask=mask, camera_side=camera_side).signed()
         return disp
 
     def load_flow(self, flow_path: str):
         img = cv2.imread(flow_path, cv2.IMREAD_UNCHANGED)
-        valid_mask = img[..., 0] == 1
+        mask = img[..., 0] == 0
         flow = (img - 2**15) / 64.0
         flow = torch.as_tensor(flow[..., 1:], dtype=torch.float32).permute(2, 0, 1)
-        valid_mask = valid_mask.reshape((1, flow.shape[1], flow.shape[2]))
-        mask = Mask(valid_mask, names=("C", "H", "W"))
+        mask = mask.reshape((1, flow.shape[1], flow.shape[2]))
+        mask = Mask(mask, names=("C", "H", "W"))
         flow = Flow(flow, names=("C", "H", "W"), mask=mask)
         return flow
 
@@ -85,7 +85,7 @@ class KittiStereoFlowSFlow2015(BaseDataset, SplitMixin):
 
         # For each unique pixel value correspond a vehicule (execpt for 0)
         for px_value in np.unique(img)[1:]:
-            result.append((px_value, Mask(np.array([img == px_value]), names=("C", "H", "W"))))
+            result.append((px_value, Mask(np.array([img != px_value]), names=("C", "H", "W"))))
         return result
 
     def extrinsic(self, idx: int) -> CameraExtrinsic:
@@ -145,18 +145,17 @@ class KittiStereoFlowSFlow2015(BaseDataset, SplitMixin):
         # Compute the scene flow from the points cloud
         mask = mask.any(axis=1)
         scene_flow = end_points - start_points
-        scene_flow = scene_flow.reshape((size[0], size[1], 3))
+        scene_flow = scene_flow.transpose(1, 0).reshape((3, size[0], size[1]))
 
-        # Not sure it is really usefull but here for security
+        # Not sure if it is really usefull but here for security
         start_occlusion = depth.occlusion.cpu().numpy().astype(bool)
         end_occlusion = next_depth.occlusion.cpu().numpy().astype(bool)
 
         # Fusion the occlusion mask
         mask2 = end_occlusion | start_occlusion
-        mask = mask.reshape((size[0], size[1]))
-        mask2 = mask2.reshape((size[0], size[1]))
+        mask = mask.reshape((1, size[0], size[1]))
         mask = mask2 | mask
-        mask = Mask(mask, names=("H", "W"))
+        mask = Mask(mask, names=("C", "H", "W"))
 
         return SceneFlow(scene_flow, occlusion=mask)
 
@@ -397,7 +396,3 @@ if __name__ == "__main__":
     obj = dataset.getitem(0)
     print(obj)
     obj[10]["left"].get_view().render()
-    # obj[10]["left"].cam_extrinsic = obj[10]["left"].cam_extrinsic + 8
-    # print(obj[11]["left"].cam_extrinsic)
-    # obj[10]["left"].get_view().render()
-    # print(Flow.dummy((2, 10, 10)))

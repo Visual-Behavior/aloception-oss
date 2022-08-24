@@ -242,16 +242,18 @@ class KittiStereoFlowSFlow2015(BaseDataset, SplitMixin):
             else:
                 dummy_size = (2, sequence[10]["left"].H, sequence[10]["left"].W)
                 if "disp_noc" in self.load:
-                    sequence[index]["left"].append_disparity(Disparity.dummy(dummy_size), "disp_noc")
+                    sequence[index]["left"].append_disparity(Disparity.dummy(dummy_size, ("C", "H", "W")), "disp_noc")
                 if "disp_occ" in self.load:
-                    sequence[index]["left"].append_disparity(Disparity.dummy(dummy_size), "disp_occ")
+                    sequence[index]["left"].append_disparity(Disparity.dummy(dummy_size, ("C", "H", "W")), "disp_occ")
                 if "flow_occ" in self.load:
-                    sequence[index]["left"].append_flow(Flow.dummy(dummy_size), "flow_occ")
+                    sequence[index]["left"].append_flow(Flow.dummy(dummy_size, ("C", "H", "W")), "flow_occ")
                 if "flow_noc" in self.load:
-                    sequence[index]["left"].append_flow(Flow.dummy(dummy_size), "flow_noc")
+                    sequence[index]["left"].append_flow(Flow.dummy(dummy_size, ("C", "H", "W")), "flow_noc")
                 if "scene_flow" in self.load:
                     scene_flow_size = (3, sequence[10]["left"].H, sequence[10]["left"].W)
-                    sequence[index]["left"].append_scene_flow(SceneFlow.dummy(scene_flow_size), "scene_flow")
+                    sequence[index]["left"].append_scene_flow(
+                        SceneFlow.dummy(scene_flow_size, ("C", "H", "W")), "scene_flow"
+                    )
 
         return sequence
 
@@ -391,9 +393,10 @@ class KittiStereoFlowSFlow2015(BaseDataset, SplitMixin):
 
 
 if __name__ == "__main__":
-    dataset = KittiStereoFlowSFlow2015(sequence_start=9)
+    dataset = KittiStereoFlowSFlow2015(sequence_start=10)
     obj = dataset.getitem(0)
     print(obj)
+    obj[10]["left"].get_view().render()
     # obj[10]["left"].cam_extrinsic = obj[10]["left"].cam_extrinsic + 8
     # print(obj[11]["left"].cam_extrinsic)
     # obj[10]["left"].get_view().render()

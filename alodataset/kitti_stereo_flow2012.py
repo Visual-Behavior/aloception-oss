@@ -169,18 +169,19 @@ class KittiStereoFlow2012(BaseDataset, SplitMixin):
                     )
             else:
                 dummy_size = (2, sequence[index]["left"].HW[0], sequence[index]["left"].HW[1])
+                dummy_names = ("C", "H", "W")
                 if "disp_noc" in self.load:
-                    sequence[index]["left"].append_disparity(Disparity.dummy(dummy_size), "disp_noc")
+                    sequence[index]["left"].append_disparity(Disparity.dummy(dummy_size, dummy_names), "disp_noc")
                 if "disp_occ" in self.load:
-                    sequence[index]["left"].append_disparity(Disparity.dummy(dummy_size), "disp_occ")
+                    sequence[index]["left"].append_disparity(Disparity.dummy(dummy_size, dummy_names), "disp_occ")
                 if "disp_refl_noc" in self.load:
-                    sequence[index]["left"].append_disparity(Disparity.dummy(dummy_size), "disp_refl_noc")
+                    sequence[index]["left"].append_disparity(Disparity.dummy(dummy_size, dummy_names), "disp_refl_noc")
                 if "disp_refl_occ" in self.load:
-                    sequence[index]["left"].append_disparity(Disparity.dummy(dummy_size), "disp_refl_occ")
+                    sequence[index]["left"].append_disparity(Disparity.dummy(dummy_size, dummy_names), "disp_refl_occ")
                 if "flow_occ" in self.load:
-                    sequence[index]["left"].append_flow(Flow.dummy(dummy_size), "flow_occ")
+                    sequence[index]["left"].append_flow(Flow.dummy(dummy_size, dummy_names), "flow_occ")
                 if "flow_noc" in self.load:
-                    sequence[index]["left"].append_flow(Flow.dummy(dummy_size), "flow_noc")
+                    sequence[index]["left"].append_flow(Flow.dummy(dummy_size, dummy_names), "flow_noc")
 
         return sequence
 

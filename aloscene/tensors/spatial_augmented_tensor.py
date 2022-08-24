@@ -65,6 +65,16 @@ class SpatialAugmentedTensor(AugmentedTensor):
     def __init__(self, x, *args, **kwargs):
         super().__init__(x)
 
+    @classmethod
+    def dummy(cls, size: tuple, names: tuple):
+        dummy_class = cls(torch.ones(size))
+        mask_size = list(size)
+        if 'C' in names:
+            mask_size[names.index('C')] = 1
+        mask_size = tuple(mask_size)
+        dummy_class.append_mask(aloscene.Mask(torch.ones(mask_size), names=names))
+        return dummy_class
+
     @property
     def HW(self):
         return (self.H, self.W)

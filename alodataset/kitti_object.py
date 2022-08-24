@@ -1,0 +1,147 @@
+import os
+import torch
+import numpy as np
+
+from alodataset import BaseDataset, Split, SplitMixin
+from aloscene import Frame, BoundingBoxes2D, Labels, BoundingBoxes3D
+from aloscene.camera_calib import CameraIntrinsic, CameraExtrinsic
+
+LABELS = ["Car", "Van", "Truck", "Pedestrian", "Person_sitting", "Cyclist", "Tram", "Misc", "DontCare"]
+
+
+class KittiObjectDataset(BaseDataset, SplitMixin):
+    SPLIT_FOLDERS = {Split.TRAIN: "training", Split.TEST: "testing"}
+
+    def __init__(self, name="kitti_object", right_frame=False, **kwargs):
+        super().__init__(name=name, **kwargs)
+
+        self.split_folder = os.path.join(self.dataset_dir, self.get_split_folder())
+        left_img_folder = os.path.join(self.split_folder, "image_2")
+        n_samples = len(os.listdir(left_img_folder))
+
+        self.items = {}
+        for idx in range(n_samples):
+            self.items[idx] = {
+                "left": os.path.join(self.split_folder, f"image_2/{idx:06d}.png"),
+                "right": os.path.join(self.split_folder, f"image_3/{idx:06d}.png") if right_frame else None,
+                "label": os.path.join(self.split_folder, f"label_2/{idx:06d}.txt"),
+                "calib": os.path.join(self.split_folder, f"calib/{idx:06d}.txt"),
+            }
+
+    def __len__(self):
+        return len(self.items)
+
+    def getitem(self, idx):
+        item = self.items[idx]
+        frames = {}
+        frames["right"] = Frame(item["right"]) if item["right"] is not None else None
+        frames["left"] = Frame(item["left"])
+        size = frames["left"].HW
+        calib = self._load_calib(item["calib"])
+        frames["left"].append_cam_intrinsic(CameraIntrinsic(np.c_[calib["K_cam2"], np.zeros(3)]))
+        frames["left"].append_cam_extrinsic(CameraExtrinsic(calib["T_cam2_rect"]))
+
+        # Try to calculate the boxes 3d of all objects
+        boxes2d = []
+        boxes3d = []
+        labels = []
+        with open(item["label"], "r") as f:
+            frame_info = f.readlines()
+
+            for line in frame_info:
+                line = line.split()
+                x, y, w, h = float(line[4]), float(line[5]), float(line[6]), float(line[7])
+                boxes2d.append([x, y, w, h])
+                labels.append(LABELS.index(line[0]))
+                boxes3d.append(
+                    [
+                        float(line[11]),
+                        float(line[12]) - float(line[8]) / 2,
+                        float(line[13]),
+                        float(line[9]),
+                        float(line[8]),
+                        float(line[10]),
+                        float(line[14]) + np.pi / 2,
+                    ]
+                )
+
+        labels = Labels(labels, labels_names=["boxes"])
+
+        bounding_box = BoundingBoxes2D(boxes2d, boxes_format="xyxy", absolute=True, frame_size=size, labels=labels)
+        # boxes3d = [[0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.5]]
+        boxe3d = BoundingBoxes3D(boxes3d)  # maybe extrinsic ?
+        frames["left"].append_boxes2d(bounding_box)
+        frames["left"].append_boxes3d(boxe3d, name=str(idx))
+
+        return frames
+
+    # https://github.com/utiasSTARS/pykitti/tree/master
+    def read_calib_file(self, filepath):
+        """Read in a calibration file and parse into a dictionary."""
+        data = {}
+
+        with open(filepath, "r") as f:
+            for line in f.readlines():
+                if line == "\n":
+                    continue
+                key, value = line.split(":", 1)
+                # The only non-float values in these files are dates, which
+                # we don't care about anyway
+                try:
+                    data[key] = np.array([float(x) for x in value.split()])
+                except ValueError:
+                    pass
+
+        return data
+
+    def _load_calib(self, calib_filepath):
+        """Load and compute intrinsic and extrinsic calibration parameters."""
+        # We'll build the calibration parameters as a dictionary, then
+        # convert it to a namedtuple to prevent it from being modified later
+        data = {}
+
+        # Load the calibration file
+        filedata = self.read_calib_file(calib_filepath)
+
+        # Create 3x4 projection matrices
+        P_rect_00 = np.reshape(filedata["P0"], (3, 4))
+        P_rect_10 = np.reshape(filedata["P1"], (3, 4))
+        P_rect_20 = np.reshape(filedata["P2"], (3, 4))
+        P_rect_30 = np.reshape(filedata["P3"], (3, 4))
+
+        data["P_rect_00"] = P_rect_00
+        data["P_rect_10"] = P_rect_10
+        data["P_rect_20"] = P_rect_20
+        data["P_rect_30"] = P_rect_30
+
+        # Compute the rectified extrinsics from cam0 to camN
+        T0 = np.eye(4)
+        T0[0, 3] = P_rect_00[0, 3] / P_rect_00[0, 0]
+        T1 = np.eye(4)
+        T1[0, 3] = P_rect_10[0, 3] / P_rect_10[0, 0]
+        T2 = np.eye(4)
+        T2[0, 3] = P_rect_20[0, 3] / P_rect_20[0, 0]
+        T3 = np.eye(4)
+        T3[0, 3] = P_rect_30[0, 3] / P_rect_30[0, 0]
+
+        data["T_cam0_rect"] = T0
+        data["T_cam1_rect"] = T1
+        data["T_cam2_rect"] = T2
+        data["T_cam3_rect"] = T3
+
+        # Compute the camera intrinsics
+        data["K_cam0"] = P_rect_00[0:3, 0:3]
+        data["K_cam1"] = P_rect_10[0:3, 0:3]
+        data["K_cam2"] = P_rect_20[0:3, 0:3]
+        data["K_cam3"] = P_rect_30[0:3, 0:3]
+
+        return data
+
+
+if __name__ == "__main__":
+    from random import randint
+
+    dataset = KittiObjectDataset()
+    obj = dataset.getitem(randint(0, len(dataset)))
+    print(obj)
+    obj["left"].get_view().render()

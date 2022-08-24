@@ -131,7 +131,7 @@ class SceneFlow(aloscene.tensors.SpatialAugmentedTensor):
             names=("B", "C", "H", "W") if has_batch else ("C", "H", "W"),
             occlusion=None
             if occlusion is None
-            else Mask(occlusion, names=("B", "H", "W") if has_batch else ("H", "W")),
+            else Mask(occlusion, names=("B", "C", "H", "W") if has_batch else ("C", "H", "W")),
         )
         return tensor
 

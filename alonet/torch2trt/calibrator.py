@@ -3,8 +3,16 @@ from aloscene.frame import Frame
 import os
 import torch
 import numpy as np
-import tensorrt as trt
-import pycuda.driver as cuda
+
+try:
+    import tensorrt as trt
+    import pycuda.driver as cuda
+    prod_package_error = None
+except Exception as e:
+    trt = None
+    cuda = None
+    prod_package_error = e
+    pass
 
 
 class DataBatchStreamer:
@@ -74,6 +82,7 @@ class DataBatchStreamer:
             limit_batches=None,
             **kwargs,
             ):
+        if prod_package_error is not None: raise prod_package_error
         for sample in dataset[0]:
             if not isinstance(sample, (torch.Tensor, np.ndarray, Frame)):
                 raise TypeError(f"unknown sample type, expected samples to be instance of {' or '.join(self.FTYPES)} got {sample.__class__.__name__} instead")
@@ -195,45 +204,46 @@ class BaseCalibrator:
             d.free()
 
 
-class MinMaxCalibrator(BaseCalibrator, trt.IInt8MinMaxCalibrator):
-    def __init__(
-            self,
-            data_streamer,
-            cache_file,
-            **kwargs,
-        ):
-        trt.IInt8MinMaxCalibrator.__init__(self)
-        super(MinMaxCalibrator, self).__init__(data_streamer=data_streamer, cache_file=cache_file, **kwargs)
+if trt is not None:
+    class MinMaxCalibrator(BaseCalibrator, trt.IInt8MinMaxCalibrator):
+        def __init__(
+                self,
+                data_streamer,
+                cache_file,
+                **kwargs,
+            ):
+            trt.IInt8MinMaxCalibrator.__init__(self)
+            super(MinMaxCalibrator, self).__init__(data_streamer=data_streamer, cache_file=cache_file, **kwargs)
 
 
-class LegacyCalibrator(BaseCalibrator, trt.IInt8LegacyCalibrator):
-    def __init__(
-            self,
-            data_streamer,
-            cache_file,
-            **kwargs,
-        ):
-        trt.IInt8LegacyCalibrator.__init__(self)
-        super(LegacyCalibrator, self).__init__(data_streamer=data_streamer, cache_file=cache_file, **kwargs)
+    class LegacyCalibrator(BaseCalibrator, trt.IInt8LegacyCalibrator):
+        def __init__(
+                self,
+                data_streamer,
+                cache_file,
+                **kwargs,
+            ):
+            trt.IInt8LegacyCalibrator.__init__(self)
+            super(LegacyCalibrator, self).__init__(data_streamer=data_streamer, cache_file=cache_file, **kwargs)
 
 
-class EntropyCalibrator(BaseCalibrator, trt.IInt8EntropyCalibrator):
-    def __init__(
-            self,
-            data_streamer,
-            cache_file,
-            **kwargs,
-        ):
-        trt.IInt8EntropyCalibrator.__init__(self)
-        super(EntropyCalibrator, self).__init__(data_streamer=data_streamer, cache_file=cache_file, **kwargs)
+    class EntropyCalibrator(BaseCalibrator, trt.IInt8EntropyCalibrator):
+        def __init__(
+                self,
+                data_streamer,
+                cache_file,
+                **kwargs,
+            ):
+            trt.IInt8EntropyCalibrator.__init__(self)
+            super(EntropyCalibrator, self).__init__(data_streamer=data_streamer, cache_file=cache_file, **kwargs)
 
 
-class EntropyCalibrator2(BaseCalibrator, trt.IInt8EntropyCalibrator2):
-    def __init__(
-            self,
-            data_streamer,
-            cache_file,
-            **kwargs,
-        ):
-        trt.IInt8EntropyCalibrator2.__init__(self)
-        super(EntropyCalibrator2, self).__init__(data_streamer=data_streamer, cache_file=cache_file, **kwargs)
+    class EntropyCalibrator2(BaseCalibrator, trt.IInt8EntropyCalibrator2):
+        def __init__(
+                self,
+                data_streamer,
+                cache_file,
+                **kwargs,
+            ):
+            trt.IInt8EntropyCalibrator2.__init__(self)
+            super(EntropyCalibrator2, self).__init__(data_streamer=data_streamer, cache_file=cache_file, **kwargs)

@@ -4,6 +4,8 @@ from aloscene.io.flow import load_scene_flow
 from typing import Union
 import torch
 import torch.nn.functional as F
+from aloscene.renderer import View
+from aloscene.utils.flow_utils import flow_to_color
 
 
 class SceneFlow(aloscene.tensors.SpatialAugmentedTensor):
@@ -29,6 +31,13 @@ class SceneFlow(aloscene.tensors.SpatialAugmentedTensor):
 
     def __init__(self, x, *args, **kwargs):
         super().__init__(x)
+
+    def __get_view__(self, clip_flow=None, convert_to_bgr=False, magnitude_max=None):
+        assert all(dim not in self.names for dim in ["B", "T"]), "flow should not have batch or time dimension"
+        flow = self.rename(None).squeeze().permute([1, 2, 0]).detach().cpu().contiguous().numpy()[:, :, 0:2]
+        assert flow.ndim == 3 and flow.shape[-1] == 2, f"wrong flow shape:{flow.shape}"
+        flow_color = flow_to_color(flow, clip_flow, convert_to_bgr, magnitude_max) / 255
+        return View(flow_color)
 
     @classmethod
     def from_optical_flow(

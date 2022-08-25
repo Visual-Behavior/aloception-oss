@@ -25,7 +25,9 @@ class KittiObjectDataset(BaseDataset, SplitMixin):
             self.items[idx] = {
                 "left": os.path.join(self.split_folder, f"image_2/{idx:06d}.png"),
                 "right": os.path.join(self.split_folder, f"image_3/{idx:06d}.png") if right_frame else None,
-                "label": os.path.join(self.split_folder, f"label_2/{idx:06d}.txt"),
+                "label": os.path.join(self.split_folder, f"label_2/{idx:06d}.txt")
+                if self.split == Split.TRAIN
+                else None,
                 "calib": os.path.join(self.split_folder, f"calib/{idx:06d}.txt"),
                 "left_context_1": os.path.join(self.split_folder, f"prev_2/{idx:06d}_01.png")
                 if context_images >= 1
@@ -64,25 +66,26 @@ class KittiObjectDataset(BaseDataset, SplitMixin):
         boxes2d = []
         boxes3d = []
         labels = []
-        with open(item["label"], "r") as f:
-            frame_info = f.readlines()
+        if item["label"] is not None:
+            with open(item["label"], "r") as f:
+                frame_info = f.readlines()
 
-            for line in frame_info:
-                line = line.split()
-                x, y, w, h = float(line[4]), float(line[5]), float(line[6]), float(line[7])
-                boxes2d.append([x, y, w, h])
-                labels.append(LABELS.index(line[0]))
-                boxes3d.append(
-                    [
-                        float(line[11]),
-                        float(line[12]) - float(line[8]) / 2,
-                        float(line[13]),
-                        float(line[9]),
-                        float(line[8]),
-                        float(line[10]),
-                        float(line[14]) + np.pi / 2,
-                    ]
-                )
+                for line in frame_info:
+                    line = line.split()
+                    x, y, w, h = float(line[4]), float(line[5]), float(line[6]), float(line[7])
+                    boxes2d.append([x, y, w, h])
+                    labels.append(LABELS.index(line[0]))
+                    boxes3d.append(
+                        [
+                            float(line[11]),
+                            float(line[12]) - float(line[8]) / 2,
+                            float(line[13]),
+                            float(line[9]),
+                            float(line[8]),
+                            float(line[10]),
+                            float(line[14]) + np.pi / 2,
+                        ]
+                    )
 
         labels = Labels(labels, labels_names=["boxes"])
 

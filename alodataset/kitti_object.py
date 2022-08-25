@@ -1,5 +1,4 @@
 import os
-import torch
 import numpy as np
 
 from alodataset import BaseDataset, Split, SplitMixin
@@ -12,8 +11,10 @@ LABELS = ["Car", "Van", "Truck", "Pedestrian", "Person_sitting", "Cyclist", "Tra
 class KittiObjectDataset(BaseDataset, SplitMixin):
     SPLIT_FOLDERS = {Split.TRAIN: "training", Split.TEST: "testing"}
 
-    def __init__(self, name="kitti_object", right_frame=False, **kwargs):
+    def __init__(self, name="kitti_object", right_frame=False, context_images=3, **kwargs):
         super().__init__(name=name, **kwargs)
+
+        assert context_images >= 0 and context_images <= 3, "You can only get 3 frames before the main frame"
 
         self.split_folder = os.path.join(self.dataset_dir, self.get_split_folder())
         left_img_folder = os.path.join(self.split_folder, "image_2")
@@ -26,6 +27,24 @@ class KittiObjectDataset(BaseDataset, SplitMixin):
                 "right": os.path.join(self.split_folder, f"image_3/{idx:06d}.png") if right_frame else None,
                 "label": os.path.join(self.split_folder, f"label_2/{idx:06d}.txt"),
                 "calib": os.path.join(self.split_folder, f"calib/{idx:06d}.txt"),
+                "left_context_1": os.path.join(self.split_folder, f"prev_2/{idx:06d}_01.png")
+                if context_images >= 1
+                else None,
+                "left_context_2": os.path.join(self.split_folder, f"prev_2/{idx:06d}_02.png")
+                if context_images >= 2
+                else None,
+                "left_context_3": os.path.join(self.split_folder, f"prev_2/{idx:06d}_03.png")
+                if context_images >= 3
+                else None,
+                "right_context_1": os.path.join(self.split_folder, f"prev_3/{idx:06d}_01.png")
+                if context_images >= 1 and right_frame
+                else None,
+                "right_context_2": os.path.join(self.split_folder, f"prev_3/{idx:06d}_02.png")
+                if context_images >= 2 and right_frame
+                else None,
+                "right_context_3": os.path.join(self.split_folder, f"prev_3/{idx:06d}_03.png")
+                if context_images >= 3 and right_frame
+                else None,
             }
 
     def __len__(self):
@@ -72,6 +91,22 @@ class KittiObjectDataset(BaseDataset, SplitMixin):
         boxe3d = BoundingBoxes3D(boxes3d)  # maybe extrinsic ?
         frames["left"].append_boxes2d(bounding_box)
         frames["left"].append_boxes3d(boxe3d, name=str(idx))
+
+        context_frames = [
+            "right",
+            "left_context_1",
+            "left_context_2",
+            "left_context_3",
+            "right_context_1",
+            "right_context_2",
+            "right_context_3",
+        ]
+        for context_frame in context_frames:
+            if item[context_frame] is not None:
+                frames[context_frame] = Frame(item[context_frame])
+                side = 2 if context_frame.startswith("left") else 3
+                frames[context_frame].append_cam_intrinsic(CameraIntrinsic(np.c_[calib[f"K_cam{side}"], np.zeros(3)]))
+                frames[context_frame].append_cam_extrinsic(CameraExtrinsic(calib[f"T_cam{side}_rect"]))
 
         return frames
 
@@ -141,7 +176,7 @@ class KittiObjectDataset(BaseDataset, SplitMixin):
 if __name__ == "__main__":
     from random import randint
 
-    dataset = KittiObjectDataset()
+    dataset = KittiObjectDataset(right_frame=True, context_images=2)
     obj = dataset.getitem(randint(0, len(dataset)))
     print(obj)
     obj["left"].get_view().render()

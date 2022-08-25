@@ -78,11 +78,17 @@ class KittiObjectDataset(BaseDataset, SplitMixin):
                     boxes3d.append(
                         [
                             float(line[11]),
+                            # The center of the 3d box on Kitty is the center of the bottom face. We need to
+                            # move it up by half the height of the box to correspond to the center of the box.
+                            # Check kitti_tracking devkit for more info.
                             float(line[12]) - float(line[8]) / 2,
                             float(line[13]),
                             float(line[9]),
                             float(line[8]),
                             float(line[10]),
+                            # The rotation of the 3d box on Kitty is based on the X axis. We need to rotate it
+                            # to have same the rotation wanted by BoundingBoxes3D.
+                            # Check kitti_object devkit for more info.
                             float(line[14]) + np.pi / 2,
                         ]
                     )
@@ -179,7 +185,7 @@ class KittiObjectDataset(BaseDataset, SplitMixin):
 if __name__ == "__main__":
     from random import randint
 
-    dataset = KittiObjectDataset(right_frame=True, context_images=2)
+    dataset = KittiObjectDataset(right_frame=False, context_images=0)
     obj = dataset.getitem(randint(0, len(dataset)))
     print(obj)
     obj["left"].get_view().render()

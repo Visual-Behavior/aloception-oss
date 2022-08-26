@@ -62,7 +62,6 @@ class KittiObjectDataset(BaseDataset, SplitMixin):
         frames["left"].append_cam_intrinsic(CameraIntrinsic(np.c_[calib["K_cam2"], np.zeros(3)]))
         frames["left"].append_cam_extrinsic(CameraExtrinsic(calib["T_cam2_rect"]))
 
-        # Try to calculate the boxes 3d of all objects
         boxes2d = []
         boxes3d = []
         labels = []
@@ -96,8 +95,7 @@ class KittiObjectDataset(BaseDataset, SplitMixin):
         labels = Labels(labels, labels_names=["boxes"])
 
         bounding_box = BoundingBoxes2D(boxes2d, boxes_format="xyxy", absolute=True, frame_size=size, labels=labels)
-        # boxes3d = [[0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.5]]
-        boxe3d = BoundingBoxes3D(boxes3d)  # maybe extrinsic ?
+        boxe3d = BoundingBoxes3D(boxes3d)
         frames["left"].append_boxes2d(bounding_box)
         frames["left"].append_boxes3d(boxe3d, name=str(idx))
 

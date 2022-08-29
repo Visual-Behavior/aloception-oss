@@ -3,7 +3,7 @@ import numpy as np
 import cv2
 
 from alodataset import BaseDataset, Split, SplitMixin
-from aloscene import Frame, Mask, Labels
+from aloscene import Frame, Mask
 from aloscene.camera_calib import CameraIntrinsic, CameraExtrinsic
 
 LABELS = ["Car", "Van", "Truck", "Pedestrian", "Person_sitting", "Cyclist", "Tram", "Misc", "DontCare"]
@@ -64,10 +64,8 @@ class KittiRoadDataset(BaseDataset, SplitMixin):
             color_codes = [[0, 255], [2, 255], [2, 0]]
             # Cv2 loads images in BGR format
             ground_truth = cv2.imread(item["ground_truth"], cv2.IMREAD_UNCHANGED)
-            print(ground_truth.shape, ground_truth)
             for name, color_code in zip(names, color_codes):
                 area = ~np.array(ground_truth[:, :, color_code[0]] == color_code[1])
-                print(area.shape, area)
                 area = np.expand_dims(area, axis=0)
                 area = Mask(area, names=("C", "H", "W"))
                 frames["left"].append_mask(area, name=name)

@@ -54,13 +54,21 @@ class KittiObjectDataset(BaseDataset, SplitMixin):
 
     def getitem(self, idx):
         item = self.items[idx]
-        frames = {}
-        frames["right"] = Frame(item["right"]) if item["right"] is not None else None
-        frames["left"] = Frame(item["left"])
-        size = frames["left"].HW
         calib = self._load_calib(item["calib"])
+        frames = {}
+
+        if item["right"] is not None:
+            frames["right"] = Frame(item["right"])
+            frames["right"].append_cam_intrinsic(CameraIntrinsic(np.c_[calib["K_cam3"], np.zeros(3)]))
+            frames["right"].append_cam_extrinsic(CameraExtrinsic(calib["T_cam3_rect"]))
+            frames["right"].baseline = calib["b_rgb"]
+
+        frames["left"] = Frame(item["left"])
+        frames["left"].baseline = calib["b_rgb"]
         frames["left"].append_cam_intrinsic(CameraIntrinsic(np.c_[calib["K_cam2"], np.zeros(3)]))
         frames["left"].append_cam_extrinsic(CameraExtrinsic(calib["T_cam2_rect"]))
+
+        size = frames["left"].HW
 
         boxes2d = []
         boxes3d = []
@@ -171,11 +179,30 @@ class KittiObjectDataset(BaseDataset, SplitMixin):
         data["T_cam2_rect"] = T2
         data["T_cam3_rect"] = T3
 
+        # Compute the velodyne to rectified camera coordinate transforms
+        data['T_cam0_velo'] = np.reshape(filedata['Tr_velo_to_cam'], (3, 4))
+        data['T_cam0_velo'] = np.vstack([data['T_cam0_velo'], [0, 0, 0, 1]])
+        data['T_cam1_velo'] = T1.dot(data['T_cam0_velo'])
+        data['T_cam2_velo'] = T2.dot(data['T_cam0_velo'])
+        data['T_cam3_velo'] = T3.dot(data['T_cam0_velo'])
+
         # Compute the camera intrinsics
         data["K_cam0"] = P_rect_00[0:3, 0:3]
         data["K_cam1"] = P_rect_10[0:3, 0:3]
         data["K_cam2"] = P_rect_20[0:3, 0:3]
         data["K_cam3"] = P_rect_30[0:3, 0:3]
+
+        # Compute the stereo baselines in meters by projecting the origin of
+        # each camera frame into the velodyne frame and computing the distances
+        # between them
+        p_cam = np.array([0, 0, 0, 1])
+        p_velo0 = np.linalg.inv(data['T_cam0_velo']).dot(p_cam)
+        p_velo1 = np.linalg.inv(data['T_cam1_velo']).dot(p_cam)
+        p_velo2 = np.linalg.inv(data['T_cam2_velo']).dot(p_cam)
+        p_velo3 = np.linalg.inv(data['T_cam3_velo']).dot(p_cam)
+
+        data['b_gray'] = np.linalg.norm(p_velo1 - p_velo0)  # gray baseline
+        data['b_rgb'] = np.linalg.norm(p_velo3 - p_velo2)   # rgb baseline
 
         return data
 

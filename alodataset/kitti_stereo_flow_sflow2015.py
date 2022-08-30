@@ -19,7 +19,7 @@ class KittiStereoFlowSFlow2015(BaseDataset, SplitMixin):
         sequence_end=11,
         grayscale=False,
         load: list = [
-            "right_frame",
+            "right",
             "disp_noc",
             "disp_occ",
             "flow_occ",
@@ -47,6 +47,7 @@ class KittiStereoFlowSFlow2015(BaseDataset, SplitMixin):
             assert sequence_start <= 10 and sequence_end >= 10, "Flow is not available for this frame range"
             assert grayscale is False, "Flow is only available in RGB"
         if "scene_flow" in load:
+            assert "disp_noc" in load, "Scene flow need 'disp_noc'"
             assert sequence_start <= 10 and sequence_end >= 11, "Scene flow is not available for this frame range"
             assert grayscale is False, "Scene flow is only available in RGB"
 
@@ -123,14 +124,14 @@ class KittiStereoFlowSFlow2015(BaseDataset, SplitMixin):
         depth = disparity.as_depth(baseline=0.54, camera_intrinsic=frame.cam_intrinsic)
         depth.occlusion = disparity.mask.clone()
         depth.append_cam_extrinsic(frame.cam_extrinsic)
-        frame.append_depth(depth)
+        # frame.append_depth(depth)
 
         # Compute depth from disparity at time T+1
         disparity = next_frame.disparity["warped_disp_noc"]
         next_depth = disparity.as_depth(baseline=0.54, camera_intrinsic=next_frame.cam_intrinsic)
         next_depth.occlusion = disparity.mask.clone()
         next_depth.append_cam_extrinsic(next_frame.cam_extrinsic)
-        next_frame.append_depth(next_depth)
+        # next_frame.append_depth(next_depth)
 
         # Compute the points cloud from the depth at time T
         start_points = depth.as_points3d(camera_intrinsic=frame.cam_intrinsic).cpu().numpy()
@@ -143,9 +144,9 @@ class KittiStereoFlowSFlow2015(BaseDataset, SplitMixin):
         np.nan_to_num(end_points, copy=False, nan=-0.1, posinf=-0.1, neginf=-0.1)
 
         # Compute the scene flow from the points cloud
-        mask = mask.any(axis=1)
+        mask = mask.any(axis=2)
         scene_flow = end_points - start_points
-        scene_flow = scene_flow.transpose(1, 0).reshape((3, size[0], size[1]))
+        scene_flow = scene_flow.transpose(0, 2, 1).reshape((1, 3, size[0], size[1]))
 
         # Not sure if it is really usefull but here for security
         start_occlusion = depth.occlusion.cpu().numpy().astype(bool)
@@ -155,9 +156,9 @@ class KittiStereoFlowSFlow2015(BaseDataset, SplitMixin):
         mask2 = end_occlusion | start_occlusion
         mask = mask.reshape((1, size[0], size[1]))
         mask = mask2 | mask
-        mask = Mask(mask, names=("C", "H", "W"))
+        mask = Mask(mask, names=("T", "C", "H", "W"))
 
-        return SceneFlow(scene_flow, occlusion=mask)
+        return SceneFlow(scene_flow, occlusion=mask, names=("T", "C", "H", "W"))
 
     def getitem(self, idx):
         """
@@ -186,6 +187,13 @@ class KittiStereoFlowSFlow2015(BaseDataset, SplitMixin):
         sequence: Dict[int, Dict[str, Frame]] = {}
         calib = self._load_calib(self.split_folder, idx)
 
+        # Load all the object before loading to create the correct number of dummy masks.
+        obj_map = (
+            self.load_obj_map(os.path.join(self.split_folder, f"obj_map/{idx:06d}_10.png"))
+            if "obj_map" in self.load
+            else None
+        )
+
         # We need to load the sequance from the last to the first frame because we need information from the previous
         # frame to compute the scene flow.
         for index in range(self.sequence_end, self.sequence_start - 1, -1):
@@ -202,6 +210,8 @@ class KittiStereoFlowSFlow2015(BaseDataset, SplitMixin):
 
             # Frames at index 10 and 11 are the only one who have ground truth in dataset.
             if index == 11:
+                dummy_size = (2, sequence[index]["left"].H, sequence[index]["left"].W)
+                dummy_disp_size = (1, sequence[index]["left"].H, sequence[index]["left"].W)
                 if "disp_noc" in self.load:
                     sequence[11]["left"].append_disparity(
                         self.load_disp(os.path.join(self.split_folder, f"disp_noc_1/{idx:06d}_10.png"), "left"),
@@ -212,6 +222,18 @@ class KittiStereoFlowSFlow2015(BaseDataset, SplitMixin):
                         self.load_disp(os.path.join(self.split_folder, f"disp_occ_1/{idx:06d}_10.png"), "left"),
                         "warped_disp_occ",
                     )
+                if "flow_occ" in self.load:
+                    sequence[index]["left"].append_flow(Flow.dummy(dummy_size, ("C", "H", "W")), "flow_occ")
+                if "flow_noc" in self.load:
+                    sequence[index]["left"].append_flow(Flow.dummy(dummy_size, ("C", "H", "W")), "flow_noc")
+                if "scene_flow" in self.load:
+                    scene_flow_size = (3, sequence[index]["left"].H, sequence[index]["left"].W)
+                    sequence[index]["left"].append_scene_flow(SceneFlow.dummy(scene_flow_size, ("C", "H", "W")))
+                if obj_map is not None:
+                    for vehicule in obj_map:
+                        sequence[index]["left"].append_mask(
+                            Mask(torch.ones(dummy_disp_size), names=("C", "H", "W")), str(vehicule[0])
+                        )
             elif index == 10:
                 if "disp_noc" in self.load:
                     sequence[10]["left"].append_disparity(
@@ -235,26 +257,43 @@ class KittiStereoFlowSFlow2015(BaseDataset, SplitMixin):
                     # The scene flow cannot be added currently because of a bug in his representation.
                     scene_flow = self.scene_flow_from_disp(sequence[10]["left"], sequence[11]["left"])
                     sequence[10]["left"].append_scene_flow(scene_flow)
-                if "obj_map" in self.load:
-                    for vehicule in self.load_obj_map(os.path.join(self.split_folder, f"obj_map/{idx:06d}_10.png")):
+                if obj_map is not None:
+                    for vehicule in obj_map:
                         sequence[10]["left"].append_mask(vehicule[1], str(vehicule[0]))
             else:
-                dummy_size = (2, sequence[10]["left"].H, sequence[10]["left"].W)
+                dummy_size = (2, sequence[index]["left"].H, sequence[index]["left"].W)
+                dummy_disp_size = (1, sequence[index]["left"].H, sequence[index]["left"].W)
                 if "disp_noc" in self.load:
-                    sequence[index]["left"].append_disparity(Disparity.dummy(dummy_size, ("C", "H", "W")), "disp_noc")
+                    dummy_disp = Disparity.dummy(dummy_disp_size, ("C", "H", "W")).signed("left")
+                    sequence[index]["left"].append_disparity(dummy_disp, "warped_disp_noc")
                 if "disp_occ" in self.load:
-                    sequence[index]["left"].append_disparity(Disparity.dummy(dummy_size, ("C", "H", "W")), "disp_occ")
+                    dummy_disp = Disparity.dummy(dummy_disp_size, ("C", "H", "W")).signed("left")
+                    sequence[index]["left"].append_disparity(dummy_disp, "warped_disp_occ")
                 if "flow_occ" in self.load:
                     sequence[index]["left"].append_flow(Flow.dummy(dummy_size, ("C", "H", "W")), "flow_occ")
                 if "flow_noc" in self.load:
                     sequence[index]["left"].append_flow(Flow.dummy(dummy_size, ("C", "H", "W")), "flow_noc")
                 if "scene_flow" in self.load:
-                    scene_flow_size = (3, sequence[10]["left"].H, sequence[10]["left"].W)
-                    sequence[index]["left"].append_scene_flow(
-                        SceneFlow.dummy(scene_flow_size, ("C", "H", "W")), "scene_flow"
-                    )
+                    scene_flow_size = (3, sequence[index]["left"].H, sequence[index]["left"].W)
+                    sequence[index]["left"].append_scene_flow(SceneFlow.dummy(scene_flow_size, ("C", "H", "W")))
+                if obj_map is not None:
+                    for vehicule in obj_map:
+                        sequence[index]["left"].append_mask(
+                            Mask(torch.ones(dummy_disp_size), names=("C", "H", "W")), str(vehicule[0])
+                        )
 
-        return sequence
+            sequence[index]["left"] = sequence[index]["left"].temporal()
+            if "right" in self.load:
+                sequence[index]["right"] = sequence[index]["right"].temporal()
+
+        result = {}
+        left = [sequence[frame]["left"] for frame in range(self.sequence_start, self.sequence_end + 1)]
+        result["left"] = torch.cat(left, dim=0)
+        if "right" in self.load:
+            right = [sequence[frame]["right"] for frame in range(self.sequence_start, self.sequence_end + 1)]
+            result["right"] = torch.cat(right, dim=0)
+
+        return result
 
     # https://github.com/utiasSTARS/pykitti/tree/master
     def read_calib_file(self, filepath):
@@ -392,7 +431,9 @@ class KittiStereoFlowSFlow2015(BaseDataset, SplitMixin):
 
 
 if __name__ == "__main__":
-    dataset = KittiStereoFlowSFlow2015(sequence_start=10)
-    obj = dataset.getitem(0)
-    print(obj)
-    obj[10]["left"].get_view().render()
+    from random import randint
+
+    dataset = KittiStereoFlowSFlow2015(sequence_start=8, sequence_end=12, grayscale=False)
+    obj = dataset.getitem(1)
+    # print(obj)
+    obj["right"].get_view().render()

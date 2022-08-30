@@ -19,6 +19,7 @@ class KittiStereoFlow2012(BaseDataset, SplitMixin):
         sequence_start=10,
         sequence_end=11,
         load: list = [
+            "right",
             "disp_noc",
             "disp_occ",
             "disp_refl_noc",
@@ -77,7 +78,9 @@ class KittiStereoFlow2012(BaseDataset, SplitMixin):
     def load_disp_refl(self, disp_refl_path: str, camera_side: str):
         img = cv2.imread(disp_refl_path, cv2.IMREAD_UNCHANGED).astype(bool)
         disp_refl = torch.as_tensor(img[None, ...], dtype=torch.float32)
-        disp_refl = Disparity(disp_refl, names=("C", "H", "W"), camera_side=camera_side).signed()
+        mask = disp_refl <= 0
+        mask = Mask(mask, names=("C", "H", "W"))
+        disp_refl = Disparity(disp_refl, names=("C", "H", "W"), camera_side=camera_side, mask=mask).signed()
         return disp_refl
 
     def getitem(self, idx: int):
@@ -169,21 +172,42 @@ class KittiStereoFlow2012(BaseDataset, SplitMixin):
                     )
             else:
                 dummy_size = (2, sequence[index]["left"].HW[0], sequence[index]["left"].HW[1])
+                dummy_size_disp = (1, sequence[index]["left"].HW[0], sequence[index]["left"].HW[1])
                 dummy_names = ("C", "H", "W")
                 if "disp_noc" in self.load:
-                    sequence[index]["left"].append_disparity(Disparity.dummy(dummy_size, dummy_names), "disp_noc")
+                    dummy_disp = Disparity.dummy(dummy_size_disp, dummy_names)
+                    dummy_disp = dummy_disp.signed("left")
+                    sequence[index]["left"].append_disparity(dummy_disp, "disp_noc")
                 if "disp_occ" in self.load:
-                    sequence[index]["left"].append_disparity(Disparity.dummy(dummy_size, dummy_names), "disp_occ")
+                    dummy_disp = Disparity.dummy(dummy_size_disp, dummy_names)
+                    dummy_disp = dummy_disp.signed("left")
+                    sequence[index]["left"].append_disparity(dummy_disp, "disp_occ")
                 if "disp_refl_noc" in self.load:
-                    sequence[index]["left"].append_disparity(Disparity.dummy(dummy_size, dummy_names), "disp_refl_noc")
+                    dummy_disp = Disparity.dummy(dummy_size_disp, dummy_names)
+                    dummy_disp = dummy_disp.signed("left")
+                    sequence[index]["left"].append_disparity(dummy_disp, "disp_refl_noc")
                 if "disp_refl_occ" in self.load:
-                    sequence[index]["left"].append_disparity(Disparity.dummy(dummy_size, dummy_names), "disp_refl_occ")
+                    dummy_disp = Disparity.dummy(dummy_size_disp, dummy_names)
+                    dummy_disp = dummy_disp.signed("left")
+                    sequence[index]["left"].append_disparity(dummy_disp, "disp_refl_occ")
                 if "flow_occ" in self.load:
                     sequence[index]["left"].append_flow(Flow.dummy(dummy_size, dummy_names), "flow_occ")
                 if "flow_noc" in self.load:
                     sequence[index]["left"].append_flow(Flow.dummy(dummy_size, dummy_names), "flow_noc")
 
-        return sequence
+            sequence[index]["left"] = sequence[index]["left"].temporal()
+            if "right" in self.load:
+                sequence[index]["right"] = sequence[index]["right"].temporal()
+
+        result = {}
+
+        left = [sequence[frame]["left"] for frame in range(self.sequence_start, self.sequence_end + 1)]
+        result["left"] = torch.cat(left, dim=0)
+        if "right" in self.load:
+            right = [sequence[frame]["right"] for frame in range(self.sequence_start, self.sequence_end + 1)]
+            result["right"] = torch.cat(right, dim=0)
+
+        return result
 
     # https://github.com/utiasSTARS/pykitti/tree/master
     def read_calib_file(self, filepath):
@@ -254,7 +278,9 @@ class KittiStereoFlow2012(BaseDataset, SplitMixin):
 
 
 if __name__ == "__main__":
-    dataset = KittiStereoFlow2012(grayscale=True, sequence_start=9)
-    obj = dataset.getitem(0)
+    from random import randint
+
+    dataset = KittiStereoFlow2012(grayscale=True, sequence_start=8)
+    obj = dataset.getitem(randint(0, len(dataset)))
     print(obj)
-    obj[10]["left"].get_view().render()
+    obj["left"].get_view().render()

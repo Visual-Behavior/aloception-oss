@@ -1,5 +1,7 @@
 import os
 import numpy as np
+import torch
+from typing import Dict
 
 from alodataset import BaseDataset, Split, SplitMixin
 from aloscene import Frame, BoundingBoxes2D, Labels, BoundingBoxes3D
@@ -52,21 +54,18 @@ class KittiObjectDataset(BaseDataset, SplitMixin):
     def __len__(self):
         return len(self.items)
 
-    def getitem(self, idx):
+    def getitem(self, idx) -> Dict[str, Frame]:
         item = self.items[idx]
         calib = self._load_calib(item["calib"])
         frames = {}
+        frames["left"] = Frame(item["left"])
 
         if item["right"] is not None:
             frames["right"] = Frame(item["right"])
             frames["right"].append_cam_intrinsic(CameraIntrinsic(np.c_[calib["K_cam3"], np.zeros(3)]))
             frames["right"].append_cam_extrinsic(CameraExtrinsic(calib["T_cam3_rect"]))
             frames["right"].baseline = calib["b_rgb"]
-
-        frames["left"] = Frame(item["left"])
-        frames["left"].baseline = calib["b_rgb"]
-        frames["left"].append_cam_intrinsic(CameraIntrinsic(np.c_[calib["K_cam2"], np.zeros(3)]))
-        frames["left"].append_cam_extrinsic(CameraExtrinsic(calib["T_cam2_rect"]))
+            frames["right"] = frames["right"].temporal()
 
         size = frames["left"].HW
 
@@ -101,14 +100,17 @@ class KittiObjectDataset(BaseDataset, SplitMixin):
                     )
 
         labels = Labels(labels, labels_names=["boxes"])
-
         bounding_box = BoundingBoxes2D(boxes2d, boxes_format="xyxy", absolute=True, frame_size=size, labels=labels)
         boxe3d = BoundingBoxes3D(boxes3d)
+
         frames["left"].append_boxes2d(bounding_box)
-        frames["left"].append_boxes3d(boxe3d, name=str(idx))
+        frames["left"].append_boxes3d(boxe3d)
+        frames["left"].baseline = calib["b_rgb"]
+        frames["left"].append_cam_intrinsic(CameraIntrinsic(np.c_[calib["K_cam2"], np.zeros(3)]))
+        frames["left"].append_cam_extrinsic(CameraExtrinsic(calib["T_cam2_rect"]))
+        frames["left"] = frames["left"].temporal()
 
         context_frames = [
-            "right",
             "left_context_1",
             "left_context_2",
             "left_context_3",
@@ -122,8 +124,19 @@ class KittiObjectDataset(BaseDataset, SplitMixin):
                 side = 2 if context_frame.startswith("left") else 3
                 frames[context_frame].append_cam_intrinsic(CameraIntrinsic(np.c_[calib[f"K_cam{side}"], np.zeros(3)]))
                 frames[context_frame].append_cam_extrinsic(CameraExtrinsic(calib[f"T_cam{side}_rect"]))
+                frames[context_frame].baseline = calib["b_rgb"]
+                frames[context_frame] = frames[context_frame].temporal()
 
-        return frames
+        ordered_frames = sorted([frame for frame in frames])[::-1]
+        left = [frames[name] for name in ordered_frames if name.startswith("left")]
+        right = [frames[name] for name in ordered_frames if name.startswith("right")]
+
+        result = {}
+        result["left"] = torch.cat(left, dim=0)
+        if right:
+            result["right"] = torch.cat(right, dim=0)
+
+        return result
 
     # https://github.com/utiasSTARS/pykitti/tree/master
     def read_calib_file(self, filepath):
@@ -180,11 +193,11 @@ class KittiObjectDataset(BaseDataset, SplitMixin):
         data["T_cam3_rect"] = T3
 
         # Compute the velodyne to rectified camera coordinate transforms
-        data['T_cam0_velo'] = np.reshape(filedata['Tr_velo_to_cam'], (3, 4))
-        data['T_cam0_velo'] = np.vstack([data['T_cam0_velo'], [0, 0, 0, 1]])
-        data['T_cam1_velo'] = T1.dot(data['T_cam0_velo'])
-        data['T_cam2_velo'] = T2.dot(data['T_cam0_velo'])
-        data['T_cam3_velo'] = T3.dot(data['T_cam0_velo'])
+        data["T_cam0_velo"] = np.reshape(filedata["Tr_velo_to_cam"], (3, 4))
+        data["T_cam0_velo"] = np.vstack([data["T_cam0_velo"], [0, 0, 0, 1]])
+        data["T_cam1_velo"] = T1.dot(data["T_cam0_velo"])
+        data["T_cam2_velo"] = T2.dot(data["T_cam0_velo"])
+        data["T_cam3_velo"] = T3.dot(data["T_cam0_velo"])
 
         # Compute the camera intrinsics
         data["K_cam0"] = P_rect_00[0:3, 0:3]
@@ -196,13 +209,13 @@ class KittiObjectDataset(BaseDataset, SplitMixin):
         # each camera frame into the velodyne frame and computing the distances
         # between them
         p_cam = np.array([0, 0, 0, 1])
-        p_velo0 = np.linalg.inv(data['T_cam0_velo']).dot(p_cam)
-        p_velo1 = np.linalg.inv(data['T_cam1_velo']).dot(p_cam)
-        p_velo2 = np.linalg.inv(data['T_cam2_velo']).dot(p_cam)
-        p_velo3 = np.linalg.inv(data['T_cam3_velo']).dot(p_cam)
+        p_velo0 = np.linalg.inv(data["T_cam0_velo"]).dot(p_cam)
+        p_velo1 = np.linalg.inv(data["T_cam1_velo"]).dot(p_cam)
+        p_velo2 = np.linalg.inv(data["T_cam2_velo"]).dot(p_cam)
+        p_velo3 = np.linalg.inv(data["T_cam3_velo"]).dot(p_cam)
 
-        data['b_gray'] = np.linalg.norm(p_velo1 - p_velo0)  # gray baseline
-        data['b_rgb'] = np.linalg.norm(p_velo3 - p_velo2)   # rgb baseline
+        data["b_gray"] = np.linalg.norm(p_velo1 - p_velo0)  # gray baseline
+        data["b_rgb"] = np.linalg.norm(p_velo3 - p_velo2)  # rgb baseline
 
         return data
 
@@ -210,7 +223,7 @@ class KittiObjectDataset(BaseDataset, SplitMixin):
 if __name__ == "__main__":
     from random import randint
 
-    dataset = KittiObjectDataset(right_frame=False, context_images=0)
+    dataset = KittiObjectDataset(right_frame=True, context_images=2)
     obj = dataset.getitem(randint(0, len(dataset)))
-    print(obj)
+    # print(obj)
     obj["left"].get_view().render()

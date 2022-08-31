@@ -122,7 +122,7 @@ class SceneFlow(aloscene.tensors.SpatialAugmentedTensor):
             if depth.occlusion is not None:
                 occlusion = occlusion | depth.occlusion.as_tensor().bool()
             if next_depth.occlusion is not None:
-                next_depth_tensor = next_depth.occlusion.as_tensor().bool().unsqueeze(1)
+                next_depth_tensor = next_depth.occlusion.as_tensor().bool()
 
                 # Use of 'not' needed because the grid_sample has padding_mode="zeros" and
                 # the 0 from this function mean that the pixel is occluded
@@ -137,7 +137,6 @@ class SceneFlow(aloscene.tensors.SpatialAugmentedTensor):
                 moved_occlusion = ~(moved_occlusion >= 0.99999)
 
                 # Fusion of the 2 occlusion mask
-                moved_occlusion = moved_occlusion.squeeze(1)
                 occlusion = occlusion | moved_occlusion
 
         # Remove the artificial batch dimension

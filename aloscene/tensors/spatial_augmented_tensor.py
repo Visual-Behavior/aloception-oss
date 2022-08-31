@@ -28,6 +28,8 @@ class SpatialAugmentedTensor(AugmentedTensor):
         If part of a stereo setup, will encode the side of the camere "left" or "right" or None.
     baseline: float | None
         If part of a stereo setup, the `baseline` is the distance between the two cameras.
+    timestamp: float | None
+        Time in seconds since the beginning of the sequence.
     """
 
     @staticmethod
@@ -52,6 +54,7 @@ class SpatialAugmentedTensor(AugmentedTensor):
         tensor.add_property("camera_side", camera_side)
         tensor.add_property("projection", projection)
         tensor.add_property("distortion", distortion)
+        tensor.add_property("timestamp", None)
 
         # Intrisic and extrinsic parameters are cloned by default, to prevent having multiple reference
         # of the same intrisic/extrinsic across nodes.

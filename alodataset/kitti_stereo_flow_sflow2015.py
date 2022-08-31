@@ -434,6 +434,6 @@ if __name__ == "__main__":
     from random import randint
 
     dataset = KittiStereoFlowSFlow2015(sequence_start=8, sequence_end=12, grayscale=False)
-    obj = dataset.getitem(1)
-    # print(obj)
-    obj["right"].get_view().render()
+    obj = dataset.getitem(randint(0, len(dataset)))
+    print(obj)
+    obj["left"].get_view().render()

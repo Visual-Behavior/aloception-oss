@@ -53,17 +53,19 @@ class KittiOdometryDataset(BaseDataset, SplitMixin):
             # Exploit data from calib.txt
             calib = self._load_calib(os.path.join(self.dataset_dir, "sequences", seq, "calib.txt"))
 
+            self.seq_params[seq] = {}
+
             # Register sequence parameters
-            self.seq_params["baseline"] = calib["b_gray" if self.grayscale else "b_rgb"]
-            self.seq_params["left_intrinsic"] = CameraIntrinsic(
+            self.seq_params[seq]["baseline"] = calib["b_gray" if self.grayscale else "b_rgb"]
+            self.seq_params[seq]["left_intrinsic"] = CameraIntrinsic(
                 np.c_[calib[f"K_cam{0 if grayscale else 2}"], np.zeros(3)]
             )
-            self.seq_params["left_extrinsic"] = CameraExtrinsic(calib[f"T_cam{0 if grayscale else 2}_rect"])
+            self.seq_params[seq]["left_extrinsic"] = CameraExtrinsic(calib[f"T_cam{0 if grayscale else 2}_rect"])
             if right_frame:
-                self.seq_params["right_intrinsic"] = CameraIntrinsic(
+                self.seq_params[seq]["right_intrinsic"] = CameraIntrinsic(
                     np.c_[calib[f"K_cam{1 if grayscale else 3}"], np.zeros(3)]
                 )
-                self.seq_params["right_extrinsic"] = CameraExtrinsic(calib[f"T_cam{1 if grayscale else 3}_rect"])
+                self.seq_params[seq]["right_extrinsic"] = CameraExtrinsic(calib[f"T_cam{1 if grayscale else 3}_rect"])
 
             with open(os.path.join(self.dataset_dir, "sequences", seq, "times.txt"), "r") as f:
                 times = [float(x) for x in f.readlines()]
@@ -147,57 +149,55 @@ class KittiOdometryDataset(BaseDataset, SplitMixin):
 
         left = []
         right = []
-        poses = []
         sequence: str = item["sequence"]  # Number of the sequence
 
         for id, seq in enumerate(item["temporal_sequence"]):
-
-            left.append(
-                Frame(
-                    os.path.join(
-                        self.dataset_dir,
-                        "sequences",
-                        sequence,
-                        f"image_{0 if self.grayscale else 2}",
-                        f"{seq:06d}.png",
-                    )
-                ).temporal()
+            left_frame = Frame(
+                os.path.join(
+                    self.dataset_dir,
+                    "sequences",
+                    sequence,
+                    f"image_{0 if self.grayscale else 2}",
+                    f"{seq:06d}.png",
+                )
             )
+            left_frame.baseline = self.seq_params[sequence]["baseline"]
+            left_frame.append_cam_intrinsic(self.seq_params[sequence]["left_intrinsic"])
+            left_frame.append_cam_extrinsic(self.seq_params[sequence]["left_extrinsic"])
 
             if self.split == Split.TRAIN:
                 pose = Pose(
                     torch.Tensor([float(x) for x in item["poses"][id].split(" ")] + [0, 0, 0, 1]).reshape(4, 4)
                 )
-                poses.append(pose)
+                left_frame.append_pose(pose)
+
+            left.append(left_frame.temporal())
 
             if self.right_frame:
-                right.append(
-                    Frame(
-                        os.path.join(
-                            self.dataset_dir,
-                            "sequences",
-                            sequence,
-                            f"image_{1 if self.grayscale else 3}",
-                            f"{seq:06d}.png",
-                        )
-                    ).temporal()
+                right_frame = Frame(
+                    os.path.join(
+                        self.dataset_dir,
+                        "sequences",
+                        sequence,
+                        f"image_{1 if self.grayscale else 3}",
+                        f"{seq:06d}.png",
+                    )
                 )
+                right_frame.baseline = self.seq_params[sequence]["baseline"]
+                right_frame.append_cam_intrinsic(self.seq_params[sequence]["right_intrinsic"])
+                right_frame.append_cam_extrinsic(self.seq_params[sequence]["right_extrinsic"])
+
+                right.append(left_frame.temporal())
 
         frames = {}
         frames["left"] = torch.cat(left, dim=0)
+
+        # Timestamps need to be added at the end because torch.cat can't merge them.
         frames["left"].timestamp = item["times"]
-        frames["left"].baseline = self.seq_params["baseline"]
-        frames["left"].append_cam_intrinsic(self.seq_params["left_intrinsic"])
-        frames["left"].append_cam_extrinsic(self.seq_params["left_extrinsic"])
-        if poses:
-            frames["left"].append_pose(poses)
 
         if self.right_frame:
             frames["right"] = torch.cat(right, dim=0)
             frames["right"].timestamp = item["times"]
-            frames["right"].baseline = self.seq_params["baseline"]
-            frames["right"].append_cam_intrinsic(self.seq_params["right_intrinsic"])
-            frames["right"].append_cam_extrinsic(self.seq_params["right_extrinsic"])
 
         return frames
 
@@ -282,7 +282,9 @@ class KittiOdometryDataset(BaseDataset, SplitMixin):
 
 
 if __name__ == "__main__":
-    odo = KittiOdometryDataset(sequences=["00", "01"], sequence_skip=40, skip=28)
-    r = odo.getitem(0)
+    from random import randint
+
+    odo = KittiOdometryDataset(sequences=["00", "01"], sequence_skip=40, skip=28, sequence_size=5)
+    r = odo.getitem(randint(0, len(odo)))
     print(r["left"])
-    # r["left"].get_view().render()
+    r["left"].get_view().render()

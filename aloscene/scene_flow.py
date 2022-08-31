@@ -32,9 +32,21 @@ class SceneFlow(aloscene.tensors.SpatialAugmentedTensor):
     def __init__(self, x, *args, **kwargs):
         super().__init__(x)
 
-    def __get_view__(self, clip_flow=None, convert_to_bgr=False, magnitude_max=None):
+    def __get_view__(self, clip_flow=None, convert_to_bgr=False, magnitude_max=None, axes="xx"):
         assert all(dim not in self.names for dim in ["B", "T"]), "flow should not have batch or time dimension"
-        flow = self.rename(None).squeeze().permute([1, 2, 0]).detach().cpu().contiguous().numpy()[:, :, 0:2]
+        axe_one = ord(axes[0]) - ord("x")
+        axe_two = ord(axes[1]) - ord("x")
+        assert len(axes) == 2, "axes should be of length 2"
+        assert axe_one >= 0 and axe_one <= 2 and axe_two >= 0 and axe_two <= 2, "axes should be x, y or z"
+        flow = (
+            self.rename(None)
+            .squeeze()
+            .permute([1, 2, 0])
+            .detach()
+            .cpu()
+            .contiguous()
+            .numpy()[:, :, [axe_one, axe_two]]
+        )
         assert flow.ndim == 3 and flow.shape[-1] == 2, f"wrong flow shape:{flow.shape}"
         flow_color = flow_to_color(flow, clip_flow, convert_to_bgr, magnitude_max) / 255
         return View(flow_color)

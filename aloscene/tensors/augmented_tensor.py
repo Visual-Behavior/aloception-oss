@@ -705,44 +705,37 @@ class AugmentedTensor(torch.Tensor):
 
     def __repr__(self):
         _str = self.as_tensor().__repr__()
-        n_str = f"tensor(\n\t"
 
+        props = []
         for name in self._property_list:
             if name.startswith("_") or getattr(self, name) is None:
                 continue
             v = getattr(self, name)
-            n_str += f"{name}={v}, "
-        n_str += "\n\t"
+            props.append(f"{name}={v}")
+
+        childs_props = []
 
         for name in self._children_list:
             values = getattr(self, name)
             if values is None:
                 continue
             if isinstance(values, dict):
-                content_value = ""
+                sub_props = []
                 for key in values:
                     if isinstance(values[key], list):
-                        cvalue = (
-                            f"{key}:["
-                            + ", ".join(["{}".format(len(k) if k is not None else None) for k in values[key]])
-                            + "]"
-                        )
-                        content_value += f"{cvalue}, "
+                        sub_prop = f"{key}:[{', '.join([f'{None if k is None else len(k)}' for k in values[key]])}]"
                     else:
-                        content_value += "{}:{},".format(key, values[key].shape)
-                n_str += name + "=" + "{" + content_value + "}"
+                        sub_prop = f"{key}:{values[key].shape}"
+                    sub_props.append(sub_prop)
+                prop = f"{name}={{{', '.join(sub_props)}}}"
             else:
                 if isinstance(values, list):
-                    content_value = (
-                        f"[" + ", ".join(["{}".format(len(k) if k is not None else None) for k in values]) + "]"
-                    )
-                    n_str += f"{name}={ {content_value} }, "
+                    prop = f"{name}=[{', '.join([f'{None if k is None else len(k)}' for k in values])}]"
                 else:
-                    content_value = "{}".format(values.shape)
-                    n_str += name + "=" + "" + content_value + ""
-        n_str += "\n\t"
+                    prop = f"{name}={values.shape}"
+            childs_props.append(prop)
 
-        _str = _str.replace("tensor(", n_str)
+        _str = _str.replace("tensor(", f"tensor(\n\t{'; '.join(props)}\n\t{'; '.join(childs_props)}\n\t")
         return _str
 
     def get_slices(self, dim_values, label=None):

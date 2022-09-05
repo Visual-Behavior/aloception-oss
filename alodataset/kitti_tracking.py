@@ -55,14 +55,16 @@ class KittiTrackingDataset(BaseDataset, SplitMixin):
             # Exploit data from calib.txt
             calib = self._load_calib(os.path.join(self.dataset_dir, "calib", f"{seq}.txt"))
 
+            self.seq_params[seq] = {}
+
             # Register sequence parameters
-            # self.seq_params["baseline"] = calib"b_gra"_rgb"]
-            self.seq_params["left_intrinsic"] = calib["left_intrinsic"]
-            self.seq_params["left_extrinsic"] = calib["left_extrinsic"]
-            self.seq_params["baseline"] = calib["baseline"]
+            # self.seq_params[sequence]["baseline"] = calib"b_gra"_rgb"]
+            self.seq_params[seq]["left_intrinsic"] = calib["left_intrinsic"]
+            self.seq_params[seq]["left_extrinsic"] = calib["left_extrinsic"]
+            self.seq_params[seq]["baseline"] = calib["baseline"]
             if right_frame:
-                self.seq_params["right_intrinsic"] = calib["right_intrinsic"]
-                self.seq_params["right_extrinsic"] = calib["right_extrinsic"]
+                self.seq_params[seq]["right_intrinsic"] = calib["right_intrinsic"]
+                self.seq_params[seq]["right_extrinsic"] = calib["right_extrinsic"]
 
             with open(os.path.join(self.dataset_dir, "label_02", f"{seq}.txt"), "r") as f:
                 labels = []
@@ -207,9 +209,9 @@ class KittiTrackingDataset(BaseDataset, SplitMixin):
             boxe3d = BoundingBoxes3D(boxes3d)
             left_frame.append_boxes3d(boxe3d)
             left_frame.append_boxes2d(bounding_box)
-            left_frame.append_cam_extrinsic(CameraExtrinsic(self.seq_params["left_extrinsic"]))
-            left_frame.append_cam_intrinsic(CameraIntrinsic(self.seq_params["left_intrinsic"]))
-            left_frame.baseline = self.seq_params["baseline"]
+            left_frame.append_cam_extrinsic(CameraExtrinsic(self.seq_params[sequence]["left_extrinsic"]))
+            left_frame.append_cam_intrinsic(CameraIntrinsic(self.seq_params[sequence]["left_intrinsic"]))
+            left_frame.baseline = self.seq_params[sequence]["baseline"]
 
             # Need to create temporal dimension for future fusion.
             left.append(left_frame.temporal())
@@ -223,9 +225,9 @@ class KittiTrackingDataset(BaseDataset, SplitMixin):
                         f"{seq:06d}.png",
                     )
                 )
-                right_frame.append_cam_intrinsic(CameraIntrinsic(self.seq_params["right_intrinsic"]))
-                right_frame.append_cam_extrinsic(CameraExtrinsic(self.seq_params["right_extrinsic"]))
-                right_frame.baseline = self.seq_params["baseline"]
+                right_frame.append_cam_intrinsic(CameraIntrinsic(self.seq_params[sequence]["right_intrinsic"]))
+                right_frame.append_cam_extrinsic(CameraExtrinsic(self.seq_params[sequence]["right_extrinsic"]))
+                right_frame.baseline = self.seq_params[sequence]["baseline"]
                 right.append(right_frame.temporal())
 
         frames = {}

@@ -138,16 +138,7 @@ class KittiStereoFlowSFlow2015(BaseDataset, SplitMixin):
         scene_flow.nan_to_num_(0, 0, 0)
         return scene_flow
 
-    def getitem(self, idx):
-        """
-        Function for compatibility
-        Please check at getsequence
-        """
-        if self.sample:
-            return BaseDataset.__getitem__(self, idx)
-        return self.getsequence(idx)
-
-    def getsequence(self, idx) -> Dict[int, Dict[str, Frame]]:
+    def getitem(self, idx) -> Dict[int, Dict[str, Frame]]:
         """
         Load a sequence of frames from the dataset.
 
@@ -162,6 +153,9 @@ class KittiStereoFlowSFlow2015(BaseDataset, SplitMixin):
             Dictionary of index beetween sequance_start and sequance_end.\n
             Each index is a dictionary of frames ("left" and maybe "right").
         """
+        if self.sample:
+            return BaseDataset.__getitem__(self, idx)
+
         sequence: Dict[int, Dict[str, Frame]] = {}
         calib = self._load_calib(self.split_folder, idx)
 
@@ -411,7 +405,7 @@ class KittiStereoFlowSFlow2015(BaseDataset, SplitMixin):
 if __name__ == "__main__":
     from random import randint
 
-    dataset = KittiStereoFlowSFlow2015(sequence_start=8, sequence_end=12, grayscale=False)
+    dataset = KittiStereoFlowSFlow2015(sequence_start=10, sequence_end=11, grayscale=False)
     obj = dataset.getitem(randint(0, len(dataset)))
-    print(obj)
-    obj["left"].get_view().render()
+    print(obj["left"])
+    # obj["left"].get_view().render()

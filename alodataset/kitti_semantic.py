@@ -18,6 +18,9 @@ class KittiSemanticDataset(BaseDataset, SplitMixin):
     def __init__(self, name="kitti_semantic", **kwargs):
         super().__init__(name=name, **kwargs)
 
+        if self.sample:
+            return
+
         self.split_folder = os.path.join(self.dataset_dir, self.get_split_folder())
         left_img_folder = os.path.join(self.split_folder, "image_2")
         n_samples = len([file for file in os.listdir(left_img_folder)])
@@ -84,6 +87,9 @@ class KittiSemanticDataset(BaseDataset, SplitMixin):
 
     def getitem(self, idx):
         item = self.items[idx]
+
+        if self.sample:
+            return BaseDataset.__getitem__(self, idx)
 
         frames = {}
         frames["left"] = Frame(item["left"])

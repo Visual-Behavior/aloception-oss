@@ -83,22 +83,7 @@ class KittiStereoFlow2012(BaseDataset, SplitMixin):
         disp_refl = Disparity(disp_refl, names=("C", "H", "W"), camera_side=camera_side, mask=mask).signed()
         return disp_refl
 
-    def getitem(self, idx: int):
-        """Function for compatibility
-
-        Parameters
-        ----------
-        idx : int
-            Index of the item
-
-        Returns
-        -------
-        """
-        if self.sample:
-            return BaseDataset.__getitem__(self, idx)
-        return self.getsequence(idx)
-
-    def getsequence(self, idx: int) -> Dict[int, Dict[str, Frame]]:
+    def getitem(self, idx: int) -> Dict[int, Dict[str, Frame]]:
         """
         Loads a sequence of frames from the dataset.
 
@@ -113,6 +98,9 @@ class KittiStereoFlow2012(BaseDataset, SplitMixin):
             Dictionary of index beetween sequance_start and sequance_end.\n
             Each index is a dictionary of frames ("left" and maybe "right").
         """
+
+        if self.sample:
+            return BaseDataset.__getitem__(self, idx)
 
         # Read the calibration file
         calib = self._load_calib(os.path.join(self.split_folder, "calib", f"{idx:06d}.txt"))

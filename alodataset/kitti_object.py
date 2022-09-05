@@ -18,6 +18,9 @@ class KittiObjectDataset(BaseDataset, SplitMixin):
 
         assert context_images >= 0 and context_images <= 3, "You can only get 3 frames before the main frame"
 
+        if self.sample:
+            return
+
         self.split_folder = os.path.join(self.dataset_dir, self.get_split_folder())
         left_img_folder = os.path.join(self.split_folder, "image_2")
         n_samples = len(os.listdir(left_img_folder))
@@ -55,6 +58,10 @@ class KittiObjectDataset(BaseDataset, SplitMixin):
         return len(self.items)
 
     def getitem(self, idx) -> Dict[str, Frame]:
+
+        if self.sample:
+            return BaseDataset.__getitem__(self, idx)
+        
         item = self.items[idx]
         calib = self._load_calib(item["calib"])
         frames = {}

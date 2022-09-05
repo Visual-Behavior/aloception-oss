@@ -18,6 +18,9 @@ class KittiRoadDataset(BaseDataset, SplitMixin):
         assert environement in ["um", "umm", "uu"], "Environement must be in ['um', 'umm', 'uu']"
         assert obj == "road" or (obj == "lane" and environement == "um"), "Type must be 'road' or 'lane'"
 
+        if self.sample:
+            return
+
         self.obj = obj
         self.grayscale = grayscale
 
@@ -45,6 +48,9 @@ class KittiRoadDataset(BaseDataset, SplitMixin):
         return len(self.items)
 
     def getitem(self, idx):
+
+        if self.sample:
+            return BaseDataset.__getitem__(self, idx)
         item = self.items[idx]
         calib = self._load_calib(item["calib"])
         frames = {}

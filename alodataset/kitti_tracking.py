@@ -6,6 +6,8 @@ from typing import List, Dict, Any, Union
 from alodataset import BaseDataset, SplitMixin, Split
 from aloscene import Frame, Pose, CameraIntrinsic, CameraExtrinsic, BoundingBoxes2D, Labels, BoundingBoxes3D
 
+LABELS = ["Car", "Van", "Truck", "Pedestrian", "Person_sitting", "Cyclist", "Tram", "Misc", "DontCare"]
+
 
 def sequence_index(start, seq_size, skip):
     end = start + (seq_size - 1) * (skip + 1)
@@ -131,7 +133,7 @@ class KittiTrackingDataset(BaseDataset, SplitMixin):
         x = torch.eye(4, dtype=torch.float32)
         return CameraExtrinsic(x)
 
-    def getitem(self, idx: int):
+    def getitem(self, idx: int) -> Dict[str, Frame]:
         """
         Loads a single frame from the dataset.
 
@@ -160,11 +162,13 @@ class KittiTrackingDataset(BaseDataset, SplitMixin):
             labels = []
             boxes2d = []
             boxes3d = []
+            categories = []
 
             for box in item["labels"][id]:
                 x, y, w, h = float(box[5]), float(box[6]), float(box[7]), float(box[8])
                 boxes2d.append([x, y, w, h])
                 labels.append(int(box[0]))
+                categories.append(LABELS.index(box[1]))
 
                 # If the object caterory is "Don't care" (index -1) there is no 3D box.
                 if box[0] != "-1":
@@ -196,8 +200,10 @@ class KittiTrackingDataset(BaseDataset, SplitMixin):
             )
             labels = Labels(labels, labels_names=["boxes"])
             bounding_box = BoundingBoxes2D(
-                boxes2d, boxes_format="xyxy", absolute=True, frame_size=left_frame.HW, labels=labels
+                boxes2d, boxes_format="xyxy", absolute=True, frame_size=left_frame.HW
             )
+            bounding_box.append_labels(labels, "id")
+            bounding_box.append_labels(Labels(categories, labels_names=LABELS), "categories")
             boxe3d = BoundingBoxes3D(boxes3d)
             left_frame.append_boxes3d(boxe3d)
             left_frame.append_boxes2d(bounding_box)

@@ -138,7 +138,7 @@ class KittiStereoFlowSFlow2015(BaseDataset, SplitMixin):
         scene_flow.nan_to_num_(0, 0, 0)
         return scene_flow
 
-    def getitem(self, idx) -> Dict[int, Dict[str, Frame]]:
+    def getitem(self, idx) -> Dict[str, Frame]:
         """
         Load a sequence of frames from the dataset.
 

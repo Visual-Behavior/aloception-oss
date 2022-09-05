@@ -83,7 +83,7 @@ class KittiStereoFlow2012(BaseDataset, SplitMixin):
         disp_refl = Disparity(disp_refl, names=("C", "H", "W"), camera_side=camera_side, mask=mask).signed()
         return disp_refl
 
-    def getitem(self, idx: int) -> Dict[int, Dict[str, Frame]]:
+    def getitem(self, idx: int) -> Dict[str, Frame]:
         """
         Loads a sequence of frames from the dataset.
 

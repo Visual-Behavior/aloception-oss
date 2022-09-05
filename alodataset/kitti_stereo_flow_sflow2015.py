@@ -117,6 +117,8 @@ class KittiStereoFlowSFlow2015(BaseDataset, SplitMixin):
             Scene flow beetween the two frames.
         """
 
+        size = frame.HW
+
         # Compute depth from disparity at time T
         disparity = frame.disparity["warped_disp_noc"]
         depth = disparity.as_depth(baseline=0.54, camera_intrinsic=frame.cam_intrinsic)
@@ -129,14 +131,34 @@ class KittiStereoFlowSFlow2015(BaseDataset, SplitMixin):
         next_depth.occlusion = disparity.mask.clone()
         next_depth.append_cam_extrinsic(next_frame.cam_extrinsic)
 
-        # Remove the temporal dimension so depth and next_depth have the same shape.
-        next_depth = next_depth.squeeze(0)
+        # Compute the points cloud from the depth at time T
+        start_points = depth.as_points3d(camera_intrinsic=frame.cam_intrinsic).cpu().numpy()
+        mask = ~np.isfinite(start_points)
+        np.nan_to_num(start_points, copy=False, nan=-0.1, posinf=-0.1, neginf=-0.1)
 
-        scene_flow = SceneFlow.from_optical_flow(frame.flow["flow_noc"], depth, next_depth, frame.cam_intrinsic)
+        # Compute the points cloud from the depth at time T+1
+        end_points = next_depth.as_points3d(camera_intrinsic=next_frame.cam_intrinsic).cpu().numpy()
+        mask = mask | ~np.isfinite(end_points)
+        np.nan_to_num(end_points, copy=False, nan=-0.1, posinf=-0.1, neginf=-0.1)
 
-        scene_flow.rename_(None, auto_restore_names=True)
-        scene_flow.nan_to_num_(0, 0, 0)
-        return scene_flow
+        # Compute the scene flow from the points cloud
+        mask = mask.any(axis=2)
+        # Subtract removes unnecessary temporal dimension
+        scene_flow = end_points - start_points
+        scene_flow = scene_flow.transpose(0, 2, 1).reshape((3, size[0], size[1]))
+
+        # Not sure if it is really usefull but here for security
+        start_occlusion = depth.occlusion.cpu().numpy().astype(bool)
+        # Need to squeze to remove the time dimension
+        end_occlusion = np.squeeze(next_depth.occlusion.cpu().numpy().astype(bool), axis=0)
+
+        # Fusion the occlusion mask
+        mask2 = end_occlusion | start_occlusion
+        mask = mask.reshape((1, size[0], size[1]))
+        mask = mask2 | mask
+        mask = Mask(mask, names=("C", "H", "W"))
+
+        return SceneFlow(scene_flow, occlusion=mask, names=("C", "H", "W"))
 
     def getitem(self, idx) -> Dict[str, Frame]:
         """
@@ -407,5 +429,5 @@ if __name__ == "__main__":
 
     dataset = KittiStereoFlowSFlow2015(sequence_start=10, sequence_end=11, grayscale=False)
     obj = dataset.getitem(randint(0, len(dataset)))
-    print(obj["left"])
-    # obj["left"].get_view().render()
+    print(obj["left"].scene_flow)
+    obj["left"].get_view().render()

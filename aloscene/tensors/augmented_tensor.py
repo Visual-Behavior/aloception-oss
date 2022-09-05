@@ -713,8 +713,6 @@ class AugmentedTensor(torch.Tensor):
             v = getattr(self, name)
             props.append(f"{name}={v}")
 
-        childs_props = []
-
         for name in self._children_list:
             values = getattr(self, name)
             if values is None:
@@ -733,9 +731,11 @@ class AugmentedTensor(torch.Tensor):
                     prop = f"{name}=[{', '.join([f'{None if k is None else len(k)}' for k in values])}]"
                 else:
                     prop = f"{name}={values.shape}"
-            childs_props.append(prop)
+            props.append(prop)
 
-        _str = _str.replace("tensor(", f"tensor(\n\t{'; '.join(props)}\n\t{'; '.join(childs_props)}\n\t")
+        # Needed var in order to avoid fstring error.
+        sep = "\n\t"
+        _str = _str.replace("tensor(", f"tensor(\n\t{sep.join(sorted(props, key=len))}\n\t")
         return _str
 
     def get_slices(self, dim_values, label=None):

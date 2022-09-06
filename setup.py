@@ -23,8 +23,8 @@ setup(
 		'onnx',
 		'onnxsim',
 		'pycuda',
-		'wandb'
-	],
+		'wandb'],
+	setup_requires=['nvidia-pyindex'],
 	license_files=['LICENSE'],
 	keywords=['artificial intelligence', 'computer vision'],
 	classifiers=[

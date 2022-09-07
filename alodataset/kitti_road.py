@@ -1,6 +1,7 @@
 import os
 import numpy as np
 import cv2
+from typing import Dict
 
 from alodataset import BaseDataset, Split, SplitMixin
 from aloscene import Frame, Mask
@@ -47,7 +48,7 @@ class KittiRoadDataset(BaseDataset, SplitMixin):
     def __len__(self):
         return len(self.items)
 
-    def getitem(self, idx):
+    def getitem(self, idx) -> Dict[str, Frame]:
 
         if self.sample:
             return BaseDataset.__getitem__(self, idx)
@@ -136,11 +137,11 @@ class KittiRoadDataset(BaseDataset, SplitMixin):
         data["T_cam3_rect"] = T3
 
         # Compute the velodyne to rectified camera coordinate transforms
-        data['T_cam0_velo'] = np.reshape(filedata['Tr_velo_to_cam'], (3, 4))
-        data['T_cam0_velo'] = np.vstack([data['T_cam0_velo'], [0, 0, 0, 1]])
-        data['T_cam1_velo'] = T1.dot(data['T_cam0_velo'])
-        data['T_cam2_velo'] = T2.dot(data['T_cam0_velo'])
-        data['T_cam3_velo'] = T3.dot(data['T_cam0_velo'])
+        data["T_cam0_velo"] = np.reshape(filedata["Tr_velo_to_cam"], (3, 4))
+        data["T_cam0_velo"] = np.vstack([data["T_cam0_velo"], [0, 0, 0, 1]])
+        data["T_cam1_velo"] = T1.dot(data["T_cam0_velo"])
+        data["T_cam2_velo"] = T2.dot(data["T_cam0_velo"])
+        data["T_cam3_velo"] = T3.dot(data["T_cam0_velo"])
 
         # Compute the camera intrinsics
         data["K_cam0"] = P_rect_00[0:3, 0:3]
@@ -152,13 +153,13 @@ class KittiRoadDataset(BaseDataset, SplitMixin):
         # each camera frame into the velodyne frame and computing the distances
         # between them
         p_cam = np.array([0, 0, 0, 1])
-        p_velo0 = np.linalg.inv(data['T_cam0_velo']).dot(p_cam)
-        p_velo1 = np.linalg.inv(data['T_cam1_velo']).dot(p_cam)
-        p_velo2 = np.linalg.inv(data['T_cam2_velo']).dot(p_cam)
-        p_velo3 = np.linalg.inv(data['T_cam3_velo']).dot(p_cam)
+        p_velo0 = np.linalg.inv(data["T_cam0_velo"]).dot(p_cam)
+        p_velo1 = np.linalg.inv(data["T_cam1_velo"]).dot(p_cam)
+        p_velo2 = np.linalg.inv(data["T_cam2_velo"]).dot(p_cam)
+        p_velo3 = np.linalg.inv(data["T_cam3_velo"]).dot(p_cam)
 
-        data['b_gray'] = np.linalg.norm(p_velo1 - p_velo0)  # gray baseline
-        data['b_rgb'] = np.linalg.norm(p_velo3 - p_velo2)   # rgb baseline
+        data["b_gray"] = np.linalg.norm(p_velo1 - p_velo0)  # gray baseline
+        data["b_rgb"] = np.linalg.norm(p_velo3 - p_velo2)  # rgb baseline
 
         return data
 

@@ -85,14 +85,13 @@ class KittiSemanticDataset(BaseDataset, SplitMixin):
             return color[:, :, 0] + 256 * color[:, :, 1] + 256 * 256 * color[:, :, 2]
         return int(color[0] + 256 * color[1] + 256 * 256 * color[2])
 
-    def getitem(self, idx):
+    def getitem(self, idx) -> Frame:
         item = self.items[idx]
 
         if self.sample:
             return BaseDataset.__getitem__(self, idx)
 
-        frames = {}
-        frames["left"] = Frame(item["left"])
+        frame = Frame(item["left"])
 
         if item["instance"] is not None:
             instance = cv2.imread(item["instance"], cv2.IMREAD_UNCHANGED)
@@ -116,13 +115,11 @@ class KittiSemanticDataset(BaseDataset, SplitMixin):
 
             labels = torch.as_tensor([label for label in labels_list], dtype=torch.float32)
             # Labels store the list of categories id and a list off all categories
-            labels_2d = Labels(
-                labels, labels_names=[cat[0] for cat in self.category], names=("N"), encoding="id"
-            )
+            labels_2d = Labels(labels, labels_names=[cat[0] for cat in self.category], names=("N"), encoding="id")
             all_masks = torch.cat(masks, dim=0)
-            frames["left"].append_segmentation(Mask(all_masks, labels=labels_2d, names=("N", "H", "W")))
+            frame.append_segmentation(Mask(all_masks, labels=labels_2d, names=("N", "H", "W")))
 
-        return frames
+        return frame
 
     # https://github.com/utiasSTARS/pykitti/tree/master
     def read_calib_file(self, filepath):
@@ -192,5 +189,5 @@ if __name__ == "__main__":
 
     dataset = KittiSemanticDataset()
     obj = dataset.getitem(randint(0, len(dataset)))
-    print("final", obj["left"].shape, obj)
-    obj["left"].get_view().render()
+    print("final", obj.shape, obj)
+    obj.get_view().render()

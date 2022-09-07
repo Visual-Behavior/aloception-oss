@@ -61,7 +61,7 @@ class KittiObjectDataset(BaseDataset, SplitMixin):
 
         if self.sample:
             return BaseDataset.__getitem__(self, idx)
-        
+
         item = self.items[idx]
         calib = self._load_calib(item["calib"])
         frames = {}

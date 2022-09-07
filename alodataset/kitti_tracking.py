@@ -201,9 +201,7 @@ class KittiTrackingDataset(BaseDataset, SplitMixin):
                 )
             )
             labels = Labels(labels, labels_names=["boxes"])
-            bounding_box = BoundingBoxes2D(
-                boxes2d, boxes_format="xyxy", absolute=True, frame_size=left_frame.HW
-            )
+            bounding_box = BoundingBoxes2D(boxes2d, boxes_format="xyxy", absolute=True, frame_size=left_frame.HW)
             bounding_box.append_labels(labels, "id")
             bounding_box.append_labels(Labels(categories, labels_names=LABELS), "categories")
             boxe3d = BoundingBoxes3D(boxes3d)
@@ -291,11 +289,11 @@ class KittiTrackingDataset(BaseDataset, SplitMixin):
         data["T3"] = T3
 
         # Compute the velodyne to rectified camera coordinate transforms
-        data['T_cam0_velo'] = np.reshape(filedata['Tr_velo_cam'], (3, 4))
-        data['T_cam0_velo'] = np.vstack([data['T_cam0_velo'], [0, 0, 0, 1]])
-        data['T_cam1_velo'] = T1.dot(data['T_cam0_velo'])
-        data['T_cam2_velo'] = T2.dot(data['T_cam0_velo'])
-        data['T_cam3_velo'] = T3.dot(data['T_cam0_velo'])
+        data["T_cam0_velo"] = np.reshape(filedata["Tr_velo_cam"], (3, 4))
+        data["T_cam0_velo"] = np.vstack([data["T_cam0_velo"], [0, 0, 0, 1]])
+        data["T_cam1_velo"] = T1.dot(data["T_cam0_velo"])
+        data["T_cam2_velo"] = T2.dot(data["T_cam0_velo"])
+        data["T_cam3_velo"] = T3.dot(data["T_cam0_velo"])
 
         # Compute the camera intrinsics
         data["K_cam0"] = P_rect_00[0:3, 0:3]
@@ -307,13 +305,13 @@ class KittiTrackingDataset(BaseDataset, SplitMixin):
         # each camera frame into the velodyne frame and computing the distances
         # between them
         p_cam = np.array([0, 0, 0, 1])
-        p_velo0 = np.linalg.inv(data['T_cam0_velo']).dot(p_cam)
-        p_velo1 = np.linalg.inv(data['T_cam1_velo']).dot(p_cam)
-        p_velo2 = np.linalg.inv(data['T_cam2_velo']).dot(p_cam)
-        p_velo3 = np.linalg.inv(data['T_cam3_velo']).dot(p_cam)
+        p_velo0 = np.linalg.inv(data["T_cam0_velo"]).dot(p_cam)
+        p_velo1 = np.linalg.inv(data["T_cam1_velo"]).dot(p_cam)
+        p_velo2 = np.linalg.inv(data["T_cam2_velo"]).dot(p_cam)
+        p_velo3 = np.linalg.inv(data["T_cam3_velo"]).dot(p_cam)
 
-        data['b_gray'] = np.linalg.norm(p_velo1 - p_velo0)  # gray baseline
-        data['b_rgb'] = np.linalg.norm(p_velo3 - p_velo2)   # rgb baseline
+        data["b_gray"] = np.linalg.norm(p_velo1 - p_velo0)  # gray baseline
+        data["b_rgb"] = np.linalg.norm(p_velo3 - p_velo2)  # rgb baseline
 
         # Return only the parameters we care.
         result = {
@@ -321,7 +319,7 @@ class KittiTrackingDataset(BaseDataset, SplitMixin):
             "right_intrinsic": np.c_[data["K_cam3"], [0, 0, 0]],
             "left_extrinsic": data["T2"],
             "right_extrinsic": data["T3"],
-            "baseline": data['b_rgb'],
+            "baseline": data["b_rgb"],
         }
         return result
 

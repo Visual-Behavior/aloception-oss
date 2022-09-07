@@ -127,7 +127,7 @@ class KittiOdometryDataset(BaseDataset, SplitMixin):
 
         return loaded_sequences
 
-    def getitem(self, idx: int):
+    def getitem(self, idx: int) -> Dict[str, Frame]:
         """
         Loads a single frame from the dataset.
 

@@ -1,6 +1,6 @@
 # Detr
 
-Here is a simple example to get started with **Detr** and aloception. To learn more about Detr, you can checkout the <a href="https://visual-behavior.github.io/aloception/tutorials/training_detr.html">Detr Tutorials<a/> or
+Here is a simple example to get started with **Detr** and aloception. To learn more about Detr, you can checkout the <a href="https://visual-behavior.github.io/aloception-oss/tutorials/training_detr.html">Detr Tutorials<a/> or
 the scripts described bellow.
 
 ```python
@@ -17,7 +17,7 @@ pred_boxes = model.inference(model([frame]))
 frame.append_boxes2d(pred_boxes[0], "pred_boxes")
 frame.get_view().render()
 ```
-  
+
 
 ### Running inference with detr_r50
 

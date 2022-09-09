@@ -16,7 +16,7 @@ jobs:
       run : |
         pip install numpy==1.22.2
         pip install torch==1.10.2+cpu torchvision==0.11.3+cpu torchaudio==0.10.2 -f https://download.pytorch.org/whl/torch_stable.html
-        pip install git+https://github.com/Visual-Behavior/aloception-oss
+        pip install -r requirements.txt
       shell: bash
     - name: Run python unit tests
       run: |

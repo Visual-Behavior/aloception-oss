@@ -11,7 +11,6 @@ setup(
     install_requires=[
         'matplotlib==3.5.3',
         'more-itertools==8.8.0', # required for alodataset waymo
-        'numpy==1.23.2',
         'onnx==1.12.0',
         'onnx_graphsurgeon==0.0.1.dev5',
         'onnxsim==0.4.8',
@@ -30,7 +29,7 @@ setup(
         'ts==0.5.1',
         'wandb==0.12.2',
         'waymo_open_dataset==1.0.1'],
-    setup_requires=['torch', 'nvidia-pyindex', 'pycuda'],
+    setup_requires=['numpy', 'torch', 'nvidia-pyindex', 'pycuda'],
     license_files=['LICENSE'],
     keywords=['artificial intelligence', 'computer vision'],
     classifiers=[

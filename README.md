@@ -6,9 +6,9 @@
 
 [![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-0.3.0-green.svg)](https://conventionalcommits.org)
 
-# Aloception
+# Aloception open source software
 
-**Aloception** is a set of packages for computer vision built on top of popular deep learning libraries:
+**Aloception-oss** is a set of packages for computer vision built on top of popular deep learning libraries:
 [pytorch](<https://pytorch.org/>)  and  [pytorch lightning](https://www.pytorchlightning.ai/).
 
 

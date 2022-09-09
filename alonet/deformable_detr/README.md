@@ -13,7 +13,7 @@ python test.py # should yield True
 
 ## Getting started
 
-Here is a simple example to get started with **Deformable Detr** and aloception. To learn more about Deformable, you can checkout the <a href="https://visual-behavior.github.io/aloception/tutorials/training_deformable_detr.html">Deformable Tutorials<a/>.
+Here is a simple example to get started with **Deformable Detr** and aloception. To learn more about Deformable, you can checkout the <a href="https://visual-behavior.github.io/aloception-oss/tutorials/training_deformable_detr.html">Deformable Tutorials<a/>.
 
 ```python
 # Loading Deformable model

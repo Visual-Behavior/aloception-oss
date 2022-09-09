@@ -2,7 +2,7 @@
   <img src="images/aloception.png" style="text-align:center; width: 50%;" alt="Logo aloception" />
 </p>
 
-<a href="https://visual-behavior.github.io/aloception/">Documentation</a>
+<a href="https://visual-behavior.github.io/aloception-oss/">Documentation</a>
 
 [![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-0.3.0-green.svg)](https://conventionalcommits.org)
 
@@ -86,24 +86,24 @@ configuration. Please, ref to the `pytorch website <https://pytorch.org/>`_  for
 ## Getting started
 
 <ul>
-  <li><a href="https://visual-behavior.github.io/aloception/getting_started/getting_started.html">Getting started</a></li>
-  <li><a href="https://visual-behavior.github.io/aloception/getting_started/aloscene.html">Aloscene: Computer vision with ease</a></li>
-  <li><a href="https://visual-behavior.github.io/aloception/getting_started/alodataset.html">Alodataset: Loading your vision datasets</a></li>
-  <li><a href="https://visual-behavior.github.io/aloception/getting_started/alonet.html">Alonet: Loading & training your models</a></li>
-  <li><a href="https://visual-behavior.github.io/aloception/getting_started/augmented_tensor.html">About augmented tensors</a></li>
+  <li><a href="https://visual-behavior.github.io/aloception-oss/getting_started/getting_started.html">Getting started</a></li>
+  <li><a href="https://visual-behavior.github.io/aloception-oss/getting_started/aloscene.html">Aloscene: Computer vision with ease</a></li>
+  <li><a href="https://visual-behavior.github.io/aloception-oss/getting_started/alodataset.html">Alodataset: Loading your vision datasets</a></li>
+  <li><a href="https://visual-behavior.github.io/aloception-oss/getting_started/alonet.html">Alonet: Loading & training your models</a></li>
+  <li><a href="https://visual-behavior.github.io/aloception-oss/getting_started/augmented_tensor.html">About augmented tensors</a></li>
 </ul>
 
 
 ## Tutorials
 
 <ul>
-  <li><a href="https://visual-behavior.github.io/aloception/tutorials/data_setup.html">How to setup your data?</a></li>
-  <li><a href="https://visual-behavior.github.io/aloception/tutorials/training_detr.html">Training Detr</a></li>
-  <li><a href="https://visual-behavior.github.io/aloception/tutorials/finetuning_detr.html">Finetuning DETR</a></li>
-  <li><a href="https://visual-behavior.github.io/aloception/tutorials/training_panoptic.html">Training Panoptic Head</a></li>
-  <li><a href="https://visual-behavior.github.io/aloception/tutorials/training_deformable_detr.html">Training Deformable DETR</a></li>
-  <li><a href="https://visual-behavior.github.io/aloception/tutorials/finetuning_deformable_detr.html">Finetuning Deformanble DETR</a></li>
-  <li><a href="https://visual-behavior.github.io/aloception/tutorials/tensort_inference.html">Exporting DETR / Deformable-DETR to TensorRT</a></li>
+  <li><a href="https://visual-behavior.github.io/aloception-oss/tutorials/data_setup.html">How to setup your data?</a></li>
+  <li><a href="https://visual-behavior.github.io/aloception-oss/tutorials/training_detr.html">Training Detr</a></li>
+  <li><a href="https://visual-behavior.github.io/aloception-oss/tutorials/finetuning_detr.html">Finetuning DETR</a></li>
+  <li><a href="https://visual-behavior.github.io/aloception-oss/tutorials/training_panoptic.html">Training Panoptic Head</a></li>
+  <li><a href="https://visual-behavior.github.io/aloception-oss/tutorials/training_deformable_detr.html">Training Deformable DETR</a></li>
+  <li><a href="https://visual-behavior.github.io/aloception-oss/tutorials/finetuning_deformable_detr.html">Finetuning Deformanble DETR</a></li>
+  <li><a href="https://visual-behavior.github.io/aloception-oss/tutorials/tensort_inference.html">Exporting DETR / Deformable-DETR to TensorRT</a></li>
 </ul>
 
 # Alonet

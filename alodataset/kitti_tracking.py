@@ -21,10 +21,6 @@ def sequence_indices(n_samples, seq_size, skip, seq_skip):
         yield sequence_index(start, seq_size, skip)
 
 
-def default_value():
-    return []
-
-
 class KittiTrackingDataset(BaseDataset, SplitMixin):
     SPLIT_FOLDERS = {Split.TRAIN: "training", Split.TEST: "testing"}
 
@@ -73,7 +69,7 @@ class KittiTrackingDataset(BaseDataset, SplitMixin):
                 self.seq_params[seq]["right_extrinsic"] = calib["right_extrinsic"]
 
             with open(os.path.join(self.dataset_dir, "label_02", f"{seq}.txt"), "r") as f:
-                labels: defaultdict[int, List[List[str]]] = defaultdict(default_value)
+                labels: defaultdict[int, List[List[str]]] = defaultdict(list)
                 for line in f:
                     line = line.split()
                     labels[int(line[0])].append(line[1:])
@@ -153,9 +149,11 @@ class KittiTrackingDataset(BaseDataset, SplitMixin):
         for id, seq in enumerate(item["temporal_sequence"]):
 
             labels = []
+            categories = []
+            labels_3d = []
+            categories_3d = []
             boxes2d = []
             boxes3d = []
-            categories = []
 
             for box in item["labels"][id]:
                 x, y, w, h = float(box[5]), float(box[6]), float(box[7]), float(box[8])
@@ -182,6 +180,8 @@ class KittiTrackingDataset(BaseDataset, SplitMixin):
                             float(box[15]) + np.pi / 2,
                         ]
                     )
+                    labels_3d.append(int(box[0]))  # track_id
+                    categories_3d.append(LABELS.index(box[1]))  # type
 
             left_frame = Frame(
                 os.path.join(
@@ -192,11 +192,12 @@ class KittiTrackingDataset(BaseDataset, SplitMixin):
                 )
             )
             labels = Labels(labels, labels_names=["boxes"])
+            labels_3d = Labels(labels_3d, labels_names=["boxes"])
             bounding_box = BoundingBoxes2D(boxes2d, boxes_format="xyxy", absolute=True, frame_size=left_frame.HW)
             bounding_box.append_labels(labels, "track_id")
             bounding_box.append_labels(Labels(categories, labels_names=LABELS), "categories")
             boxe3d = BoundingBoxes3D(
-                boxes3d, labels={"track_id": labels, "categories": Labels(categories, labels_names=LABELS)}
+                boxes3d, labels={"track_id": labels_3d, "categories": Labels(categories_3d, labels_names=LABELS)}
             )
             left_frame.append_boxes3d(boxe3d)
             left_frame.append_boxes2d(bounding_box)

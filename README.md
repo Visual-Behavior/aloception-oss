@@ -73,15 +73,22 @@ frame.get_view().render()
 One can use **aloscene** independently than the two other packages to handle computer vision data, or to improve its
 training pipelines with **augmented tensors**.
 
-## Install
+## Installation
 
-Aloception's packages are built on top of multiple libraries. Most of them are listed in the **requirements.txt**
-```
-pip install -r requirements.txt
+You first need to install PyTorch based on your hardware and environment
+configuration. Please refer to the [pytorch website](https://pytorch.org/get-started/locally/) for this installation.
+
+Once this is done, you can run:
+```sh
+pip3 install git+https://github.com/Visual-Behavior/aloception-oss/
 ```
 
-Once the others packages are installed, you still need to install pytorch based on your hardware and environment
-configuration. Please, ref to the `pytorch website <https://pytorch.org/>`_  for this install.
+<br/>
+
+Alternatively, you can clone the repository and use:
+```sh
+pip3 install -e aloception-oss/
+```
 
 ## Getting started
 

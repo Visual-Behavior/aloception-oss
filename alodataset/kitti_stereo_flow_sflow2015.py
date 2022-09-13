@@ -137,7 +137,19 @@ class KittiStereoFlowSFlow2015(BaseDataset, SplitMixin):
         np.nan_to_num(start_points, copy=False, nan=-0.1, posinf=-0.1, neginf=-0.1)
 
         # Compute the points cloud from the depth at time T+1
-        end_points = next_depth.as_points3d(camera_intrinsic=next_frame.cam_intrinsic).cpu().numpy()
+        flow = next_frame.flow["flow_noc"][0].numpy()
+        # Move the points by the the flow because the depth is warped
+        y_points, x_points = torch.meshgrid(torch.arange(size[0]), torch.arange(size[1]))
+        x_points = x_points + flow[0, ...]
+        y_points = y_points + flow[1, ...]
+        x_points.unsqueeze_(0).unsqueeze_(0)
+        y_points.unsqueeze_(0).unsqueeze_(0)
+
+        end_points = (
+            next_depth.as_points3d(camera_intrinsic=next_frame.cam_intrinsic, points=(x_points, y_points))
+            .cpu()
+            .numpy()
+        )
         mask = mask | ~np.isfinite(end_points)
         np.nan_to_num(end_points, copy=False, nan=-0.1, posinf=-0.1, neginf=-0.1)
 

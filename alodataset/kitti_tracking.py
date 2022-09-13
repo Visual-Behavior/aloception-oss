@@ -5,6 +5,7 @@ from typing import List, Dict, Any, Union
 
 from alodataset import BaseDataset, SplitMixin, Split
 from aloscene import Frame, Pose, CameraIntrinsic, CameraExtrinsic, BoundingBoxes2D, Labels, BoundingBoxes3D
+import aloscene
 
 LABELS = ["Car", "Van", "Truck", "Pedestrian", "Person_sitting", "Cyclist", "Tram", "Misc", "DontCare"]
 
@@ -70,12 +71,16 @@ class KittiTrackingDataset(BaseDataset, SplitMixin):
                 labels = []
                 for line in f:
                     line = line.split()
+                    # TODO : this assumes that annotations are sorted by frame_id, and that all frame have annotations
+                    # either verify it manually on all sequences or load it differently (read a defaultdict(list) first)
                     if int(line[0]) == len(labels):
                         labels.append([])
                     labels[-1].append(line[1:])
 
             # Compute all the items.
             sequence_size = len(labels)
+            # TODO : this works only if each frame has annotations (do not make this assumption)
+            # better to read in image_2/seq (le nombre d'images)
 
             # Compute sequence indices
             temporal_sequences = sequence_indices(sequence_size, self.sequence_size, self.skip, self.sequence_skip)
@@ -102,12 +107,15 @@ class KittiTrackingDataset(BaseDataset, SplitMixin):
                 if (int(seq) <= 10 and self.split == Split.TRAIN) or (int(seq) >= 11 and self.split == Split.VAL):
                     loaded_sequences.append(seq)
         elif isinstance(sequences, int):
+            # TODO : cast to list of string and remove tests
             if not os.path.exists(os.path.join(self.dataset_dir, "image_02", f"{sequences:02d}")):
                 raise ValueError(f"Sequence {sequences:04} does not exist")
             if (sequences <= 10 and self.split == Split.VAL) or (sequences >= 11 and self.split == Split.TRAIN):
                 raise ValueError(f"Sequence {sequences:04d} is not in the {self.split} split")
             loaded_sequences.append(f"{sequences:04d}")
+
         elif isinstance(sequences, str):
+            # TODO : cast to list of string and remove tests
             if not os.path.exists(os.path.join(self.dataset_dir, "image_02", sequences)):
                 raise ValueError(f"Sequence {sequences} does not exist")
             if (int(sequences) <= 10 and self.split == Split.VAL) or (
@@ -130,6 +138,7 @@ class KittiTrackingDataset(BaseDataset, SplitMixin):
     def _get_cam_intrinsic(size):
         return CameraIntrinsic(focal_length=721.0, plane_size=size)
 
+    # TODO : delete unused method
     @staticmethod
     def _fake_extrinsinc():
         x = torch.eye(4, dtype=torch.float32)
@@ -169,11 +178,11 @@ class KittiTrackingDataset(BaseDataset, SplitMixin):
             for box in item["labels"][id]:
                 x, y, w, h = float(box[5]), float(box[6]), float(box[7]), float(box[8])
                 boxes2d.append([x, y, w, h])
-                labels.append(int(box[0]))
-                categories.append(LABELS.index(box[1]))
+                labels.append(int(box[0]))  # track_id
+                categories.append(LABELS.index(box[1]))  # type
 
                 # If the object caterory is "Don't care" (index -1) there is no 3D box.
-                if box[0] != "-1":
+                if box[0] != "-1":  # TODO: box[0] is the track_id, not the category
                     boxes3d.append(
                         [
                             float(box[12]),
@@ -202,9 +211,10 @@ class KittiTrackingDataset(BaseDataset, SplitMixin):
             )
             labels = Labels(labels, labels_names=["boxes"])
             bounding_box = BoundingBoxes2D(boxes2d, boxes_format="xyxy", absolute=True, frame_size=left_frame.HW)
-            bounding_box.append_labels(labels, "id")
+            bounding_box.append_labels(labels, "track_id")
             bounding_box.append_labels(Labels(categories, labels_names=LABELS), "categories")
             boxe3d = BoundingBoxes3D(boxes3d)
+            # TODO : boxes3D should also have labels
             left_frame.append_boxes3d(boxe3d)
             left_frame.append_boxes2d(bounding_box)
             left_frame.append_cam_extrinsic(CameraExtrinsic(self.seq_params[sequence]["left_extrinsic"]))
@@ -325,7 +335,17 @@ class KittiTrackingDataset(BaseDataset, SplitMixin):
 
 
 if __name__ == "__main__":
-    tracking = KittiTrackingDataset(sequences=[0], right_frame=False, sequence_size=4, sequence_skip=40, skip=17)
+    sequence_size = 3
+    tracking = KittiTrackingDataset(
+        sequences=[0], right_frame=False, sequence_size=sequence_size, sequence_skip=40, skip=17
+    )
     r = tracking.getitem(0)
-    print("tensor", r["left"].HW, r["left"].boxes3d, "\ntotal", r)
-    r["left"].get_view().render()
+    views = []
+    for t in range(sequence_size):
+        f = r["left"][t]
+        frame_view = f.get_view([f])
+        box2d_cat_view = f.boxes2d.get_view(f, labels_set="categories")
+        box2d_id_view = f.boxes2d.get_view(f, labels_set="track_id")
+        box3d_view = f.boxes3d.get_view(f)
+        views.extend([frame_view, box2d_cat_view, box2d_id_view, box3d_view])
+    aloscene.render(views, renderer="matplotlib")

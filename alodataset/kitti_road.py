@@ -20,7 +20,7 @@ class KittiRoadDataset(BaseDataset, SplitMixin):
         assert obj == "road" or (obj == "lane" and environement == "um"), "Type must be 'road' or 'lane'"
 
         if self.sample:
-            return
+            raise NotImplementedError("Sample mode is not implemented for KittiRoadDataset")
 
         self.obj = obj
         self.grayscale = grayscale

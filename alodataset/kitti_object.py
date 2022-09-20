@@ -19,7 +19,7 @@ class KittiObjectDataset(BaseDataset, SplitMixin):
         assert context_images >= 0 and context_images <= 3, "You can only get 3 frames before the main frame"
 
         if self.sample:
-            return
+            raise NotImplementedError("Sample is not implemented for KittiObjectDataset")
 
         self.split_folder = os.path.join(self.dataset_dir, self.get_split_folder())
         left_img_folder = os.path.join(self.split_folder, "image_2")

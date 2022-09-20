@@ -36,7 +36,7 @@ class KittiStereoFlowSFlow2015(BaseDataset, SplitMixin):
         self.load = load
 
         if self.sample:
-            return
+            raise NotImplementedError("Sample mode is not implemented for KittiStereoFlowSFlow2015")
 
         assert sequence_start <= sequence_end, "sequence_start should be less than sequence_end"
 

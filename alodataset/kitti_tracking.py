@@ -42,7 +42,7 @@ class KittiTrackingDataset(BaseDataset, SplitMixin):
         self.sequence_skip = sequence_skip
 
         if self.sample:
-            return
+            raise NotImplementedError("Sample mode is not implemented for KittiTrackingDataset")
 
         self.dataset_dir = os.path.join(self.dataset_dir, self.get_split_folder())
 

@@ -19,7 +19,7 @@ class KittiSemanticDataset(BaseDataset, SplitMixin):
         super().__init__(name=name, **kwargs)
 
         if self.sample:
-            return
+            raise NotImplementedError("Sample mode is not implemented for KittiSemanticDataset")
 
         self.split_folder = os.path.join(self.dataset_dir, self.get_split_folder())
         left_img_folder = os.path.join(self.split_folder, "image_2")

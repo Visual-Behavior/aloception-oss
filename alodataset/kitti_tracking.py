@@ -118,10 +118,6 @@ class KittiTrackingDataset(BaseDataset, SplitMixin):
 
         return loaded_sequences
 
-    @staticmethod
-    def _get_cam_intrinsic(size):
-        return CameraIntrinsic(focal_length=721.0, plane_size=size)
-
     def getitem(self, idx: int) -> Dict[str, Frame]:
         """
         Loads a single frame from the dataset.
@@ -191,19 +187,23 @@ class KittiTrackingDataset(BaseDataset, SplitMixin):
                     f"{seq:06d}.png",
                 )
             )
-            labels = Labels(labels, labels_names=["boxes"])
-            labels_3d = Labels(labels_3d, labels_names=["boxes"])
-            bounding_box = BoundingBoxes2D(boxes2d, boxes_format="xyxy", absolute=True, frame_size=left_frame.HW)
-            bounding_box.append_labels(labels, "track_id")
-            bounding_box.append_labels(Labels(categories, labels_names=LABELS), "categories")
-            boxe3d = BoundingBoxes3D(
-                boxes3d, labels={"track_id": labels_3d, "categories": Labels(categories_3d, labels_names=LABELS)}
-            )
-            left_frame.append_boxes3d(boxe3d)
-            left_frame.append_boxes2d(bounding_box)
+
+            if boxes2d:
+                labels = Labels(labels, labels_names=["boxes"])
+                bounding_box = BoundingBoxes2D(boxes2d, boxes_format="xyxy", absolute=True, frame_size=left_frame.HW)
+                bounding_box.append_labels(labels, "track_id")
+                bounding_box.append_labels(Labels(categories, labels_names=LABELS), "categories")
+                left_frame.append_boxes2d(bounding_box)
+            if boxes3d:
+                labels_3d = Labels(labels_3d, labels_names=["boxes"])
+                boxe3d = BoundingBoxes3D(
+                    boxes3d, labels={"track_id": labels_3d, "categories": Labels(categories_3d, labels_names=LABELS)}
+                )
+                left_frame.append_boxes3d(boxe3d)
+
+            left_frame.baseline = self.seq_params[sequence]["baseline"]
             left_frame.append_cam_extrinsic(CameraExtrinsic(self.seq_params[sequence]["left_extrinsic"]))
             left_frame.append_cam_intrinsic(CameraIntrinsic(self.seq_params[sequence]["left_intrinsic"]))
-            left_frame.baseline = self.seq_params[sequence]["baseline"]
 
             # Need to create temporal dimension for future fusion.
             left.append(left_frame.temporal())
@@ -319,17 +319,6 @@ class KittiTrackingDataset(BaseDataset, SplitMixin):
 
 
 if __name__ == "__main__":
-    sequence_size = 3
-    tracking = KittiTrackingDataset(
-        sequences=[0], right_frame=False, sequence_size=sequence_size, sequence_skip=40, skip=17
-    )
-    r = tracking.getitem(0)
-    views = []
-    for t in range(sequence_size):
-        f = r["left"][t]
-        frame_view = f.get_view([f])
-        box2d_cat_view = f.boxes2d.get_view(f, labels_set="categories")
-        box2d_id_view = f.boxes2d.get_view(f, labels_set="track_id")
-        box3d_view = f.boxes3d.get_view(f)
-        views.extend([frame_view, box2d_cat_view, box2d_id_view, box3d_view])
-    aloscene.render(views, renderer="matplotlib")
+    tracking = KittiTrackingDataset(right_frame=False)
+    r = tracking.getitem(286)
+    r["left"].get_view().render()

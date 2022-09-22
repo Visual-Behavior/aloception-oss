@@ -42,10 +42,7 @@ class SceneFlow(aloscene.tensors.SpatialAugmentedTensor):
             self.rename(None)
             .squeeze()
             .permute([1, 2, 0])
-            .detach()
-            .cpu()
-            .contiguous()
-            .numpy()[:, :, [axe_one, axe_two]]
+            .as_numpy()[:, :, [axe_one, axe_two]]
         )
         assert flow.ndim == 3 and flow.shape[-1] == 2, f"wrong flow shape:{flow.shape}"
         flow_color = flow_to_color(flow, clip_flow, convert_to_bgr, magnitude_max) / 255

@@ -281,7 +281,6 @@ class KittiOdometryDataset(BaseDataset, SplitMixin):
 if __name__ == "__main__":
     from random import randint
 
-    odo = KittiOdometryDataset(sequences=["00", "01"], sequence_skip=40, skip=28, sequence_size=5)
-    r = odo.getitem(randint(0, len(odo)))
-    print(r["left"])
-    r["left"].get_view().render()
+    dataset = KittiOdometryDataset(sequences=["00", "01"], sequence_skip=40, skip=28, sequence_size=5)
+    obj = dataset.getitem(randint(0, len(dataset)))
+    obj["left"].get_view().render()

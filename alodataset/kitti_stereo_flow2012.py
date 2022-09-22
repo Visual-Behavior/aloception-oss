@@ -8,6 +8,8 @@ from alodataset import BaseDataset, Split, SplitMixin
 from aloscene import Frame, Disparity, Mask, Flow
 from aloscene.camera_calib import CameraIntrinsic, CameraExtrinsic
 
+from alodataset.utils.kitti import load_calib_cam_to_cam
+
 
 class KittiStereoFlow2012(BaseDataset, SplitMixin):
     SPLIT_FOLDERS = {Split.TRAIN: "training", Split.TEST: "testing"}
@@ -103,7 +105,7 @@ class KittiStereoFlow2012(BaseDataset, SplitMixin):
             return BaseDataset.__getitem__(self, idx)
 
         # Read the calibration file
-        calib = self._load_calib(os.path.join(self.split_folder, "calib", f"{idx:06d}.txt"))
+        calib = load_calib_cam_to_cam(os.path.join(self.split_folder, "calib", f"{idx:06d}.txt"))
 
         sequence: Dict[int, Dict[str, Frame]] = {}
 
@@ -113,16 +115,24 @@ class KittiStereoFlow2012(BaseDataset, SplitMixin):
                 os.path.join(self.split_folder, f"image_{0 if self.grayscale else 2}/{idx:06d}_{index:02d}.png")
             )
             sequence[index]["left"].baseline = 0.54
-            sequence[index]["left"].append_cam_extrinsic(calib["left_extrinsic"])
-            sequence[index]["left"].append_cam_intrinsic(calib["left_intrinsic"])
+            sequence[index]["left"].append_cam_extrinsic(
+                CameraExtrinsic(calib["T_cam0_rect"] if self.grayscale else calib["T_cam2_rect"])
+            )
+            sequence[index]["left"].append_cam_intrinsic(
+                CameraIntrinsic(np.c_[calib["K_cam0"] if self.grayscale else calib["K_cam2"], [0, 0, 0]])
+            )
 
             if "right" in self.load:
                 sequence[index]["right"] = Frame(
                     os.path.join(self.split_folder, f"image_{1 if self.grayscale else 3}/{idx:06d}_{index:02d}.png")
                 )
                 sequence[index]["right"].baseline = 0.54
-                sequence[index]["right"].append_cam_extrinsic(calib["right_extrinsic"])
-                sequence[index]["right"].append_cam_intrinsic(calib["right_intrinsic"])
+                sequence[index]["right"].append_cam_extrinsic(
+                    CameraExtrinsic(calib["T_cam1_rect"] if self.grayscale else calib["T_cam3_rect"])
+                )
+                sequence[index]["right"].append_cam_intrinsic(
+                    CameraIntrinsic(np.c_[calib["K_cam1"] if self.grayscale else calib["K_cam3"], [0, 0, 0]])
+                )
 
             # Frame at index 10 is the only one to have ground truth in dataset.
             if index == 10:
@@ -197,78 +207,10 @@ class KittiStereoFlow2012(BaseDataset, SplitMixin):
 
         return result
 
-    # https://github.com/utiasSTARS/pykitti/tree/master
-    def read_calib_file(self, filepath):
-        """Read in a calibration file and parse into a dictionary."""
-        data = {}
-
-        with open(filepath, "r") as f:
-            for line in f.readlines():
-                key, value = line.split(":", 1)
-                # The only non-float values in these files are dates, which
-                # we don't care about anyway
-                try:
-                    data[key] = np.array([float(x) for x in value.split()])
-                except ValueError:
-                    pass
-
-        return data
-
-    def _load_calib(self, calib_filepath):
-        """Load and compute intrinsic and extrinsic calibration parameters."""
-        # We'll build the calibration parameters as a dictionary, then
-        # convert it to a namedtuple to prevent it from being modified later
-        data = {}
-
-        # Load the calibration file
-        filedata = self.read_calib_file(calib_filepath)
-
-        # Create 3x4 projection matrices
-        P_rect_00 = np.reshape(filedata["P0"], (3, 4))
-        P_rect_10 = np.reshape(filedata["P1"], (3, 4))
-        P_rect_20 = np.reshape(filedata["P2"], (3, 4))
-        P_rect_30 = np.reshape(filedata["P3"], (3, 4))
-
-        data["P_rect_00"] = P_rect_00
-        data["P_rect_10"] = P_rect_10
-        data["P_rect_20"] = P_rect_20
-        data["P_rect_30"] = P_rect_30
-
-        # Compute the rectified extrinsics from cam0 to camN
-        T0 = np.eye(4)
-        T0[0, 3] = P_rect_00[0, 3] / P_rect_00[0, 0]
-        T1 = np.eye(4)
-        T1[0, 3] = P_rect_10[0, 3] / P_rect_10[0, 0]
-        T2 = np.eye(4)
-        T2[0, 3] = P_rect_20[0, 3] / P_rect_20[0, 0]
-        T3 = np.eye(4)
-        T3[0, 3] = P_rect_30[0, 3] / P_rect_30[0, 0]
-
-        data["T0"] = T0
-        data["T1"] = T1
-        data["T2"] = T2
-        data["T3"] = T3
-
-        # Compute the camera intrinsics
-        data["K_cam0"] = P_rect_00[0:3, 0:3]
-        data["K_cam1"] = P_rect_10[0:3, 0:3]
-        data["K_cam2"] = P_rect_20[0:3, 0:3]
-        data["K_cam3"] = P_rect_30[0:3, 0:3]
-
-        # Return only the parameters we care.
-        result = {
-            "left_intrinsic": CameraIntrinsic(np.c_[data["K_cam0"] if self.grayscale else data["K_cam2"], [0, 0, 0]]),
-            "right_intrinsic": CameraIntrinsic(np.c_[data["K_cam1"] if self.grayscale else data["K_cam3"], [0, 0, 0]]),
-            "left_extrinsic": CameraExtrinsic(data["T0"] if self.grayscale else data["T2"]),
-            "right_extrinsic": CameraExtrinsic(data["T1"] if self.grayscale else data["T3"]),
-        }
-        return result
-
 
 if __name__ == "__main__":
     from random import randint
 
     dataset = KittiStereoFlow2012(grayscale=True, sequence_start=8)
     obj = dataset.getitem(randint(0, len(dataset)))
-    print(obj)
     obj["left"].get_view().render()

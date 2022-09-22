@@ -6,7 +6,8 @@ from collections import defaultdict
 
 from alodataset import BaseDataset, SplitMixin, Split
 from aloscene import Frame, CameraIntrinsic, CameraExtrinsic, BoundingBoxes2D, Labels, BoundingBoxes3D
-import aloscene
+
+from alodataset.utils.kitti import load_calib_cam_to_cam
 
 LABELS = ["Car", "Van", "Truck", "Pedestrian", "Person_sitting", "Cyclist", "Tram", "Misc", "DontCare"]
 
@@ -227,95 +228,23 @@ class KittiTrackingDataset(BaseDataset, SplitMixin):
 
         return frames
 
-    # https://github.com/utiasSTARS/pykitti/tree/master
-    def read_calib_file(self, filepath):
-        """Read in a calibration file and parse into a dictionary."""
-        data = {}
-
-        with open(filepath, "r") as f:
-            for line in f.readlines():
-                key, value = line.split(" ", 1)
-                key = key.strip(":")
-                # The only non-float values in these files are dates, which
-                # we don't care about anyway
-                try:
-                    data[key] = np.array([float(x) for x in value.split()])
-                except ValueError:
-                    pass
-        return data
-
     def _load_calib(self, calib_filepath):
-        """Load and compute intrinsic and extrinsic calibration parameters."""
-        # We'll build the calibration parameters as a dictionary, then
-        # convert it to a namedtuple to prevent it from being modified later
-        data = {}
-
-        # Load the calibration file
-        filedata = self.read_calib_file(calib_filepath)
-
-        # Create 3x4 projection matrices
-        P_rect_00 = np.reshape(filedata["P0"], (3, 4))
-        P_rect_10 = np.reshape(filedata["P1"], (3, 4))
-        P_rect_20 = np.reshape(filedata["P2"], (3, 4))
-        P_rect_30 = np.reshape(filedata["P3"], (3, 4))
-
-        data["P_rect_00"] = P_rect_00
-        data["P_rect_10"] = P_rect_10
-        data["P_rect_20"] = P_rect_20
-        data["P_rect_30"] = P_rect_30
-
-        # Compute the rectified extrinsics from cam0 to camN
-        T0 = np.eye(4)
-        T0[0, 3] = P_rect_00[0, 3] / P_rect_00[0, 0]
-        T1 = np.eye(4)
-        T1[0, 3] = P_rect_10[0, 3] / P_rect_10[0, 0]
-        T2 = np.eye(4)
-        T2[0, 3] = P_rect_20[0, 3] / P_rect_20[0, 0]
-        T3 = np.eye(4)
-        T3[0, 3] = P_rect_30[0, 3] / P_rect_30[0, 0]
-
-        data["T0"] = T0
-        data["T1"] = T1
-        data["T2"] = T2
-        data["T3"] = T3
-
-        # Compute the velodyne to rectified camera coordinate transforms
-        data["T_cam0_velo"] = np.reshape(filedata["Tr_velo_cam"], (3, 4))
-        data["T_cam0_velo"] = np.vstack([data["T_cam0_velo"], [0, 0, 0, 1]])
-        data["T_cam1_velo"] = T1.dot(data["T_cam0_velo"])
-        data["T_cam2_velo"] = T2.dot(data["T_cam0_velo"])
-        data["T_cam3_velo"] = T3.dot(data["T_cam0_velo"])
-
-        # Compute the camera intrinsics
-        data["K_cam0"] = P_rect_00[0:3, 0:3]
-        data["K_cam1"] = P_rect_10[0:3, 0:3]
-        data["K_cam2"] = P_rect_20[0:3, 0:3]
-        data["K_cam3"] = P_rect_30[0:3, 0:3]
-
-        # Compute the stereo baselines in meters by projecting the origin of
-        # each camera frame into the velodyne frame and computing the distances
-        # between them
-        p_cam = np.array([0, 0, 0, 1])
-        p_velo0 = np.linalg.inv(data["T_cam0_velo"]).dot(p_cam)
-        p_velo1 = np.linalg.inv(data["T_cam1_velo"]).dot(p_cam)
-        p_velo2 = np.linalg.inv(data["T_cam2_velo"]).dot(p_cam)
-        p_velo3 = np.linalg.inv(data["T_cam3_velo"]).dot(p_cam)
-
-        data["b_gray"] = np.linalg.norm(p_velo1 - p_velo0)  # gray baseline
-        data["b_rgb"] = np.linalg.norm(p_velo3 - p_velo2)  # rgb baseline
+        data = load_calib_cam_to_cam(calib_filepath)
 
         # Return only the parameters we care.
         result = {
             "left_intrinsic": np.c_[data["K_cam2"], [0, 0, 0]],
             "right_intrinsic": np.c_[data["K_cam3"], [0, 0, 0]],
-            "left_extrinsic": data["T2"],
-            "right_extrinsic": data["T3"],
+            "left_extrinsic": data["T_cam2_rect"],
+            "right_extrinsic": data["T_cam3_rect"],
             "baseline": data["b_rgb"],
         }
         return result
 
 
 if __name__ == "__main__":
-    tracking = KittiTrackingDataset(right_frame=False)
-    r = tracking.getitem(286)
-    r["left"].get_view().render()
+    from random import randint
+
+    dataset = KittiTrackingDataset(right_frame=False)
+    obj = dataset.getitem(randint(0, len(dataset)))
+    obj["left"].get_view().render()

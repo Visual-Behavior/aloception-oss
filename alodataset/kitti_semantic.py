@@ -115,73 +115,10 @@ class KittiSemanticDataset(BaseDataset, SplitMixin):
 
         return frame
 
-    # https://github.com/utiasSTARS/pykitti/tree/master
-    def read_calib_file(self, filepath):
-        """Read in a calibration file and parse into a dictionary."""
-        data = {}
-
-        with open(filepath, "r") as f:
-            for line in f.readlines():
-                if line == "\n":
-                    continue
-                key, value = line.split(":", 1)
-                # The only non-float values in these files are dates, which
-                # we don't care about anyway
-                try:
-                    data[key] = np.array([float(x) for x in value.split()])
-                except ValueError:
-                    pass
-
-        return data
-
-    def _load_calib(self, calib_filepath):
-        """Load and compute intrinsic and extrinsic calibration parameters."""
-        # We'll build the calibration parameters as a dictionary, then
-        # convert it to a namedtuple to prevent it from being modified later
-        data = {}
-
-        # Load the calibration file
-        filedata = self.read_calib_file(calib_filepath)
-
-        # Create 3x4 projection matrices
-        P_rect_00 = np.reshape(filedata["P0"], (3, 4))
-        P_rect_10 = np.reshape(filedata["P1"], (3, 4))
-        P_rect_20 = np.reshape(filedata["P2"], (3, 4))
-        P_rect_30 = np.reshape(filedata["P3"], (3, 4))
-
-        data["P_rect_00"] = P_rect_00
-        data["P_rect_10"] = P_rect_10
-        data["P_rect_20"] = P_rect_20
-        data["P_rect_30"] = P_rect_30
-
-        # Compute the rectified extrinsics from cam0 to camN
-        T0 = np.eye(4)
-        T0[0, 3] = P_rect_00[0, 3] / P_rect_00[0, 0]
-        T1 = np.eye(4)
-        T1[0, 3] = P_rect_10[0, 3] / P_rect_10[0, 0]
-        T2 = np.eye(4)
-        T2[0, 3] = P_rect_20[0, 3] / P_rect_20[0, 0]
-        T3 = np.eye(4)
-        T3[0, 3] = P_rect_30[0, 3] / P_rect_30[0, 0]
-
-        data["T_cam0_rect"] = T0
-        data["T_cam1_rect"] = T1
-        data["T_cam2_rect"] = T2
-        data["T_cam3_rect"] = T3
-
-        # Compute the camera intrinsics
-        data["K_cam0"] = P_rect_00[0:3, 0:3]
-        data["K_cam1"] = P_rect_10[0:3, 0:3]
-        data["K_cam2"] = P_rect_20[0:3, 0:3]
-        data["K_cam3"] = P_rect_30[0:3, 0:3]
-
-        return data
-
 
 if __name__ == "__main__":
     from random import randint
 
     dataset = KittiSemanticDataset()
     obj = dataset.getitem(randint(0, len(dataset)))
-    print("final", obj.shape, obj)
     obj.get_view().render()

@@ -7,11 +7,10 @@ from alodataset import BaseDataset, Split, SplitMixin
 from aloscene import Frame, BoundingBoxes2D, Labels, BoundingBoxes3D
 from aloscene.camera_calib import CameraIntrinsic, CameraExtrinsic
 
-LABELS = ["Car", "Van", "Truck", "Pedestrian", "Person_sitting", "Cyclist", "Tram", "Misc", "DontCare"]
-
 
 class KittiObjectDataset(BaseDataset, SplitMixin):
     SPLIT_FOLDERS = {Split.TRAIN: "training", Split.TEST: "testing"}
+    LABELS = ["Car", "Van", "Truck", "Pedestrian", "Person_sitting", "Cyclist", "Tram", "Misc", "DontCare"]
 
     def __init__(self, name="kitti_object", right_frame=False, context_images=3, **kwargs):
         super().__init__(name=name, **kwargs)
@@ -87,7 +86,7 @@ class KittiObjectDataset(BaseDataset, SplitMixin):
                     line = line.split()
                     x, y, w, h = float(line[4]), float(line[5]), float(line[6]), float(line[7])
                     boxes2d.append([x, y, w, h])
-                    labels.append(LABELS.index(line[0]))
+                    labels.append(self.LABELS.index(line[0]))
                     boxes3d.append(
                         [
                             float(line[11]),

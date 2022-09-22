@@ -1,5 +1,4 @@
 from aloscene import Frame, Mask, BoundingBoxes2D, Labels
-from aloscene.io.image import load_image
 from alodataset import BaseDataset
 
 from PIL import Image
@@ -115,8 +114,7 @@ class WooodScapeDataset(BaseDataset):
 
     def getitem(self, idx):
         ipath = self.items[idx]
-        frame = load_image(ipath)
-        frame = Frame(frame, names=tuple("CHW"))
+        frame = Frame(ipath, names=tuple("CHW"))
 
         if "seg" in self.labels:
             segmentation = self._path2segLabel(ipath)

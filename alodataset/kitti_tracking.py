@@ -9,8 +9,6 @@ from aloscene import Frame, CameraIntrinsic, CameraExtrinsic, BoundingBoxes2D, L
 
 from alodataset.utils.kitti import load_calib_cam_to_cam
 
-LABELS = ["Car", "Van", "Truck", "Pedestrian", "Person_sitting", "Cyclist", "Tram", "Misc", "DontCare"]
-
 
 def sequence_index(start, seq_size, skip):
     end = start + (seq_size - 1) * (skip + 1)
@@ -24,6 +22,7 @@ def sequence_indices(n_samples, seq_size, skip, seq_skip):
 
 class KittiTrackingDataset(BaseDataset, SplitMixin):
     SPLIT_FOLDERS = {Split.TRAIN: "training", Split.TEST: "testing"}
+    LABELS = ["Car", "Van", "Truck", "Pedestrian", "Person_sitting", "Cyclist", "Tram", "Misc", "DontCare"]
 
     def __init__(
         self,
@@ -153,7 +152,7 @@ class KittiTrackingDataset(BaseDataset, SplitMixin):
                 x, y, w, h = float(box[5]), float(box[6]), float(box[7]), float(box[8])
                 boxes2d.append([x, y, w, h])
                 labels.append(int(box[0]))  # track_id
-                categories.append(LABELS.index(box[1]))  # type
+                categories.append(self.LABELS.index(box[1]))  # type
 
                 # If the object caterory is "Don't care", there is no 3D box.
                 if box[1] != "DontCare":
@@ -175,7 +174,7 @@ class KittiTrackingDataset(BaseDataset, SplitMixin):
                         ]
                     )
                     labels_3d.append(int(box[0]))  # track_id
-                    categories_3d.append(LABELS.index(box[1]))  # type
+                    categories_3d.append(self.LABELS.index(box[1]))  # type
 
             left_frame = Frame(
                 os.path.join(
@@ -190,12 +189,13 @@ class KittiTrackingDataset(BaseDataset, SplitMixin):
                 labels = Labels(labels, labels_names=["boxes"])
                 bounding_box = BoundingBoxes2D(boxes2d, boxes_format="xyxy", absolute=True, frame_size=left_frame.HW)
                 bounding_box.append_labels(labels, "track_id")
-                bounding_box.append_labels(Labels(categories, labels_names=LABELS), "categories")
+                bounding_box.append_labels(Labels(categories, labels_names=self.LABELS), "categories")
                 left_frame.append_boxes2d(bounding_box)
             if boxes3d:
                 labels_3d = Labels(labels_3d, labels_names=["boxes"])
                 boxe3d = BoundingBoxes3D(
-                    boxes3d, labels={"track_id": labels_3d, "categories": Labels(categories_3d, labels_names=LABELS)}
+                    boxes3d,
+                    labels={"track_id": labels_3d, "categories": Labels(categories_3d, labels_names=self.LABELS)},
                 )
                 left_frame.append_boxes3d(boxe3d)
 

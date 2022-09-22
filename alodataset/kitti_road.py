@@ -7,8 +7,6 @@ from alodataset import BaseDataset, Split, SplitMixin
 from aloscene import Frame, Mask
 from aloscene.camera_calib import CameraIntrinsic, CameraExtrinsic
 
-LABELS = ["Car", "Van", "Truck", "Pedestrian", "Person_sitting", "Cyclist", "Tram", "Misc", "DontCare"]
-
 
 class KittiRoadDataset(BaseDataset, SplitMixin):
     SPLIT_FOLDERS = {Split.TRAIN: "training", Split.TEST: "testing"}
@@ -44,9 +42,6 @@ class KittiRoadDataset(BaseDataset, SplitMixin):
                 else None,
                 "calib": os.path.join(self.split_folder, f"calib/{environement}_{idx:06d}.txt"),
             }
-
-    def __len__(self):
-        return len(self.items)
 
     def getitem(self, idx) -> Dict[str, Frame]:
 

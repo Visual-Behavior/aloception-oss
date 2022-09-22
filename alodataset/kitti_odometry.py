@@ -93,9 +93,6 @@ class KittiOdometryDataset(BaseDataset, SplitMixin):
                 }
             )
 
-    def __len__(self):
-        return len(self.items)
-
     def _load_sequences(self, sequences) -> List[str]:
         loaded_sequences = []
 

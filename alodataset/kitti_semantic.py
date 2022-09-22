@@ -9,9 +9,6 @@ from aloscene import Frame, Mask, Labels, BoundingBoxes2D
 from aloscene.camera_calib import CameraIntrinsic, CameraExtrinsic
 
 
-LABELS = ["Car", "Van", "Truck", "Pedestrian", "Person_sitting", "Cyclist", "Tram", "Misc", "DontCare"]
-
-
 class KittiSemanticDataset(BaseDataset, SplitMixin):
     SPLIT_FOLDERS = {Split.TRAIN: "training", Split.TEST: "testing"}
 
@@ -74,9 +71,6 @@ class KittiSemanticDataset(BaseDataset, SplitMixin):
                 if self.split == Split.TRAIN
                 else None,
             }
-
-    def __len__(self):
-        return len(self.items)
 
     def rgb2id(self, color: Union[list, np.ndarray]):
         if isinstance(color, np.ndarray) and len(color.shape) == 3:

@@ -91,9 +91,6 @@ class KittiTrackingDataset(BaseDataset, SplitMixin):
                 }
             )
 
-    def __len__(self):
-        return len(self.items)
-
     def _load_sequences(self, sequences) -> List[str]:
         if sequences is None:
             sequences = []

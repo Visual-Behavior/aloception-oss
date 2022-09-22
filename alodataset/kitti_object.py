@@ -53,9 +53,6 @@ class KittiObjectDataset(BaseDataset, SplitMixin):
                 else None,
             }
 
-    def __len__(self):
-        return len(self.items)
-
     def getitem(self, idx) -> Dict[str, Frame]:
 
         if self.sample:

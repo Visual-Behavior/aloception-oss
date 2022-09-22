@@ -10,6 +10,7 @@ from alodataset import BaseDataset
 
 class KittiDepth(BaseDataset):
     """
+    Depth task from KITTI dataset.
     Parameters
     ----------
         subset: either 'train', 'val' or 'all'. If all, both val and train subset are considered.
@@ -41,7 +42,7 @@ class KittiDepth(BaseDataset):
     Exemples
     --------
         >>> # get all the dataset
-        >>> kitti_ds = KittiBaseDataset(
+        >>> kitti_ds = KittiDepth(
                                 subset='all',
                                 return_depth=True,
                                 )
@@ -51,7 +52,7 @@ class KittiDepth(BaseDataset):
                           ]
         >>> date = '2011_09_26'
         >>> custom_drives = {date: idsOfDrives}
-        >>> kitti_ds = KittiBaseDataset(
+        >>> kitti_ds = KittiDepth(
                                 return_depth=True,
                                 custom_drives=custom_drives,
                                 )
@@ -147,7 +148,19 @@ class KittiDepth(BaseDataset):
 
     @classmethod
     def from_yaml(cls, path: str, **kwargs):
-        """pass custom drives from a .yaml file"""
+        """Pass custom drives from a .yaml file.
+
+        Parameters
+        ----------
+
+        path: str
+            Path to the .yaml file.
+
+        Returns
+        -------
+        KittiDepth
+            KittiDepth dataset with custom drives.
+        """
         import yaml
 
         with open(path, "r") as f:
@@ -156,22 +169,33 @@ class KittiDepth(BaseDataset):
 
     @staticmethod
     def depth_from_path(path: str) -> Depth:
-        """reads depth from the given path"""
+        """Reads depth from the given path.
+
+        Parameters
+        ----------
+        path: str
+            Path to the depth file.
+
+        Returns
+        -------
+        Depth
+            Depth object.
+        """
         depth = np.asarray(Image.open(path), dtype=np.int16)
         return Depth(np.expand_dims(depth, 0))
 
     def getitem(self, idx):
-        """Get the :mod:`Frame <aloscene.frame>` corresponds to *idx* index
+        """Get the :mod:`Frame <aloscene.frame>` corresponds to *idx* index.
 
         Parameters
         ----------
         idx : int
-            Index of the frame to be returned
+            Index of the frame to be returned.
 
         Returns
         -------
         :mod:`Frame <aloscene.frame>`
-            Frame with its corresponding depth
+            Frame with its corresponding depth.
         """
         if self.sample:
             return BaseDataset.__getitem__(self, idx)
@@ -188,10 +212,17 @@ class KittiDepth(BaseDataset):
 
     def get_corresponding_depth(self, path: str):
         """
-        Args:
-            path to drive
+        Get the corresponding depth path from the given image path.
+
+        Parameters
+        ----------
+        path: str
+            Path to drive.
+
         Returns:
-            corresponding path to depth groud truth image.
+        --------
+        path: str
+            Corresponding path to depth groud truth image.
         """
         fixed_dir = os.path.join("proj_depth", "groundtruth")
         filename = os.path.basename(path)
@@ -201,7 +232,22 @@ class KittiDepth(BaseDataset):
     def _get_paths_from_subdirs(
         self, drive_path: str, filenames: Union[List[str], None] = None, extension: str = "png"
     ) -> List[str]:
-        """return paths to images in drive_path/self.main_folder/data with the specified extension"""
+        """Return paths to images in drive_path/self.main_folder/data with the specified extension.
+
+        Parameters
+        ----------
+        drive_path: str
+            Path to the drive.
+        filenames: list, optional
+            List of filenames to be returned. If None, all files are returned.
+        extension: str, optional
+            Extension of the files to be returned. Default is "png".
+
+        Returns
+        -------
+        list[str]
+            List of paths to images.
+        """
         assert extension in ["png", "jpg"], "unvalid extension: should be 'png' | 'jpg'"
         main_path = os.path.join(drive_path, self.main_folder, "data")
 
@@ -215,11 +261,35 @@ class KittiDepth(BaseDataset):
 
     @staticmethod
     def get_drive_name(date: str, drive_id: str) -> str:
-        """return the drive file name with the corresponding date and drive id"""
+        """Return the drive file name with the corresponding date and drive id.
+
+        Parameters
+        ----------
+        date: str
+            Date of the drive.
+        drive_id: str
+            Id of the drive.
+
+        Returns
+        -------
+        str
+            Drive name."""
         return date + "_drive_" + drive_id + "_sync"
 
     @staticmethod
     def date_id_from_drive(basename):
+        """Return the date and drive id from the drive name.
+
+        Parameters
+        ----------
+        basename: str
+            Drive name.
+
+        Returns
+        -------
+        str
+            Date and id of the drive.
+        """
         return basename[:10], basename[17:21]
 
 

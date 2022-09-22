@@ -10,5 +10,3 @@ from . import callbacks
 
 from . import detr_panoptic
 from . import deformable_detr_panoptic
-
-from . import torch2trt

@@ -304,23 +304,12 @@ class KittiStereoFlowSFlow2015(BaseDataset, SplitMixin):
         return result
 
     def _load_calib(self, path, idx):
-        """Load and compute intrinsic and extrinsic calibration parameters."""
-        # We'll build the calibration parameters as a dictionary, then
-        # convert it to a namedtuple to prevent it from being modified later
-        data = {}
-
-        # Load the rigid transformation from IMU to velodyne
-        data["T_velo_imu"] = self._load_calib_rigid(os.path.join(path, "calib_imu_to_velo", f"{idx:06d}.txt"))
-
-        # Load the camera intrinsics and extrinsics
-        data.update(
-            load_calib_cam_to_cam(
-                os.path.join(path, "calib_cam_to_cam", f"{idx:06d}.txt"),
-                os.path.join(path, "calib_velo_to_cam", f"{idx:06d}.txt"),
-            )
+        data = load_calib_cam_to_cam(
+            os.path.join(path, "calib_cam_to_cam", f"{idx:06d}.txt"),
+            os.path.join(path, "calib_velo_to_cam", f"{idx:06d}.txt"),
         )
 
-        # Return the parameters we want only
+        # Return only the parameters we are interested in.
         result = {
             "baseline": data["b_gray"] if self.grayscale else data["b_rgb"],
             "left_intrinsic": CameraIntrinsic(np.c_[data["K_cam0"] if self.grayscale else data["K_cam2"], [0, 0, 0]]),

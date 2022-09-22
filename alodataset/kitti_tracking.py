@@ -231,7 +231,7 @@ class KittiTrackingDataset(BaseDataset, SplitMixin):
     def _load_calib(self, calib_filepath):
         data = load_calib_cam_to_cam(calib_filepath)
 
-        # Return only the parameters we care.
+        # Return only the parameters we are interested in.
         result = {
             "left_intrinsic": np.c_[data["K_cam2"], [0, 0, 0]],
             "right_intrinsic": np.c_[data["K_cam3"], [0, 0, 0]],

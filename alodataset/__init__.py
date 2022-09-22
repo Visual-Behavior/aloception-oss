@@ -14,3 +14,5 @@ from .crowd_human_dataset import CrowdHumanDataset
 from .sintel_flow_dataset import SintelFlowDataset
 from .sintel_disparity_dataset import SintelDisparityDataset
 from .sintel_multi_dataset import SintelMultiDataset
+from .woodScape_dataset import WooodScapeDataset
+from .woodScape_split_dataset import WoodScapeSplitDataset

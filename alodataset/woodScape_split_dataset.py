@@ -1,5 +1,4 @@
-from alodataset import Split, SplitMixin
-from alovb.datasets import WooodScapeDataset
+from alodataset import Split, SplitMixin, WooodScapeDataset
 
 
 class WoodScapeSplitDataset(WooodScapeDataset, SplitMixin):

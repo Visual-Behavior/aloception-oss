@@ -72,12 +72,12 @@ def load_calib_cam_to_cam(cam_to_cam_filepath, velo_to_cam_file: Union[str, None
 
     # Load the rigid transformation from velodyne coordinates
     # to unrectified cam0 coordinates
-    T_cam0unrect_velo = None
+    t_cam0unrect_velo = None
     stereo_baseline = None
     if velo_to_cam_file is not None and r_rect is not None:
-        T_cam0unrect_velo = load_calib_rigid(velo_to_cam_file)
+        t_cam0unrect_velo = load_calib_rigid(velo_to_cam_file)
 
-        velo_to_cam = [rectified_extrinsics[i].dot(r_rect[i].dot(T_cam0unrect_velo)) for i in range(4)]
+        velo_to_cam = [rectified_extrinsics[i].dot(r_rect[i].dot(t_cam0unrect_velo)) for i in range(4)]
         p_cam = np.array([0, 0, 0, 1])
         stereo_baseline = [np.linalg.inv(velo_to_cam[i]).dot(p_cam) for i in range(4)]
 

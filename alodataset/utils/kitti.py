@@ -2,6 +2,16 @@ import numpy as np
 from typing import Union
 
 
+def sequence_index(start, seq_size, skip):
+    end = start + (seq_size - 1) * (skip + 1)
+    return np.linspace(start, end, seq_size).astype(int).tolist()
+
+
+def sequence_indices(n_samples, seq_size, skip, seq_skip):
+    for start in range(0, n_samples - (seq_size - 1) * (skip + 1), seq_skip + 1):
+        yield sequence_index(start, seq_size, skip)
+
+
 # https://github.com/utiasSTARS/pykitti/tree/master
 def read_calib_file(filepath):
     """Read in a calibration file and parse into a dictionary."""

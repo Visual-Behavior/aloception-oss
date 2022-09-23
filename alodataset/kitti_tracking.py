@@ -7,17 +7,7 @@ from collections import defaultdict
 from alodataset import BaseDataset, SplitMixin, Split
 from aloscene import Frame, CameraIntrinsic, CameraExtrinsic, BoundingBoxes2D, Labels, BoundingBoxes3D
 
-from alodataset.utils.kitti import load_calib_cam_to_cam
-
-
-def sequence_index(start, seq_size, skip):
-    end = start + (seq_size - 1) * (skip + 1)
-    return np.linspace(start, end, seq_size).astype(int).tolist()
-
-
-def sequence_indices(n_samples, seq_size, skip, seq_skip):
-    for start in range(0, n_samples - (seq_size - 1) * (skip + 1), seq_skip + 1):
-        yield sequence_index(start, seq_size, skip)
+from alodataset.utils.kitti import load_calib_cam_to_cam, sequence_indices
 
 
 class KittiTrackingDataset(BaseDataset, SplitMixin):

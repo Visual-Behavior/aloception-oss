@@ -1,22 +1,29 @@
-import torch
 from aloscene.tensors import AugmentedTensor
+from typing import Union, Tuple
+
 import matplotlib.pyplot as plt
 import numpy as np
+import torch
 
 
-def coords2rtheta(K, size, distortion, projection="pinhole"):
+def coords2rtheta(
+    K,
+    size: Tuple[int, int],
+    distortion: Union[float, Tuple[float, float]],
+    projection: str = "pinhole"
+):
     """Compute r_d and theta from image coordinates.
 
     Parameters
     ----------
     K: aloscene.CameraIntrinsic
         Intrinsic matrix of camera.
-    size: tuple
+    size: Tuple[int, int]
         (H, W) height and width of image
-    distortion: float
-        Distortion coefficient using for wide angle camera.
+    distortion: Union[float, Tuple[float, float]]
+        Distortion coefficient(s) for wide angle cameras.
     projection: str
-        Projection model: Only pinhole and equidistant projection are supported.
+        Projection model: Only pinhole, equidistant and kumler_bauer projections are supported.
     """
     h, w = size
     focal = K.focal_length[..., 0]
@@ -37,6 +44,11 @@ def coords2rtheta(K, size, distortion, projection="pinhole"):
         theta = torch.atan(r_d / focal)
     elif projection == "equidistant":
         theta = r_d / (focal * distortion)
+    elif projection == "kumler_bauer":
+        if isinstance(distortion, tuple):
+            theta = torch.asin(r_d / (distortion[0] * focal)) / distortion[1]
+        else:  # use the same value for k1 & k2
+            theta = torch.asin(r_d / (distortion * focal)) / distortion
     else:
         raise NotImplementedError
 

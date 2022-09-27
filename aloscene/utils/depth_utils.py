@@ -1,5 +1,5 @@
 from aloscene.tensors import AugmentedTensor
-from typing import Union, Tuple
+from typing import Union, Tuple, Sequence
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -45,10 +45,9 @@ def coords2rtheta(
     elif projection == "equidistant":
         theta = r_d / (focal * distortion)
     elif projection == "kumler_bauer":
-        if isinstance(distortion, tuple):
-            theta = torch.asin(r_d / (distortion[0] * focal)) / distortion[1]
-        else:  # use the same value for k1 & k2
-            theta = torch.asin(r_d / (distortion * focal)) / distortion
+        assert isinstance(distortion, Sequence), "Kumler-Bauer projection needs two distortion coefficients (alpha, beta)"
+        theta_dist = torch.atan(r_d / focal)
+        theta = torch.atan((distortion[0] / focal) * torch.sin(distortion[1] * theta_dist))
     else:
         raise NotImplementedError
 

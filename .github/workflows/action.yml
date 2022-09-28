@@ -46,3 +46,20 @@ jobs:
             exit 1
         fi
       shell: bash
+  linter:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Black
+        uses: psf/black@stable
+        with:
+          options: "--check -l 119"
+      - name: Set up Python environment
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.8"
+      - name: flake8 Lint
+        uses: py-actions/flake8@v2
+        with:
+          ignore: "E203,E722,I201,I100,BLK100,W503"
+          max-line-length: "119"

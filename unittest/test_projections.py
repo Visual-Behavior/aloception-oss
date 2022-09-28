@@ -8,7 +8,9 @@ def _test_disp_depth_points3d(depth, height, width, resize=True):
     assert torch.allclose(depth.as_tensor(), depth.as_disp().as_depth().as_tensor())
 
     if resize:
-        assert torch.allclose(depth.as_tensor(), depth.resize((height * 2, width * 2)).resize((height, width)).as_tensor())
+        assert torch.allclose(
+            depth.as_tensor(), depth.resize((height * 2, width * 2)).resize((height, width)).as_tensor()
+        )
 
         assert torch.allclose(
             depth.as_tensor(),
@@ -31,7 +33,11 @@ def _test_disp_depth_points3d(depth, height, width, resize=True):
 
         assert torch.allclose(
             depth.as_tensor(),
-            depth.as_disp().as_depth().as_points3d().as_depth(torch.zeros_like(depth), depth.cam_intrinsic).as_tensor(),
+            depth.as_disp()
+            .as_depth()
+            .as_points3d()
+            .as_depth(torch.zeros_like(depth), depth.cam_intrinsic)
+            .as_tensor(),
         )
 
     if resize:

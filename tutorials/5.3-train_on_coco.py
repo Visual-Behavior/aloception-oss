@@ -52,8 +52,10 @@ args.limit_train_batches = 1000  # Train only with 1000 samples. Comment if you 
 
 # Dataset use to train
 # Init dataset loader and model with pre-trained weights loaded for fast train results
-coco_loader = CocoDetection2Detr(args, classes = ['cat','dog']) # Using COCODataset, background_class must have id = len(classes)
-detr_ftune_nn = DetrR50Finetune(num_classes=2, weights="detr-r50") # num_classes include bg_class
+coco_loader = CocoDetection2Detr(
+    args, classes=["cat", "dog"]
+)  # Using COCODataset, background_class must have id = len(classes)
+detr_ftune_nn = DetrR50Finetune(num_classes=2, weights="detr-r50")  # num_classes include bg_class
 lit_detr = LitDetr(args, model=detr_ftune_nn)
 
 # Callbacks

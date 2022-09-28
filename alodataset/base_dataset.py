@@ -122,7 +122,7 @@ class BaseDataset(torch.utils.data.Dataset):
         sample: bool = False,
         **kwargs,
     ):
-        """ Streaming dataset
+        """Streaming dataset
 
         Parameters
         ----------

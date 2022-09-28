@@ -12,8 +12,7 @@ from aloscene import Frame
 
 
 def main(args):
-    """ Main
-    """
+    """Main"""
     device = torch.device("cuda")
 
     # Init the DetrPanoptic model with the dataset

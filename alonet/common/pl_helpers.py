@@ -169,7 +169,6 @@ def load_training(
     weights_path = getattr(args, "weights", None) if args is not None else None
     no_run_id = args.no_run_id if no_run_id is None and "no_run_id" in args else no_run_id
 
-
     if "weights" in kwargs and kwargs["weights"] is not None:  # Highest priority
         weights_path = kwargs["weights"]
 

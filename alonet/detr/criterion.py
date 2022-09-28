@@ -12,7 +12,7 @@ import aloscene
 
 
 class DetrCriterion(nn.Module):
-    """ Create the criterion.
+    """Create the criterion.
 
     Parameters
     ----------

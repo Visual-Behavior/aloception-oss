@@ -168,7 +168,10 @@ class Data2Detr(pl.LightningDataModule):
         return frame.norm_resnet()
 
     def val_transform(
-        self, frame: aloscene.Frame, same_on_sequence: bool = True, same_on_frames: bool = False,
+        self,
+        frame: aloscene.Frame,
+        same_on_sequence: bool = True,
+        same_on_frames: bool = False,
     ):
         """Transform requered to valid on each frame
 

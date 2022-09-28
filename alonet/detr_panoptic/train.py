@@ -36,7 +36,10 @@ class LitPanopticDetr(alonet.deformable_detr.LitDeformableDetr):
     def add_argparse_args(parent_parser: ArgumentParser, parser: _ArgumentGroup = None):
         parser = parent_parser.add_argument_group("LitPanopticDetr") if parser is None else parser
         parser.add_argument(
-            "--weights", type=str, default=None, help="One of {detr-r50-panoptic}, by default %(default)s",
+            "--weights",
+            type=str,
+            default=None,
+            help="One of {detr-r50-panoptic}, by default %(default)s",
         )
         parser.add_argument(
             "--gradient_clip_val", type=float, default=0.1, help="Gradient clipping norm, by default %(default)s"
@@ -63,9 +66,7 @@ class LitPanopticDetr(alonet.deformable_detr.LitDeformableDetr):
         # Get correct set of labels and assert inputs content
         frames = get_base_model_frame(frames)
         self.assert_input(frames)
-        get_filter_fn = lambda *args, **kwargs: get_mask_queries(
-            *args, matcher=self.matcher, **kwargs
-        )
+        get_filter_fn = lambda *args, **kwargs: get_mask_queries(*args, matcher=self.matcher, **kwargs)
         m_outputs = self.model(frames, get_filter_fn=get_filter_fn)
 
         total_loss, losses = self.criterion(m_outputs, frames, compute_statistical_metrics=batch_idx < 100)

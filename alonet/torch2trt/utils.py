@@ -1,6 +1,6 @@
 from alonet import ALONET_ROOT
 from alonet.torch2trt.calibrator import (
-    LegacyCalibrator, 
+    LegacyCalibrator,
     MinMaxCalibrator,
     EntropyCalibrator,
     EntropyCalibrator2,
@@ -276,7 +276,7 @@ def allocate_buffers(context, stream=None, sync_mode=True, shared_mem={}):
                     host_mem = cuda.pagelocked_empty(size, dtype)
                     device_mem = cuda.mem_alloc(host_mem.nbytes)
                 out_pointer += 1
-                
+
             else:
                 host_mem = cuda.pagelocked_empty(size, dtype)
                 device_mem = cuda.mem_alloc(host_mem.nbytes)
@@ -374,7 +374,11 @@ def execute_async(context, bindings, inputs, outputs, stream, shared_mem, inputs
         [cuda.memcpy_htod_async(inp.device, inp.host, stream) for inp in inputs]
     else:
         # Reload all inputs from "inputs" except the ones with shared memory.
-        [cuda.memcpy_htod_async(inp.device, inp.host, stream) for i, inp in enumerate(inputs) if i not in shared_mem.keys()]
+        [
+            cuda.memcpy_htod_async(inp.device, inp.host, stream)
+            for i, inp in enumerate(inputs)
+            if i not in shared_mem.keys()
+        ]
 
     # Run inference.
     check = context.execute_async(bindings=bindings, stream_handle=stream.handle)
@@ -385,7 +389,11 @@ def execute_async(context, bindings, inputs, outputs, stream, shared_mem, inputs
         [cuda.memcpy_dtoh(out.host, out.device) for out in outputs]
     else:
         # only outputs with no memory shared
-        [cuda.memcpy_dtoh_async(out.host, out.device, stream) for i, out in enumerate(outputs) if i not in shared_mem.values()]
+        [
+            cuda.memcpy_dtoh_async(out.host, out.device, stream)
+            for i, out in enumerate(outputs)
+            if i not in shared_mem.values()
+        ]
     # Synchronize the stream
     stream.synchronize()
     # Return only the host outputs.

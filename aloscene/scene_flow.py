@@ -38,12 +38,7 @@ class SceneFlow(aloscene.tensors.SpatialAugmentedTensor):
         axe_two = ord(axes[1]) - ord("x")
         assert len(axes) == 2, "axes should be of length 2"
         assert axe_one >= 0 and axe_one <= 2 and axe_two >= 0 and axe_two <= 2, "axes should be x, y or z"
-        flow = (
-            self.rename(None)
-            .squeeze()
-            .permute([1, 2, 0])
-            .as_numpy()[:, :, [axe_one, axe_two]]
-        )
+        flow = self.rename(None).squeeze().permute([1, 2, 0]).as_numpy()[:, :, [axe_one, axe_two]]
         assert flow.ndim == 3 and flow.shape[-1] == 2, f"wrong flow shape:{flow.shape}"
         flow_color = flow_to_color(flow, clip_flow, convert_to_bgr, magnitude_max) / 255
         return View(flow_color)

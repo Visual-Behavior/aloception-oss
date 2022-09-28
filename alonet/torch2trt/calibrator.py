@@ -18,7 +18,7 @@ class DataBatchStreamer:
             Streaming batch size. Default 8.
         limit_batches: (int)
             Maximum batches to use.
-    
+
     Attributes
     ----------
         batch_idx: (int)
@@ -46,7 +46,7 @@ class DataBatchStreamer:
         >>>
         >>>     def __getitem__(self, idx):
         >>>         return input1[idx], input2[idx]
-        >>>     
+        >>>
         >>>     def __len__(self):
         >>>         return 10
         >>>
@@ -65,17 +65,20 @@ class DataBatchStreamer:
         >>> s_dataStreamer = DataBatchStreamer(dataset=s_calib)
         >>> m_dataStreamer = DataBatchStreamer(dataset=m_calib)
     """
+
     def __init__(
-            self,
-            dataset=None,
-            batch_size=8,
-            limit_batches=None,
-            **kwargs,
-            ):
+        self,
+        dataset=None,
+        batch_size=8,
+        limit_batches=None,
+        **kwargs,
+    ):
         for sample in dataset[0]:
             if not isinstance(sample, (torch.Tensor, np.ndarray, Frame)):
                 ftypes = ["torch.Tensor", "ndarray", "aloscene.Frame"]
-                raise TypeError(f"unknown sample type, expected samples to be instance of {' or '.join(ftypes)} got {sample.__class__.__name__} instead")
+                raise TypeError(
+                    f"unknown sample type, expected samples to be instance of {' or '.join(ftypes)} got {sample.__class__.__name__} instead"
+                )
 
         self.batch_idx = 0
         self.dataset = dataset
@@ -90,11 +93,11 @@ class DataBatchStreamer:
         self.max_batch = self.dlength // batch_size + (1 if self.dlength % batch_size else 0)
         if limit_batches is not None:
             self.max_batch = min(self.max_batch, limit_batches)
-    
+
     def reset(self):
         """Resets batch index"""
         self.batch_idx = 0
-    
+
     @staticmethod
     def convert_frame(frame):
         if isinstance(frame, Frame):
@@ -105,9 +108,11 @@ class DataBatchStreamer:
             pass
         else:
             ftypes = ["torch.Tensor", "ndarray", "aloscene.Frame"]
-            raise TypeError(f"Unknown sample type, expected samples to be instance of {' or '.join(ftypes)} got {frame.__class__.__name__}.")
+            raise TypeError(
+                f"Unknown sample type, expected samples to be instance of {' or '.join(ftypes)} got {frame.__class__.__name__}."
+            )
         return frame
-    
+
     def next_(self):
         """Returns next batch"""
         if self.batch_idx < self.max_batch:
@@ -116,7 +121,9 @@ class DataBatchStreamer:
 
             for i, j in enumerate(range(bidx, eidx)):
                 frames = self.dataset[j]
-                assert isinstance(frames, (list, tuple)), f"dataset should return samples of type list or tuple. got {frames.__class__.__name__} instead"
+                assert isinstance(
+                    frames, (list, tuple)
+                ), f"dataset should return samples of type list or tuple. got {frames.__class__.__name__} instead"
                 for k in range(self.n_inputs):
                     frame = self.convert_frame(frames[k])
                     self.calib_ds[k][i] = frame
@@ -125,33 +132,34 @@ class DataBatchStreamer:
             return [np.ascontiguousarray(self.calib_ds[i], dtype=np.float32) for i in range(self.n_inputs)]
         else:
             return None
-    
+
     def __len__(self):
         return self.max_batch
-    
+
 
 class BaseCalibrator:
     """Tensorrt post training quantization data calibrator
-    
+
     Parameters
     ----------
         data_streamer: (DataBatchStreamer)
             Data streamer.
         cache_file: (str)
             Path to calibration cache file. Default None.
-    
+
     Attributes
     ----------
         nbytes: List[int]
             List of number of bytes occupied by each dataset batch.
 
     """
+
     def __init__(
-            self,
-            data_streamer,
-            cache_file=None,
-            **kwargs,
-        ):
+        self,
+        data_streamer,
+        cache_file=None,
+        **kwargs,
+    ):
         ## Avoid confusing: Deleting calibration file as the read funtion comes first.
         if os.path.exists(cache_file):
             print("Cache file exists already: Deleting file...")
@@ -172,24 +180,24 @@ class BaseCalibrator:
         ## return None if the batch is empty
         if batch is None:
             return None
-        
+
         for i in range(self.n_inputs):
             cuda.memcpy_htod(self.d_input[i], batch[i])
         return self.d_input
-        
+
     def read_calibration_cache(self):
         ## expilicitly returns None if cache file does not exist.
         if os.path.exists(self.cache_file):
-            with open(self.cache_file, 'rb') as f:
+            with open(self.cache_file, "rb") as f:
                 return f.read()
 
     def write_calibration_cache(self, cache):
         if self.cache_file is None:
             return None
 
-        with open(self.cache_file, 'wb') as f:
+        with open(self.cache_file, "wb") as f:
             f.write(cache)
-    
+
     def free(self):
         for d in self.d_input:
             d.free()
@@ -197,43 +205,43 @@ class BaseCalibrator:
 
 class MinMaxCalibrator(BaseCalibrator, trt.IInt8MinMaxCalibrator):
     def __init__(
-            self,
-            data_streamer,
-            cache_file,
-            **kwargs,
-        ):
+        self,
+        data_streamer,
+        cache_file,
+        **kwargs,
+    ):
         trt.IInt8MinMaxCalibrator.__init__(self)
         super(MinMaxCalibrator, self).__init__(data_streamer=data_streamer, cache_file=cache_file, **kwargs)
 
 
 class LegacyCalibrator(BaseCalibrator, trt.IInt8LegacyCalibrator):
     def __init__(
-            self,
-            data_streamer,
-            cache_file,
-            **kwargs,
-        ):
+        self,
+        data_streamer,
+        cache_file,
+        **kwargs,
+    ):
         trt.IInt8LegacyCalibrator.__init__(self)
         super(LegacyCalibrator, self).__init__(data_streamer=data_streamer, cache_file=cache_file, **kwargs)
 
 
 class EntropyCalibrator(BaseCalibrator, trt.IInt8EntropyCalibrator):
     def __init__(
-            self,
-            data_streamer,
-            cache_file,
-            **kwargs,
-        ):
+        self,
+        data_streamer,
+        cache_file,
+        **kwargs,
+    ):
         trt.IInt8EntropyCalibrator.__init__(self)
         super(EntropyCalibrator, self).__init__(data_streamer=data_streamer, cache_file=cache_file, **kwargs)
 
 
 class EntropyCalibrator2(BaseCalibrator, trt.IInt8EntropyCalibrator2):
     def __init__(
-            self,
-            data_streamer,
-            cache_file,
-            **kwargs,
-        ):
+        self,
+        data_streamer,
+        cache_file,
+        **kwargs,
+    ):
         trt.IInt8EntropyCalibrator2.__init__(self)
         super(EntropyCalibrator2, self).__init__(data_streamer=data_streamer, cache_file=cache_file, **kwargs)

@@ -27,7 +27,12 @@ class DetrR50(Detr):
         # Positional encoding
         position_embedding = self.build_positional_encoding(hidden_dim=256, position_embedding="sin")
         # Backbone
-        backbone = self.build_backbone("resnet50", train_backbone=True, return_interm_layers=True, dilation=False,)
+        backbone = self.build_backbone(
+            "resnet50",
+            train_backbone=True,
+            return_interm_layers=True,
+            dilation=False,
+        )
         num_channels = backbone.num_channels
         backbone = alonet.detr.backbone.Joiner(backbone, position_embedding)
         backbone.num_channels = num_channels

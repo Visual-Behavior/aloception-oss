@@ -88,8 +88,7 @@ class FrozenBatchNorm2d(torch.nn.Module):
 
 
 class BackboneBase(nn.Module):
-    """Base class to define behavior of backbone
-    """
+    """Base class to define behavior of backbone"""
 
     def __init__(
         self,

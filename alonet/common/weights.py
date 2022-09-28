@@ -26,7 +26,7 @@ WEIGHT_NAME_TO_FILES = {
     ],
     "detr-r50-things-stuffs": [
         "https://storage.googleapis.com/visualbehavior-publicweights/detr-r50-things-stuffs/detr-r50-things-stuffs.pth"
-    ]
+    ],
 }
 
 

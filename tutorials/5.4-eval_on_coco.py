@@ -38,9 +38,9 @@ args = parser.parse_args()
 # Choose dataset and create a empty model in order to load the weights
 if args.run_id is None:  # Model by default
     coco_loader = CocoDetection2Detr(batch_size=1)
-    lit_detr = LitDetr(weights="detr-r50") 
-else: # Load model trained and saved with tutorials/5.3-train_on_coco.py program
-    coco_loader = CocoDetection2Detr(batch_size=1, classes=['cat','dog'])
+    lit_detr = LitDetr(weights="detr-r50")
+else:  # Load model trained and saved with tutorials/5.3-train_on_coco.py program
+    coco_loader = CocoDetection2Detr(batch_size=1, classes=["cat", "dog"])
     nn_skeleton = DetrR50Finetune(num_classes=2)
     lit_detr = load_training(LitDetr, args=args, model=nn_skeleton, run_id=args.run_id, project_run_id="detr_finetune")
 lit_detr.model = lit_detr.model.eval().to(device)

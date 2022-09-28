@@ -5,26 +5,26 @@ import torch
 # from alonet.metrics.compute_pq import VOID
 
 
-
 class GLOBAL_COLOR_SET_CLASS:
-    
+
     COLOR = np.random.uniform(0, 1, (300, 3))
     VOID_CLASS_ID = -1
-    
+
     def __init__(self):
         self.COLOR[self.VOID_CLASS_ID] = [0, 0, 0]
 
     def __getitem__(self, idx):
         mx_id = np.max(idx)
         if mx_id > self.COLOR.shape[0]:
-            self.COLOR = np.concatenate([self.COLOR, np.random.uniform(0, 1, (mx_id - self.COLOR.shape[0] + 1, 3))], axis=0)
+            self.COLOR = np.concatenate(
+                [self.COLOR, np.random.uniform(0, 1, (mx_id - self.COLOR.shape[0] + 1, 3))], axis=0
+            )
         return self.COLOR[idx]
+
 
 GLOBAL_COLOR_SET = GLOBAL_COLOR_SET_CLASS()
 VOID_CLASS_ID = GLOBAL_COLOR_SET.VOID_CLASS_ID
 OFFSET = 256 * 256 * 256
-
-
 
 
 # Function get from PanopticAPI: https://github.com/cocodataset/panopticapi/blob/master/panopticapi/utils.py

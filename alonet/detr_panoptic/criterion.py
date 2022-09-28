@@ -89,7 +89,14 @@ class PanopticCriterion(nn.Module):
         Weighting factor in range (0,1) to balance positive vs negative examples. -1 for no weighting, by default 0.25
     """
 
-    def __init__(self, loss_dice_weight: float, loss_focal_weight: float, focal_alpha: float = 0.25, upscale_interpolate=True, **kwargs):
+    def __init__(
+        self,
+        loss_dice_weight: float,
+        loss_focal_weight: float,
+        focal_alpha: float = 0.25,
+        upscale_interpolate=True,
+        **kwargs,
+    ):
         super().__init__(**kwargs)
 
         # Define the weight dict
@@ -147,7 +154,9 @@ class PanopticCriterion(nn.Module):
             frames.segmentation, outputs_masks, outputs["pred_masks_info"]["filters"], indices
         ):
             if not self.upscale_interpolate:
-                gt_masks = F.interpolate(torch.unsqueeze(gt_masks.as_tensor(), dim=0), size=o_shape, mode="bilinear", align_corners=False)[0]
+                gt_masks = F.interpolate(
+                    torch.unsqueeze(gt_masks.as_tensor(), dim=0), size=o_shape, mode="bilinear", align_corners=False
+                )[0]
 
             # Get pred_masks by indices matcher and append zero mask if it is necessary
             m_index = torch.where(m_filters)[0]
@@ -158,7 +167,6 @@ class PanopticCriterion(nn.Module):
                     pred_masks.append(p_masks[im : im + 1])
                 else:
                     pred_masks.append(zero_masks)
-
 
             target_masks.append(gt_masks[b_index[1]])
 

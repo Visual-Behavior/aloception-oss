@@ -53,7 +53,7 @@ pred_on_coco(lit_detr)
 # Define LightningModule choosing the architecture and LitDetr default parameters
 # model = DETR50, replacing output layer with num_classes outputs for finetunning
 my_detr = DetrR50Finetune(num_classes=2, weights="detr-r50")
-#Load weights from ~/.aloception/weights/detr-r50/detr-r50.pth
+# Load weights from ~/.aloception/weights/detr-r50/detr-r50.pth
 lit_detr = LitDetr(model=my_detr)
 pred_on_coco(lit_detr)  # Weights loades, but random output layer!
 

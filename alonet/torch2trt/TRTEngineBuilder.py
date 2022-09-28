@@ -160,7 +160,7 @@ class TRTEngineBuilder:
             # INT8
             if self.INT8_allowed:
                 if not builder.platform_has_fast_int8:
-                    raise RuntimeError('INT8 not supported on this platform')
+                    raise RuntimeError("INT8 not supported on this platform")
                 config.set_quantization_flag(trt.QuantizationFlag.CALIBRATE_BEFORE_FUSION)
                 config.set_flag(trt.BuilderFlag.INT8)
                 config.int8_calibrator = self.calibrator

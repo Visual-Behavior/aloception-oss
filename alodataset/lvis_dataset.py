@@ -16,14 +16,13 @@ from aloscene import BoundingBoxes2D, Frame, Labels, Mask
 
 
 class LvisDataset(CocoDetectionDataset):
-    """ Lvis Dataset https://www.lvisdataset.org/.
+    """Lvis Dataset https://www.lvisdataset.org/.
     Same usage as CocoDetectionDataset. However, the
     `img_folder` does not need to be passed to the model. If the parameters
     is passed, its gonna be ignore.
     The dataset_dir is therefore supposed to contains at the root, the `val2017` folder and
     the `train2017` folder.
     """
-
 
     def __init__(self, **kwargs):
         CocoDetectionDataset.__init__(self, **kwargs)
@@ -34,23 +33,22 @@ class LvisDataset(CocoDetectionDataset):
             img_id = item
             ann_ids = self.coco.getAnnIds(imgIds=img_id)
             anns = self.coco.loadAnns(ann_ids)
-            path = "/".join(self.coco.loadImgs(img_id)[0]['coco_url'].split("/")[-2:])
+            path = "/".join(self.coco.loadImgs(img_id)[0]["coco_url"].split("/")[-2:])
             if "train2017" not in path:
-             filtered_item.append(item)
+                filtered_item.append(item)
         assert type(self.items) == type(filtered_item)
         self.items = filtered_item
-
 
     def load_anns(self, index):
         """
         Parameters
         ----------
-            index : (int): 
+            index : (int):
                 Index ann to load
 
         Returns
         -------
-            tuple: Tuple 
+            tuple: Tuple
                 (image, target) target is a list of captions for the image.
         """
         coco = self.coco
@@ -60,14 +58,13 @@ class LvisDataset(CocoDetectionDataset):
 
         target = [ann for ann in anns]
 
-        path = "/".join(coco.loadImgs(img_id)[0]['coco_url'].split("/")[-2:])
+        path = "/".join(coco.loadImgs(img_id)[0]["coco_url"].split("/")[-2:])
 
         img_path = os.path.join(self.dataset_dir, path)
 
-        img = np.array(Image.open(img_path).convert('RGB'))
+        img = np.array(Image.open(img_path).convert("RGB"))
 
         return img, target
-
 
     def getitem(self, idx):
         """Get the :mod:`Frame <aloscene.frame>` corresponds to *idx* index
@@ -84,7 +81,7 @@ class LvisDataset(CocoDetectionDataset):
         """
         if self.sample:
             return BaseDataset.__getitem__(self, idx)
-        #img, target = CocoDetectionDataset.__getitem__(self, idx)
+        # img, target = CocoDetectionDataset.__getitem__(self, idx)
         img, target = self.load_anns(idx)
 
         image_id = self.items[idx]
@@ -113,18 +110,15 @@ class LvisDataset(CocoDetectionDataset):
 
         return frame
 
+
 def main():
 
     torch.manual_seed(42)
     np.random.seed(42)
     random.seed(42)
 
-
     """Main"""
-    coco_dataset = LvisDataset(
-        ann_file = "annotations/lvis_v1_val.json",
-        return_masks=True
-    )
+    coco_dataset = LvisDataset(ann_file="annotations/lvis_v1_val.json", return_masks=True)
     for f, frames in enumerate(coco_dataset.train_loader(batch_size=2)):
         frames = Frame.batch_list(frames)
         frames.get_view().render()

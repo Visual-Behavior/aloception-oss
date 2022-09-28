@@ -13,6 +13,7 @@ try:
     import onnx_graphsurgeon as gs
     import tensorrt as trt
     import pycuda.driver as cuda
+
     prod_package_error = None
 except Exception as e:
     prod_package_error = e
@@ -133,7 +134,9 @@ class BaseTRTExporter:
         else:
             trt_logger = trt.Logger(trt.Logger.WARNING)
 
-        self.engine_builder = TRTEngineBuilder(self.onnx_path, logger=trt_logger, opt_profiles=opt_profiles, calibrator=calibrator)
+        self.engine_builder = TRTEngineBuilder(
+            self.onnx_path, logger=trt_logger, opt_profiles=opt_profiles, calibrator=calibrator
+        )
 
         if profiling_verbosity == 0:
             self.engine_builder.profiling_verbosity = "LAYER_NAMES_ONLY"
@@ -142,7 +145,7 @@ class BaseTRTExporter:
         elif profiling_verbosity == 2:
             self.engine_builder.profiling_verbosity = "DETAILED"
         else:
-            raise AttributeError('unknown profiling_verbosity')
+            raise AttributeError("unknown profiling_verbosity")
 
         if precision.lower() == "fp32":
             pass
@@ -177,7 +180,7 @@ class BaseTRTExporter:
         graph: onnx_graphsurgeon.Graph
         """
         return graph
-    
+
     def _adapt_graph(self, graph, **kwargs):
         """Modify ONNX graph to ensure compability between ONNX and TensorRT
 
@@ -186,6 +189,7 @@ class BaseTRTExporter:
         graph: onnx_graphsurgeon.Graph
         """
         clip_nodes = get_nodes_by_op("Clip", graph)
+
         def handle_op_Clip(node: gs.Node):
             max_constant = np.array(np.finfo(np.float32).max, dtype=np.float32)
             if "value" in node.inputs[1].i().inputs[0].attrs:
@@ -205,6 +209,7 @@ class BaseTRTExporter:
             handle_op_Clip(n)
 
         from onnxsim import simplify
+
         model = onnx.load(self.onnx_path)
         check = False
         model_simp, check = simplify(model)
@@ -216,7 +221,6 @@ class BaseTRTExporter:
             graph.cleanup()
         else:
             print("\n[INFO] ONNX model was not validated.")
-
 
         # Call the child class for specific graph adapation
         graph = self.adapt_graph(graph)
@@ -303,7 +307,6 @@ class BaseTRTExporter:
 
             if self.use_scope_names:
                 onnx_export_log = buffer.getvalue()
-            
 
         graph = gs.import_onnx(onnx.load(self.onnx_path))
         graph.toposort()
@@ -366,7 +369,7 @@ class BaseTRTExporter:
         m_outputs = model.execute()
         print("==== Absolute / relavtive error:")
         for out in m_outputs:
-            print('out', m_outputs[out])
+            print("out", m_outputs[out])
             diff = m_outputs[out].astype(float) - sample_outputs[out].astype(float)
             abs_err = np.abs(diff)
             rel_err = np.abs(diff / (sample_outputs[out] + 1e-6))  # Avoid div by zero
@@ -400,16 +403,31 @@ class BaseTRTExporter:
         parser.add_argument("--batch_size", type=int, default=1, help="Engine batch size, default = 1")
         parser.add_argument("--precision", type=str, default="fp32", help="fp32/fp16/mix, default FP32")
         parser.add_argument("--verbose", action="store_true", help="Helpful when debugging")
-        parser.add_argument("--profiling_verbosity", default=0, type=int, help="Helpful when profiling the engine (default: %(default)s)")
-        parser.add_argument("--calibration_batch_size", type=int, default=8, help="Calibration data batch size (default: %(default)s)")
-        parser.add_argument("--limit_calibration_batches", type=int, default=None, help="Limits number of batches (default: %(default)s)")
-        parser.add_argument("--cache_file", type=str, default="calib.bin", help="Path to caliaration cache file (default: %(default)s)")
         parser.add_argument(
-            "--calibrator", 
-            type=str, 
-            choices=['base', 'minmax', 'entropy', 'entropy2', 'legacy'], 
-            default='minmax',
-            help="Calibrator to use with int8 precision (default: %(default)s)")
+            "--profiling_verbosity",
+            default=0,
+            type=int,
+            help="Helpful when profiling the engine (default: %(default)s)",
+        )
+        parser.add_argument(
+            "--calibration_batch_size", type=int, default=8, help="Calibration data batch size (default: %(default)s)"
+        )
+        parser.add_argument(
+            "--limit_calibration_batches",
+            type=int,
+            default=None,
+            help="Limits number of batches (default: %(default)s)",
+        )
+        parser.add_argument(
+            "--cache_file", type=str, default="calib.bin", help="Path to caliaration cache file (default: %(default)s)"
+        )
+        parser.add_argument(
+            "--calibrator",
+            type=str,
+            choices=["base", "minmax", "entropy", "entropy2", "legacy"],
+            default="minmax",
+            help="Calibrator to use with int8 precision (default: %(default)s)",
+        )
         parser.add_argument(
             "--use_scope_names",
             action="store_true",

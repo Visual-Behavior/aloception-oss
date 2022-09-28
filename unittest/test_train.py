@@ -3,6 +3,7 @@ from unittest import mock
 
 # GithubActionsIgnore : cuda
 
+
 def get_argparse_defaults(parser):
     defaults = {}
     for action in parser._actions:

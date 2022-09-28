@@ -20,7 +20,6 @@ try:
         def reset(self):
             self.timing = defaultdict(list)
 
-
 except Exception as prod_package_error:
     pass
 
@@ -74,9 +73,13 @@ class TRTExecutor:
                     Output is redirected to the input after each execution.
                     Exemple : shared_mem = {0: 1} makes input of index 0 share memory with output of index 1.
         """
-        assert isinstance(shared_mem, dict), f"shared_mem argument should be of type dict but got {shared_mem.__class__.__name__} instead"
+        assert isinstance(
+            shared_mem, dict
+        ), f"shared_mem argument should be of type dict but got {shared_mem.__class__.__name__} instead"
         if shared_mem != {}:
-            print("[WARNING] outputs with shared memory are static, please set outputs_to_cpu=True when executing if you want to retrieve them.")
+            print(
+                "[WARNING] outputs with shared memory are static, please set outputs_to_cpu=True when executing if you want to retrieve them."
+            )
             for inp, out in shared_mem.items():
                 print(f"[INFO] input of index {inp} has shared memory with output of index {out}.")
         if prod_package_error is not None:
@@ -104,7 +107,10 @@ class TRTExecutor:
             self.context.profiler = CustomProfiler()
         # Allocate_buffer take into account if engine has dynamic axes
         self.inputs, self.outputs, self.stream, self.has_dynamic_axes = allocate_buffers(
-            self.context, self.stream, self.sync_mode, self.shared_mem,
+            self.context,
+            self.stream,
+            self.sync_mode,
+            self.shared_mem,
         )
         self.dict_inputs = {mem_obj.name: mem_obj for mem_obj in self.inputs}
         self.dict_outputs = {mem_obj.name: mem_obj for mem_obj in self.outputs}
@@ -126,7 +132,7 @@ class TRTExecutor:
 
     def execute(self, inputs_from_cpu=False, outputs_to_cpu=False):
         """Executes engine
-        
+
         Parameters
         ----------
         inputs_from_cpu: bool, reload inputs from CPU again.
@@ -167,7 +173,7 @@ class TRTExecutor:
                 shared_mem=self.shared_mem,
                 inputs_from_cpu=inputs_from_cpu,
                 outputs_to_cpu=outputs_to_cpu,
-                )
+            )
         else:
             execute_async(
                 self.context,
@@ -178,7 +184,7 @@ class TRTExecutor:
                 shared_mem=self.shared_mem,
                 inputs_from_cpu=inputs_from_cpu,
                 outputs_to_cpu=outputs_to_cpu,
-                )
+            )
         return {out.name: out.host for out in self.outputs}
 
     def set_binding_shape(self, binding: int, shape: tuple):

@@ -35,7 +35,7 @@ class DeformableDetrHungarianMatcher(DetrHungarianMatcher):
             out_prob = out_prob.flatten(0, 1).sigmoid()  # [batch_size * num_queries, num_classes]
             alpha = 0.25
             gamma = 2.0
-            neg_cost_class = (1 - alpha) * (out_prob ** gamma) * (-(1 - out_prob + 1e-8).log())
+            neg_cost_class = (1 - alpha) * (out_prob**gamma) * (-(1 - out_prob + 1e-8).log())
             pos_cost_class = alpha * ((1 - out_prob) ** gamma) * (-(out_prob + 1e-8).log())
             cost_class = pos_cost_class[:, tgt_ids] - neg_cost_class[:, tgt_ids]
             cost_class = cost_class.as_tensor()

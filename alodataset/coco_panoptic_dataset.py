@@ -73,7 +73,7 @@ class CocoPanopticDataset(BaseDataset, SplitMixin):
         split=Split.TRAIN,
         return_masks: bool = True,
         classes: list = None,
-        ignore_classes: list=None,
+        ignore_classes: list = None,
         fix_classes_len: int = None,  # Match with pre-trained weights
         **kwargs,
     ):

@@ -10,13 +10,13 @@ class KittiSplitDataset(KittiBaseDataset, SplitMixin):
     SPLIT_FOLDERS = {Split.VAL: "val", Split.TRAIN: "train"}
 
     def __init__(
-            self,
-            split=Split.TRAIN,
-            add_depth_mask: bool = True,
-            custom_drives: Dict[str, List[str]] = None,
-            main_folder: str = 'image_02',
-            name: str='kitti',
-            **kwargs
+        self,
+        split=Split.TRAIN,
+        add_depth_mask: bool = True,
+        custom_drives: Dict[str, List[str]] = None,
+        main_folder: str = "image_02",
+        name: str = "kitti",
+        **kwargs
     ):
 
         self.split = split
@@ -27,8 +27,8 @@ class KittiSplitDataset(KittiBaseDataset, SplitMixin):
             custom_drives=custom_drives,
             main_folder=main_folder,
             return_depth=True,
-            **kwargs)
-
+            **kwargs
+        )
 
     def getitem(self, idx):
         frame = super().getitem(idx)

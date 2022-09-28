@@ -27,7 +27,7 @@ class ConvGRU(nn.Module):
         z = torch.sigmoid(self.convz(hx))
         r = torch.sigmoid(self.convr(hx))
         q = torch.tanh(self.convq(torch.cat([r * h, x], dim=1)))
-        
+
         h = (1 - z) * h + z * q
         return h
 

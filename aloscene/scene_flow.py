@@ -4,6 +4,8 @@ from aloscene.io.flow import load_scene_flow
 from typing import Union
 import torch
 import torch.nn.functional as F
+from aloscene.renderer import View
+from aloscene.utils.flow_utils import flow_to_color
 
 
 class SceneFlow(aloscene.tensors.SpatialAugmentedTensor):
@@ -29,6 +31,22 @@ class SceneFlow(aloscene.tensors.SpatialAugmentedTensor):
 
     def __init__(self, x, *args, **kwargs):
         super().__init__(x)
+
+    def __get_view__(self, clip_flow=None, convert_to_bgr=False, magnitude_max=None, axes="xx"):
+        assert all(dim not in self.names for dim in ["B", "T"]), "flow should not have batch or time dimension"
+        axe_one = ord(axes[0]) - ord("x")
+        axe_two = ord(axes[1]) - ord("x")
+        assert len(axes) == 2, "axes should be of length 2"
+        assert axe_one >= 0 and axe_one <= 2 and axe_two >= 0 and axe_two <= 2, "axes should be x, y or z"
+        flow = (
+            self.rename(None)
+            .squeeze()
+            .permute([1, 2, 0])
+            .as_numpy()[:, :, [axe_one, axe_two]]
+        )
+        assert flow.ndim == 3 and flow.shape[-1] == 2, f"wrong flow shape:{flow.shape}"
+        flow_color = flow_to_color(flow, clip_flow, convert_to_bgr, magnitude_max) / 255
+        return View(flow_color)
 
     @classmethod
     def from_optical_flow(
@@ -101,7 +119,7 @@ class SceneFlow(aloscene.tensors.SpatialAugmentedTensor):
             if depth.occlusion is not None:
                 occlusion = occlusion | depth.occlusion.as_tensor().bool()
             if next_depth.occlusion is not None:
-                next_depth_tensor = next_depth.occlusion.as_tensor().bool().unsqueeze(1)
+                next_depth_tensor = next_depth.occlusion.as_tensor().bool()
 
                 # Use of 'not' needed because the grid_sample has padding_mode="zeros" and
                 # the 0 from this function mean that the pixel is occluded
@@ -116,7 +134,6 @@ class SceneFlow(aloscene.tensors.SpatialAugmentedTensor):
                 moved_occlusion = ~(moved_occlusion >= 0.99999)
 
                 # Fusion of the 2 occlusion mask
-                moved_occlusion = moved_occlusion.squeeze(1)
                 occlusion = occlusion | moved_occlusion
 
         # Remove the artificial batch dimension
@@ -131,7 +148,7 @@ class SceneFlow(aloscene.tensors.SpatialAugmentedTensor):
             names=("B", "C", "H", "W") if has_batch else ("C", "H", "W"),
             occlusion=None
             if occlusion is None
-            else Mask(occlusion, names=("B", "H", "W") if has_batch else ("H", "W")),
+            else Mask(occlusion, names=("B", "C", "H", "W") if has_batch else ("C", "H", "W")),
         )
         return tensor
 

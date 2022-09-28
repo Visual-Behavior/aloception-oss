@@ -9,7 +9,7 @@ from aloscene import Mask
 from aloscene.renderer import View
 from aloscene.utils.depth_utils import coords2rtheta, add_colorbar
 import numpy as np
-from typing import Union
+from typing import Union, Tuple
 
 from aloscene.io.depth import load_depth
 
@@ -209,7 +209,11 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         return View(depth_color, title=title)
 
     def as_points3d(
-        self, camera_intrinsic: Union[aloscene.CameraIntrinsic, None] = None, projection=None, distortion=None
+        self,
+        camera_intrinsic: Union[aloscene.CameraIntrinsic, None] = None,
+        projection=None,
+        distortion=None,
+        points: Union[Tuple[torch.Tensor, torch.Tensor], None] = None,
     ):
         """Compute the 3D coordinates of points 2D points based on their respective depth.
 
@@ -217,6 +221,9 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         ----------
         camera_intrinsic: CameraIntrinsic to use to unproject the points to 3D. If not, will try to use
         the instance `cam_intrinsic` if set.
+
+        points: Tuple of torch.Tensor or None
+            Points is a tuple of tensor who contain x_points and y_points.
 
         Returns
         -------
@@ -227,10 +234,6 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         projection = projection if projection is not None else self.projection
         distortion = distortion if distortion is not None else self.distortion
         assert projection in ["pinhole", "equidistant"], "Only pinhole and equidistant are supported."
-
-        y_points, x_points = torch.meshgrid(
-            torch.arange(self.H, device=self.device), torch.arange(self.W, device=self.device)
-        )
 
         # if self is not planar depth, we must convert to planar depth before projecting to 3d points
         if self.is_planar:
@@ -246,15 +249,23 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
 
         target_shape = tuple([self.shape[self.names.index(n)] for n in self.names if n not in ("C", "H", "W")] + [-1])
         target_names = tuple([n for n in self.names if n not in ("C", "H", "W")] + ["N", None])
+        if points is None:
+            y_points, x_points = torch.meshgrid(
+                torch.arange(self.H, device=self.device), torch.arange(self.W, device=self.device)
+            )
+            # Append batch & temporal dimensions
+            for _ in range(len(target_shape[:-1])):
+                y_points = y_points.unsqueeze(0)
+                x_points = x_points.unsqueeze(0)
+        elif points[0].shape != points[1].shape or points[0].shape != self.shape:
+            raise ValueError("The shape of the points must be the same as the shape of the depth tensor.")
+        else:
+            print(type(points[0]))
+            x_points, y_points = points
 
         y_points = y_points.reshape((-1,))
         x_points = x_points.reshape((-1,))
         z_points = self.as_tensor().reshape(target_shape)
-
-        # Append batch & temporal dimensions
-        for _ in range(len(target_shape[:-1])):
-            y_points = y_points.unsqueeze(0)
-            x_points = x_points.unsqueeze(0)
 
         points_3d_shape = tuple(list(target_shape)[:-1] + [self.H * self.W] + [3])
         points_3d = torch.zeros(points_3d_shape, device=self.device)

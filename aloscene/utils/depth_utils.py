@@ -43,6 +43,7 @@ def coords2rtheta(
     if projection == "pinhole":
         theta = torch.atan(r_d / focal)
     elif projection == "equidistant":
+        assert not isinstance(distortion, Sequence)
         theta = r_d / (focal * distortion)
     elif projection == "kumler_bauer":
         assert isinstance(distortion, Sequence), "Kumler-Bauer projection needs two distortion coefficients (alpha, beta)"

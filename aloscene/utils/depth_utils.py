@@ -47,8 +47,7 @@ def coords2rtheta(
         theta = r_d / (focal * distortion)
     elif projection == "kumler_bauer":
         assert isinstance(distortion, Sequence), "Kumler-Bauer projection needs two distortion coefficients (alpha, beta)"
-        theta_dist = torch.atan(r_d / focal)
-        theta = torch.atan((distortion[0] / focal) * torch.sin(distortion[1] * theta_dist))
+        theta = torch.arcsin(distortion[0] * r_d / focal) / distortion[1]
     else:
         raise NotImplementedError
 

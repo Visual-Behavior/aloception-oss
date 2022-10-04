@@ -43,10 +43,10 @@ def coords2rtheta(
     if projection == "pinhole":
         theta = torch.atan(r_d / focal)
     elif projection == "equidistant":
-        assert not isinstance(distortion, Sequence)
+        assert isinstance(distortion, (float, int))
         theta = r_d / (focal * distortion)
     elif projection == "kumler_bauer":
-        assert isinstance(distortion, Sequence), "Kumler-Bauer projection needs two distortion coefficients (alpha, beta)"
+        assert isinstance(distortion, Sequence) and len(distortion) == 2, "Kumler-Bauer projection needs two distortion coefficients (alpha, beta)"
         theta = torch.arcsin(distortion[0] * r_d / focal) / distortion[1]
     else:
         raise NotImplementedError

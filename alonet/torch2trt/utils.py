@@ -1,15 +1,10 @@
 from alonet import ALONET_ROOT
-
-try:
-    from alonet.torch2trt.calibrator import (
-        LegacyCalibrator, 
-        MinMaxCalibrator,
-        EntropyCalibrator,
-        EntropyCalibrator2,
-    )
-    calibrator_import_error = None
-except Exception as e:
-    calibrator_import_error = e
+from alonet.torch2trt.calibrator import (
+    LegacyCalibrator, 
+    MinMaxCalibrator,
+    EntropyCalibrator,
+    EntropyCalibrator2,
+)
 
 import os
 import ctypes
@@ -18,9 +13,9 @@ try:
     import pycuda.driver as cuda
     import onnx_graphsurgeon as gs
     import tensorrt as trt
+
     prod_package_error = None
-except Exception as e:
-    prod_package_error = e
+except Exception as prod_package_error:
     pass
 
 
@@ -32,9 +27,6 @@ def create_calibrator(name: str, *args, **kwargs):
         name : str
             Calibrator name
     """
-    if calibrator_import_error is not None:
-        raise calibrator_import_error
-
     CALIBS = ["minmax", "entropy", "entropy2", "legacy"]
     if name == "entropy2":
         return EntropyCalibrator2(*args, **kwargs)

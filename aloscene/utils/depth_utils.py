@@ -46,8 +46,10 @@ def coords2rtheta(
         assert isinstance(distortion, (float, int))
         theta = r_d / (focal * distortion)
     elif projection == "kumler_bauer":
+        # distortion [k1, k2, focal_meter]
         assert isinstance(distortion, Sequence) and len(distortion) == 2, "Kumler-Bauer projection needs two distortion coefficients (alpha, beta)"
-        theta = torch.arcsin(distortion[0] * r_d / focal) / distortion[1]
+        fm = distortion[2]
+        theta = torch.arcsin(fm / distortion[0] * r_d / focal) / distortion[1]
     else:
         raise NotImplementedError
 

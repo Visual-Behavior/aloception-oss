@@ -7,10 +7,7 @@ import torch
 
 
 def coords2rtheta(
-    K,
-    size: Tuple[int, int],
-    distortion: Union[float, Tuple[float, float]],
-    projection: str = "pinhole"
+    K, size: Tuple[int, int], distortion: Union[float, Tuple[float, float]], projection: str = "pinhole"
 ):
     """Compute r_d and theta from image coordinates.
 
@@ -47,7 +44,9 @@ def coords2rtheta(
         theta = r_d / (focal * distortion)
     elif projection == "kumler_bauer":
         # distortion [k1, k2, focal_meter]
-        assert isinstance(distortion, Sequence) and len(distortion) == 2, "Kumler-Bauer projection needs two distortion coefficients (alpha, beta)"
+        assert (
+            isinstance(distortion, Sequence) and len(distortion) == 3
+        ), "Kumler-Bauer projection needs two distortion coefficients (alpha, beta)"
         fm = distortion[2]
         theta = torch.arcsin(fm / distortion[0] * r_d / focal) / distortion[1]
     else:

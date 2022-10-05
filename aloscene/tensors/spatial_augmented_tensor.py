@@ -3,6 +3,7 @@ import math
 import torchvision.transforms.functional as F
 from torchvision.transforms import InterpolationMode
 import torch
+from typing import Union
 
 from aloscene.renderer import View, Renderer
 from .augmented_tensor import AugmentedTensor
@@ -27,6 +28,8 @@ class SpatialAugmentedTensor(AugmentedTensor):
         If part of a stereo setup, will encode the side of the camere "left" or "right" or None.
     baseline: float | None
         If part of a stereo setup, the `baseline` is the distance between the two cameras.
+    timestamp: float | None
+        Time in seconds since the beginning of the sequence.
     """
 
     @staticmethod
@@ -34,11 +37,11 @@ class SpatialAugmentedTensor(AugmentedTensor):
         cls,
         x,
         *args,
-        cam_intrinsic: CameraIntrinsic = None,
-        cam_extrinsic: CameraExtrinsic = None,
+        cam_intrinsic: Union[CameraIntrinsic, None] = None,
+        cam_extrinsic: Union[CameraExtrinsic, None] = None,
         # For stereo setups
-        camera_side: str = None,
-        baseline: float = None,
+        camera_side: Union[str, None] = None,
+        baseline: Union[float, None] = None,
         mask=None,
         projection="pinhole",
         distortion=1.0,
@@ -51,6 +54,7 @@ class SpatialAugmentedTensor(AugmentedTensor):
         tensor.add_property("camera_side", camera_side)
         tensor.add_property("projection", projection)
         tensor.add_property("distortion", distortion)
+        tensor.add_property("timestamp", None)
 
         # Intrisic and extrinsic parameters are cloned by default, to prevent having multiple reference
         # of the same intrisic/extrinsic across nodes.
@@ -64,6 +68,16 @@ class SpatialAugmentedTensor(AugmentedTensor):
     def __init__(self, x, *args, **kwargs):
         super().__init__(x)
 
+    @classmethod
+    def dummy(cls, size: tuple, names: tuple):
+        dummy_class = cls(torch.ones(size))
+        mask_size = list(size)
+        if 'C' in names:
+            mask_size[names.index('C')] = 1
+        mask_size = tuple(mask_size)
+        dummy_class.append_mask(aloscene.Mask(torch.ones(mask_size), names=names))
+        return dummy_class
+
     @property
     def HW(self):
         return (self.H, self.W)
@@ -76,8 +90,9 @@ class SpatialAugmentedTensor(AugmentedTensor):
     def H(self):
         return self.shape[self.names.index("H")]
 
-    def append_mask(self, mask, name: str = None):
+    def append_mask(self, mask, name: Union[str, None] = None):
         """Attach a mask to the frame.
+        The value 1 mean invalid and 0 mean valid.
 
         Parameters
         ----------

@@ -14,6 +14,9 @@ from aloscene.labels import Labels
 
 class Mask(aloscene.tensors.SpatialAugmentedTensor):
     """
+    A mask represent which part of the SpatialAugmentedTensor are valid.
+    The value 1 mean invalid and 0 mean valid.
+
     Parameters
     ----------
     x : Union[torch.Tensor, str]

@@ -2,7 +2,9 @@ from aloscene.renderer import View
 from alodataset import WaymoDataset, Split
 import torch
 
-frame = WaymoDataset(split=Split.VAL, cameras=["front"], labels=["gt_boxes_2d"], sequence_size=1,).get(42)["front"]  #
+frame = WaymoDataset(split=Split.VAL, cameras=["front"], labels=["gt_boxes_2d"], sequence_size=1,).get(
+    42
+)["front"]
 
 ######
 # Special & usefull operations on the frame

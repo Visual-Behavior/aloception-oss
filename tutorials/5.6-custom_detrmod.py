@@ -44,7 +44,7 @@ class Mot17DetectionDetr(CocoDetection2Detr):
     def _obj2person(self, frame):
         total_obj = frame.boxes2d.size(0)
         frame.boxes2d.labels = Labels(
-            torch.zeros(total_obj).to(torch.float32), labels_names=["person"], names=("N"), encoding="id",
+            torch.zeros(total_obj).to(torch.float32), labels_names=["person"], names=("N"), encoding="id"
         )
         return frame
 
@@ -103,7 +103,9 @@ lit_detr = LitDetrR50(args)
 # Train process
 args.max_epochs = 10  # Fast training (pytorchlightning Trainer parameter)
 lit_detr.run_train(
-    data_loader=mot_loader, args=args, project="detr_mot",
+    data_loader=mot_loader,
+    args=args,
+    project="detr_mot",
 )
 lit_detr.model = lit_detr.model.eval().to(device)
 
@@ -114,5 +116,8 @@ pred_boxes = lit_detr.inference(lit_detr(frame))[0]  # Inference from forward re
 gt_boxes = frame[0].boxes2d
 
 frame.get_view(
-    [gt_boxes.get_view(frame[0], title="Ground truth boxes"), pred_boxes.get_view(frame[0], title="Predicted boxes"),]
+    [
+        gt_boxes.get_view(frame[0], title="Ground truth boxes"),
+        pred_boxes.get_view(frame[0], title="Predicted boxes"),
+    ]
 ).render()

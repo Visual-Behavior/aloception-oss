@@ -166,7 +166,7 @@ class KittiTrackingDataset(BaseDataset, SplitMixin):
                     labels_3d.append(int(box[0]))  # track_id
                     categories_3d.append(self.LABELS.index(box[1]))  # type
 
-            left_frame = Frame(os.path.join(self.dataset_dir, "image_02", sequence, f"{seq:06d}.png",))
+            left_frame = Frame(os.path.join(self.dataset_dir, "image_02", sequence, f"{seq:06d}.png"))
 
             if boxes2d:
                 labels = Labels(labels, labels_names=["boxes"])
@@ -190,7 +190,7 @@ class KittiTrackingDataset(BaseDataset, SplitMixin):
             left.append(left_frame.temporal())
 
             if self.right_frame:
-                right_frame = Frame(os.path.join(self.dataset_dir, "image_03", sequence, f"{seq:06d}.png",))
+                right_frame = Frame(os.path.join(self.dataset_dir, "image_03", sequence, f"{seq:06d}.png"))
                 right_frame.append_cam_intrinsic(CameraIntrinsic(self.seq_params[sequence]["right_intrinsic"]))
                 right_frame.append_cam_extrinsic(CameraExtrinsic(self.seq_params[sequence]["right_extrinsic"]))
                 right_frame.baseline = self.seq_params[sequence]["baseline"]

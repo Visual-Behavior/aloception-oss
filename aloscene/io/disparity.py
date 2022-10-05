@@ -78,7 +78,7 @@ def load_disp_png(path, decoding="rgb", scale=256.0, negate=False):
         d_r = f_in[:, :, 0].astype("float64")
         d_g = f_in[:, :, 1].astype("float64")
         d_b = f_in[:, :, 2].astype("float64")
-        disp = d_r * 4 + d_g / (2 ** 6) + d_b / (2 ** 14)
+        disp = d_r * 4 + d_g / (2**6) + d_b / (2**14)
     elif decoding == "uint16":  # Kitti_stereo
         disp = f_in.astype("float32") / scale
     disp = np.expand_dims(disp, axis=-1)

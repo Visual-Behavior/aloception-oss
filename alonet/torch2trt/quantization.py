@@ -135,9 +135,7 @@ class QuantizedModel:
                 print(f"Calibrator: {module._calibrator}")
                 print(f"{name:40}: {module}")
 
-    def calibrate(
-        self, calib_data, method="percentile", percentile=99.99, max_samples=10,
-    ):
+    def calibrate(self, calib_data, method="percentile", percentile=99.99, max_samples=10):
         """Calibrates the model
 
         Parameters

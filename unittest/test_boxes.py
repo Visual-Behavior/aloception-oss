@@ -270,7 +270,7 @@ def _test_padded_boxes():
     """Outdated"""
 
     boxes_abs = aloscene.BoundingBoxes2D(
-        [[20, 40, 40, 60], [40, 60, 60, 80],], boxes_format="xyxy", absolute=True, frame_size=(80, 80),
+        [[20, 40, 40, 60], [40, 60, 60, 80]], boxes_format="xyxy", absolute=True, frame_size=(80, 80)
     )
 
     boxes_rel = boxes_abs.rel_pos()

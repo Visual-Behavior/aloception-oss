@@ -124,9 +124,7 @@ class PQMetrics(object):
             _print_map(result, per_class_results, suffix=suffix, **kwargs)
         return result, per_class_results
 
-    def add_sample(
-        self, p_mask: aloscene.Mask, t_mask: aloscene.Mask, **kwargs,
-    ):
+    def add_sample(self, p_mask: aloscene.Mask, t_mask: aloscene.Mask, **kwargs):
         """Add a new prediction and target masks to PQ metrics estimation process
 
         Parameters
@@ -268,7 +266,10 @@ class PQMetrics(object):
         for key, cat in zip(keys, cats):
             if cat is not None or not self.isfull:
                 all_maps[key], all_maps_per_class[key] = self.pq_average(
-                    cat, print_result, clm_size=9, head_elm=["PQ", "SQ", "RQ"],
+                    cat,
+                    print_result,
+                    clm_size=9,
+                    head_elm=["PQ", "SQ", "RQ"],
                 )
             else:
                 all_maps[key], all_maps_per_class[key] = self.pq_average(cat)

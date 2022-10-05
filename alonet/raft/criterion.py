@@ -17,7 +17,7 @@ class RAFTCriterion(nn.Module):
         flow_loss = 0.0
 
         # exlude invalid pixels and extremely large diplacements
-        mag = torch.sum(flow_gt ** 2, dim=1, keepdim=True).sqrt()
+        mag = torch.sum(flow_gt**2, dim=1, keepdim=True).sqrt()
         if valid is None:
             valid = torch.ones_like(mag, dtype=torch.bool)
         else:

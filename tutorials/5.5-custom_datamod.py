@@ -52,4 +52,4 @@ mot_loader = Mot17DetectionDetr()
 
 for frames in mot_loader.val_dataloader():
     frames = frames[0].batch_list(frames)  # Remove temporal dim
-    frames.get_view(frames.boxes2d,).render(View.CV)
+    frames.get_view(frames.boxes2d).render(View.CV)

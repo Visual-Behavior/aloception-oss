@@ -56,9 +56,7 @@ class Points3D(aloscene.tensors.AugmentedTensor):
     """
 
     @staticmethod
-    def __new__(
-        cls, x: Union[list, np.array, torch.Tensor], names=("N", None), *args, **kwargs,
-    ):
+    def __new__(cls, x: Union[list, np.array, torch.Tensor], names=("N", None), *args, **kwargs):
 
         tensor = super().__new__(cls, x, *args, names=names, **kwargs)
         return tensor
@@ -123,10 +121,10 @@ class Points3D(aloscene.tensors.AugmentedTensor):
             n_base_depth[depth_slice] = flattened_projected_points[valid_points][..., 2:]
 
         if not return_mapping:
-            return aloscene.Depth(n_base_depth, cam_intrinsic=camera_intrinsic, names=n_base_depth_names,)
+            return aloscene.Depth(n_base_depth, cam_intrinsic=camera_intrinsic, names=n_base_depth_names)
         else:
             return (
-                aloscene.Depth(n_base_depth, cam_intrinsic=camera_intrinsic, names=n_base_depth_names,),
+                aloscene.Depth(n_base_depth, cam_intrinsic=camera_intrinsic, names=n_base_depth_names),
                 depth_slice,
                 valid_points,
             )

@@ -481,9 +481,7 @@ class Detr(nn.Module):
             normalize_before=normalize_before,
         )
 
-    def build_decoder(
-        self, hidden_dim: int = 256, num_decoder_layers: int = 6,
-    ):
+    def build_decoder(self, hidden_dim: int = 256, num_decoder_layers: int = 6):
         """Build decoder layer
 
         Parameters

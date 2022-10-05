@@ -66,9 +66,7 @@ class DataBatchStreamer:
         >>> m_dataStreamer = DataBatchStreamer(dataset=m_calib)
     """
 
-    def __init__(
-        self, dataset=None, batch_size=8, limit_batches=None, **kwargs,
-    ):
+    def __init__(self, dataset=None, batch_size=8, limit_batches=None, **kwargs):
         for sample in dataset[0]:
             if not isinstance(sample, (torch.Tensor, np.ndarray, Frame)):
                 ftypes = ["torch.Tensor", "ndarray", "aloscene.Frame"]
@@ -150,9 +148,7 @@ class BaseCalibrator:
 
     """
 
-    def __init__(
-        self, data_streamer, cache_file=None, **kwargs,
-    ):
+    def __init__(self, data_streamer, cache_file=None, **kwargs):
         ## Avoid confusing: Deleting calibration file as the read funtion comes first.
         if os.path.exists(cache_file):
             print("Cache file exists already: Deleting file...")
@@ -197,32 +193,24 @@ class BaseCalibrator:
 
 
 class MinMaxCalibrator(BaseCalibrator, trt.IInt8MinMaxCalibrator):
-    def __init__(
-        self, data_streamer, cache_file, **kwargs,
-    ):
+    def __init__(self, data_streamer, cache_file, **kwargs):
         trt.IInt8MinMaxCalibrator.__init__(self)
         super(MinMaxCalibrator, self).__init__(data_streamer=data_streamer, cache_file=cache_file, **kwargs)
 
 
 class LegacyCalibrator(BaseCalibrator, trt.IInt8LegacyCalibrator):
-    def __init__(
-        self, data_streamer, cache_file, **kwargs,
-    ):
+    def __init__(self, data_streamer, cache_file, **kwargs):
         trt.IInt8LegacyCalibrator.__init__(self)
         super(LegacyCalibrator, self).__init__(data_streamer=data_streamer, cache_file=cache_file, **kwargs)
 
 
 class EntropyCalibrator(BaseCalibrator, trt.IInt8EntropyCalibrator):
-    def __init__(
-        self, data_streamer, cache_file, **kwargs,
-    ):
+    def __init__(self, data_streamer, cache_file, **kwargs):
         trt.IInt8EntropyCalibrator.__init__(self)
         super(EntropyCalibrator, self).__init__(data_streamer=data_streamer, cache_file=cache_file, **kwargs)
 
 
 class EntropyCalibrator2(BaseCalibrator, trt.IInt8EntropyCalibrator2):
-    def __init__(
-        self, data_streamer, cache_file, **kwargs,
-    ):
+    def __init__(self, data_streamer, cache_file, **kwargs):
         trt.IInt8EntropyCalibrator2.__init__(self)
         super(EntropyCalibrator2, self).__init__(data_streamer=data_streamer, cache_file=cache_file, **kwargs)

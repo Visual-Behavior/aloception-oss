@@ -119,7 +119,7 @@ class DepthMetrics:
         ratio = np.maximum(p_depth / (t_depth + epsilon), t_depth / (p_depth + epsilon))
 
         for xi in self.x:
-            th = self.alpha ** xi
+            th = self.alpha**xi
             dx = (ratio < th).mean()
             metrics[f"d{xi}"] = float(dx)
 

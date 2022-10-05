@@ -482,9 +482,7 @@ class Detr(nn.Module):
         )
 
     def build_decoder(
-        self,
-        hidden_dim: int = 256,
-        num_decoder_layers: int = 6,
+        self, hidden_dim: int = 256, num_decoder_layers: int = 6,
     ):
         """Build decoder layer
 

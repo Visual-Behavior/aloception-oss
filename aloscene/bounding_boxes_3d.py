@@ -144,11 +144,7 @@ class BoundingBoxes3D(aloscene.tensors.AugmentedTensor):
 
     @staticmethod
     def get_enclosing_box_2d(
-        boxes,
-        cam_intrinsic: CameraIntrinsic,
-        cam_extrinsic: CameraExtrinsic,
-        frame_size: Tuple[int, int],
-        **kwargs,
+        boxes, cam_intrinsic: CameraIntrinsic, cam_extrinsic: CameraExtrinsic, frame_size: Tuple[int, int], **kwargs,
     ) -> BoundingBoxes2D:
         """Get the 2d box enclosing the 3d box on image plan
 
@@ -370,10 +366,7 @@ class BoundingBoxes3D(aloscene.tensors.AugmentedTensor):
 
     @staticmethod
     def giou3d(
-        boxes1: Union[torch.Tensor],
-        boxes2: Union[torch.Tensor],
-        enclosing_type="smallest",
-        ret_iou3d=False,
+        boxes1: Union[torch.Tensor], boxes2: Union[torch.Tensor], enclosing_type="smallest", ret_iou3d=False,
     ) -> Union[Tensor, Tuple[Tensor, Tensor]]:
         """Calculate GIoU 3D for 2 aligned sets of boxes in order
 

@@ -82,8 +82,5 @@ pred_boxes = lit_detr.inference(lit_detr(frame))[0]  # Inference from forward re
 gt_boxes = frame[0].boxes2d
 
 frame.get_view(
-    [
-        gt_boxes.get_view(frame[0], title="Ground truth boxes"),
-        pred_boxes.get_view(frame[0], title="Predicted boxes"),
-    ]
+    [gt_boxes.get_view(frame[0], title="Ground truth boxes"), pred_boxes.get_view(frame[0], title="Predicted boxes"),]
 ).render()

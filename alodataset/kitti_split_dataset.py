@@ -16,7 +16,7 @@ class KittiSplitDataset(KittiBaseDataset, SplitMixin):
         custom_drives: Dict[str, List[str]] = None,
         main_folder: str = "image_02",
         name: str = "kitti",
-        **kwargs
+        **kwargs,
     ):
 
         self.split = split
@@ -27,7 +27,7 @@ class KittiSplitDataset(KittiBaseDataset, SplitMixin):
             custom_drives=custom_drives,
             main_folder=main_folder,
             return_depth=True,
-            **kwargs
+            **kwargs,
         )
 
     def getitem(self, idx):

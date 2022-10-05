@@ -56,7 +56,7 @@ class Mot17(BaseDataset, SequenceMixin, SplitMixin):
         all_gt: bool = False,
         random_step: int = None,
         visibility_threshold=0.0,
-        **kwargs
+        **kwargs,
     ):
         """Mot17 Dataset
         https://motchallenge.net/data/MOT17/

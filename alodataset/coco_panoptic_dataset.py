@@ -271,11 +271,7 @@ class CocoPanopticDataset(BaseDataset, SplitMixin):
         frame = Frame(img_path)
         labels_2d = Labels(labels.to(torch.float32), labels_names=self.label_names, names=("N"), encoding="id")
         boxes_2d = BoundingBoxes2D(
-            masks_to_boxes(masks),
-            boxes_format="xyxy",
-            absolute=True,
-            frame_size=frame.HW,
-            names=("N", None),
+            masks_to_boxes(masks), boxes_format="xyxy", absolute=True, frame_size=frame.HW, names=("N", None)
         )
         boxes_2d.append_labels(labels_2d, name="category")
         self._append_type_labels(boxes_2d, labels)

@@ -110,7 +110,7 @@ class SpatialTransform(AloTransform):
         v_flip_prob=0.1,
         do_flip=True,
         *args,
-        **kwargs
+        **kwargs,
     ):
         self.crop_size = crop_size
         self.min_scale = min_scale

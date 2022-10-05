@@ -300,11 +300,7 @@ if __name__ == "__main__":
         "0002",  # sample from validation subset
     ]
     custom_drives = {date: idsOfDrives}
-    kitti_ds = KittiDepth(
-        subset="all",
-        return_depth=True,
-        custom_drives=custom_drives,
-    )
+    kitti_ds = KittiDepth(subset="all", return_depth=True, custom_drives=custom_drives,)
 
     for f, frames in enumerate(kitti_ds.train_loader(batch_size=2)):
         frames = Frame.batch_list(frames)

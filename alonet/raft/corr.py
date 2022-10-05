@@ -38,7 +38,7 @@ class CorrBlock:
             dy = torch.linspace(-r, r, 2 * r + 1)
             delta = torch.stack(torch.meshgrid(dy, dx), axis=-1).to(coords.device)
 
-            centroid_lvl = coords.reshape(batch * h1 * w1, 1, 1, 2) / 2**i
+            centroid_lvl = coords.reshape(batch * h1 * w1, 1, 1, 2) / 2 ** i
             delta_lvl = delta.view(1, 2 * r + 1, 2 * r + 1, 2)
             coords_lvl = centroid_lvl + delta_lvl
 
@@ -82,7 +82,7 @@ class AlternateCorrBlock:
             fmap1_i = self.pyramid[0][0].permute(0, 2, 3, 1).contiguous()
             fmap2_i = self.pyramid[i][1].permute(0, 2, 3, 1).contiguous()
 
-            coords_i = (coords / 2**i).reshape(B, 1, H, W, 2).contiguous()
+            coords_i = (coords / 2 ** i).reshape(B, 1, H, W, 2).contiguous()
             (corr,) = alt_cuda_corr.forward(fmap1_i, fmap2_i, coords_i, r)
             corr_list.append(corr.squeeze(1))
 

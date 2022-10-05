@@ -36,10 +36,7 @@ class LitPanopticDetr(alonet.deformable_detr.LitDeformableDetr):
     def add_argparse_args(parent_parser: ArgumentParser, parser: _ArgumentGroup = None):
         parser = parent_parser.add_argument_group("LitPanopticDetr") if parser is None else parser
         parser.add_argument(
-            "--weights",
-            type=str,
-            default=None,
-            help="One of {detr-r50-panoptic}, by default %(default)s",
+            "--weights", type=str, default=None, help="One of {detr-r50-panoptic}, by default %(default)s",
         )
         parser.add_argument(
             "--gradient_clip_val", type=float, default=0.1, help="Gradient clipping norm, by default %(default)s"

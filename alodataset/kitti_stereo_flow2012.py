@@ -20,15 +20,7 @@ class KittiStereoFlow2012(BaseDataset, SplitMixin):
         grayscale=True,
         sequence_start=10,
         sequence_end=11,
-        load: list = [
-            "right",
-            "disp_noc",
-            "disp_occ",
-            "disp_refl_noc",
-            "disp_refl_occ",
-            "flow_occ",
-            "flow_noc",
-        ],
+        load: list = ["right", "disp_noc", "disp_occ", "disp_refl_noc", "disp_refl_occ", "flow_occ", "flow_noc",],
         **kwargs,
     ):
         super().__init__(name=name, **kwargs)
@@ -70,7 +62,7 @@ class KittiStereoFlow2012(BaseDataset, SplitMixin):
     def load_flow(self, flow_path: str):
         img = cv2.imread(flow_path, cv2.IMREAD_UNCHANGED)
         mask = img[..., 0] == 0
-        flow = (img - 2**15) / 64.0
+        flow = (img - 2 ** 15) / 64.0
         flow = torch.as_tensor(flow[..., 1:], dtype=torch.float32).permute(2, 0, 1)
         mask = mask.reshape((1, flow.shape[1], flow.shape[2]))
         mask = Mask(mask, names=("C", "H", "W"))

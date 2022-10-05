@@ -659,7 +659,7 @@ class CustomRandomColoring(AloTransform):
     def apply(self, frame: Frame):
         assert frame.normalization == "01", "frame should be normalized between 0 and 1 before color modification"
 
-        frame = frame**self.gamma
+        frame = frame ** self.gamma
         frame = frame * self.brightness
         # change color by applying different coefficients to R, G, and B channels
         C = frame.shape[frame.names.index("C")]

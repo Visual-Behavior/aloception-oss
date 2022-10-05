@@ -93,7 +93,7 @@ class MSDeformAttn(nn.Module):
         input_spatial_shapes,
         input_level_start_index,
         input_padding_mask=None,
-        **kwargs
+        **kwargs,
     ):
         """
         :param query                       (N, Length_{query}, C)

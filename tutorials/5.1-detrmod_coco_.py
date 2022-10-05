@@ -6,9 +6,7 @@ from aloscene.renderer import View
 # Procedure based on previous tutorials to display images
 def img_plot(frames):
     frames = frames[0].batch_list(frames)
-    frames.get_view(
-        frames.boxes2d,
-    ).render()
+    frames.get_view(frames.boxes2d,).render()
 
 
 ######
@@ -67,9 +65,7 @@ coco_loader = CocoDetection2Detr(args, batch_size=4, classes=["dog", "cat"])
 # A COMMON FULL-READ EXAMPLE
 for frames in coco_loader.val_dataloader():
     frames = frames[0].batch_list(frames)
-    frames.get_view(
-        frames.boxes2d,
-    ).render(View.CV)
+    frames.get_view(frames.boxes2d,).render(View.CV)
 
 # NOTE: 'classes' elements must be in COCO_CLASSES list
 print("[INFO] Possible classes list:", coco_loader.CATEGORIES)

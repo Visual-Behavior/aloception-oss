@@ -101,7 +101,7 @@ def draw_shiny_3D_box(image, vertices_2d, class_names=None, labels=None, colors=
             return
 
         gradient = np.linspace(0, 1, num=max_y - min_y, endpoint=True, retstep=False, dtype=None, axis=0)  # (h, )
-        gradient = gradient**4
+        gradient = gradient ** 4
 
         gradient = np.expand_dims(gradient, axis=-1)
         gradient = np.tile(gradient, [1, max_x - min_x])  # (h, w)

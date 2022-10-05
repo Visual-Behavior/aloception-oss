@@ -185,10 +185,7 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
         if tensor.boxes_format == "xcyc":
             labels = tensor.drop_children()
             # Convert from xcyc to xyxy
-            n_tensor = torch.cat(
-                [tensor[:, :2] - (tensor[:, 2:] / 2), tensor[:, :2] + (tensor[:, 2:] / 2)],
-                dim=1,
-            )
+            n_tensor = torch.cat([tensor[:, :2] - (tensor[:, 2:] / 2), tensor[:, :2] + (tensor[:, 2:] / 2)], dim=1,)
             n_tensor.boxes_format = "xyxy"
             n_tensor.set_children(labels)
             return n_tensor
@@ -198,10 +195,7 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
             labels = tensor.drop_children()
             tensor.rename_(None)
             # Convert from yxyx to xyxy
-            n_tensor = torch.cat(
-                [tensor[:, :2].flip([1]), tensor[:, 2:].flip([1])],
-                dim=1,
-            )
+            n_tensor = torch.cat([tensor[:, :2].flip([1]), tensor[:, 2:].flip([1])], dim=1,)
             tensor.reset_names()
             n_tensor.reset_names()
             n_tensor.boxes_format = "xyxy"
@@ -242,10 +236,7 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
             labels = tensor.drop_children()
             tensor.rename_(None)
             # Convert from xyxy to yxyx
-            yxyx_boxes = torch.cat(
-                [tensor[:, :2].flip([1]), tensor[:, 2:].flip([1])],
-                dim=1,
-            )
+            yxyx_boxes = torch.cat([tensor[:, :2].flip([1]), tensor[:, 2:].flip([1])], dim=1,)
             yxyx_boxes.reset_names()
             tensor.reset_names()
             yxyx_boxes.boxes_format = "yxyx"
@@ -807,14 +798,8 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
                 )
 
                 n_padded_size = (
-                    (
-                        (n_padded_size[0][0]) / pr_frame_size[0],
-                        (n_padded_size[0][1]) / pr_frame_size[0],
-                    ),
-                    (
-                        (n_padded_size[1][0]) / pr_frame_size[1],
-                        (n_padded_size[1][1]) / pr_frame_size[1],
-                    ),
+                    ((n_padded_size[0][0]) / pr_frame_size[0], (n_padded_size[0][1]) / pr_frame_size[0],),
+                    ((n_padded_size[1][0]) / pr_frame_size[1], (n_padded_size[1][1]) / pr_frame_size[1],),
                 )
 
             else:

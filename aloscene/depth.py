@@ -43,7 +43,7 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         shift=None,
         *args,
         names=("C", "H", "W"),
-        **kwargs
+        **kwargs,
     ):
 
         if isinstance(x, str):

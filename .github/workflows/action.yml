@@ -57,7 +57,7 @@ jobs:
       - name: Black
         uses: psf/black@stable
         with:
-          options: "--check -l 119"
+          options: "--check -l 119 -tpy38"
       - name: Set up Python environment
         uses: actions/setup-python@v2
         with:

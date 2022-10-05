@@ -45,7 +45,7 @@ class CocoDetection2Detr(Data2Detr):
         val_folder: str = "val2017",
         val_ann: str = "annotations/instances_val2017.json",
         return_masks: bool = False,
-        **kwargs
+        **kwargs,
     ):
         # Update class attributes with args and kwargs inputs
         self.train_loader_kwargs = dict(

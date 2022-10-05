@@ -475,11 +475,7 @@ class AugmentedTensor(torch.Tensor):
                     if isinstance(label_value, dict):
                         for key in label_value:
                             labels_dict2list[label_name] = self._merge_child(
-                                label_value[key],
-                                label_name,
-                                key,
-                                labels_dict2list[label_name],
-                                kwargs,
+                                label_value[key], label_name, key, labels_dict2list[label_name], kwargs,
                             )
                     elif label_value is None and isinstance(labels_dict2list[label_name], dict):
                         for key in labels_dict2list[label_name]:

@@ -20,6 +20,7 @@ try:
         def reset(self):
             self.timing = defaultdict(list)
 
+
 except Exception as prod_package_error:
     pass
 
@@ -107,10 +108,7 @@ class TRTExecutor:
             self.context.profiler = CustomProfiler()
         # Allocate_buffer take into account if engine has dynamic axes
         self.inputs, self.outputs, self.stream, self.has_dynamic_axes = allocate_buffers(
-            self.context,
-            self.stream,
-            self.sync_mode,
-            self.shared_mem,
+            self.context, self.stream, self.sync_mode, self.shared_mem,
         )
         self.dict_inputs = {mem_obj.name: mem_obj for mem_obj in self.inputs}
         self.dict_outputs = {mem_obj.name: mem_obj for mem_obj in self.outputs}

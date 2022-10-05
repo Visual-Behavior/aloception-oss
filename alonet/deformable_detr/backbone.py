@@ -21,7 +21,7 @@ class BackboneBase(DetrBackboneBase):
             train_backbone,
             num_channels=2048,  # Don't care. Will be override
             return_interm_layers=True,  # Don't care. Will be override
-            **kwargs
+            **kwargs,
         )
         if return_interm_layers:
             # Ignore layer1 in forward. Use layer1 for panoptic purposes

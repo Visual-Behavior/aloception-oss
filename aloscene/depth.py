@@ -285,7 +285,13 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
             for _ in range(len(target_shape[:-1])):
                 theta = theta.unsqueeze(0)
             r = torch.tan(theta)
-            focal_length = focal_length * theta * distortion / r.abs()
+
+            if projection == "equidistant":
+                focal_length = focal_length * theta * distortion / r.abs()
+            elif projection == "kumler_bauer":
+                focal_length = (
+                    distortion[0] * torch.sin(distortion[1] * theta) * focal_length / (distortion[2] * r.abs())
+                )
 
             # find points behind camera
             behind = theta > (np.pi / 2)

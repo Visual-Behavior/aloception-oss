@@ -13,7 +13,7 @@ class DetrObjectDetectorCallback(ObjectDetectorCallback):
     def on_train_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx):
         if trainer.logger is None:
             return
-        if trainer.fit_loop.should_accumulate() or (trainer.global_step + 1) % (trainer.log_every_n_steps * 10) != 0:
+        if trainer.fit_loop._should_accumulate() or (trainer.global_step + 1) % (trainer.log_every_n_steps * 10) != 0:
             # Draw boxes for last batch
             if (trainer.fit_loop.total_batch_idx + 1) % trainer.num_training_batches != 0:
                 return

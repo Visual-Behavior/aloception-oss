@@ -895,3 +895,35 @@ class DynamicCropTransform(AloTransform):
             )
 
         return F.crop(frame, top, left, crop_h, crop_w)
+
+
+class RandomFisheyeCrop(AloTransform):
+    """
+    Args:
+        crop_size: Tuple[int, int]: Size of the crops (height, width)
+
+    Returns:
+        Random crops of fixed size `crop_size` in fisheye images
+    """
+    def __init__(self, crop_size: Tuple[int, int], *args, **kwargs) -> None:
+        super(RandomFisheyeCrop, self).__init__(*args, **kwargs)
+        self.crop_size = crop_size
+
+    def _random_fisheye_crop_center(self, input_size: Tuple[int, int]) -> Tuple[int, int]:
+        height, width = input_size
+        min_x = (self.crop_size[0] / 2 / width) * 2
+        min_y = (self.crop_size[1] / 2 / height) * 2
+        x = np.random.uniform(min_x - 1, 1 - min_x)
+        r = np.sin(np.arccos(x))
+        y = np.random.uniform(-r, r)
+        y = np.clip(y, min_y - 1, 1 - min_y)
+        x = int((x + 1) * width) // 2
+        y = int((y + 1) * height) // 2
+        return x, y
+
+    def __call__(self, frame: Frame) -> Frame:
+        h, w = frame.shape[-2:]
+        cx, cy = self._random_fisheye_crop_center((h, w))
+        csx, csy = self.crop_size[0] // 2, self.crop_size[1] // 2
+        out = frame[..., cy - csy : cy + csy, cx - csx : cx + csx].clone()
+        return out

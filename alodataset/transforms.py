@@ -330,7 +330,7 @@ class RandomSizeCrop(AloTransform):
         h = min(frame.H, sample_h)
 
         region = T.RandomCrop.get_params(frame, [h, w])
-        frame = F.crop(frame, *region)
+        frame = frame.crop(H_crop=(region[0]/frame.H, (region[0]+region[2])/frame.H), W_crop=(region[1]/frame.W, (region[1]+region[3])/frame.W))
         return frame
 
 

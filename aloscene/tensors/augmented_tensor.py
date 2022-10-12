@@ -283,10 +283,7 @@ class AugmentedTensor(torch.Tensor):
                     raise Exception("Do not handle this slice")
             return label
         else:
-            if isinstance(idx, torch.Tensor) and hasattr(label, "reset_names"):
-                return label.rename_(None)[idx]  # .reset_names()
-            else:
-                return label[idx]
+            return label[idx]
 
     def __getitem__(self, idx):
 

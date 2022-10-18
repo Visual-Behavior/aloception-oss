@@ -62,14 +62,16 @@ class CocoDetectionDataset(CocoBaseDataset, SplitMixin):
         >>> frames.get_view(frames.boxes2d,).render()
     """
 
-    SPLIT_FOLDERS = {Split.VAL: "val2017", Split.TRAIN: "train2017"}
+    SPLIT_FOLDERS = {Split.VAL: "val2017", Split.TRAIN: "train2017", Split.UNLABELED: "unlabeled2017"}
     SPLIT_ANN_FILES = {
         Split.VAL: "annotations/instances_val2017.json",
         Split.TRAIN: "annotations/instances_train2017.json",
+        Split.UNLABELED: None,
     }
     SPLIT_ANN_STUFF_FILES = {
         Split.VAL: "annotations/stuff_val2017.json",
         Split.TRAIN: "annotations/stuff_train2017.json",
+        Split.UNLABELED: None,
     }
 
     def __init__(
@@ -216,7 +218,7 @@ class CocoDetectionDataset(CocoBaseDataset, SplitMixin):
 
 
 if __name__ == "__main__":
-    coco_dataset = CocoDetectionDataset(split=Split.VAL, return_multiple_labels=True)
+    coco_dataset = CocoDetectionDataset(split=Split.UNLABELED, return_multiple_labels=True)
     for f, frames in enumerate(coco_dataset.stream_loader(num_workers=1)):
         frames = Frame.batch_list([frames])
         frames.get_view().render()

@@ -78,54 +78,57 @@ class CocoBaseDataset(BaseDataset):
             return
         else:
             assert img_folder is not None, "When sample = False, img_folder must be given."
-            assert ann_file is not None, "When sample = False, ann_file must be given."
+            #assert ann_file is not None, "When sample = False, ann_file must be given."
 
         # Create properties
         self.img_folder = os.path.join(self.dataset_dir, img_folder)
-        self.coco = COCO(os.path.join(self.dataset_dir, ann_file))
+        self.coco = COCO(None if ann_file is None else os.path.join(self.dataset_dir, ann_file))
         self.items = list(sorted(self.coco.imgs.keys()))
-
-        # Setup the class names
-        cats = self.coco.loadCats(self.coco.getCatIds())
-        nb_category = max(cat["id"] for cat in cats)
-        label_names = ["N/A"] * (nb_category + 1)
-        for cat in cats:
-            label_names[cat["id"]] = cat["name"]
-
-        self._ids_renamed = classes
-        self.label_names = label_names
-        if classes is not None:
-            notclass = [label for label in classes if label not in self.label_names]
-            if len(notclass) > 0:  # Ignore all labels not in classes
-                raise Exception(
-                    f"The {notclass} classes dont match in label_names list. Possible values: {self.label_names}"
-                )
-
-            self.label_names = classes
-            self._ids_renamed = [-1 if label not in classes else classes.index(label) for label in label_names]
-            self._ids_renamed = np.array(self._ids_renamed)
-
-            # Check each annotation and keep only that have at least 1 box in classes list
-            ids = []
-            for i in self.items:
-                target = self.coco.loadAnns(self.coco.getAnnIds(i))
-                if any([self._ids_renamed[bbox["category_id"]] >= 0 for bbox in target]):
-                    ids.append(i)
-            self.items = ids  # Remove images without bboxes with classes in classes list
-
-        # Fix lenght of label_names to a desired `fix_classes_len`
-        if fix_classes_len is not None:
-            self._fix_classes(fix_classes_len)
-        self.prepare = ConvertCocoPolysToMask(return_masks)
 
         # Process to return multiple labels : Create encoding objects
         self.label_types, self.label_types_names = None, None
-        if return_multiple_labels:
-            dict_cats = {
-                lbl: self.coco.loadCats(self.coco.getCatIds(lbl))[0] if lbl != "N/A" else {}
-                for lbl in self.label_names
-            }
-            self.label_types, self.label_types_names = self._get_label_types(dict_cats)
+
+        # Setup the class names
+        if ann_file is not None:
+            cats = self.coco.loadCats(self.coco.getCatIds())
+
+            nb_category = max(cat["id"] for cat in cats)
+            label_names = ["N/A"] * (nb_category + 1)
+            for cat in cats:
+                label_names[cat["id"]] = cat["name"]
+
+            self._ids_renamed = classes
+            self.label_names = label_names
+            if classes is not None:
+                notclass = [label for label in classes if label not in self.label_names]
+                if len(notclass) > 0:  # Ignore all labels not in classes
+                    raise Exception(
+                        f"The {notclass} classes dont match in label_names list. Possible values: {self.label_names}"
+                    )
+
+                self.label_names = classes
+                self._ids_renamed = [-1 if label not in classes else classes.index(label) for label in label_names]
+                self._ids_renamed = np.array(self._ids_renamed)
+
+                # Check each annotation and keep only that have at least 1 box in classes list
+                ids = []
+                for i in self.items:
+                    target = self.coco.loadAnns(self.coco.getAnnIds(i))
+                    if any([self._ids_renamed[bbox["category_id"]] >= 0 for bbox in target]):
+                        ids.append(i)
+                self.items = ids  # Remove images without bboxes with classes in classes list
+
+            # Fix lenght of label_names to a desired `fix_classes_len`
+            if fix_classes_len is not None:
+                self._fix_classes(fix_classes_len)
+            self.prepare = ConvertCocoPolysToMask(return_masks)
+
+            if return_multiple_labels:
+                dict_cats = {
+                    lbl: self.coco.loadCats(self.coco.getCatIds(lbl))[0] if lbl != "N/A" else {}
+                    for lbl in self.label_names
+                }
+                self.label_types, self.label_types_names = self._get_label_types(dict_cats)
 
     def _get_label_types(self, dict_cats: Dict[dict, list]):
         label_types, label_types_names = defaultdict(list), defaultdict(list)
@@ -341,7 +344,7 @@ class ConvertCocoPolysToMask(object):
 
 
 if __name__ == "__main__":
-    coco_dataset = CocoBaseDataset(sample=True)
+    coco_dataset = CocoBaseDataset(sample=False)
     for f, frames in enumerate(coco_dataset.train_loader(batch_size=2)):
         frames = Frame.batch_list(frames)
         frames.get_view().render()

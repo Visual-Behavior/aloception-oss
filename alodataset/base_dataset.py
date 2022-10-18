@@ -30,8 +30,8 @@ class Split(Enum):
     TRAIN: str = "train"
     VAL: str = "val"
     TEST: str = "test"
-
-    Type: List[str] = ["train", "val", "test"]
+    UNLABELED: str = "unlabeled"
+    Type: List[str] = ["train", "val", "test", "unlabeled"]
 
 
 def stream_loader(dataset, num_workers=2):

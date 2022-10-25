@@ -10,7 +10,7 @@ import torchvision.transforms.functional as F
 from torch.distributions.uniform import Uniform
 import torchvision
 
-from aloscene import Frame
+from aloscene import Frame,Mask
 
 
 class AloTransform(object):
@@ -143,6 +143,20 @@ class AloTransform(object):
 
             return frames
 
+    def add_new_mask(self,frame:Frame):
+        """Adds a mask during the transforms that can create invalid pixels"""
+        if frame.mask is None:
+        #if the frame has no mask, create a mask to keep track of the pixels becoming invalid during the transform
+        #then the Mask class implementation of the spatial shift is applied by recursive_apply_on_children fct
+            if frame.names==("H","W"):
+                shape=frame.shape
+            elif "C" in frame.names:
+                shape=frame.shape
+                shape[frame.names.index("C") ]=1
+            else:
+                raise Exception(f"Expected frame.names to contain C dimension, but got {frame.names}")
+
+            frame.append_mask(Mask(torch.zeros(shape), names=frame.names))
 
 class Compose(AloTransform):
     def __init__(self, transforms: AloTransform, *args, **kwargs):
@@ -580,6 +594,8 @@ class Rotate(AloTransform):
         frame: Frame
             Frame to apply the transformation on
         """
+        self.add_new_mask(frame)
+
         frame = frame.rotate(self.angle)
         return frame
 
@@ -701,6 +717,7 @@ class SpatialShift(AloTransform):
         frame: Frame
             Frame to apply the transformation on
         """
+        self.add_new_mask(frame)
         n_frame = frame.spatial_shift(self.percentage[0], self.percentage[1])
         return n_frame
 

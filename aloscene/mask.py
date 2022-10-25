@@ -10,6 +10,7 @@ import aloscene
 from aloscene.renderer import View
 from aloscene.io.mask import load_mask
 from aloscene.labels import Labels
+import torchvision.transforms.functional as F
 
 
 class Mask(aloscene.tensors.SpatialAugmentedTensor):
@@ -295,3 +296,28 @@ class Mask(aloscene.tensors.SpatialAugmentedTensor):
             n_frame.data = frame_data
 
             return n_frame
+
+    def _rotate(self, angle, **kwargs):
+        """Rotate the mask and fill the areas outside with 1 to show that these pixels become invalid
+
+        Parameters
+        ----------
+        angle : float
+
+        Returns
+        -------
+        rotated : aloscene.SpatialAugmentedTensor
+            rotated tensor
+        """
+        # If a SpatialAgumentedTensor is empty, rotate operation does not work. Use view instead.
+        assert not (
+            ("N" in self.names and self.size("N") == 0) or ("C" in self.names and self.size("C") == 0)
+        ), "rotation is not possible on an empty tensor"
+        if len(self.shape)==3:
+            self=self.temporal(0)
+
+        new_self=self.type(torch.LongTensor)
+        print("dtype",self.dtype)
+
+        new_mask=F.rotate(new_self.rename(None), angle,fill=1.0)
+        return new_mask.reset_names()

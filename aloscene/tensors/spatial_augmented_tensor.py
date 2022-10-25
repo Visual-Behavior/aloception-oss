@@ -361,12 +361,17 @@ class SpatialAugmentedTensor(AugmentedTensor):
         # Create the batch list mask
         n_mask = torch.ones(tuple(n_mask_shape), dtype=torch.float, device=device)
         for b, frame in enumerate(n_sa_tensors):
+            if frame.mask is not None:
+                frame.mask.rename_(None,auto_restore_names=True)
             n_slice = frame.get_slices({"B": b, "H": slice(None, frame.H), "W": slice(None, frame.W)})
             n_tensor[n_slice].copy_(frame[0])
-            n_mask[n_slice] = 0
+            n_mask[n_slice] =  0
 
         # n_frame = instance(n_tensor, names=n_names, normalization=normalization, device=device, mean_std=mean_std)
-        n_augmented_tensors.append_mask(aloscene.Mask(n_mask, names=n_names))
+        if n_augmented_tensors.mask is None:
+            n_augmented_tensors.append_mask(aloscene.Mask(n_mask, names=n_names))
+        else:
+            n_augmented_tensors.mask=aloscene.Mask(n_mask, names=n_names)
 
         return n_augmented_tensors
 

@@ -233,7 +233,7 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         intrinsic = camera_intrinsic if camera_intrinsic is not None else self.cam_intrinsic
         projection = projection if projection is not None else self.projection
         distortion = distortion if distortion is not None else self.distortion
-        assert projection in ["pinhole", "equidistant", "kumler_bauer"], "Only pinhole and equidistant are supported."
+        assert projection in ["pinhole", "equidistant", "kumler_bauer"], "Only pinhole, equidistant and kumler_bauer are supported."
 
         # if self is not planar depth, we must convert to planar depth before projecting to 3d points
         if self.is_planar:
@@ -399,7 +399,7 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
             "pinhole",
             "equidistant",
             "kumler_bauer",
-        ], "Only pinhole and equidistant projection are supported"
+        ], "Only pinhole, equidistant and kumler_bauer projection are supported"
 
         planar = self
         camera_intrinsic = camera_intrinsic if camera_intrinsic is not None else self.cam_intrinsic
@@ -444,7 +444,7 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
             "pinhole",
             "equidistant",
             "kumler_bauer",
-        ], "Only pinhole and equidistant projection are supported"
+        ], "Only pinhole, equidistant and kumler_bauer projection are supported"
 
         euclidean = self
         camera_intrinsic = camera_intrinsic if camera_intrinsic is not None else self.cam_intrinsic

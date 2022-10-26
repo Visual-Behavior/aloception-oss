@@ -388,11 +388,20 @@ class WaymoDataset(BaseDataset, SequenceMixin, SplitMixin):
                 cam_intrinsic, cam_extrinsic = self.get_frame_camera_parameters(frame, camera, segment, el)
                 frame.append_cam_intrinsic(cam_intrinsic)
                 frame.append_cam_extrinsic(cam_extrinsic)
+            if "depth" in self.labels:
+                depth_path = os.path.join(
+                    self.dataset_dir, self.get_split_folder(), segment, "depth" + camera_id, str(el).zfill(3) + ".npz"
+                )
+                depth = aloscene.Depth(depth_path).temporal()
+
+                # depth is at 1/4th the resolution so adapt image
+                frame = frame.resize(depth.HW)
+                frame.append_depth(depth)
+
             frames.append(frame)
             t += 1
 
         # Stack along the first dimension
-
         frames = torch.cat(frames, dim=0).type(torch.float32)
         return frames
 
@@ -501,12 +510,12 @@ class WaymoDataset(BaseDataset, SequenceMixin, SplitMixin):
 
 def main():
     """Main"""
-    waymo_dataset = WaymoDataset(sample=True)
-    waymo_dataset.prepare()
+    waymo_dataset = WaymoDataset(labels=["depth"])
+    # waymo_dataset.prepare()
 
     for frames in waymo_dataset.train_loader(batch_size=2):
         frames = Frame.batch_list([frame["front"] for frame in frames])
-        frames.get_view([frames.boxes3d]).render()
+        frames.get_view(exclude=[frames.mask]).render()
 
 
 if __name__ == "__main__":

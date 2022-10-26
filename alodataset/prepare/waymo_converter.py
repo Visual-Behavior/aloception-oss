@@ -19,9 +19,10 @@ import pickle
 
 from waymo_open_dataset.utils.frame_utils import parse_range_image_and_camera_projection
 from waymo_open_dataset import dataset_pb2 as open_dataset
-from waymo_open_dataset import dataset_pb2
-from waymo_open_dataset.utils import range_image_utils
-from waymo_open_dataset.utils import transform_utils
+from waymo_open_dataset.utils import frame_utils
+
+from scipy.ndimage import binary_closing, grey_opening
+from scipy.interpolate import LinearNDInterpolator
 
 # Abbreviations:
 # WOD: Waymo Open Dataset
@@ -95,6 +96,7 @@ class Waymo2KITTIConverter(object):
         self.label_save_dir = "label"
         self.label_all_save_dir = "label_all"
         self.image_save_dir = "image"
+        self.depth_save_dir = "depth"
         self.calib_save_dir = "calib"
         self.point_cloud_save_dir = "velodyne"
         self.pose_save_dir = "pose"
@@ -122,16 +124,27 @@ class Waymo2KITTIConverter(object):
             if not os.path.exists(pkl_file):
                 return False
 
-        # check image
+        # check image & depth
         img_nb = []
+        depth_nb = []
         for i in range(5):
             img_dir = join(sgmt_dir, self.image_save_dir + str(i))
             if not isdir(img_dir):
                 return False
             else:
                 img_nb.append(len([img for img in os.listdir(img_dir) if img.endswith("jpg")]))
-        # image numbers in each subdir should be equal
-        if sum(img_nb) / len(img_nb) != img_nb[0]:
+
+            depth_dir = join(sgmt_dir, self.depth_save_dir + str(i))
+            if not isdir(depth_dir):
+                return False
+            else:
+                depth_nb.append(len([dpt for dpt in os.listdir(depth_dir) if dpt.endswith("npz")]))
+
+        # image and depth numbers in each subdirs should be equal
+        if sum(img_nb) / len(img_nb) != img_nb[0] or sum(depth_nb) / len(depth_nb) != img_nb[0]:
+            return False
+
+        elif len([dpt for dpt in os.listdir(depth_dir) if dpt.endswith("npz")]) != img_nb[0]:
             return False
 
         # if all the checks are passed
@@ -146,8 +159,7 @@ class Waymo2KITTIConverter(object):
         if isdir(sgmt_dir) and self.check_segment_dir_integrity(sgmt_dir):
             return None
 
-        if not isdir(sgmt_dir):
-            self.create_folder(sgmt_name)
+        self.create_folder(sgmt_name)
 
         calibs = {}
         lidar_labels = {}
@@ -163,6 +175,8 @@ class Waymo2KITTIConverter(object):
 
             # save images
             self.save_image(frame, frame_idx, sgmt_name)
+
+            self.save_dense_depth(frame, frame_idx, sgmt_name)
 
             # parse calibration files
             calibs[frame_idx] = self.save_calib(frame, frame_idx, sgmt_name)
@@ -215,6 +229,102 @@ class Waymo2KITTIConverter(object):
             )
             with open(img_path, "wb") as f:
                 f.write(img.image)
+
+    def save_dense_depth(self, frame, frame_idx, sgmt_name):
+        """Use lidar data to generate dense depth, pixels with no values are at 0
+
+        Parameters
+        ----------
+        frame : waymo_open_dataset.dataset_pb2.Frame
+            waymo open dataset frame proto
+        frame_idx : int
+            the current frame number
+        sgmt_name : str
+            the current segment name
+        """
+
+        (range_images, camera_projections, range_image_top_pose) = frame_utils.parse_range_image_and_camera_projection(
+            frame
+        )
+        points, cp_points = frame_utils.convert_range_image_to_point_cloud(
+            frame, range_images, camera_projections, range_image_top_pose
+        )
+
+        # 3d points in vehicle frame.
+        points_all = np.concatenate(points, axis=0)
+
+        # camera projection corresponding to each point.
+        cp_points = np.concatenate(cp_points, axis=0)
+        images = sorted(frame.images, key=lambda i: i.name)
+        points_all = tf.norm(points_all, axis=-1, keepdims=True)
+        cp_points = tf.constant(cp_points, dtype=tf.int32)
+
+        for img in images:
+
+            # lidar points can be on 2 cameras so we have to filter out other cameras
+            mask0 = cp_points[..., 0] == img.name
+            mask3 = cp_points[..., 3] == img.name
+            # in some rare cases a single point can have multiple pair of coordinates for the same camera,
+            # remove 2nd pair
+            mask3 = mask3 & ~mask0
+            mask = tf.concat([tf.tile(mask0[..., None], (1, 3)), tf.tile(mask3[..., None], (1, 3))], -1)
+            cp_points_tensor = tf.cast(tf.reshape(cp_points[mask], (-1, 3)), dtype=tf.float32)
+            points_tensor = points_all[mask0 | mask3]
+
+            # project points to image scaled down by 4
+            projected_points_all_from_raw_data = tf.concat(
+                [cp_points_tensor[:, 1:] // 4, points_tensor], axis=-1
+            ).numpy()
+            s = tuple(tf.image.decode_jpeg(img.image).shape)
+            image = np.zeros((round(s[0] / 4), round(s[1] / 4), 1))
+            x = projected_points_all_from_raw_data[:, 0].astype(int)
+            y = projected_points_all_from_raw_data[:, 1].astype(int)
+            image[y, x] = projected_points_all_from_raw_data[:, 2, None]
+
+            # select points that have lidar info
+            data = image.squeeze()
+            mask = np.where((data != 0))
+
+            # select points to fill with interpolation
+            structure = np.array(
+                [
+                    [0, 0, 1, 1, 1, 1, 1, 0, 0],
+                    [0, 1, 1, 1, 1, 1, 1, 1, 0],
+                    [1, 1, 1, 1, 1, 1, 1, 1, 1],
+                    [1, 1, 1, 1, 1, 1, 1, 1, 1],
+                    [1, 1, 1, 1, 1, 1, 1, 1, 1],
+                    [1, 1, 1, 1, 1, 1, 1, 1, 1],
+                    [1, 1, 1, 1, 1, 1, 1, 1, 1],
+                    [0, 1, 1, 1, 1, 1, 1, 1, 0],
+                    [0, 0, 1, 1, 1, 1, 1, 0, 0],
+                ]
+            )
+            m = binary_closing((image > 0.0).squeeze(), structure=structure)
+            to_fill = np.where(m)
+
+            # linear interpolation between points
+            interp = LinearNDInterpolator(mask, data[mask], fill_value=0.0)
+            res = np.full(image.shape[:-1], np.nan)
+            filled_data = interp(*to_fill)
+            res[to_fill[0], to_fill[1]] = filled_data
+
+            # filter results to remove artefacts by favoring reducing the range
+            footprint = np.array(
+                [
+                    [0, 0, 1, 1, 1, 0, 0],
+                    [0, 1, 1, 1, 1, 1, 0],
+                    [0, 1, 1, 1, 1, 1, 0],
+                    [0, 1, 1, 1, 1, 1, 0],
+                    [0, 1, 1, 1, 1, 1, 0],
+                    [0, 1, 1, 1, 1, 1, 0],
+                    [0, 0, 1, 1, 1, 0, 0],
+                ]
+            )
+            res = grey_opening(res, footprint=footprint)
+            res = np.nan_to_num(res)
+
+            img_path = join(self.save_dir, sgmt_name, self.depth_save_dir + str(img.name - 1), str(frame_idx).zfill(3))
+            np.savez_compressed(img_path, (res * 100).astype(np.ushort))
 
     def save_calib(self, frame, frame_idx, sgmt_name):
         """Parse and return camera calibration as dict of np.ndarray
@@ -413,6 +523,10 @@ class Waymo2KITTIConverter(object):
 
         for i in range(5):
             d = join(self.save_dir, sgmt_name, self.image_save_dir + str(i))
+            if not isdir(d):
+                os.makedirs(d)
+
+            d = join(self.save_dir, sgmt_name, self.depth_save_dir + str(i))
             if not isdir(d):
                 os.makedirs(d)
 

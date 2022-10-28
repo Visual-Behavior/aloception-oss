@@ -303,26 +303,28 @@ class Waymo2KITTIConverter(object):
             to_fill = np.where(m)
 
             # linear interpolation between points
-            interp = LinearNDInterpolator(mask, data[mask], fill_value=0.0)
-            res = np.full(image.shape[:-1], np.nan)
-            filled_data = interp(*to_fill)
-            res[to_fill[0], to_fill[1]] = filled_data
+            try:
+                interp = LinearNDInterpolator(mask, data[mask], fill_value=0.0)
+                res = np.full(image.shape[:-1], np.nan)
+                filled_data = interp(*to_fill)
+                res[to_fill[0], to_fill[1]] = filled_data
 
-            # filter results to remove artefacts by favoring reducing the range
-            footprint = np.array(
-                [
-                    [0, 0, 1, 1, 1, 0, 0],
-                    [0, 1, 1, 1, 1, 1, 0],
-                    [0, 1, 1, 1, 1, 1, 0],
-                    [0, 1, 1, 1, 1, 1, 0],
-                    [0, 1, 1, 1, 1, 1, 0],
-                    [0, 1, 1, 1, 1, 1, 0],
-                    [0, 0, 1, 1, 1, 0, 0],
-                ]
-            )
-            res = grey_opening(res, footprint=footprint)
-            res = np.nan_to_num(res)
-
+                # filter results to remove artefacts by favoring reducing the range
+                footprint = np.array(
+                    [
+                        [0, 0, 1, 1, 1, 0, 0],
+                        [0, 1, 1, 1, 1, 1, 0],
+                        [0, 1, 1, 1, 1, 1, 0],
+                        [0, 1, 1, 1, 1, 1, 0],
+                        [0, 1, 1, 1, 1, 1, 0],
+                        [0, 1, 1, 1, 1, 1, 0],
+                        [0, 0, 1, 1, 1, 0, 0],
+                    ]
+                )
+                res = grey_opening(res, footprint=footprint)
+                res = np.nan_to_num(res)
+            except:
+                res = np.zeros(image.shape[:-1])
             img_path = join(self.save_dir, sgmt_name, self.depth_save_dir + str(img.name - 1), str(frame_idx).zfill(3))
             np.savez_compressed(img_path, (res * 100).astype(np.ushort))
 

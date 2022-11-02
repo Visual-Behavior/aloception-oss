@@ -10,8 +10,8 @@ import os
 
 class WooodScapeDataset(BaseDataset):
     """WoodScape dataset iterator
-    
-    Paramneters 
+
+    Paramneters
     -----------
         labels : List[str]
             List of labels to stick to the frame. If the list is empty all labels are loaded. By default all labels are attached.
@@ -39,15 +39,12 @@ class WooodScapeDataset(BaseDataset):
     """
 
     CAMERAS = [
-        "RV",   # Right View
-        "FV",   # Front View
+        "RV",  # Right View
+        "FV",  # Front View
         "MVL",  # Mirror Left View
         "MVR",  # Mirror Right View
-        ]
-    LABELS = [
-        "seg",
-        "box_2d"
-        ]
+    ]
+    LABELS = ["seg", "box_2d"]
     SEG_CLASSES = [
         "void",
         "road",
@@ -58,8 +55,8 @@ class WooodScapeDataset(BaseDataset):
         "vehicles",
         "bicycle",
         "motorcycle",
-        "traffic_sign"
-        ]
+        "traffic_sign",
+    ]
 
     def __init__(
         self,
@@ -70,13 +67,14 @@ class WooodScapeDataset(BaseDataset):
         seg_classes=[],
         merge_classes=False,
         rename_merged="mix",
-        **kwargs):
+        **kwargs,
+    ):
         super().__init__(name=name, **kwargs)
 
         cameras = self.CAMERAS if cameras == list() else cameras
         labels = self.LABELS if labels == list() else labels
 
-        if isinstance(fragment , int):
+        if isinstance(fragment, int):
             pass
         elif isinstance(fragment, float):
             assert fragment <= 1 and fragment >= -1, "fragment of type float can not be higher than 1 of less than -1."
@@ -86,16 +84,18 @@ class WooodScapeDataset(BaseDataset):
         if seg_classes == list():
             seg_classes = self.SEG_CLASSES
 
-        assert all([c in self.SEG_CLASSES for c in seg_classes]), f"some segmentation classes are invalid, supported classes are :\n {self.SEG_CLASSES}"
+        assert all(
+            [c in self.SEG_CLASSES for c in seg_classes]
+        ), f"some segmentation classes are invalid, supported classes are :\n {self.SEG_CLASSES}"
         assert all([v in self.CAMERAS for v in cameras]), f"Some cameras are invalid, should be in {self.CAMERAS}"
         assert all([l in self.LABELS for l in labels]), f"Some labels are invalid, should be ib {self.LABELS}"
         assert isinstance(merge_classes, (int, bool)), "Invalid merge_classes argument"
         assert isinstance(rename_merged, str), "Invalid rename_merged argument"
 
         self.items = sorted(glob.glob(os.path.join(self.dataset_dir, "rgb_images", "*")))
-        self.items = self._filter_cameras(self.items, cameras) 
+        self.items = self._filter_cameras(self.items, cameras)
         self.items = self._filter_non_png(self.items)
-        
+
         self.labels = labels
         self.cameras = cameras
         self.seg_classes = seg_classes
@@ -108,9 +108,9 @@ class WooodScapeDataset(BaseDataset):
 
         # Restricting the number of samples
         if fragment > 0:
-            self.items = self.items[:self.fragment]
+            self.items = self.items[: self.fragment]
         else:
-            self.items = self.items[len(self) - self.fragment:]
+            self.items = self.items[len(self) - self.fragment :]
 
     def getitem(self, idx):
         ipath = self.items[idx]
@@ -119,7 +119,7 @@ class WooodScapeDataset(BaseDataset):
         if "seg" in self.labels:
             segmentation = self._path2segLabel(ipath)
             frame.append_segmentation(segmentation)
-        
+
         if "box_2d" in self.labels:
             _, H, W = frame.shape
             bbox2d_path = self._path2boxLabel(ipath, frame_size=(H, W))
@@ -129,10 +129,10 @@ class WooodScapeDataset(BaseDataset):
     @staticmethod
     def _path2segPath(path):
         """Maps rgb image path to corresponding segmentation path
-        
+
         Parameters
         ----------
-            path: str 
+            path: str
                 Path to rgb image.
 
         """
@@ -144,11 +144,11 @@ class WooodScapeDataset(BaseDataset):
     @staticmethod
     def _path2boxPath(path):
         """Maps rgb image path to corresponding json 2dbbox file
-        
+
         Parameters
         ----------
             path: str
-                path to rgb image   
+                path to rgb image
 
         """
         path, file = os.path.split(path)
@@ -158,7 +158,7 @@ class WooodScapeDataset(BaseDataset):
 
     def _path2segLabel(self, path):
         """Maps image path to segmentation mask
-        
+
         Parametrs
         ---------
             path: str
@@ -172,17 +172,17 @@ class WooodScapeDataset(BaseDataset):
 
     def mask_2d_idx_to_3d_onehot_mask(self, mask_2d):
         """Converts 2d index encoding mask to 3d one hot encoding one
-        
+
         Parameters
         ----------
             mask : np.ndarray
                 Mask of size (H, W) with int values
-        
+
         """
         sample_seg_classes = torch.unique(torch.Tensor(mask_2d.reshape(-1)))
-            
+
         num_sample_seg_classes = len(self.seg_classes_renamed)
-        mask_3d = np.zeros((num_sample_seg_classes, ) + mask_2d.shape)
+        mask_3d = np.zeros((num_sample_seg_classes,) + mask_2d.shape)
 
         dec = 0
         for i, name in enumerate(self.seg_classes):
@@ -194,13 +194,18 @@ class WooodScapeDataset(BaseDataset):
                 dec += 1
 
         mask_3d = Mask(mask_3d, names=tuple("CHW"))
-        mlabels = Labels(torch.arange(num_sample_seg_classes).to(torch.float32), labels_names=self.seg_classes_renamed, names=("N"), encoding="id")
+        mlabels = Labels(
+            torch.arange(num_sample_seg_classes).to(torch.float32),
+            labels_names=self.seg_classes_renamed,
+            names=("N"),
+            encoding="id",
+        )
         mask_3d.append_labels(mlabels)
         return mask_3d
 
     def _path2boxLabel(self, path, frame_size):
         """Maps image patgh to bbox2d label
-        
+
         Parameters
         ----------
             path: str
@@ -219,7 +224,7 @@ class WooodScapeDataset(BaseDataset):
     @staticmethod
     def _filter_non_png(items):
         """Filters non png files from a list of paths to files
-        
+
         Parameters
         ----------
             items : List[str]
@@ -231,7 +236,7 @@ class WooodScapeDataset(BaseDataset):
     @staticmethod
     def _filter_cameras(items, cameras):
         """Filters paths by given cameras list
-        
+
         Parameters
         ----------
 
@@ -239,15 +244,15 @@ class WooodScapeDataset(BaseDataset):
                 List of cameras
 
         """
-        return list(filter(lambda x : any([v in x for v in cameras]), items))
+        return list(filter(lambda x: any([v in x for v in cameras]), items))
 
 
 if __name__ == "__main__":
-    ds =  WooodScapeDataset(
+    ds = WooodScapeDataset(
         labels=[],
         cameras=[],
-        fragment=1.,
-        )
+        fragment=1.0,
+    )
     idx = 222
     frame = ds[idx]
     frame.get_view().render()

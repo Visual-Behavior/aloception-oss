@@ -53,7 +53,7 @@ jobs:
   linter:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Black
         uses: psf/black@stable
         with:
@@ -64,12 +64,4 @@ jobs:
           pip install flake8==5.0.4
       - name: Run Flake8
         run: |
-          flake=`flake8`
-          end=$?
-          echo "$flake" | while read line ; do
-              if [ ! -z "$line" ]; then
-                  IFS=':' read -ra ADDR <<< "$line"
-                  echo "::warning file=${ADDR[0]},line=${ADDR[1]},col=${ADDR[2]}::${ADDR[3]}"
-              fi
-          done
-          exit $end
+          flake8

@@ -151,8 +151,14 @@ class AloTransform(object):
             if frame.names==("H","W"):
                 shape=frame.shape
             elif "C" in frame.names:
-                shape=frame.shape
-                shape[frame.names.index("C") ]=1
+                new_shape=[]
+                for i,name in enumerate(frame.names):
+                    if name!="C":
+                        new_shape.append(frame.shape[i])
+                    else:
+                        new_shape.append(1)
+
+                shape=torch.Size(new_shape)
             else:
                 raise Exception(f"Expected frame.names to contain C dimension, but got {frame.names}")
 

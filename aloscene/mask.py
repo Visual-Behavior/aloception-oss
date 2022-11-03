@@ -313,11 +313,10 @@ class Mask(aloscene.tensors.SpatialAugmentedTensor):
         assert not (
             ("N" in self.names and self.size("N") == 0) or ("C" in self.names and self.size("C") == 0)
         ), "rotation is not possible on an empty tensor"
-        if len(self.shape)==3:
-            self=self.temporal(0)
 
-        new_self=self.type(torch.LongTensor)
-        print("dtype",self.dtype)
 
-        new_mask=F.rotate(new_self.rename(None), angle,fill=1.0)
+        labels=self.get_children()
+        names=self.names
+        new_mask=aloscene.Mask(F.rotate(self.as_tensor(), angle,fill=1.0), names=names)
+        new_mask.set_children(labels)
         return new_mask.reset_names()

@@ -442,6 +442,7 @@ class Points2D(aloscene.tensors.AugmentedTensor):
             rotated points
         """
         points = self.xy()
+        assert self.absolute, "This function assumes the points are in absolute coordinates"
         H, W = self.frame_size
         angle_rad = angle * np.pi / 180
         rot_mat = torch.tensor([[np.cos(angle_rad), np.sin(angle_rad)], [-np.sin(angle_rad), np.cos(angle_rad)]]).to(
@@ -451,8 +452,10 @@ class Points2D(aloscene.tensors.AugmentedTensor):
         for i in range(points.shape[0]):
             points[i] = torch.matmul(rot_mat, points[i] - tr_mat) + tr_mat
 
+
         max_size = torch.as_tensor([W, H], dtype=torch.float32)
         points_filter = (points >= 0).as_tensor() & (points <= max_size).as_tensor()
+
         points_filter = points_filter[:, 0] & points_filter[:, 1]
         points = points[points_filter]
 

@@ -11,8 +11,8 @@ from alodataset.utils.kitti import load_calib_cam_to_cam, sequence_indices
 
 
 class KittiTrackingDataset(BaseDataset, SplitMixin):
-    SPLIT_FOLDERS = {Split.TRAIN: "training", Split.TEST: "testing"}
-    LABELS = ["Car", "Van", "Truck", "Pedestrian", "Person_sitting", "Cyclist", "Tram", "Misc", "DontCare"]
+    SPLIT_FOLDERS = {Split.TRAIN: "training", Split.VAL: "training", Split.TEST: "testing"}
+    LABELS = ["Car", "Van", "Truck", "Pedestrian", "Person_sitting", "Cyclist", "Tram", "Misc", "DontCare", "Person"]
 
     def __init__(
         self,

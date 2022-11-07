@@ -40,13 +40,13 @@ def coords2rtheta(
     if projection == "pinhole":
         theta = torch.atan(r_d / focal)
     elif projection == "equidistant":
-        assert isinstance(distortion, (float, int))
-        theta = r_d / (focal * distortion)
+        dist_coef = distortion[0] if isinstance(distortion, Sequence) else distortion
+        theta = r_d / (focal * dist_coef)
     elif projection == "kumler_bauer":
         # distortion [k1, k2, focal_meter]
         assert (
             isinstance(distortion, Sequence) and len(distortion) == 3
-        ), "Kumler-Bauer projection needs two distortion coefficients (alpha, beta)"
+        ), "Kumler-Bauer projection needs 3 distortion coefficients (alpha, beta, focal in meter)"
         fm = distortion[2]
         theta = torch.arcsin(fm / distortion[0] * r_d / focal) / distortion[1]
     else:

@@ -11,6 +11,7 @@ from aloscene.renderer import View
 from aloscene.io.mask import load_mask
 from aloscene.labels import Labels
 import torchvision.transforms.functional as F
+import matplotlib.pyplot as plt
 
 
 class Mask(aloscene.tensors.SpatialAugmentedTensor):
@@ -248,54 +249,56 @@ class Mask(aloscene.tensors.SpatialAugmentedTensor):
             shifted_tensor: aloscene.AugmentedTensor
                 shifted tensor
             """
-            n_frame = self.clone()
+            return self #shunting this modification for now bc it doesn't work well with deformable_2dpoints
 
-            if "N"  in self.names:
-                ind_name="N"
-            elif "C" in self.names:
-                ind_name="C"
+            # n_frame = self.clone()
 
-
-            n_chans=self.shape[self.names.index(ind_name) ]
-
-
-            x_shift = int(shift_x * self.W)
-            y_shift = int(shift_y * self.H)
+            # if "N"  in self.names:
+            #     ind_name="N"
+            # elif "C" in self.names:
+            #     ind_name="C"
 
 
-            frame_data = n_frame.as_tensor()
-
-            permute_idx = list(range(0, len(self.shape)))
-            last_current_idx = permute_idx[-1]
-            permute_idx[-1] = permute_idx[self.names.index(ind_name)]
-            permute_idx[self.names.index(ind_name)] = last_current_idx
-
-            # n_frame_mean = frame_data.permute(permute_idx)
-            # n_frame_mean = n_frame_mean.flatten(end_dim=-2)
-            n_frame_mean = torch.tensor([1])
-            n_shape = [1] * len(self.shape)
-            n_shape[self.names.index(ind_name)] = n_chans
+            # n_chans=self.shape[self.names.index(ind_name) ]
 
 
+            # x_shift = int(shift_x * self.W)
+            # y_shift = int(shift_y * self.H)
 
-            frame_data = torch.roll(frame_data, x_shift, dims=self.names.index("W"))
-            # Fillup the shifted area with the mean
 
-            if x_shift >= 1:
-                frame_data[self.get_slices({"W": slice(0, x_shift)})] = n_frame_mean
-            elif x_shift <= -1:
-                frame_data[self.get_slices({"W": slice(x_shift, -1)})] = n_frame_mean
+            # frame_data = n_frame.as_tensor()
 
-            frame_data = torch.roll(frame_data, y_shift, dims=self.names.index("H"))
+            # permute_idx = list(range(0, len(self.shape)))
+            # last_current_idx = permute_idx[-1]
+            # permute_idx[-1] = permute_idx[self.names.index(ind_name)]
+            # permute_idx[self.names.index(ind_name)] = last_current_idx
 
-            if y_shift >= 1:
-                frame_data[self.get_slices({"H": slice(0, y_shift)})] = n_frame_mean
-            elif y_shift <= -1:
-                frame_data[self.get_slices({"H": slice(y_shift, -1)})] = n_frame_mean
+            # # n_frame_mean = frame_data.permute(permute_idx)
+            # # n_frame_mean = n_frame_mean.flatten(end_dim=-2)
+            # n_frame_mean = torch.tensor([1])
+            # n_shape = [1] * len(self.shape)
+            # n_shape[self.names.index(ind_name)] = n_chans
 
-            n_frame.data = frame_data
 
-            return n_frame
+
+            # frame_data = torch.roll(frame_data, x_shift, dims=self.names.index("W"))
+            # # Fillup the shifted area with the mean
+
+            # if x_shift >= 1:
+            #     frame_data[self.get_slices({"W": slice(0, x_shift)})] = n_frame_mean
+            # elif x_shift <= -1:
+            #     frame_data[self.get_slices({"W": slice(x_shift, -1)})] = n_frame_mean
+
+            # frame_data = torch.roll(frame_data, y_shift, dims=self.names.index("H"))
+
+            # if y_shift >= 1:
+            #     frame_data[self.get_slices({"H": slice(0, y_shift)})] = n_frame_mean
+            # elif y_shift <= -1:
+            #     frame_data[self.get_slices({"H": slice(y_shift, -1)})] = n_frame_mean
+
+            # n_frame.data = frame_data
+
+            # return n_frame
 
     def _rotate(self, angle, **kwargs):
         """Rotate the mask and fill the areas outside with 1 to show that these pixels become invalid
@@ -317,6 +320,9 @@ class Mask(aloscene.tensors.SpatialAugmentedTensor):
 
         labels=self.get_children()
         names=self.names
-        new_mask=aloscene.Mask(F.rotate(self.as_tensor(), angle,fill=1.0), names=names)
-        new_mask.set_children(labels)
-        return new_mask.reset_names()
+
+        new_mask=aloscene.Mask(F.rotate(img=self.as_tensor(), angle=angle,fill=[1]), names=names)
+        #new_mask.set_children(labels)
+
+
+        return new_mask

@@ -365,7 +365,7 @@ class SpatialAugmentedTensor(AugmentedTensor):
             n_tensor[n_slice].copy_(frame[0])
             if frame.mask is not None:
                 frame.mask.rename_(None,auto_restore_names=True)
-                n_mask[n_slice].copy_(frame[0].mask)
+                n_mask[n_slice].copy_(frame.mask[0])
             else:
                 n_mask[n_slice]=0
 
@@ -375,6 +375,7 @@ class SpatialAugmentedTensor(AugmentedTensor):
         else:
             n_augmented_tensors.mask=aloscene.Mask(n_mask, names=n_names)
 
+        print("Unique",torch.unique(n_mask))
         return n_augmented_tensors
 
     def _relative_to_absolute_hs_ws(self, hs=None, ws=None, assert_integer=True):

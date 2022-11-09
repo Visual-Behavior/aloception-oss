@@ -5,7 +5,7 @@ from typing import List, Dict, Any, Union
 from collections import defaultdict
 
 from alodataset import BaseDataset, SplitMixin, Split
-from aloscene import Frame, CameraIntrinsic, CameraExtrinsic, BoundingBoxes2D, Labels, BoundingBoxes3D
+from aloscene import Frame, CameraIntrinsic, CameraExtrinsic, BoundingBoxes2D, Labels, BoundingBoxes3D, Depth
 
 from alodataset.utils.kitti import load_calib_cam_to_cam, sequence_indices
 
@@ -22,14 +22,17 @@ class KittiTrackingDataset(BaseDataset, SplitMixin):
         sequence_size=3,
         skip=1,
         sequence_skip=1,
+        depth=False,
         **kwargs,
     ):
+        assert not (depth & right_frame), "Depth on right frame is not available"
         super().__init__(name=name, **kwargs)
 
         self.right_frame = right_frame
         self.sequence_size = sequence_size
         self.skip = skip
         self.sequence_skip = sequence_skip
+        self.depth = depth
 
         if self.sample:
             raise NotImplementedError("Sample mode is not implemented for KittiTrackingDataset")
@@ -192,6 +195,13 @@ class KittiTrackingDataset(BaseDataset, SplitMixin):
             left_frame.baseline = self.seq_params[sequence]["baseline"]
             left_frame.append_cam_extrinsic(CameraExtrinsic(self.seq_params[sequence]["left_extrinsic"]))
             left_frame.append_cam_intrinsic(CameraIntrinsic(self.seq_params[sequence]["left_intrinsic"]))
+
+            if self.depth:
+                depth_path = os.path.join(self.dataset_dir, "depth_02", sequence, f"{seq:06d}.npz")
+                depth = Depth(depth_path)
+                # depth is a little smaller that images so rescale images
+                left_frame = left_frame.resize(depth.HW)
+                left_frame.append_depth(depth)
 
             # Need to create temporal dimension for future fusion.
             left.append(left_frame.temporal())

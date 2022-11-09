@@ -300,29 +300,29 @@ class Mask(aloscene.tensors.SpatialAugmentedTensor):
 
             # return n_frame
 
-    def _rotate(self, angle, **kwargs):
-        """Rotate the mask and fill the areas outside with 1 to show that these pixels become invalid
+    # def _rotate(self, angle, **kwargs):
+    #     """Rotate the mask and fill the areas outside with 1 to show that these pixels become invalid
 
-        Parameters
-        ----------
-        angle : float
+    #     Parameters
+    #     ----------
+    #     angle : float
 
-        Returns
-        -------
-        rotated : aloscene.SpatialAugmentedTensor
-            rotated tensor
-        """
-        # If a SpatialAgumentedTensor is empty, rotate operation does not work. Use view instead.
-        assert not (
-            ("N" in self.names and self.size("N") == 0) or ("C" in self.names and self.size("C") == 0)
-        ), "rotation is not possible on an empty tensor"
-
-
-        labels=self.get_children()
-        names=self.names
-
-        new_mask=aloscene.Mask(F.rotate(img=self.as_tensor(), angle=angle,fill=[1]), names=names)
-        #new_mask.set_children(labels)
+    #     Returns
+    #     -------
+    #     rotated : aloscene.SpatialAugmentedTensor
+    #         rotated tensor
+    #     """
+    #     # If a SpatialAgumentedTensor is empty, rotate operation does not work. Use view instead.
+    #     assert not (
+    #         ("N" in self.names and self.size("N") == 0) or ("C" in self.names and self.size("C") == 0)
+    #     ), "rotation is not possible on an empty tensor"
 
 
-        return new_mask
+    #     labels=self.get_children()
+    #     names=self.names
+
+    #     new_mask=aloscene.Mask(F.rotate(img=self.as_tensor(), angle=angle,fill=[1]), names=names)
+    #     #new_mask.set_children(labels)
+
+
+    #     return new_mask

@@ -3,6 +3,7 @@ from shutil import ExecError
 import matplotlib
 from matplotlib.pyplot import sca
 import torch
+from typing import *
 import warnings
 import aloscene
 from aloscene import Mask
@@ -287,7 +288,8 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
             r = torch.tan(theta)
 
             if projection == "equidistant":
-                focal_length = focal_length * theta * distortion / r.abs()
+                dist_coef = distortion[0] if isinstance(distortion, Sequence) else distortion
+                focal_length = focal_length * theta * dist_coef / r.abs()
             elif projection == "kumler_bauer":
                 focal_length = (
                     distortion[0] * torch.sin(distortion[1] * theta) * focal_length / (distortion[2] * r.abs())

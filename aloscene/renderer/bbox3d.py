@@ -21,7 +21,7 @@ def _draw_3D_box(image, vertices_2d, color1=None, color2=None, class_names=None,
             label_name = class_names[int(labels[i])]
         # class_color = CLASS_COLOR_MAP[int(labels[i])]
 
-        points = vertices_2d[i].astype(np.int)
+        points = np.clip(vertices_2d[i].astype(np.int), 0, np.max(image.shape))
 
         if color1 is None:
             # color1 = (0, 255, 0)
@@ -101,7 +101,7 @@ def draw_shiny_3D_box(image, vertices_2d, class_names=None, labels=None, colors=
             return
 
         gradient = np.linspace(0, 1, num=max_y - min_y, endpoint=True, retstep=False, dtype=None, axis=0)  # (h, )
-        gradient = gradient ** 4
+        gradient = gradient**4
 
         gradient = np.expand_dims(gradient, axis=-1)
         gradient = np.tile(gradient, [1, max_x - min_x])  # (h, w)

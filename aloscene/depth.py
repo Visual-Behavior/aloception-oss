@@ -184,7 +184,7 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         self,
         cmap="nipy_spectral",
         min_depth=0,
-        max_depth=200,
+        max_depth=100,
         title=None,
         reverse=True,
         legend=False,

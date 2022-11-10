@@ -204,6 +204,13 @@ class ObjectDetectorCallback(pl.Callback):
 
         log_image(trainer, name, images)
 
+    def log_depth(self, frames: list, trainer: pl.trainer.trainer.Trainer, name: str):
+        # log_image(trainer, name, None)
+        images = []
+        for depth in frames.depth:
+            images.append({"image": (depth.__get_view__(cmap="turbo", max_depth=70).image * 255).astype(np.uint8)})
+        log_image(trainer, name, images)
+
     def on_train_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx):
         if trainer.logger is None:
             return

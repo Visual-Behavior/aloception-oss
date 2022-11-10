@@ -23,6 +23,7 @@ class KittiTrackingDataset(BaseDataset, SplitMixin):
         skip=1,
         sequence_skip=1,
         depth=False,
+        drop_classes=[],
         **kwargs,
     ):
         assert not (depth & right_frame), "Depth on right frame is not available"
@@ -33,7 +34,7 @@ class KittiTrackingDataset(BaseDataset, SplitMixin):
         self.skip = skip
         self.sequence_skip = sequence_skip
         self.depth = depth
-
+        self.labels = [label for label in self.LABELS if label not in drop_classes]
         if self.sample:
             raise NotImplementedError("Sample mode is not implemented for KittiTrackingDataset")
 
@@ -142,32 +143,33 @@ class KittiTrackingDataset(BaseDataset, SplitMixin):
             boxes3d = []
 
             for box in item["labels"][id]:
-                x, y, w, h = float(box[5]), float(box[6]), float(box[7]), float(box[8])
-                boxes2d.append([x, y, w, h])
-                labels.append(int(box[0]))  # track_id
-                categories.append(self.LABELS.index(box[1]))  # type
+                if box[1] in self.labels:
+                    x, y, w, h = float(box[5]), float(box[6]), float(box[7]), float(box[8])
+                    boxes2d.append([x, y, w, h])
+                    labels.append(int(box[0]))  # track_id
+                    categories.append(self.LABELS.index(box[1]))  # type
 
-                # If the object caterory is "Don't care", there is no 3D box.
-                if box[1] != "DontCare":
-                    boxes3d.append(
-                        [
-                            float(box[12]),
-                            # The center of the 3d box on Kitty is the center of the bottom face. We need to
-                            # move it up by half the height of the box to correspond to the center of the box.
-                            # Check kitti_tracking devkit for more info.
-                            float(box[13]) - float(box[9]) / 2,
-                            float(box[14]),
-                            float(box[10]),
-                            float(box[9]),
-                            float(box[11]),
-                            # The rotation of the 3d box on Kitty is based on the X axis. We need to rotate it
-                            # to have same the rotation wanted by BoundingBoxes3D.
-                            # Check kitti_object devkit for more info.
-                            float(box[15]) + np.pi / 2,
-                        ]
-                    )
-                    labels_3d.append(int(box[0]))  # track_id
-                    categories_3d.append(self.LABELS.index(box[1]))  # type
+                    # If the object caterory is "Don't care", there is no 3D box.
+                    if box[1] != "DontCare":
+                        boxes3d.append(
+                            [
+                                float(box[12]),
+                                # The center of the 3d box on Kitty is the center of the bottom face. We need to
+                                # move it up by half the height of the box to correspond to the center of the box.
+                                # Check kitti_tracking devkit for more info.
+                                float(box[13]) - float(box[9]) / 2,
+                                float(box[14]),
+                                float(box[10]),
+                                float(box[9]),
+                                float(box[11]),
+                                # The rotation of the 3d box on Kitty is based on the X axis. We need to rotate it
+                                # to have same the rotation wanted by BoundingBoxes3D.
+                                # Check kitti_object devkit for more info.
+                                float(box[15]) + np.pi / 2,
+                            ]
+                        )
+                        labels_3d.append(int(box[0]))  # track_id
+                        categories_3d.append(self.LABELS.index(box[1]))  # type
 
             left_frame = Frame(
                 os.path.join(

@@ -57,7 +57,7 @@ jobs:
       - name: Black
         uses: psf/black@stable
         with:
-          options: "--diff -l 119 -tpy38 --check"
+          options: "--diff -l 119 --check"
           version: "22.10.0"
       - name: Install flake8
         run: |

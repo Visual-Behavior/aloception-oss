@@ -16,3 +16,12 @@ from .sintel_disparity_dataset import SintelDisparityDataset
 from .sintel_multi_dataset import SintelMultiDataset
 from .woodScape_dataset import WooodScapeDataset
 from .woodScape_split_dataset import WoodScapeSplitDataset
+from .kitti_split_dataset import KittiSplitDataset
+from .kitti_depth import KittiDepth
+from .kitti_object import KittiObjectDataset
+from .kitti_road import KittiRoadDataset
+from .kitti_stereo_flow2012 import KittiStereoFlow2012
+from .kitti_stereo_flow_sflow2015 import KittiStereoFlowSFlow2015
+from .kitti_tracking import KittiTrackingDataset
+from .kitti_odometry import KittiOdometryDataset
+from .kitti_semantic import KittiSemanticDataset

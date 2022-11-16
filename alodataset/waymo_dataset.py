@@ -17,14 +17,19 @@ waymo2alo = torch.tensor([[0.0, -1.0, 0.0, 0.0], [0.0, 0.0, -1.0, 0.0], [1.0, 0.
 
 class WaymoDataset(BaseDataset, SequenceMixin, SplitMixin):
 
-    LABELS = ["gt_boxes_2d", "gt_boxes_3d", "camera_parameters"]
+    LABELS = ["gt_boxes_2d", "gt_boxes_3d", "camera_parameters", "traffic_lights"]
     CAMERAS = ["front", "front_left", "front_right", "side_left", "side_right"]
-    CLASSES = ["UNKNOWN", "VEHICLE", "PEDESTRIAN", "SIGN", "CYCLIST"]
 
     SPLIT_FOLDERS = {Split.VAL: "validation", Split.TRAIN: "training", Split.TEST: "testing"}
 
     def __init__(
-        self, segments: list = None, cameras: list = None, random_step: int = None, labels: List[str] = [], **kwargs
+        self,
+        segments: list = None,
+        cameras: list = None,
+        random_step: int = None,
+        labels: List[str] = [],
+        load_rescaled: float = None,
+        **kwargs,
     ):
         """WaymoDataset
 
@@ -39,19 +44,28 @@ class WaymoDataset(BaseDataset, SequenceMixin, SplitMixin):
         random_step: int
             None by default. Otherwise, sample t+1 randomly on each sequence.
         labels: list of strings
-            List could be some of ["gt_boxes_2d", "gt_boxes_3d", "camera_parameters"]
+            List could be some of ["gt_boxes_2d", "gt_boxes_3d", "camera_parameters", "traffic_lights"]
+        load_rescaled: float
+            Downscale factor of images to load (>1). If None, standard resoltion will be loaded (1280,1920).
+            There should a camera dictory with the rescaled images.
+
         """
         super(WaymoDataset, self).__init__(name="waymo", **kwargs)
+        self.CLASSES = ["UNKNOWN", "VEHICLE", "PEDESTRIAN", "SIGN", "CYCLIST"]
+        if "traffic_lights" in labels:
+            self.CLASSES.append("TRAFFIC_LIGHTS")
         if self.sample:
             self.cameras = self.CAMERAS
             return
 
         self.random_step = random_step
+        self.load_rescaled = load_rescaled
 
         # Will be filled into the load() method
         self.preloaded_labels_2d = {}
         self.preloaded_labels_3d = {}
         self.preloaded_calib = {}
+        self.preloaded_traffic_lights = {}
 
         self.labels = labels
         self.cameras = cameras if cameras is not None else self.CAMERAS
@@ -124,6 +138,9 @@ class WaymoDataset(BaseDataset, SequenceMixin, SplitMixin):
             if "gt_boxes_2d" in self.labels:
                 with open(os.path.join(segment_folder, "camera_label.pkl"), "rb") as f:
                     self.preloaded_labels_2d[segment] = pkl.load(f)
+            if "traffic_lights" in self.labels:
+                with open(os.path.join(segment_folder, "traffic_lights_label.pkl"), "rb") as f:
+                    self.preloaded_traffic_lights[segment] = pkl.load(f)
             # Load boxes 3D labels
             if "gt_boxes_3d" in self.labels:
                 with open(os.path.join(segment_folder, "lidar_label.pkl"), "rb") as f:
@@ -189,6 +206,10 @@ class WaymoDataset(BaseDataset, SequenceMixin, SplitMixin):
 
         anns = self.preloaded_labels_2d[segment][int(sequence_id)][camera_id]
 
+        if "traffic_lights" in self.labels and self.preloaded_traffic_lights[segment][int(sequence_id)] is not None:
+            # add trafic lights annotations
+            anns = anns + self.preloaded_traffic_lights[segment][int(sequence_id)][int(camera_id)]
+
         boxes = np.zeros((len(anns), 4))
         labels = np.zeros((len(anns)))
         track_id = np.zeros((len(anns)))
@@ -198,25 +219,33 @@ class WaymoDataset(BaseDataset, SequenceMixin, SplitMixin):
             boxes[a] = np.array(ann["bbox"])
             labels[a] = ann["class"]
             # track_id.append(ann["track_id"])
-
-            try:
-                tid = idstring2int[ann["track_id"]]
-            except:
-                idstring2int[ann["track_id"]] = len(idstring2int) + 1
-                tid = idstring2int[ann["track_id"]]
+            if ann["track_id"] is not None:
+                try:
+                    tid = idstring2int[ann["track_id"]]
+                except:
+                    idstring2int[ann["track_id"]] = len(idstring2int) + 1
+                    tid = idstring2int[ann["track_id"]]
+            else:
+                tid = -1
             track_id[a] = tid
 
         # boxes = np.expand_dims(boxes, axis=0)
         labels_2d = Labels(labels, encoding="id", labels_names=self.CLASSES, names=("N"))
         track_id = Labels(track_id, encoding="id", names=("N"))
+        if self.load_rescaled:
+            frame_size = (frame.H * self.load_rescaled, frame.W * self.load_rescaled)
+        else:
+            frame_size = frame.HW
         boxes_2d = BoundingBoxes2D(
             boxes,
             boxes_format="xcyc",
             absolute=True,
             names=("N", None),
-            frame_size=frame.HW,
+            frame_size=frame_size,
             labels={"class": labels_2d, "track_id": track_id},
         )
+        if "traffic_lights" in self.labels:
+            boxes_2d.traffic_lights_annotated = self.preloaded_traffic_lights[segment][int(sequence_id)] is not None
         return boxes_2d
 
     def get_frame_camera_parameters(
@@ -326,8 +355,18 @@ class WaymoDataset(BaseDataset, SequenceMixin, SplitMixin):
         np_boxes3d = self.np_convert_waymo_to_aloception_coordinate_system(np_boxes3d)
         labels = Labels(np_labels, names=("N"), encoding="id", labels_names=self.CLASSES)
         boxes3d = BoundingBoxes3D(np_boxes3d, labels=labels, names=("N", None))
+        if self.load_rescaled:
+            frame_size = (frame.H * self.load_rescaled, frame.W * self.load_rescaled)
+        else:
+            frame_size = frame.HW
+
         boxes3d_proj = BoundingBoxes2D(
-            np_boxes3d_proj, boxes_format="xcyc", absolute=True, names=("N", None), frame_size=frame.HW, labels=labels
+            np_boxes3d_proj,
+            boxes_format="xcyc",
+            absolute=True,
+            names=("N", None),
+            frame_size=frame_size,
+            labels=labels,
         )
         return boxes3d, boxes3d_proj
 
@@ -368,13 +407,16 @@ class WaymoDataset(BaseDataset, SequenceMixin, SplitMixin):
 
         for el in sequence:
             # Open image
+            if self.load_rescaled:
+                img_camera_id = f"{camera_id}:{self.load_rescaled:.1f}"
+            else:
+                img_camera_id = camera_id
             image_path = os.path.join(
-                self.dataset_dir, self.get_split_folder(), segment, "image" + camera_id, str(el).zfill(3) + ".jpg"
+                self.dataset_dir, self.get_split_folder(), segment, "image" + img_camera_id, str(el).zfill(3) + ".jpg"
             )
             image = torchvision.io.read_image(image_path)
             # Add the sequence dimension
             image = torch.unsqueeze(image, dim=0)
-
             frame = Frame(image.type(torch.float32), normalization="255", names=("T", "C", "H", "W"))
             if "gt_boxes_2d" in self.labels:
                 boxes_2d = self.get_frame_boxes2d(frame, camera, segment, el, idstring2int)
@@ -395,8 +437,21 @@ class WaymoDataset(BaseDataset, SequenceMixin, SplitMixin):
                 depth = aloscene.Depth(depth_path).temporal()
 
                 # depth is at 1/4th the resolution so adapt image
-                frame = frame.resize(depth.HW)
+                if frame.HW != depth.HW:
+                    frame = frame.resize(depth.HW)
                 frame.append_depth(depth)
+
+            if self.load_rescaled:
+
+                def resize_func(label):
+                    # resize with relative coordinates if possible, else return unmodified label
+                    try:
+                        label_resized = label._resize((1.0 / self.load_rescaled, 1.0 / self.load_rescaled))
+                        return label_resized
+                    except AttributeError:
+                        return label
+
+                frame = frame.recursive_apply_on_children_(resize_func)
 
             frames.append(frame)
             t += 1
@@ -435,7 +490,7 @@ class WaymoDataset(BaseDataset, SequenceMixin, SplitMixin):
             data[camera] = frames
         return data
 
-    def prepare(self, num_processes=2):
+    def prepare(self, num_processes=2, depth=False):
         """
         Prepre Waymo Open Dataset from tfrecord files.
         The preparation can be resumed if it was stopped suddenly.
@@ -500,7 +555,7 @@ class WaymoDataset(BaseDataset, SequenceMixin, SplitMixin):
             subdir = os.path.join(dataset_dir, subdir_name)
             if not os.path.exists(prepared_subdir):
                 os.makedirs(prepared_subdir)
-            Waymo2KITTIConverter(subdir, prepared_subdir, num_proc=num_processes).convert()
+            Waymo2KITTIConverter(subdir, prepared_subdir, num_proc=num_processes, depth=depth).convert()
             print(f"{subdir_name} prepared.")
 
         # Set new dataset_dir as prepared_dir in aloception.config
@@ -510,12 +565,12 @@ class WaymoDataset(BaseDataset, SequenceMixin, SplitMixin):
 
 def main():
     """Main"""
-    waymo_dataset = WaymoDataset(labels=["depth"])
+    waymo_dataset = WaymoDataset(labels=["gt_boxes_2d", "gt_boxes_3d","depth"], load_rescaled=4.0)
     # waymo_dataset.prepare()
 
-    for frames in waymo_dataset.train_loader(batch_size=2):
+    for frames in waymo_dataset.train_loader(batch_size=1):
         frames = Frame.batch_list([frame["front"] for frame in frames])
-        frames.get_view(exclude=[frames.mask]).render()
+        aloscene.render([frames.get_view()])
 
 
 if __name__ == "__main__":

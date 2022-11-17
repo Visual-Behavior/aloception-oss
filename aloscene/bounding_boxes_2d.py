@@ -55,11 +55,11 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
     --------
     >>> boxes2d = aloscene.BoundingBoxes2D(
     ...     [[0.5, 0.5, 01, 01], [0.4, 0.30, 0.2, 0.3]],
-    ...     points_format="xcyc", absolute=False
+    ...     boxes_format="xcyc", absolute=False
     ....)
     >>> boxes2d = aloscene.BoundingBoxes2D(
     ...     [[512, 458, 20, 30], [280, 200, 100, 42]],
-    ...     points_format="xcyc", absolute=True, frame_size=(1200, 1200)
+    ...     boxes_format="xcyc", absolute=True, frame_size=(1200, 1200)
         )
     """
 

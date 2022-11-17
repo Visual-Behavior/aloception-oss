@@ -19,6 +19,7 @@ class WaymoDataset(BaseDataset, SequenceMixin, SplitMixin):
 
     LABELS = ["gt_boxes_2d", "gt_boxes_3d", "camera_parameters", "traffic_lights"]
     CAMERAS = ["front", "front_left", "front_right", "side_left", "side_right"]
+    CLASSES = ["UNKNOWN", "VEHICLE", "PEDESTRIAN", "SIGN", "CYCLIST"]
 
     SPLIT_FOLDERS = {Split.VAL: "validation", Split.TRAIN: "training", Split.TEST: "testing"}
 
@@ -51,7 +52,6 @@ class WaymoDataset(BaseDataset, SequenceMixin, SplitMixin):
 
         """
         super(WaymoDataset, self).__init__(name="waymo", **kwargs)
-        self.CLASSES = ["UNKNOWN", "VEHICLE", "PEDESTRIAN", "SIGN", "CYCLIST"]
         if "traffic_lights" in labels:
             self.CLASSES.append("TRAFFIC_LIGHTS")
         if self.sample:
@@ -430,16 +430,6 @@ class WaymoDataset(BaseDataset, SequenceMixin, SplitMixin):
                 cam_intrinsic, cam_extrinsic = self.get_frame_camera_parameters(frame, camera, segment, el)
                 frame.append_cam_intrinsic(cam_intrinsic)
                 frame.append_cam_extrinsic(cam_extrinsic)
-            if "depth" in self.labels:
-                depth_path = os.path.join(
-                    self.dataset_dir, self.get_split_folder(), segment, "depth" + camera_id, str(el).zfill(3) + ".npz"
-                )
-                depth = aloscene.Depth(depth_path).temporal()
-
-                # depth is at 1/4th the resolution so adapt image
-                if frame.HW != depth.HW:
-                    frame = frame.resize(depth.HW)
-                frame.append_depth(depth)
 
             if self.load_rescaled:
 
@@ -452,6 +442,17 @@ class WaymoDataset(BaseDataset, SequenceMixin, SplitMixin):
                         return label
 
                 frame = frame.recursive_apply_on_children_(resize_func)
+
+            if "depth" in self.labels:
+                depth_path = os.path.join(
+                    self.dataset_dir, self.get_split_folder(), segment, "depth" + camera_id, str(el).zfill(3) + ".npz"
+                )
+                depth = aloscene.Depth(depth_path).temporal()
+
+                # depth is at 1/4th the resolution so adapt image
+                if frame.HW != depth.HW:
+                    frame = frame.resize(depth.HW)
+                frame.append_depth(depth)
 
             frames.append(frame)
             t += 1
@@ -565,12 +566,12 @@ class WaymoDataset(BaseDataset, SequenceMixin, SplitMixin):
 
 def main():
     """Main"""
-    waymo_dataset = WaymoDataset(labels=["gt_boxes_2d", "gt_boxes_3d","depth"], load_rescaled=4.0)
+    waymo_dataset = WaymoDataset(labels=["gt_boxes_2d", "gt_boxes_3d", "depth", "traffic_lights"], load_rescaled=4.0)
     # waymo_dataset.prepare()
 
     for frames in waymo_dataset.train_loader(batch_size=1):
         frames = Frame.batch_list([frame["front"] for frame in frames])
-        aloscene.render([frames.get_view()])
+        frames.get_view([frames.boxes3d, frames.boxes2d]).render()
 
 
 if __name__ == "__main__":

@@ -240,7 +240,7 @@ class CocoBaseDataset(BaseDataset):
         image_id = self.items[idx]
         if "test" in self.img_folder:
             #get the filename from image_id without relying on annotation file
-            frame = Frame(os.path.join(self.img_folder, f'{str(image_id). zfill(12)}.jpg'))
+            frame = Frame(os.path.join(self.img_folder, f"{str(image_id).zfill(12)}.jpg"))
 
             return frame
 
@@ -355,7 +355,7 @@ class ConvertCocoPolysToMask(object):
 
 
 if __name__ == "__main__":
-    coco_dataset = CocoBaseDataset(sample=False,img_folder = "test2017")
+    coco_dataset = CocoBaseDataset(sample=False, img_folder="test2017")
     #checking if regular getitem works
     stuff=coco_dataset.getitem(0)
     stuff.get_view().render()

@@ -466,7 +466,15 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
         # Draw bouding boxes
 
         # Try to retrieve the associated label ID (if any)
-        labels = boxes_abs.labels if isinstance(boxes_abs.labels, aloscene.Labels) else [None] * len(boxes_abs)
+        if isinstance(boxes_abs.labels, aloscene.Labels):
+            labels = boxes_abs.labels
+        elif isinstance(boxes_abs.labels, dict):
+            for k, v in boxes_abs.labels.items():
+                if isinstance(v, aloscene.Labels):
+                    labels = v
+                    break
+        else:
+            labels = [None] * len(boxes_abs)
         if labels_set is not None and not isinstance(boxes_abs.labels, dict):
             raise Exception(
                 f"Trying to display a boxes labels set ({labels_set}) while boxes do not have multiple set of labels"

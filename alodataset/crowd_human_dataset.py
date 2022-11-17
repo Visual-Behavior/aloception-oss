@@ -36,7 +36,23 @@ class CrowdHumanDataset(BaseDataset):
             return
         else:
             assert img_folder is not None, "When sample = False, img_folder must be given."
-            assert ann_file is not None, "When sample = False, ann_file must be given."
+            assert ann_file is not None or "test" in img_folder, "When sample = False and the test split is not used, ann_file must be given."
+
+        if "test" in img_folder:
+            self.dataset_dir="/data/crowdhuman/"
+            self._img_folder = img_folder
+            if isinstance(img_folder, list):
+                self.img_folder = [os.path.join(self.dataset_dir, p, "images_test") for p in img_folder]
+            else:
+                self.img_folder = os.path.join(self.dataset_dir, img_folder, "images_test")
+
+            self.items=[]
+            for f in os.listdir(self.img_folder):
+                if os.path.isfile(os.path.join(self.img_folder, f)):
+                    self.items.append({"ID": Path(os.path.join(self.img_folder, f)).stem})
+
+            return
+
 
         assert type(img_folder) == type(ann_file), "img_folder & ann_file must be the same type."
 
@@ -121,8 +137,15 @@ class CrowdHumanDataset(BaseDataset):
             return BaseDataset.__getitem__(self, idx)
 
         record = self.items[idx]
-        ann_id = record["ann_id"]
         image_id = record["ID"]
+
+        if "test" in self.img_folder:
+            #get the filename from image_id without relying on annotation file
+            frame = Frame(os.path.join(self.img_folder, image_id + ".jpg"))
+
+            return frame
+
+        ann_id = record["ann_id"]
 
         image_path = os.path.join(self.img_folder[ann_id], image_id + ".jpg")
 
@@ -189,10 +212,15 @@ class CrowdHumanDataset(BaseDataset):
         # Final image dir
         final_tgt_image_dir = os.path.join(prepared_dir, self._img_folder)
         final_tgt_image_dir = os.path.join(final_tgt_image_dir, "Images")
-        # WIP ann file
-        tgt_ann_file = os.path.join(n_wip_dir, self._ann_file)
-        # Final ann file
-        final_tgt_ann_file = os.path.join(prepared_dir, self._ann_file)
+
+        if "test" not in self._img_folder:
+
+            # WIP ann file
+            tgt_ann_file = os.path.join(n_wip_dir, self._ann_file)
+            # Final ann file
+            final_tgt_ann_file = os.path.join(prepared_dir, self._ann_file)
+        else:
+            final_tgt_ann_file = None
 
         # Create img dir if it not already exists
         if not os.path.exists(tgt_image_dir):
@@ -207,7 +235,6 @@ class CrowdHumanDataset(BaseDataset):
                     os.path.join(final_tgt_image_dir, f_name)
                 ):
                     continue
-
                 frame = Frame(os.path.join(root, f_name))
                 if max(frame.shape) > 1333:
                     frame = T.RandomResizeWithAspectRatio([800], max_size=1333)(frame)
@@ -217,7 +244,7 @@ class CrowdHumanDataset(BaseDataset):
 
                 print(f"Preparing dataset: Saving {f_name}... [{f}/{nb_images}]", end="\r")
 
-        if not os.path.exists(tgt_ann_file) and not os.path.exists(final_tgt_ann_file):
+        if "test" not in self.img_folder and not os.path.exists(tgt_ann_file) and not os.path.exists(final_tgt_ann_file):
             # Write back the file with all boxes in relative position instead of absolute.
             content = self.load_json_lines(ann_file, idx)
             nb_line = len(content)
@@ -272,31 +299,43 @@ class CrowdHumanDataset(BaseDataset):
         if self.sample is not None and self.sample is not False:  # Nothing to do. Samples are ready
             return
 
+        if "test" in self.img_folder:
+            return  #The code for preparing test datasets exist but we are not doing that now
+
+
         if self.dataset_dir.endswith("_prepared") and not os.path.exists(self.dataset_dir.replace("_prepared", "")):
             return
 
         dataset_dir = self.dataset_dir
         dataset_dir_name = os.path.basename(os.path.normpath(self.dataset_dir))
-        for idx, (img_folder, ann_file) in enumerate(zip(self.img_folder, self.ann_file)):
-            if "_prepared" not in dataset_dir_name:
-                n_img_folder, n_ann_file = self._prepare(img_folder, ann_file, dataset_dir, idx)
-            else:
-                n_img_folder, n_ann_file = self._prepare(self._img_folder[idx], self._ann_file[idx], dataset_dir, idx)
-            self.img_folder[idx] = n_img_folder
-            self.ann_file[idx] = n_ann_file
+        if "test" not in self.img_folder:
+            for idx, (img_folder, ann_file) in enumerate(zip(self.img_folder, self.ann_file)):
+                if "_prepared" not in dataset_dir_name:
+                    n_img_folder, n_ann_file = self._prepare(img_folder, ann_file, dataset_dir, idx)
+                else:
+                    n_img_folder, n_ann_file = self._prepare(self._img_folder[idx], self._ann_file[idx], dataset_dir, idx)
+                self.img_folder[idx] = n_img_folder
+                self.ann_file[idx] = n_ann_file
 
-        # Set back the items with the annotation files
-        self.items = []
-        for a, ann_file in enumerate(self.ann_file):
-            line = self.load_json_lines(ann_file, a)
-            self.items += line
+            # Set back the items with the annotation files
+            self.items = []
+            for a, ann_file in enumerate(self.ann_file):
+                line = self.load_json_lines(ann_file, a)
+                self.items += line
+        else:
+            ann_file=None
+            idx=None
+            n_img_folder, n_ann_file = self._prepare(self.img_folder, ann_file, dataset_dir, idx)
+
+
+            print("The dataset is now prepared")
 
 
 def main():
     """Main"""
-    crowd_human_dataset = CrowdHumanDataset(img_folder="CrowdHuman_train", ann_file="annotation_train.odgt")
+    crowd_human_dataset = CrowdHumanDataset(img_folder="CrowdHuman_test")
 
-    crowd_human_dataset.prepare()
+    # crowd_human_dataset.prepare()
     for i, frames in enumerate(crowd_human_dataset.train_loader(batch_size=2, sampler=None, num_workers=0)):
         frames = Frame.batch_list(frames)
         frames.get_view().render(figsize=(20, 10))

@@ -350,6 +350,22 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         """
         self._append_child("scene_flow", scene_flow, name)
 
+    def as_numpy(self, dtype=torch.uint8):
+        """Convert the frame to numpy array uint8 format.
+
+        Parameters
+        ----------
+            dtype: dtype or str
+                The output dtype. Default torch.uint8.
+
+        Returns
+        -------
+            np.ndarray
+                Frame in  uint8 format.
+        """
+        tensor = self
+        return tensor.detach().norm255().cpu().type(dtype).rename(None).permute([1, 2, 0]).contiguous().numpy()
+
     @staticmethod
     def _get_mean_std_tensor(shape, names, mean_std: tuple, device="cpu"):
         """Utils method to a get the mean and the std

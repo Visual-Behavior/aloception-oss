@@ -66,15 +66,7 @@ class ObjectDetectorCallback(pl.Callback):
             else:
                 target_boxes = frames.boxes2d[b]
 
-            frame = frames[b]
-            frame = frame.detach()
-            frame = frame.norm255()
-            frame = frame.cpu()
-            frame = frame.type(torch.uint8)
-            frame = frame.rename(None)
-            frame = frame.permute([1, 2, 0])
-            frame = frame.contiguous()
-            frame = frame.numpy()
+            frame = frames[b].as_numpy()
 
             # wandb_img = wandb.Image(frame, boxes=boxes)
             # images.append(wandb_img)
@@ -175,8 +167,7 @@ class ObjectDetectorCallback(pl.Callback):
                         if id < len(labels_names)
                     }
 
-            frame = frames[b].detach().norm255().cpu().type(torch.uint8).rename(None)
-            frame = frame.permute([1, 2, 0]).contiguous().numpy()
+            frame = frames[b].as_numpy()
 
             # Get panoptic view
             target_masks = target_masks.mask2id(return_cats=self.one_color_per_class)

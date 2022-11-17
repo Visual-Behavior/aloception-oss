@@ -62,10 +62,10 @@ class BoundingBoxes3D(aloscene.tensors.AugmentedTensor):
         Parameters
         ----------
         labels: aloscene.Labels
-            Set of labels to attached to the bounding boxes
+            Set of labels to attached to the BoundingBoxes3D
         name: str
             If none, the label will be attached without name (if possible). Otherwise if no other unnamed
-            labels are attached to the bounding boxes, the labels will be added to the set of labels.
+            labels are attached to the BoundingBoxes3D, the labels will be added to the set of labels.
         Examples
         --------
         >>> boxes3d = aloscene.BoundingBoxes3D([[0.5, 0.5, 0.1, 0.1], [0.2, 0.1, 0.05, 0.05]], "xcyc", False)
@@ -74,7 +74,7 @@ class BoundingBoxes3D(aloscene.tensors.AugmentedTensor):
         >>> boxes3d.labels
         >>>
         Or using named labels
-        >>> boxes3d = aloscene.BoundingBoxes3D([[0.5, 0.5, 0.1, 0.1], [0.2, 0.1, 0.05, 0.05]], "xcyc", False)
+        >>> boxe3d = aloscene.BoundingBoxes3D([[0.5, 0.5, 0.1, 0.1], [0.2, 0.1, 0.05, 0.05]], "xcyc", False)
         >>> labels_set_1 = aloscene.Labels([51, 24])
         >>> labels_set_2 = aloscene.Labels([51, 24])
         >>> boxes3d.append_labels(labels_set_1, "set1")

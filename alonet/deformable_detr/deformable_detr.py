@@ -86,6 +86,7 @@ class DeformableDETR(nn.Module):
         strict_load_weights: bool = True,
         tracing=False,
     ):
+        print("WARNING : you are using DeformableDETR or an unherited class. Please launch aloception/deformable_detr/ops/make.sh before proceeding with training. Please refer to the README for more info")
         super().__init__()
         self.device = device
         self.num_feature_levels = num_feature_levels

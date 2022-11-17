@@ -56,6 +56,34 @@ class BoundingBoxes3D(aloscene.tensors.AugmentedTensor):
             )
             raise import_error
 
+    def append_labels(self, labels: Labels, name: Union[str, None] = None):
+        """Attach a set of labels to the boxes. The attached set of labels are supposed to be equal to the
+        number of points. In other words, the N dimensions must match in both tensor.
+        Parameters
+        ----------
+        labels: aloscene.Labels
+            Set of labels to attached to the bounding boxes
+        name: str
+            If none, the label will be attached without name (if possible). Otherwise if no other unnamed
+            labels are attached to the bounding boxes, the labels will be added to the set of labels.
+        Examples
+        --------
+        >>> boxes3d = aloscene.BoundingBoxes3D([[0.5, 0.5, 0.1, 0.1], [0.2, 0.1, 0.05, 0.05]], "xcyc", False)
+        >>> labels = aloscene.Labels([51, 24])
+        >>> boxes3d.append_labels(labels)
+        >>> boxes3d.labels
+        >>>
+        Or using named labels
+        >>> boxes3d = aloscene.BoundingBoxes3D([[0.5, 0.5, 0.1, 0.1], [0.2, 0.1, 0.05, 0.05]], "xcyc", False)
+        >>> labels_set_1 = aloscene.Labels([51, 24])
+        >>> labels_set_2 = aloscene.Labels([51, 24])
+        >>> boxes3d.append_labels(labels_set_1, "set1")
+        >>> boxes3d.append_labels(labels_set_2, "set2")
+        >>> boxes3d.labels["set1"]
+        >>> boxes3d.labels["set2"]
+        """
+        self._append_child("labels", labels, name)
+
     @staticmethod
     def get_vertices_3d(boxes) -> torch.Tensor:
         """Get 8 vertices for each boxes in x, y, z coordinates

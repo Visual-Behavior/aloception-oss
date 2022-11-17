@@ -1,4 +1,3 @@
-from re import L
 import aloscene
 from alodataset import BaseDataset
 
@@ -141,6 +140,7 @@ class FromDirectoryDataset(BaseDataset):
         return frame
     
     def set_dataset_dir(self, dataset_dir: str):
+        """Override parent function, this class has no dir"""
         pass
 
 

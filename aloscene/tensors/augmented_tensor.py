@@ -450,14 +450,20 @@ class AugmentedTensor(torch.Tensor):
         # Setup the new structure before to merge
         prop_name_to_value = {}
 
+        visited = set()
         for tensor in tensor_list:
-
             for prop in tensor._property_list:
-                if prop in prop_name_to_value:
-                    assert prop_name_to_value[prop] == getattr(
-                        tensor, prop
-                    ), f"Trying to merge augmented tensor with different property: {prop}, {prop_name_to_value[prop]}, {getattr(tensor, prop)}"
-                prop_name_to_value[prop] = getattr(tensor, prop)
+                if prop in prop_name_to_value and prop_name_to_value[prop]:
+                    item = getattr(tensor, prop)
+                    if item != prop_name_to_value[prop]:  # different properties: merging is required
+                        if prop not in visited:
+                            prop_name_to_value[prop] = [prop_name_to_value[prop], item]
+                            visited.add(prop)
+                        else:
+                            prop_name_to_value[prop].append(item)
+                        setattr(n_tensor, prop, prop_name_to_value[prop])  # update
+                else:
+                    prop_name_to_value[prop] = getattr(tensor, prop)
 
             for label_name in tensor._children_list:
                 label_value = getattr(tensor, label_name)

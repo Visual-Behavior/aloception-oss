@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="images/aloception.jpg" style="text-align:center; width: 50%;" alt="Logo aloception" />
+  <img src="images/aloception-wooooooow.png" style="text-align:center; width: 50%;" alt="Logo aloception" />
 </p>
 
 <a href="https://visual-behavior.github.io/aloception-oss/">Documentation</a>

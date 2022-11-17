@@ -206,13 +206,14 @@ class SpatialAugmentedTensor(AugmentedTensor):
             assert x.is_integer(), f"relative coordinates {x} have produced non-integer absolute coordinates"
         return round(x)
 
-    def temporal(self, dim=0):
+    def temporal(self, dim=None):
         """Add a temporal dimension on the tensor
 
         Parameters
         ----------
-        dim : int
-            The dim on which to add the temporal dimension. Can be 0 or 1
+        dim : int or None
+            The dim on which to add the temporal dimension. Can be 0 or 1 or None.
+            None automatically determine position of T dim in respect of convention.
 
         Returns
         -------
@@ -221,6 +222,16 @@ class SpatialAugmentedTensor(AugmentedTensor):
         """
         if "T" in self.names:  # Already a temporal frame
             return self
+
+        if dim is None:
+            if self.names[0] == "B":
+                dim = 1
+            elif "B" in self.names:
+                raise Exception(
+                    "Cannot autodetermine temporal dimension position : tensor doesn't follow convention (B, T, ...) )"
+                )
+            else:
+                dim = 0
 
         def set_n_names(names):
             pass

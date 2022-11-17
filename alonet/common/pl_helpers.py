@@ -209,7 +209,7 @@ def get_expe_infos(project, expe_name, args=None):
     """
     expe_name = expe_name or args.expe_name
     if args is not None and not args.no_suffix:
-        expe_name = "{}_{:%B-%d-%Y-%Hh-%M}".format(expe_name, datetime.datetime.now())
+        expe_name = "{}_{:%Y-%m-%d-%Hh-%M}".format(expe_name, datetime.datetime.now())
     project_dir = os.path.join(vb_folder(), f"project_{project}")
     expe_dir = os.path.join(project_dir, expe_name)
     return project_dir, expe_dir, expe_name

@@ -487,8 +487,9 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
 
             if label is not None:
                 color = self._GLOBAL_COLOR_SET[int(label) % len(self._GLOBAL_COLOR_SET)]
+                text = label.labels_names[int(label)] if label.labels_names else int(label)
                 cv2.putText(
-                    frame, str(int(label)), (int(x2), int(y1)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1, cv2.LINE_AA
+                    frame, str(text), (int(x2), int(y1)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1, cv2.LINE_AA
                 )
                 cv2.rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), color, 3)
             else:

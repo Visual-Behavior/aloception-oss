@@ -89,10 +89,10 @@ class FromDirectoryDataset(BaseDataset):
                 self.items.append(sample)
 
         # Slicing
-        l_ = len(self.items)
-        s_ = int(l_ * slice[0])
-        e_ = int(l_ * slice[1])
-        self.items = self.items[s_: e_]
+        length = len(self.items)
+        end = int(length * slice[1])
+        start = int(length * slice[0])
+        self.items = self.items[start:end]
 
         # Samples check.
         if not len(self.items):

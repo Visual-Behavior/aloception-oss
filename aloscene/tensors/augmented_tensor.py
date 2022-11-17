@@ -611,6 +611,9 @@ class AugmentedTensor(torch.Tensor):
             self_ref_tensor = self.rename_(*self._saved_names)
             self_ref_tensor._saved_names = None
             return self_ref_tensor
+        elif self._saved_names is not None and not any(v is not None for v in self._saved_names):
+            self._saved_names = None
+            return self
         else:
             return self
 

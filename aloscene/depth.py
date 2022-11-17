@@ -3,12 +3,14 @@ from shutil import ExecError
 import matplotlib
 from matplotlib.pyplot import sca
 import torch
+from typing import *
 import warnings
 import aloscene
 from aloscene import Mask
 from aloscene.renderer import View
 from aloscene.utils.depth_utils import coords2rtheta, add_colorbar
 import numpy as np
+from typing import Union, Tuple
 
 from aloscene.io.depth import load_depth
 
@@ -35,7 +37,7 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
     def __new__(
         cls,
         x,
-        occlusion: Mask = None,
+        occlusion: Union[Mask, None] = None,
         is_absolute=True,
         is_planar=True,
         scale=None,
@@ -166,7 +168,7 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
 
         return n_depth
 
-    def append_occlusion(self, occlusion: Mask, name: str = None):
+    def append_occlusion(self, occlusion: Mask, name: Union[str, None] = None):
         """Attach an occlusion mask to the depth tensor.
 
         Parameters
@@ -207,13 +209,22 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
 
         return View(depth_color, title=title)
 
-    def as_points3d(self, camera_intrinsic: aloscene.CameraIntrinsic = None, projection=None, distortion=None):
+    def as_points3d(
+        self,
+        camera_intrinsic: Union[aloscene.CameraIntrinsic, None] = None,
+        projection=None,
+        distortion=None,
+        points: Union[Tuple[torch.Tensor, torch.Tensor], None] = None,
+    ):
         """Compute the 3D coordinates of points 2D points based on their respective depth.
 
         Parameters
         ----------
         camera_intrinsic: CameraIntrinsic to use to unproject the points to 3D. If not, will try to use
         the instance `cam_intrinsic` if set.
+
+        points: Tuple of torch.Tensor or None
+            Points is a tuple of tensor who contain x_points and y_points.
 
         Returns
         -------
@@ -223,11 +234,7 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         intrinsic = camera_intrinsic if camera_intrinsic is not None else self.cam_intrinsic
         projection = projection if projection is not None else self.projection
         distortion = distortion if distortion is not None else self.distortion
-        assert projection in ["pinhole", "equidistant"], "Only pinhole and equidistant are supported."
-
-        y_points, x_points = torch.meshgrid(
-            torch.arange(self.H, device=self.device), torch.arange(self.W, device=self.device)
-        )
+        assert projection in ["pinhole", "equidistant", "kumler_bauer"], "Only pinhole, equidistant and kumler_bauer are supported."
 
         # if self is not planar depth, we must convert to planar depth before projecting to 3d points
         if self.is_planar:
@@ -243,15 +250,23 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
 
         target_shape = tuple([self.shape[self.names.index(n)] for n in self.names if n not in ("C", "H", "W")] + [-1])
         target_names = tuple([n for n in self.names if n not in ("C", "H", "W")] + ["N", None])
+        if points is None:
+            y_points, x_points = torch.meshgrid(
+                torch.arange(self.H, device=self.device), torch.arange(self.W, device=self.device)
+            )
+            # Append batch & temporal dimensions
+            for _ in range(len(target_shape[:-1])):
+                y_points = y_points.unsqueeze(0)
+                x_points = x_points.unsqueeze(0)
+        elif points[0].shape != points[1].shape or points[0].shape != self.shape:
+            raise ValueError("The shape of the points must be the same as the shape of the depth tensor.")
+        else:
+            print(type(points[0]))
+            x_points, y_points = points
 
         y_points = y_points.reshape((-1,))
         x_points = x_points.reshape((-1,))
         z_points = self.as_tensor().reshape(target_shape)
-
-        # Append batch & temporal dimensions
-        for _ in range(len(target_shape[:-1])):
-            y_points = y_points.unsqueeze(0)
-            x_points = x_points.unsqueeze(0)
 
         points_3d_shape = tuple(list(target_shape)[:-1] + [self.H * self.W] + [3])
         points_3d = torch.zeros(points_3d_shape, device=self.device)
@@ -271,7 +286,14 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
             for _ in range(len(target_shape[:-1])):
                 theta = theta.unsqueeze(0)
             r = torch.tan(theta)
-            focal_length = focal_length * theta * distortion / r.abs()
+
+            if projection == "equidistant":
+                dist_coef = distortion[0] if isinstance(distortion, Sequence) else distortion
+                focal_length = focal_length * theta * dist_coef / r.abs()
+            elif projection == "kumler_bauer":
+                focal_length = (
+                    distortion[0] * torch.sin(distortion[1] * theta) * focal_length / (distortion[2] * r.abs())
+                )
 
             # find points behind camera
             behind = theta > (np.pi / 2)
@@ -292,7 +314,10 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         return aloscene.Points3D(points_3d, names=target_names, device=self.device)
 
     def as_disp(
-        self, camera_side: str = None, baseline: float = None, camera_intrinsic: aloscene.CameraIntrinsic = None
+        self,
+        camera_side: Union[str, None] = None,
+        baseline: Union[float, None] = None,
+        camera_intrinsic: Union[aloscene.CameraIntrinsic, None] = None,
     ):
         """Create a disparity augmented tensor from the current Depth augmented tensor.
         To use this method, one must know the target `camera_side` ("left" or "right"). Also, if not set on the
@@ -344,7 +369,9 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         )
         return disp
 
-    def as_euclidean(self, camera_intrinsic: aloscene.CameraIntrinsic = None, projection=None, distortion=None):
+    def as_euclidean(
+        self, camera_intrinsic: Union[aloscene.CameraIntrinsic, None] = None, projection=None, distortion=None
+    ):
         """Create a new Depth augmented tensor whose data is the euclidean depth (distance) from camera to world points.
         To use this method, we must know intrinsic matrix of camera, projection model and distortion coefficient
         (if exists).
@@ -370,7 +397,11 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         if not self.is_planar:
             print("This tensor is already a euclidian depth tensor so no transform is performed")
             return self.clone()
-        assert projection in ["pinhole", "equidistant"], "Only pinhole and equidistant projection are supported"
+        assert projection in [
+            "pinhole",
+            "equidistant",
+            "kumler_bauer",
+        ], "Only pinhole, equidistant and kumler_bauer projection are supported"
 
         planar = self
         camera_intrinsic = camera_intrinsic if camera_intrinsic is not None else self.cam_intrinsic
@@ -384,7 +415,9 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         euclidean.is_planar = False
         return euclidean
 
-    def as_planar(self, camera_intrinsic: aloscene.CameraIntrinsic = None, projection=None, distortion=None):
+    def as_planar(
+        self, camera_intrinsic: Union[aloscene.CameraIntrinsic, None] = None, projection=None, distortion=None
+    ):
         """Create a new planar depth augmented tensor from the euclidean depth between camera to world points with
         corresponding depth. To use this method, we must know intrinsic matrix of camera, projection model and
         distortion coefficient (if exists).
@@ -409,7 +442,11 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         if self.is_planar:
             print("This tensor is already a planar depth tensor so no transform is done.")
             return self.clone()
-        assert projection in ["pinhole", "equidistant"], "Only pinhole and equidistant projection are supported"
+        assert projection in [
+            "pinhole",
+            "equidistant",
+            "kumler_bauer",
+        ], "Only pinhole, equidistant and kumler_bauer projection are supported"
 
         euclidean = self
         camera_intrinsic = camera_intrinsic if camera_intrinsic is not None else self.cam_intrinsic

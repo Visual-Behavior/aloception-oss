@@ -1,6 +1,6 @@
 # Detr Panoptic
 
-Here is a simple example to get started with **PanopticHead** and aloception. To learn more about PanopticHead, you can checkout the <a href="https://visual-behavior.github.io/aloception/tutorials/training_panoptic.html">Detr Tutorials</a> or the scripts described bellow.
+Here is a simple example to get started with **PanopticHead** and aloception. To learn more about PanopticHead, you can checkout the <a href="https://visual-behavior.github.io/aloception-oss/tutorials/training_panoptic.html">Detr Tutorials</a> or the scripts described bellow.
 
 ```python
 # Load model : Panoptic Head needs to load a module based on DETR architecture

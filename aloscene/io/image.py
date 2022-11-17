@@ -1,8 +1,10 @@
-import torchvision
-import torch
-from torchvision.io.image import ImageReadMode
-
 from aloscene.io.utils.errors import InvalidSampleError
+
+import cv2
+import torch
+import torchvision
+import numpy as np
+from torchvision.io.image import ImageReadMode
 
 
 def load_image(image_path):
@@ -22,5 +24,11 @@ def load_image(image_path):
     try:
         image = torchvision.io.read_image(image_path, ImageReadMode.RGB).type(torch.float32)
     except RuntimeError as e:
-        raise InvalidSampleError(f"[Alodataset Warning] Invalid image: {image_path} error={e}")
+        try:
+            image = cv2.imread(image_path)
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+            image = np.moveaxis(image, 2, 0)
+            image = torch.Tensor(image).type(torch.float32)
+        except RuntimeError as e:
+            raise InvalidSampleError(f"[Alodataset Warning] Invalid image: {image_path} error={e}")
     return image

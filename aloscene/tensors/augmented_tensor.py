@@ -1,5 +1,6 @@
 import torch
 import inspect
+import warnings
 import numpy as np
 from typing import *
 import copy
@@ -10,6 +11,10 @@ class AugmentedTensor(torch.Tensor):
 
     # Common dim names that must be aligned to handle label on a Tensor.
     COMMON_DIM_NAMES = ["B", "T"]
+
+    # Ignore named tansors userwarning.
+    ERROR_MSG = "Named tensors and all their associated APIs are an experimental feature and subject to change"
+    warnings.filterwarnings(action='ignore', message=ERROR_MSG)
 
     @staticmethod
     def __new__(cls, x, names=None, device=None, *args, **kwargs):
@@ -194,7 +199,7 @@ class AugmentedTensor(torch.Tensor):
 
         setattr(self, child_name, child)
 
-    def _append_child(self, child_name: str, child, set_name: str = None):
+    def _append_child(self, child_name: str, child, set_name: Union[str, None] = None):
         """
         Attach a new value for a given child name.
 
@@ -300,10 +305,10 @@ class AugmentedTensor(torch.Tensor):
 
         if isinstance(idx, torch.Tensor):
             tensor = torch.Tensor.__getitem__(self.rename(None), idx).reset_names()
-            #if not idx.dtype == torch.bool:
+            # if not idx.dtype == torch.bool:
             #    if not torch.equal(idx ** 3, idx):
             #        raise IndexError(f"Unvalid mask. Expected mask elements to be in [0, 1, True, False]")
-            #tensor = self * idx
+            # tensor = self * idx
         else:
             tensor = torch.Tensor.__getitem__(self, idx)
 
@@ -705,42 +710,37 @@ class AugmentedTensor(torch.Tensor):
 
     def __repr__(self):
         _str = self.as_tensor().__repr__()
-        n_str = f"tensor(\n\t"
 
+        props = []
         for name in self._property_list:
             if name.startswith("_") or getattr(self, name) is None:
                 continue
             v = getattr(self, name)
-            n_str += f"{name}={v}, "
-        n_str += "\n\t"
+            props.append(f"{name}={v}")
 
         for name in self._children_list:
             values = getattr(self, name)
             if values is None:
                 continue
             if isinstance(values, dict):
-                content_value = ""
+                sub_props = []
                 for key in values:
                     if isinstance(values[key], list):
-                        cvalue = (
-                            f"{key}:["
-                            + ", ".join(["{}".format(len(k) if k is not None else None) for k in values[key]])
-                            + "]"
-                        )
-                        content_value += f"{cvalue}, "
+                        sub_prop = f"{key}:[{', '.join([f'{None if k is None else len(k)}' for k in values[key]])}]"
                     else:
-                        content_value += "{}:{},".format(key, values[key].shape)
-                n_str += name + "=" + "{" + content_value + "}"
+                        sub_prop = f"{key}:{values[key].shape}"
+                    sub_props.append(sub_prop)
+                prop = f"{name}={{{', '.join(sub_props)}}}"
             else:
                 if isinstance(values, list):
-                    content_value = f"[" + ", ".join(["{}".format(len(k)) for k in values]) + "]"
-                    n_str += f"{name}={ {content_value} }, "
+                    prop = f"{name}=[{', '.join([f'{None if k is None else len(k)}' for k in values])}]"
                 else:
-                    content_value = "{}".format(values.shape)
-                    n_str += name + "=" + "" + content_value + ""
-        n_str += "\n\t"
+                    prop = f"{name}={values.shape}"
+            props.append(prop)
 
-        _str = _str.replace("tensor(", n_str)
+        # Needed var in order to avoid fstring error.
+        sep = "\n\t"
+        _str = _str.replace("tensor(", f"tensor(\n\t{sep.join(sorted(props, key=len))}\n\t")
         return _str
 
     def get_slices(self, dim_values, label=None):

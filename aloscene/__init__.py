@@ -18,6 +18,8 @@ from .tensors.spatial_augmented_tensor import SpatialAugmentedTensor
 
 from .renderer import Renderer
 
+from typing import Union
+
 
 def batch_list(tensors):
     return SpatialAugmentedTensor.batch_list(tensors)
@@ -30,7 +32,7 @@ def render(
     views: list,
     renderer: str = "cv",
     size=None,
-    record_file: str = None,
+    record_file: Union[str, None] = None,
     fps=30,
     grid_size=None,
     skip_views=False,

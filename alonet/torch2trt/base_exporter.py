@@ -13,7 +13,6 @@ try:
     import onnx_graphsurgeon as gs
     import tensorrt as trt
     import pycuda.driver as cuda
-    from pytorch_quantization import nn as quant_nn
     prod_package_error = None
 except Exception as e:
     prod_package_error = e
@@ -403,7 +402,7 @@ class BaseTRTExporter:
         parser.add_argument("--verbose", action="store_true", help="Helpful when debugging")
         parser.add_argument("--profiling_verbosity", default=0, type=int, help="Helpful when profiling the engine (default: %(default)s)")
         parser.add_argument("--calibration_batch_size", type=int, default=8, help="Calibration data batch size (default: %(default)s)")
-        parser.add_argument("--limit_calibration_batches", type=int, default=10, help="Limits number of batches (default: %(default)s)")
+        parser.add_argument("--limit_calibration_batches", type=int, default=None, help="Limits number of batches (default: %(default)s)")
         parser.add_argument("--cache_file", type=str, default="calib.bin", help="Path to caliaration cache file (default: %(default)s)")
         parser.add_argument(
             "--calibrator", 

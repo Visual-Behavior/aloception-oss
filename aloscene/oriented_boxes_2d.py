@@ -30,7 +30,14 @@ class OrientedBoxes2D(aloscene.tensors.AugmentedTensor):
 
     @staticmethod
     def __new__(
-        cls, x, absolute=True, frame_size=None, labels: Union[dict, Labels] = None, names=("N", None), *args, **kwargs
+        cls,
+        x,
+        absolute=True,
+        frame_size=None,
+        labels: Union[dict, Labels, None] = None,
+        names=("N", None),
+        *args,
+        **kwargs,
     ):
         tensor = super().__new__(cls, x, *args, names=names, **kwargs)
 
@@ -53,7 +60,7 @@ class OrientedBoxes2D(aloscene.tensors.AugmentedTensor):
             )
             raise import_error
 
-    def append_labels(self, labels: Labels, name: str = None):
+    def append_labels(self, labels: Labels, name: Union[str, None] = None):
         """Attach a set of labels to the boxes.
 
         Parameters
@@ -92,7 +99,12 @@ class OrientedBoxes2D(aloscene.tensors.AugmentedTensor):
     GLOBAL_COLOR_SET = np.random.uniform(0, 1, (300, 3))
 
     def get_view(
-        self, frame: Tensor = None, size: tuple = None, color: tuple = None, labels_set: str = None, **kwargs
+        self,
+        frame: Union[Tensor, None] = None,
+        size: Union[tuple, None] = None,
+        color: Union[tuple, None] = None,
+        labels_set: Union[str, None] = None,
+        **kwargs,
     ):
         """Create a view of the boxes in a frame
 

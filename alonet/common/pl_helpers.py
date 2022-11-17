@@ -10,13 +10,16 @@ import torch
 parser = ArgumentParser()
 
 
-def vb_folder():
+def vb_folder(create_if_not_found=False):
     home = os.getenv("HOME")
     alofolder = os.path.join(home, ".aloception")
     if not os.path.exists(alofolder):
-        raise Exception(
-            f"{alofolder} do not exist. Please, create the folder with the appropriate files. (Checkout documentation)"
-        )
+        if create_if_not_found:
+            os.mkdir(alofolder)
+        else:
+            raise Exception(
+                f"{alofolder} do not exist. Please, create the folder with the appropriate files. (Checkout documentation)"
+            )
     return alofolder
 
 

@@ -82,7 +82,7 @@ class PanopticTRTExporter(BaseTRTExporter):
 
 
 if __name__ == "__main__":
-    from alonet.common.weights import vb_fodler
+    from alonet.common.pl_helpers import vb_folder
     from alonet.detr_panoptic import PanopticHead
     from alonet.detr import DetrR50
     from alonet.detr.trt_exporter import DetrTRTExporter
@@ -103,7 +103,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     device = torch.device("cpu") if args.cpu else torch.device("cuda")
     input_shape = [3] + list(args.HW)
-    pan_onnx_path = os.path.join(vb_fodler(), "weights", "detr-r50-panoptic")
+    pan_onnx_path = os.path.join(vb_folder(), "weights", "detr-r50-panoptic")
     if args.split_engines:
         pan_onnx_path = os.path.join(pan_onnx_path, "panoptic-head.onnx")
     else:

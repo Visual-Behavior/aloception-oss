@@ -1,7 +1,7 @@
 import torch
 import requests
 import os
-from alonet.common.pl_helpers import vb_folder
+from alonet.common.pl_helpers import vb_folder, checkpoint_handler
 
 WEIGHT_NAME_TO_FILES = {
     "detr-r50": ["https://storage.googleapis.com/visualbehavior-publicweights/detr-r50/detr-r50.pth"],
@@ -31,7 +31,15 @@ WEIGHT_NAME_TO_FILES = {
 }
 
 
-def load_weights(model, weights, device, strict_load_weights=True):
+def load_weights(
+        model, weights=None,
+        run_id=None,
+        project_run_id=None,
+        checkpoint="best",
+        monitor="val_loss",
+        device=torch.device("cpu"),
+        strict_load_weights=True,
+    ):
     """Load and/or download weights from public cloud
 
     Parameters
@@ -43,10 +51,19 @@ def load_weights(model, weights, device, strict_load_weights=True):
     device: torch.device
         Device to load the weights into
     """
-    weights_dir = os.path.join(vb_folder(), "weights")
+    assert not (run_id is None and weights is None), "run_id or weights must be set."
 
-    if not os.path.exists(weights_dir):
-        os.makedirs(weights_dir)
+    if weights is None:
+        if project_run_id is None:
+            Exception(
+                "project_run_id need to be set if we load model from run_id."
+            )
+        run_id_project_dir = os.path.join(vb_folder(), f"project_{project_run_id}", run_id)
+        ckpt_path = checkpoint_handler(checkpoint, run_id_project_dir, monitor)
+        weights = os.path.join(run_id_project_dir, ckpt_path)
+        if not os.path.exists(weights):
+            raise Exception(f"Impossible to load the ckpt at the following destination:{weights}")
+        print(f"Loading ckpt from {run_id} at {weights}")
 
     if os.path.splitext(weights.lower())[1] == ".pth":
         checkpoint = torch.load(weights, map_location=device)
@@ -60,6 +77,7 @@ def load_weights(model, weights, device, strict_load_weights=True):
         model.load_state_dict(checkpoint, strict=strict_load_weights)
         print(f"Weights loaded from {weights}")
     elif weights in WEIGHT_NAME_TO_FILES:
+        weights_dir = os.path.join(vb_folder(create_if_not_found=True), "weights")
         weights_dir = os.path.join(weights_dir, weights)
         if not os.path.exists(weights_dir):
             os.makedirs(weights_dir)

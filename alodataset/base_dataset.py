@@ -75,8 +75,8 @@ def train_loader(dataset, batch_size=1, num_workers=2, sampler=torch.utils.data.
     torch.utils.data.DataLoader
         A generator
     """
-    sampler = sampler(dataset) if sampler is not None else None
-
+    if sampler is not None and not(isinstance(sampler, torch.utils.data.Sampler)):
+        sampler = sampler(dataset)
     data_loader = torch.utils.data.DataLoader(
         dataset,
         # batch_sampler=batch_sampler,

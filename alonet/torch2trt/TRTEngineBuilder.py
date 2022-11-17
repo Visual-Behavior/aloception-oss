@@ -64,7 +64,7 @@ class TRTEngineBuilder:
         self.INT8_allowed = INT8_allowed
         self.onnx_file_path = onnx_file_path
         self.calibrator = calibrator
-        self.max_workspace_size = GiB(8)
+        self.max_workspace_size = GiB(1)
         self.strict_type = strict_type
         self.logger = logger
         self.engine = None
@@ -156,11 +156,17 @@ class TRTEngineBuilder:
                 raise AttributeError("unknown profiling_verbosity")
             # FP16
             if self.FP16_allowed:
+                if not builder.platform_has_fast_fp16:
+                    raise RuntimeError("FP16 is not optimized in this platform. Check " +
+                    "https://docs.nvidia.com/deeplearning/tensorrt/support-matrix/index.html#hardware-precision-matrix"
+                    )
                 config.set_flag(trt.BuilderFlag.FP16)
             # INT8
             if self.INT8_allowed:
                 if not builder.platform_has_fast_int8:
-                    raise RuntimeError('INT8 not supported on this platform')
+                    raise RuntimeError("FP16 is not optimized in this platform. Check " +
+                    "https://docs.nvidia.com/deeplearning/tensorrt/support-matrix/index.html#hardware-precision-matrix"
+                    )
                 config.set_quantization_flag(trt.QuantizationFlag.CALIBRATE_BEFORE_FUSION)
                 config.set_flag(trt.BuilderFlag.INT8)
                 config.int8_calibrator = self.calibrator

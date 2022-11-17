@@ -131,8 +131,13 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         # Add other tensor property
         assert normalization in {"01", "255", "minmax_sym", "resnet"}, f"{normalization} norm is not yet supported"
         tensor.add_property("normalization", normalization)
-        tensor.add_property("_resnet_mean_std", ((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)))
-        tensor.add_property("mean_std", mean_std)
+
+        resnet_rgb_mean_std = ((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
+        tensor.add_property("_resnet_mean_std", resnet_rgb_mean_std)
+        if normalization == "resnet":
+            tensor.add_property("mean_std", resnet_rgb_mean_std)
+        else:
+            tensor.add_property("mean_std", mean_std)
 
         return tensor
 

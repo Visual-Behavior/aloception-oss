@@ -55,7 +55,7 @@ class SintelBaseDataset(BaseDataset, SequenceMixin):
         "temple_3",
     ]
 
-    def __init__(self, cameras=None, labels=None, passes=None, sintel_sequences=None, name="Sintel_base", **kwargs):
+    def __init__(self, training=True,cameras=None, labels=None, passes=None, sintel_sequences=None, name="Sintel_base", **kwargs):
         super(SintelBaseDataset, self).__init__(name=name, **kwargs)
 
         if self.sequence_skip != 0:
@@ -67,8 +67,11 @@ class SintelBaseDataset(BaseDataset, SequenceMixin):
         self.sintel_sequences = sintel_sequences if sintel_sequences is not None else self.SINTEL_SEQUENCES
         if self.sample:
             return
-
         self._assert_inputs()
+        if training:
+            self.split = "training"
+        else:
+            self.split = "testing"
 
         self.items = self._get_sequences()
 
@@ -98,7 +101,7 @@ class SintelBaseDataset(BaseDataset, SequenceMixin):
 
     def _get_folder(self, sintel_seq, feature_or_label):
         dset_dir = self.dataset_dir
-        return os.path.join(dset_dir, "training", feature_or_label, sintel_seq)
+        return os.path.join(dset_dir, self.split, feature_or_label, sintel_seq)
 
     @property
     def _left_img_dir(self, sintel_pass=None):

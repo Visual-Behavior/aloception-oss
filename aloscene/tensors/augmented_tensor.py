@@ -1,6 +1,5 @@
 import torch
 import inspect
-import warnings
 import numpy as np
 from typing import *
 import copy
@@ -11,10 +10,6 @@ class AugmentedTensor(torch.Tensor):
 
     # Common dim names that must be aligned to handle label on a Tensor.
     COMMON_DIM_NAMES = ["B", "T"]
-
-    # Ignore named tansors userwarning.
-    ERROR_MSG = "Named tensors and all their associated APIs are an experimental feature and subject to change"
-    warnings.filterwarnings(action='ignore', message=ERROR_MSG)
 
     @staticmethod
     def __new__(cls, x, names=None, device=None, *args, **kwargs):

@@ -5,6 +5,24 @@ from typing import *
 import copy
 
 
+def _torch_function_get_self(cls, func, types, args, kwargs):
+    """ Based on this dicussion https://github.com/pytorch/pytorch/issues/63767
+
+    "A simple solution would be to scan the args for the first subclass of this class.
+    My question is more: will forcing this to be a subclass actually be a problem for some use case?
+    Or are we saying that this code that requires a pure method is actually not well structured and should be written differently?"
+
+    " No, that isn't the case here. self is guaranteed to be in args /kwargssomewhere."
+    What I understand is that looking into args to get self is acceptable in the current API.
+    """
+    for a in args:
+        if isinstance(a, cls):
+            return a
+        elif isinstance(a, list):
+            return _torch_function_get_self(cls, func, types, a, kwargs)
+    return None
+        
+
 class AugmentedTensor(torch.Tensor):
     """Tensor with attached labels"""
 
@@ -539,11 +557,16 @@ class AugmentedTensor(torch.Tensor):
         for t in range(len(self)):
             yield self[t]
 
-    def __torch_function__(self, func, types, args=(), kwargs=None):
+
+    @classmethod
+    def __torch_function__(cls, func, types, args=(), kwargs=None):
+        
+        self = _torch_function_get_self(cls, func, types, args, kwargs)
+
         def _merging_frame(args):
             if len(args) >= 1 and isinstance(args[0], list):
                 for el in args[0]:
-                    if isinstance(el, type(self)):
+                    if isinstance(el, cls):
                         return True
                 return False
             return False
@@ -554,11 +577,12 @@ class AugmentedTensor(torch.Tensor):
         if func.__name__ == "__reduce_ex__":
             self.rename_(None, auto_restore_names=True)
             tensor = super().__torch_function__(func, types, args, kwargs)
+            #tensor = super().torch_func_method(func, types, args, kwargs)
         else:
             tensor = super().__torch_function__(func, types, args, kwargs)
+            #tensor = super().torch_func_method(func, types, args, kwargs)
 
         if isinstance(tensor, type(self)):
-
             tensor._property_list = self._property_list
             tensor._children_list = self._children_list
             tensor._child_property = self._child_property

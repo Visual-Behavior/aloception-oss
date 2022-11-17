@@ -148,7 +148,6 @@ class BaseTRTExporter:
             pass
         elif precision.lower() == "int8":
             self.engine_builder.INT8_allowed = True
-            self.engine_builder.FP16_allowed = True
             self.engine_builder.strict_type = True
         elif precision.lower() == "fp16":
             self.engine_builder.FP16_allowed = True

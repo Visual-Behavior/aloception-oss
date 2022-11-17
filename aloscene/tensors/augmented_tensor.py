@@ -21,6 +21,8 @@ def _torch_function_get_self(cls, func, types, args, kwargs):
             return a
         elif isinstance(a, list):
             return _torch_function_get_self(cls, func, types, a, kwargs)
+        elif isinstance(a, tuple):
+            return _torch_function_get_self(cls, func, types, list(a), kwargs)
     return None
         
 

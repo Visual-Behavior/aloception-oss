@@ -1,6 +1,7 @@
 import torch
 import requests
 import os
+from alonet.common.pl_helpers import vb_folder
 
 WEIGHT_NAME_TO_FILES = {
     "detr-r50": ["https://storage.googleapis.com/visualbehavior-publicweights/detr-r50/detr-r50.pth"],
@@ -30,14 +31,6 @@ WEIGHT_NAME_TO_FILES = {
 }
 
 
-def vb_fodler():
-    home = os.getenv("HOME")
-    alofolder = os.path.join(home, ".aloception")
-    if not os.path.exists(alofolder):
-        os.mkdir(alofolder)
-    return alofolder
-
-
 def load_weights(model, weights, device, strict_load_weights=True):
     """Load and/or download weights from public cloud
 
@@ -50,7 +43,7 @@ def load_weights(model, weights, device, strict_load_weights=True):
     device: torch.device
         Device to load the weights into
     """
-    weights_dir = os.path.join(vb_fodler(), "weights")
+    weights_dir = os.path.join(vb_folder(), "weights")
 
     if not os.path.exists(weights_dir):
         os.makedirs(weights_dir)

@@ -121,7 +121,7 @@ class DeformableDetrTRTExporter(BaseTRTExporter):
 
 if __name__ == "__main__":
     # test script
-    from alonet.common.weights import vb_fodler
+    from alonet.common.pl_helpers import vb_folder
 
     load_trt_plugins_for_deformable_detr()
     device = torch.device("cuda")
@@ -143,7 +143,7 @@ if __name__ == "__main__":
         model = DeformableDetrR50(weights=model_name, tracing=True, aux_loss=False).eval()
 
     if args.onnx_path is None:
-        args.onnx_path = os.path.join(vb_fodler(), "weights", model_name, model_name + ".onnx")
+        args.onnx_path = os.path.join(vb_folder(), "weights", model_name, model_name + ".onnx")
 
     input_shape = [3] + list(args.HW)
 

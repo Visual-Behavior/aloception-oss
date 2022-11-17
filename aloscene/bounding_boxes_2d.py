@@ -33,7 +33,7 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
     x: list | torch.Tensor | np.array
         BoundingBoxes2D data. See explanation above for details.
     boxes_format: str
-        One of `xyxy` (y_min, x_min, y_max, x_max), `yxyx` (x_min, y_min, x_max, y_max) or `xcyc` (xc, yc, width,
+        One of `xyxy` (x_min, y_min, x_max, y_max), `yxyx` (y_min, x_min, y_max, x_max) or `xcyc` (xc, yc, width,
         height)
     absolute: bool
         Whether your boxes are encoded as absolute value or relative values (between 0 and 1). If absolute is True,

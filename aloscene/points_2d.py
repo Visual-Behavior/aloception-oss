@@ -648,6 +648,8 @@ class Points2D(aloscene.tensors.AugmentedTensor):
 
         # shift the points
         n_points = self.clone().rel_pos().xy()
+
+
         n_points += torch.as_tensor([[shift_x, shift_y]])  # , device=self.device)
 
         # filter points outside of the image

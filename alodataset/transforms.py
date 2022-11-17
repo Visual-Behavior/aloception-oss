@@ -10,7 +10,7 @@ import torchvision.transforms.functional as F
 from torch.distributions.uniform import Uniform
 import torchvision
 
-from aloscene import Frame,Mask
+from aloscene import Frame, Mask
 
 
 class AloTransform(object):
@@ -37,7 +37,8 @@ class AloTransform(object):
                 return param
             elif isinstance(param, float):
                 if (param < 0) or (param > 1):
-                    raise ValueError("Probability value should be between 0 and 1.")
+                    raise ValueError(
+                        "Probability value should be between 0 and 1.")
                 else:
                     return np.random.rand() < param
             else:
@@ -143,26 +144,27 @@ class AloTransform(object):
 
             return frames
 
-    def add_new_mask(self,frame:Frame):
-        """Adds a mask during the transforms that can create invalid pixels"""
-        if frame.mask is None:
-        #if the frame has no mask, create a mask to keep track of the pixels becoming invalid during the transform
-        #then the Mask class implementation of the spatial shift is applied by recursive_apply_on_children fct
-            if frame.names==("H","W"):
-                shape=frame.shape
-            elif "C" in frame.names:
-                new_shape=[]
-                for i,name in enumerate(frame.names):
-                    if name!="C":
-                        new_shape.append(frame.shape[i])
-                    else:
-                        new_shape.append(1)
+    # def add_new_mask(self,frame:Frame):
+    #     """Adds a mask during the transforms that can create invalid pixels"""
+    #     if frame.mask is None:
+    #     #if the frame has no mask, create a mask to keep track of the pixels becoming invalid during the transform
+    #     #then the Mask class implementation of the spatial shift is applied by recursive_apply_on_children fct
+    #         if frame.names==("H","W"):
+    #             shape=frame.shape
+    #         elif "C" in frame.names:
+    #             new_shape=[]
+    #             for i,name in enumerate(frame.names):
+    #                 if name!="C":
+    #                     new_shape.append(frame.shape[i])
+    #                 else:
+    #                     new_shape.append(1)
 
-                shape=torch.Size(new_shape)
-            else:
-                raise Exception(f"Expected frame.names to contain C dimension, but got {frame.names}")
+    #             shape=torch.Size(new_shape)
+    #         else:
+    #             raise Exception(f"Expected frame.names to contain C dimension, but got {frame.names}")
 
-            frame.append_mask(Mask(torch.zeros(shape), names=frame.names))
+    #         frame.append_mask(Mask(torch.zeros(shape), names=frame.names))
+
 
 class Compose(AloTransform):
     def __init__(self, transforms: AloTransform, *args, **kwargs):
@@ -309,7 +311,8 @@ class RandomSizeCrop(AloTransform):
             Maximun width and height of the crop. I float, will be use as a percentage
         """
         if type(min_size) != type(max_size):
-            raise Exception("Both `min_size` and `max_size` but be of the same type (float or int)")
+            raise Exception(
+                "Both `min_size` and `max_size` but be of the same type (float or int)")
         self.min_size = min_size
         self.max_size = max_size
         super().__init__(*args, **kwargs)
@@ -389,10 +392,12 @@ class RandomSizePad(AloTransform):
 
     def __call__(self, frame):
 
-        print((self._pad_top, self._pad_bottom), (self._pad_left, self._pad_right))
+        print((self._pad_top, self._pad_bottom),
+              (self._pad_left, self._pad_right))
 
         return frame.pad(
-            offset_y=(self._pad_top, self._pad_bottom), offset_x=(self._pad_left, self._pad_right), pad_boxes=True
+            offset_y=(self._pad_top, self._pad_bottom), offset_x=(
+                self._pad_left, self._pad_right), pad_boxes=True
         )
 
 
@@ -428,7 +433,8 @@ class RandomPad(AloTransform):
 
     def __call__(self, frame):
         return frame.pad(
-            offset_y=(self._pad_top, self._pad_bottom), offset_x=(self._pad_left, self._pad_right), pad_boxes=True
+            offset_y=(self._pad_top, self._pad_bottom), offset_x=(
+                self._pad_left, self._pad_right), pad_boxes=True
         )
 
 
@@ -500,7 +506,8 @@ class RandomResizeWithAspectRatio(AloTransform):
             min_original_size = float(min((w, h)))
             max_original_size = float(max((w, h)))
             if max_original_size / min_original_size * size > max_size:
-                size = int(round(max_size * min_original_size / max_original_size))
+                size = int(
+                    round(max_size * min_original_size / max_original_size))
 
         if (w <= h and w == size) or (h <= w and h == size):
             return (h, w)
@@ -533,7 +540,8 @@ class RandomResizeWithAspectRatio(AloTransform):
             Frame to apply the transformation on
         """
         # Sample one frame size
-        size = self.get_size_with_aspect_ratio(frame, self._size, self.max_size)
+        size = self.get_size_with_aspect_ratio(
+            frame, self._size, self.max_size)
         # Resize frame
         frame = frame.resize(size)
         return frame
@@ -600,7 +608,7 @@ class Rotate(AloTransform):
         frame: Frame
             Frame to apply the transformation on
         """
-        self.add_new_mask(frame)
+        # self.add_new_mask(frame)
 
         frame = frame.rotate(self.angle)
         return frame
@@ -639,8 +647,10 @@ class RealisticNoise(AloTransform):
     def apply(self, frame: Frame):
         n_frame = frame.norm01()
 
-        gaussian_noise = torch.normal(mean=0, std=self.gaussian_std, size=frame.shape, device=frame.device)
-        shot_noise = torch.normal(mean=0, std=self.shot_std, size=frame.shape, device=frame.device)
+        gaussian_noise = torch.normal(
+            mean=0, std=self.gaussian_std, size=frame.shape, device=frame.device)
+        shot_noise = torch.normal(
+            mean=0, std=self.shot_std, size=frame.shape, device=frame.device)
         noisy_frame = n_frame + n_frame * n_frame * shot_noise + gaussian_noise
         noisy_frame = torch.clip(noisy_frame, 0, 1)
 
@@ -723,7 +733,8 @@ class SpatialShift(AloTransform):
         frame: Frame
             Frame to apply the transformation on
         """
-        self.add_new_mask(frame)
+        # self.add_new_mask(frame)
+
         n_frame = frame.spatial_shift(self.percentage[0], self.percentage[1])
         return n_frame
 
@@ -874,7 +885,8 @@ class RandomDownScaleCrop(Compose):
     """
 
     def __init__(self, size, preserve_ratio=False, *args, **kwargs):
-        transforms = [RandomDownScale(size, preserve_ratio, *args, **kwargs), RandomCrop(size, *args, **kwargs)]
+        transforms = [RandomDownScale(
+            size, preserve_ratio, *args, **kwargs), RandomCrop(size, *args, **kwargs)]
         super().__init__(transforms, *args, **kwargs)
 
 

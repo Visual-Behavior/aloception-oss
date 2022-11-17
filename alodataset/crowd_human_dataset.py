@@ -226,10 +226,9 @@ class CrowdHumanDataset(BaseDataset):
         if not os.path.exists(tgt_image_dir):
             os.makedirs(tgt_image_dir)
 
-        print(img_folder)
         for root, subdirs, files in os.walk(img_folder):
             nb_images = len(files)
-            for f, f_name in enumerate(files[:10]):
+            for f, f_name in enumerate(files):
 
                 # File aready exists in the destination folder.
                 if os.path.exists(os.path.join(tgt_image_dir, f_name)) or os.path.exists(

@@ -9,6 +9,7 @@ except Exception as prod_package_error:
 
 
 from typing import Dict, List, Tuple
+from time import sleep
 
 
 def GiB(val):
@@ -160,16 +161,20 @@ class TRTEngineBuilder:
             # FP16
             if self.FP16_allowed:
                 if not builder.platform_has_fast_fp16:
-                    raise RuntimeError("FP16 is not optimized in this platform. Check " +
+                    print("FP16 is not optimized in this platform. Check " +
                     "https://docs.nvidia.com/deeplearning/tensorrt/support-matrix/index.html#hardware-precision-matrix"
                     )
+                    # Fast logs, sleep for logs readability
+                    sleep(0.5)
                 config.set_flag(trt.BuilderFlag.FP16)
             # INT8
             if self.INT8_allowed:
                 if not builder.platform_has_fast_int8:
-                    raise RuntimeError("FP16 is not optimized in this platform. Check " +
+                    print("FP16 is not optimized in this platform. Check " +
                     "https://docs.nvidia.com/deeplearning/tensorrt/support-matrix/index.html#hardware-precision-matrix"
                     )
+                    # Fast logs, sleep for logs readability
+                    sleep(0.5)
                 config.set_quantization_flag(trt.QuantizationFlag.CALIBRATE_BEFORE_FUSION)
                 config.set_flag(trt.BuilderFlag.INT8)
                 config.int8_calibrator = self.calibrator

@@ -445,6 +445,10 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
         """
         from aloscene import Frame
 
+        if isinstance(self.labels, dict):
+            if len(self.labels.keys())!=0:
+                print("You can select a labels set and pass it to frame.get_view(). Available labels set are: ", [key for key in self.labels.keys()])
+
         if frame is not None:
             if len(frame.shape) > 3:
                 raise Exception(f"Expect image of shape c,h,w. Found image with shape {frame.shape}")
@@ -586,8 +590,7 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
             assert (boxes1.as_tensor()[:, 2:] >= boxes1.as_tensor()[:, :2]).all(), f"{boxes1.as_tensor()}"
             assert (boxes2.as_tensor()[:, 2:] >= boxes2.as_tensor()[:, :2]).all(), f"{boxes2.as_tensor()}"
         except:
-            print("boxes1", boxes1)
-            print("boxes2", boxes2)
+
             assert (boxes1.as_tensor()[:, 2:] >= boxes1.as_tensor()[:, :2]).all(), f"{boxes1.as_tensor()}"
             assert (boxes2.as_tensor()[:, 2:] >= boxes2.as_tensor()[:, :2]).all(), f"{boxes2.as_tensor()}"
 

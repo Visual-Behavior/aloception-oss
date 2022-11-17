@@ -219,6 +219,6 @@ if __name__ == "__main__":
     coco_dataset = CocoDetectionDataset(split=Split.VAL, return_multiple_labels=True)
     for f, frames in enumerate(coco_dataset.stream_loader(num_workers=1)):
         frames = Frame.batch_list([frames])
-        frames.get_view().render()
+        frames.get_view(labels_set="category").render()
         if f > 1:
             break

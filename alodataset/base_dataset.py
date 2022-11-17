@@ -69,6 +69,7 @@ def train_loader(dataset, batch_size=1, num_workers=2, sampler=torch.utils.data.
         Number of workers, by default 2
     sampler : torch.utils.data, optional
         Callback to sampler the dataset, by default torch.utils.data.RandomSampler
+        Or instance of any class inheriting from torch.utils.data.Sampler
 
     Returns
     -------

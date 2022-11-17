@@ -39,20 +39,17 @@ class CrowdHumanDataset(BaseDataset):
             assert ann_file is not None or "test" in img_folder, "When sample = False and the test split is not used, ann_file must be given."
 
         if "test" in img_folder:
-            self.dataset_dir="/data/crowdhuman/"
+            if not os.path.exists(os.path.join(self.dataset_dir, img_folder)):
+                self.dataset_dir = input("You are trying to use the test split of CrowdHuman. Please enter the path to the dataset directory: ")
             self._img_folder = img_folder
-            if isinstance(img_folder, list):
-                self.img_folder = [os.path.join(self.dataset_dir, p, "images_test") for p in img_folder]
-            else:
-                self.img_folder = os.path.join(self.dataset_dir, img_folder, "images_test")
+            self.img_folder = os.path.join(self.dataset_dir, img_folder, "images_test")
 
-            self.items=[]
+            self.items = []
             for f in os.listdir(self.img_folder):
                 if os.path.isfile(os.path.join(self.img_folder, f)):
                     self.items.append({"ID": Path(os.path.join(self.img_folder, f)).stem})
 
             return
-
 
         assert type(img_folder) == type(ann_file), "img_folder & ann_file must be the same type."
 
@@ -141,9 +138,9 @@ class CrowdHumanDataset(BaseDataset):
 
         if "test" in self.img_folder:
             #get the filename from image_id without relying on annotation file
-            frame = Frame(os.path.join(self.img_folder, image_id + ".jpg"))
+            return Frame(os.path.join(self.img_folder, image_id + ".jpg"))
 
-            return frame
+
 
         ann_id = record["ann_id"]
 
@@ -301,7 +298,6 @@ class CrowdHumanDataset(BaseDataset):
 
         if "test" in self.img_folder:
             return  #The code for preparing test datasets exist but we are not doing that now
-
 
         if self.dataset_dir.endswith("_prepared") and not os.path.exists(self.dataset_dir.replace("_prepared", "")):
             return

@@ -55,6 +55,7 @@ class BaseTRTExporter:
         opt_profiles: Dict[str, Tuple[List[int]]] = None,
         profiling_verbosity: int = 0,
         calibrator=None,
+        max_workspace_size: int = 1,
         **kwargs,
     ):
         """
@@ -93,6 +94,8 @@ class BaseTRTExporter:
                 1 : NONE (Do not print any layer information).
                 2 : DETAILED : (Print detailed layer information including layer names and layer parameters).
             Set to 2 for more layers details (preicision, type, kernel ...) when calling the EngineInspector
+        max_workspace_size : int
+            Maximum work size in GiB.
 
         Raises
         ------
@@ -133,7 +136,13 @@ class BaseTRTExporter:
         else:
             trt_logger = trt.Logger(trt.Logger.WARNING)
 
-        self.engine_builder = TRTEngineBuilder(self.onnx_path, logger=trt_logger, opt_profiles=opt_profiles, calibrator=calibrator)
+        self.engine_builder = TRTEngineBuilder(
+            self.onnx_path,
+            logger=trt_logger,
+            calibrator=calibrator,
+            opt_profiles=opt_profiles,
+            max_workspace_size=max_workspace_size
+            )
 
         if profiling_verbosity == 0:
             self.engine_builder.profiling_verbosity = "LAYER_NAMES_ONLY"

@@ -34,6 +34,7 @@ class TRTEngineBuilder:
         logger=None,
         opt_profiles: Dict[str, Tuple[List[int]]] = None,
         profiling_verbosity: str = "LAYER_NAMES_ONLY",
+        max_workspace_size: int = 1,
     ):
         """
         Parameters
@@ -50,6 +51,8 @@ class TRTEngineBuilder:
             Used for INT8 quantization
         opt_profiles : Dict[str, Tuple[List[int]]], by default None
             Optimization profiles (one by each dynamic axis), with the minimum, minimum and maximum values.
+        max_workspace_size : int
+            Maximum work size in GiB.
 
         Raises
         ------
@@ -64,7 +67,7 @@ class TRTEngineBuilder:
         self.INT8_allowed = INT8_allowed
         self.onnx_file_path = onnx_file_path
         self.calibrator = calibrator
-        self.max_workspace_size = GiB(1)
+        self.max_workspace_size = GiB(max_workspace_size)
         self.strict_type = strict_type
         self.logger = logger
         self.engine = None

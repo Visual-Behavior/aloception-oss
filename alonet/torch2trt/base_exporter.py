@@ -56,6 +56,7 @@ class BaseTRTExporter:
         profiling_verbosity: int = 0,
         calibrator=None,
         max_workspace_size: int = 1,
+        opset_version: int = 13,
         **kwargs,
     ):
         """
@@ -96,6 +97,8 @@ class BaseTRTExporter:
             Set to 2 for more layers details (preicision, type, kernel ...) when calling the EngineInspector
         max_workspace_size : int
             Maximum work size in GiB.
+        opset_version : int
+                ONNX version (Default 13).
 
         Raises
         ------
@@ -106,7 +109,7 @@ class BaseTRTExporter:
         """
         if prod_package_error is not None:
             raise prod_package_error
-
+        self.opset_version = opset_version
         self.model = model
         self.input_names = input_names
         self.onnx_path = onnx_path
@@ -298,7 +301,7 @@ class BaseTRTExporter:
                 inputs,  # model input (or a tuple for multiple inputs)
                 self.onnx_path,  # where to save the model
                 export_params=True,  # store the trained parameter weights inside the model file
-                opset_version=13,  # the ONNX version to export the model to
+                opset_version=self.opset_version,  # the ONNX version to export the model to
                 do_constant_folding=self.do_constant_folding,  # whether to execute constant folding for optimization
                 verbose=self.verbose or self.use_scope_names,  # verbose mandatory in scope names procedure
                 input_names=self.input_names,  # the model's input names

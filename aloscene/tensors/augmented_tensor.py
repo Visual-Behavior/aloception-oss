@@ -984,10 +984,18 @@ class AugmentedTensor(torch.Tensor):
         """
         if multiple is not None:
             assert offset_x is None and offset_y is None
-            offset_y = (((self.H // multiple) + 1) * multiple - self.H) % multiple // 2 / self.H
-            offset_x = (((self.W // multiple) + 1) * multiple - self.W) % multiple // 2 / self.W
-            offset_y = (offset_y, offset_y)
-            offset_x = (offset_x, offset_x)
+            if not self.H % multiple == 0:
+                offset_y0 = int(np.floor((multiple - self.H % multiple) / 2))
+                offset_y1 = int(np.ceil((multiple - self.H % multiple) / 2))
+                offset_y = (offset_y0 / self.H, offset_y1 / self.H)
+            else:  # already a multiple of H
+                offset_y = (0, 0)
+            if not self.W % multiple == 0:
+                offset_x0 = int(np.floor((multiple - self.W % multiple) / 2))
+                offset_x1 = int(np.ceil((multiple - self.W % multiple) / 2))
+                offset_x = (offset_x0 / self.W, offset_x1 / self.W)
+            else:  # already a multiple of W
+                offset_x = (0, 0)
         else:
             assert offset_x is not None and offset_y is not None
             alototo = offset_x[0], offset_y[0]

@@ -269,6 +269,12 @@ class CrowdHumanDataset(BaseDataset):
         are prepared and stored into the prepared folder. Otherwise, if the original directory is no longer
         on the disk, the method will simply use the prepared dir as it is and the prepare step will be skiped.
         """
+        permission = input("Do you want to prepare the dataset? (y/n)")
+        if permission.lower() == "n":
+            return
+        elif permission.lower() != "y":
+            raise Exception("Please answer y or n")
+
         if self.sample is not None and self.sample is not False:  # Nothing to do. Samples are ready
             return
 

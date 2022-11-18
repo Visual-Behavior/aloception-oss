@@ -411,7 +411,7 @@ class BaseTRTExporter:
         parser.add_argument("--batch_size", type=int, default=1, help="Engine batch size, default = 1")
         parser.add_argument("--precision", type=str, default="fp32", help="fp32/fp16/mix, default FP32")
         parser.add_argument("--verbose", action="store_true", help="Helpful when debugging")
-        parser.add_argument("--onnx_version", type=int, default=13, help="Onnx version to export the model to, Default = 13")
+        parser.add_argument("--opset_version", type=int, default=13, help="Onnx version to export the model to, Default = 13")
         parser.add_argument("--profiling_verbosity", default=0, type=int, help="Helpful when profiling the engine (default: %(default)s)")
         parser.add_argument("--calibration_batch_size", type=int, default=8, help="Calibration data batch size (default: %(default)s)")
         parser.add_argument("--limit_calibration_batches", type=int, default=None, help="Limits number of batches (default: %(default)s)")

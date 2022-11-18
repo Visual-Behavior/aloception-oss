@@ -378,7 +378,7 @@ class Points2D(aloscene.tensors.AugmentedTensor):
                     str(int(label)),
                     pos_x=int(x1) + 10,
                     pos_y=int(y1) + 10,
-                    color=color,
+                    text_color=color,
                     square_background=False,
                 )
 

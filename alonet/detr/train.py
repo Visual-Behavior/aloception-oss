@@ -151,9 +151,19 @@ class LitDetr(pl.LightningModule):
 
         total_loss, losses = self.criterion(m_outputs, frames, compute_statistical_metrics=batch_idx < 100)
 
+        def detach_all(var):
+            if isinstance(var, torch.Tensor):
+                return var.detach()
+            elif isinstance(var, dict):
+                for k, v in var.items():
+                    var[k] = detach_all(v)
+            elif isinstance(var, list):
+                for i, v in enumerate(var):
+                    var[i] = detach_all(v)
+
         outputs = {"loss": total_loss}
-        outputs.update({"metrics": losses})
-        outputs.update({"m_outputs": m_outputs})
+        outputs.update({"metrics": detach_all(losses)})
+        outputs.update({"m_outputs": detach_all(m_outputs)})
         return outputs
 
     @torch.no_grad()
@@ -390,4 +400,4 @@ if __name__ == "__main__":
     model = LitDetr(args)
     frame = Frame(torch.rand((3, 250, 250)), names=("C", "H", "W")).norm_resnet()
     frame = frame.batch_list([frame])
-    logger.info("Random inference without train: {}".format(model.inference(model(frame))))
+    # logger.info("Random inference without train: {}".format(model.inference(model(frame))))

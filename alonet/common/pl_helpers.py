@@ -288,7 +288,7 @@ def get_expe_infos(project, expe_name, args=None):
     expe_name = expe_name or args.expe_name
     if args is not None and not args.no_suffix:
         expe_name = "{}_{:%B-%d-%Y-%Hh-%M}".format(expe_name, datetime.datetime.now())
-    project_dir = os.path.join(get_dir_from_config(args, "log"), f"project_{project}")
+    project_dir = os.path.join(get_dir_from_config(args, "checkpoint"), f"project_{project}")
     expe_dir = os.path.join(project_dir, expe_name)
     return project_dir, expe_dir, expe_name
 
@@ -331,10 +331,22 @@ def run_pl_training(
             resume_from_checkpoint = ckpt_path
             expe_dir = os.path.join(run_id_project_dir, args.run_id)
 
+    if args.save:
+        monitor = getattr(args, "monitor", "val_loss")
+        checkpoint_callback = ModelCheckpoint(
+            dirpath=expe_dir,
+            verbose=True,
+            save_last=True,
+            save_top_k=getattr(args, "save_top_k", 3),
+            monitor=monitor,
+            filename="{epoch}-{step}-{" + monitor + ":.4f}",
+        )
+        callbacks.append(checkpoint_callback)
+
     if args.log is not None:
         # get dir to save log
-        save_dir = os.path.join(get_dir_from_config(args, "checkpoint"), f"project_{project}", expe_name)
-        
+        save_dir = os.path.join(get_dir_from_config(args, "log"), f"project_{project}", expe_name)
+
         # create path
         if args.log == "wandb":
             save_dir = os.path.join(save_dir, "wandb")
@@ -348,18 +360,6 @@ def run_pl_training(
             raise ValueError("Unknown or not implemented logger")
     else:
         logger = None
-
-    if args.save:
-        monitor = getattr(args, "monitor", "val_loss")
-        checkpoint_callback = ModelCheckpoint(
-            dirpath=expe_dir,
-            verbose=True,
-            save_last=True,
-            save_top_k=getattr(args, "save_top_k", 3),
-            monitor=monitor,
-            filename="{epoch}-{step}-{" + monitor + ":.4f}",
-        )
-        callbacks.append(checkpoint_callback)
 
     # Init trainer and run training
     trainer = pl.Trainer.from_argparse_args(

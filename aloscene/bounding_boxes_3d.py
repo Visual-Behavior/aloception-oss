@@ -173,7 +173,7 @@ class BoundingBoxes3D(aloscene.tensors.AugmentedTensor):
 
         if torch.any(neg_mask):
             neg_coord = torch.where(neg_mask)
-            # find the 2 other points linked to the first
+            # find the 2 possible linked points  inside frame
             pair1 = (neg_coord[1] + 4) % 8
             pair2 = neg_coord[1] - (neg_coord[1] % 2) * 2 + 1
 

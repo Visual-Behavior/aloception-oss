@@ -563,7 +563,7 @@ class SpatialAugmentedTensor(AugmentedTensor):
         except AttributeError:
             return label
 
-    def _pad(self, offset_y: tuple, offset_x: tuple, value=0, **kwargs):
+    def _pad(self, offset_y: tuple, offset_x: tuple, **kwargs):
         """Pad the based on the given offset
 
         Parameters
@@ -575,7 +575,7 @@ class SpatialAugmentedTensor(AugmentedTensor):
 
         Returns
         -------
-        padded
+            padded tensor
         """
         pad_top = int(round(offset_y[0] * self.H))
         pad_bottom = int(round(offset_y[1] * self.H))
@@ -583,7 +583,14 @@ class SpatialAugmentedTensor(AugmentedTensor):
         pad_right = int(round(offset_x[1] * self.W))
 
         padding = [pad_left, pad_top, pad_right, pad_bottom]
-        tensor_padded = F.pad(self.rename(None), padding, padding_mode="constant", fill=value).reset_names()
+
+        tensor_padded = F.pad(
+            self.rename(None),
+            padding,
+            fill=kwargs.get("fill", 0),
+            padding_mode=kwargs.get("padding_mode", "constant"),
+        ).reset_names()
+
         return tensor_padded
 
     def _getitem_child(self, label, label_name, idx):

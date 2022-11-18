@@ -546,7 +546,7 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         view = View(frame, title=title)
         return view
 
-    def _pad(self, offset_y: tuple, offset_x: tuple, value=0, **kwargs):
+    def _pad(self, offset_y: tuple, offset_x: tuple, **kwargs):
         """Pad the based on the given offset
 
         Parameters
@@ -558,12 +558,12 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
 
         Returns
         -------
-        padded
+            padded tensor
         """
         pad_values = {"01": 0, "255": 0, "minmax_sym": -1}
         if self.normalization in pad_values:
             pad_value = pad_values[self.normalization]
-            return super()._pad(offset_y, offset_x, value=pad_value, **kwargs)
+            return super()._pad(offset_y, offset_x, fill=pad_value, **kwargs)
         elif self.mean_std is not None:
             # Set the new height and weight of the frame
             pad_top, pad_bottom, pad_left, pad_right = (

@@ -254,6 +254,8 @@ def run_pl_training(
     if args.log is not None:
         if args.log == "wandb":
             logger = WandbLogger(name=expe_name, project=project, id=expe_name)
+            logger.log_hyperparams(args)
+
         elif args.log == "tensorboard":
             logger = TensorBoardLogger(save_dir="tensorboard/", name=expe_name, sub_dir=expe_name)
         else:

@@ -196,10 +196,14 @@ class SpatialAugmentedTensor(AugmentedTensor):
         view = Renderer.get_grid_view(n_views, grid_size=grid_size, cell_grid_size=size, add_title=add_title, **kwargs)
         return View(view)
 
-    def relative_to_absolute(self, x, dim, assert_integer=False):
+    def relative_to_absolute(self, x, dim, assert_integer=False, allow_propagate_None=True):
         dim = dim.lower()
         assert dim in ["h", "w"], "dim should be 'h' or 'w'"
         ref = self.H if dim == "h" else self.W
+
+        if allow_propagate_None and x is None:
+            return None
+
         x *= ref
 
         if assert_integer:
@@ -614,9 +618,15 @@ class SpatialAugmentedTensor(AugmentedTensor):
                     label_dim_idx += len(self.names) - len(idx[slicer_idx:]) + 1
                 elif isinstance(slicer, slice) and (slicer.start != None or slicer.stop != None):
                     if self.names[dim_idx] == "H":
-                        hw_crop[0] = (slicer.start / self.H, slicer.stop / self.H)
+                        hw_crop[0] = (
+                            (slicer.start / self.H) if slicer.start is not None else None,
+                            (slicer.stop / self.H) if slicer.stop is not None else None
+                        )
                     elif self.names[dim_idx] == "W":
-                        hw_crop[1] = (slicer.start / self.W, slicer.stop / self.W)
+                        hw_crop[1] = (
+                            (slicer.start / self.W) if slicer.start is not None else None,
+                            (slicer.stop / self.W) if slicer.stop is not None else None
+                        )
                     else:
                         allow_dims = self._child_property[label_name]["align_dim"]
                         if self.names[label_dim_idx] not in allow_dims:

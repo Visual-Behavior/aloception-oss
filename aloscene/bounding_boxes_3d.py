@@ -472,7 +472,9 @@ class BoundingBoxes3D(aloscene.tensors.AugmentedTensor):
             )
             # Draw bbox 3d
             frame = frame.norm01().cpu().rename(None).permute([1, 2, 0]).detach().contiguous().numpy()
-            draw_3D_box(frame, vertices_3d_proj)
+            labels = [int(label_value) for label_value in self.labels]
+            class_names = self.labels.labels_names if self.labels.labels_names else [int(label) for label in labels]
+            draw_3D_box(frame, vertices_3d_proj, class_names=class_names, labels=labels)
             return View(frame, **kwargs)
         elif mode == "2D":
             enclosing_2d = self.get_enclosing_box_2d(self, cam_intrinsic, cam_extrinsic, frame_size)

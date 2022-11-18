@@ -2,10 +2,6 @@ import numpy as np
 import cv2
 import math
 import matplotlib.pyplot as plt
-import matplotlib
-from abc import ABC, abstractmethod
-import numpy as np
-import cv2
 
 
 def adapt_text_size_to_frame(size, frame_size):

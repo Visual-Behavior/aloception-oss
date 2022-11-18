@@ -17,7 +17,7 @@ class KittiTrackingDataset(BaseDataset, SplitMixin):
     ----------
     name : str
         Name of the dataset
-    sequences : int | list[int] | None
+    sequences : int | list[str] | None
         List of sequences to load. If None, all sequences are loaded.
     right_frame : bool
         If True, load the right frame.
@@ -27,8 +27,15 @@ class KittiTrackingDataset(BaseDataset, SplitMixin):
         Number of frames to skip between two frames in a sequence.
     sequence_skip : int
         Nunber of sequences to skip between each item.
-    split : str
-        Split of the dataset. Can be "training" or "testing".
+    split : Split
+        Split of the dataset. Can be `Split.TRAIN` or `Split.TEST`.
+
+    Examples
+    --------
+    >>> # Load the first sequence without the right frame
+    >>> dataset = KittiTrackingDataset(sequences=0, right_frame=False)
+    >>> # Load the sequences 0, 1 and 2 with 4 image per item
+    >>> dataset = KittiTrackingDataset(sequences=["0000", "0001", "0002"], sequence_size=4)
     """
     SPLIT_FOLDERS = {Split.TRAIN: "training", Split.TEST: "testing"}
     LABELS = ["Car", "Van", "Truck", "Pedestrian", "Person_sitting", "Cyclist", "Tram", "Misc", "DontCare"]

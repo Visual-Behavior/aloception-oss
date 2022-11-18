@@ -28,8 +28,15 @@ class KittiOdometryDataset(BaseDataset, SplitMixin):
         Number of images to skip between each image in the sequence.
     sequence_skip : int
         Nunber of sequences to skip between each item.
-    split : str
-        Split of the dataset. Can be 'training' or 'testing'.
+    split : Split
+        Split of the dataset. Can be `Split.TRAIN` or `Split.TEST`.
+
+    Examples
+    --------
+    >>> # Load all training sequences with 3 images per item and 3 image from right camera
+    >>> dataset = KittiOdometryDataset(split=Split.TRAIN, sequence_size=3, right_frame=True)
+    >>> # Load all training sequences from sequence 00 and 03 with 5 images per item
+    >>> dataset = KittiOdometryDataset(split=Split.TRAIN, sequences=["00", "03"], sequence_size=5, right_frame=False)
     """
 
     def __init__(

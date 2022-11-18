@@ -34,8 +34,17 @@ class KittiStereoFlowSFlow2015(BaseDataset, SplitMixin):
         - flow_noc: flow map without occlusions
         - scene_flow: scene flow map
         - obj_map: object map
-    split : str
-        Split of the dataset. Can be "training" or "testing".
+    split : Split
+        Split of the dataset. Can be `Split.TRAIN` or `Split.TEST`.
+
+    Examples
+    --------
+    >>> # Load dataset with only the 2 annotated images
+    >>> dataset = KittiStereoFlowSFlow2015(sequence_start=10, sequence_end=11)
+    >>> # Load dataset with 3 context images before the 2 annotated images
+    >>> dataset = KittiStereoFlowSFlow2015(sequence_start=7, sequence_end=11)
+    >>> # Load dataset with all the context images
+    >>> dataset = KittiStereoFlowSFlow2015(sequence_start=0, sequence_end=20)
     """
     SPLIT_FOLDERS = {Split.TRAIN: "training", Split.TEST: "testing"}
 

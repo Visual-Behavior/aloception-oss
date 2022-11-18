@@ -23,10 +23,18 @@ class KittiRoadDataset(BaseDataset, SplitMixin):
         If True, load the grayscale images.
     environement : str
         Environement to load. Must be in ['um', 'umm', 'uu'].
+        (urban marked, urban unmarked multiple lanes, urban unmarked)
     obj : str
         Can be set to 'lane' if environement is 'um'.
-    split : str
-        Split of the dataset. Can be 'training' or 'testing'.
+    split : Split
+        Split of the dataset. Can be `Split.TRAIN` or `Split.TEST`.
+
+    Examples
+    --------
+    >>> # Load urban marked environement with lane object:
+    >>> dataset = KittiRoadDataset(environement="um", obj="lane")
+    >>> # Load urban unmarked environement with road object with grayscale images:
+    >>> dataset = KittiRoadDataset(environement="uu", obj="road", grayscale=True)
     """
 
     SPLIT_FOLDERS = {Split.TRAIN: "training", Split.TEST: "testing"}

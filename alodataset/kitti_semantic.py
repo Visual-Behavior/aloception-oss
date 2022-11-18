@@ -15,8 +15,15 @@ class KittiSemanticDataset(BaseDataset, SplitMixin):
     ----------
     name : str
         Name of the dataset.
-    split : str
-        Split of the dataset. Can be "training" or "testing".
+    split : Split
+        Split of the dataset. Can be `Split.TRAIN` or `Split.TEST`.
+
+    Examples
+    --------
+    >>> # Load kitti training semantic dataset
+    >>> dataset = KittiSemanticDataset(split=Split.TRAIN)
+    >>> # Load kitti testing semantic dataset
+    >>> dataset = KittiSemanticDataset(split=Split.TEST)
     """
     SPLIT_FOLDERS = {Split.TRAIN: "training", Split.TEST: "testing"}
 

@@ -34,8 +34,17 @@ class KittiStereoFlow2012(BaseDataset, SplitMixin):
         - disp_refl_occ: disparity map with occlusions and reflections
         - flow_noc: flow map without occlusions
         - flow_occ: flow map with occlusions
-    split : str
-        Split of the dataset. Can be "training" or "testing".
+    split : Split
+        Split of the dataset. Can be `Split.TRAIN` or `Split.TEST`.
+
+    Examples
+    --------
+    >>> # Load only annotated images with all available data
+    >>> kitti_stereo = KittiStereoFlow2012(sequence_start=10, sequence_end=10, split=Split.TRAIN)
+    >>> # Load only annotated images with no data except right image
+    >>> kitti_stereo = KittiStereoFlow2012(load=["right"], sequence_start=10, sequence_end=10, split=Split.TRAIN)
+    >>> # Load only all trainging images with all available data
+    >>> kitti_stereo = KittiStereoFlow2012(sequence_start=0, sequence_end=20, split=Split.TRAIN)
     """
     SPLIT_FOLDERS = {Split.TRAIN: "training", Split.TEST: "testing"}
 

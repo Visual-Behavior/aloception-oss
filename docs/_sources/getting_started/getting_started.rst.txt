@@ -4,7 +4,7 @@ Getting started
 About Aloception
 ===========================
 
-.. image:: ../images/aloception-wooooooow.png
+.. image:: ../images/aloception.jpg
   :width: 400
   :alt: Alternative text
 

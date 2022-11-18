@@ -391,13 +391,12 @@ def test_crop_abs():
 
 
 if __name__ == "__main__":
-    test_boxes_from_dt()
+    #test_boxes_from_dt()
     test_boxes_rel_xcyc()
-    test_boxes_rel_xcyc()
-    test_boxes_rel_xyxy()
-    test_boxes_abs_xcyc()
-    test_boxes_abs_yxyx()
-    test_boxes_abs_xyxy()
+    #test_boxes_rel_xyxy()
+    #test_boxes_abs_xcyc()
+    #test_boxes_abs_yxyx()
+    #test_boxes_abs_xyxy()
     # test_padded_boxes() Outdated
-    test_boxes_slice()
-    test_crop_abs()
+    #test_boxes_slice()
+    #test_crop_abs()

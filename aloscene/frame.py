@@ -129,9 +129,15 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         tensor.add_child("scene_flow", labels, align_dim=["B", "T"], mergeable=False)
 
         # Add other tensor property
+        assert normalization in {"01", "255", "minmax_sym", "resnet"}, f"{normalization} norm is not yet supported"
         tensor.add_property("normalization", normalization)
-        tensor.add_property("_resnet_mean_std", ((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)))
-        tensor.add_property("mean_std", mean_std)
+
+        resnet_rgb_mean_std = ((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
+        tensor.add_property("_resnet_mean_std", resnet_rgb_mean_std)
+        if normalization == "resnet":
+            tensor.add_property("mean_std", resnet_rgb_mean_std)
+        else:
+            tensor.add_property("mean_std", mean_std)
 
         return tensor
 
@@ -349,6 +355,22 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         >>> frame.append_scene_flow(scene_flow)
         """
         self._append_child("scene_flow", scene_flow, name)
+
+    def as_image(self, dtype=torch.uint8):
+        """Convert the frame to numpy array uint8 format.
+
+        Parameters
+        ----------
+            dtype: dtype or str
+                The output dtype. Default torch.uint8.
+
+        Returns
+        -------
+            np.ndarray
+                Frame in  uint8 format.
+        """
+        tensor = self
+        return tensor.detach().norm255().cpu().type(dtype).rename(None).permute([1, 2, 0]).contiguous().numpy()
 
     @staticmethod
     def _get_mean_std_tensor(shape, names, mean_std: tuple, device="cpu"):

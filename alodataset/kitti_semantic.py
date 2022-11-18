@@ -5,11 +5,26 @@ import torch
 from typing import Union
 
 from alodataset import BaseDataset, Split, SplitMixin
-from aloscene import Frame, Mask, Labels, BoundingBoxes2D
-from aloscene.camera_calib import CameraIntrinsic, CameraExtrinsic
+from aloscene import Frame, Mask, Labels
 
 
 class KittiSemanticDataset(BaseDataset, SplitMixin):
+    """
+    Semantic task from Kitti dataset.
+    Parameters
+    ----------
+    name : str
+        Name of the dataset.
+    split : Split
+        Split of the dataset. Can be `Split.TRAIN` or `Split.TEST`.
+
+    Examples
+    --------
+    >>> # Load kitti training semantic dataset
+    >>> dataset = KittiSemanticDataset(split=Split.TRAIN)
+    >>> # Load kitti testing semantic dataset
+    >>> dataset = KittiSemanticDataset(split=Split.TEST)
+    """
     SPLIT_FOLDERS = {Split.TRAIN: "training", Split.TEST: "testing"}
 
     def __init__(self, name="kitti_semantic", **kwargs):

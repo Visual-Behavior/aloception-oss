@@ -36,7 +36,18 @@ class CrowdHumanDataset(BaseDataset):
             return
         else:
             assert img_folder is not None, "When sample = False, img_folder must be given."
-            assert ann_file is not None, "When sample = False, ann_file must be given."
+            assert ann_file is not None or "test" in img_folder, "When sample = False and the test split is not used, ann_file must be given."
+
+        if "test" in img_folder:
+            self._img_folder = img_folder
+            self.img_folder = os.path.join(self.dataset_dir, img_folder, "images_test")
+
+            self.items = []
+            for f in os.listdir(self.img_folder):
+                if os.path.isfile(os.path.join(self.img_folder, f)):
+                    self.items.append({"ID": Path(os.path.join(self.img_folder, f)).stem})
+
+            return
 
         assert type(img_folder) == type(ann_file), "img_folder & ann_file must be the same type."
 
@@ -121,8 +132,13 @@ class CrowdHumanDataset(BaseDataset):
             return BaseDataset.__getitem__(self, idx)
 
         record = self.items[idx]
-        ann_id = record["ann_id"]
         image_id = record["ID"]
+
+        if "test" in self.img_folder:
+            #get the filename from image_id without relying on annotation file
+            return Frame(os.path.join(self.img_folder, image_id + ".jpg"))
+
+        ann_id = record["ann_id"]
 
         image_path = os.path.join(self.img_folder[ann_id], image_id + ".jpg")
 
@@ -272,6 +288,9 @@ class CrowdHumanDataset(BaseDataset):
         if self.sample is not None and self.sample is not False:  # Nothing to do. Samples are ready
             return
 
+        if "test" in self.img_folder:
+            return  #The code for preparing test datasets exist but we are not doing that now
+
         if self.dataset_dir.endswith("_prepared") and not os.path.exists(self.dataset_dir.replace("_prepared", "")):
             return
 
@@ -294,7 +313,9 @@ class CrowdHumanDataset(BaseDataset):
 
 def main():
     """Main"""
-    crowd_human_dataset = CrowdHumanDataset(img_folder="CrowdHuman_train", ann_file="annotation_train.odgt")
+    crowd_human_dataset = CrowdHumanDataset(img_folder="CrowdHuman_test")
+    stuff = crowd_human_dataset[0]
+    stuff.get_view().render()
 
     crowd_human_dataset.prepare()
     for i, frames in enumerate(crowd_human_dataset.train_loader(batch_size=2, sampler=None, num_workers=0)):

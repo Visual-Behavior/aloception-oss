@@ -15,7 +15,15 @@ def adapt_text_size_to_frame(size, frame_size):
 
 
 def put_adapative_cv2_text(
-    frame: np.array, frame_size: tuple, text: str, pos_x: float, pos_y: float, color=None, square_background=True
+    frame: np.array,
+    frame_size: tuple,
+    text: str,
+    pos_x: float,
+    pos_y: float,
+    text_color=None,
+    background_color=None,
+    square_background=True,
+    views_counter=None
 ):
     """Put Text on the given frame with adaptive size.
 
@@ -31,27 +39,35 @@ def put_adapative_cv2_text(
     pos_y: int
     """
     size_h, size_w = adapt_text_size_to_frame(1.0, frame_size)
-    c_size_h = int(size_w * 20)
-    w_size_w = int(size_w * 20)
+
+    (w, h), _ = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, (size_h + size_w) / 2, -1)
+
+    # Decrease text size if too long
+    if w > (frame_size[1] / (views_counter / 2)) and views_counter:
+        size_h /= 2
+        size_w /= 2
+
+        (w, h), _ = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, (size_h + size_w) / 2, -1)
 
     pos_x = int(pos_x)
     pos_y = int(pos_y)
+
     if square_background:
         cv2.rectangle(
             frame,
-            (pos_x - 3, pos_y - c_size_h - c_size_h),
-            (pos_x + (w_size_w * (len(text) + 1)), pos_y + c_size_h),
-            (1, 1, 1),
+            (pos_x, int(pos_y - 2 * h)),
+            (pos_x + w + 3, int(pos_y + 3 * h) ),
+            (1, 1, 1) if background_color is None else background_color,
             -1,
         )
 
     cv2.putText(
         frame,
         text,
-        (int(pos_x), int(pos_y)),
+        (int(pos_x), int(pos_y + 2 * h)),
         cv2.FONT_HERSHEY_SIMPLEX,
         (size_h + size_w) / 2,
-        (0, 0, 0) if color is None else color,
+        (0, 0, 0) if text_color is None else text_color,
         1,
         cv2.LINE_AA,
     )
@@ -143,7 +159,7 @@ class Renderer(object):
         plt.show()
 
     @classmethod
-    def get_grid_view(cls, views: list, cell_grid_size=None, grid_size=None, **kwargs):
+    def get_grid_view(cls, views: list, cell_grid_size=None, grid_size=None, add_title=True, **kwargs):
         """Get a grid of view from multiple view"""
 
         smallest_view = None
@@ -167,7 +183,9 @@ class Renderer(object):
         while v < len(views):
             start = int(v % grid_size) * target_display_shape[1]
             line[:, start : start + target_display_shape[1], :] = views[v].image
-            cls.add_title(line, (start, 0), views[v].title)
+
+            if add_title:
+                cls.add_title(line, (start, 0), views[v].title, len(views))
 
             v += 1
             if v % grid_size == 0 or v == len(views):
@@ -177,7 +195,7 @@ class Renderer(object):
         return np.concatenate(lines, axis=0)
 
     @staticmethod
-    def add_title(array, start, title):
+    def add_title(array, start, title, views_counter):
         """
         Add a box with view title
 
@@ -193,18 +211,22 @@ class Renderer(object):
         if title is None:
             return
         else:
-            x, y = start
-            cv2.rectangle(array, (x, y), (x + 10 + (len(title) * 6), y + 10), (0, 0, 0), -1)
-            cv2.putText(array, title, (x + 10, y + 8), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (0.8, 0.8, 0.8), 1, cv2.LINE_AA)
+            put_adapative_cv2_text(array,
+                                   array.shape,
+                                   title,
+                                   start[0],
+                                   start[1],
+                                   text_color=(1, 1, 1),
+                                   background_color=(0, 0, 0),
+                                   views_counter=views_counter)
 
     @classmethod
-    def get_user_defined_grid_view(cls, views):
+    def get_user_defined_grid_view(cls, views, add_title):
         """
         Create grid_view from list of list, without resizing views
 
         view : list of list of views with view[i][j] = view for line i, colomun j
         """
-
         # create blank image
         Hf, Wf = 0, 0
         for line in views:
@@ -222,7 +244,9 @@ class Renderer(object):
             for v in line:
                 h, w = v.image.shape[:2]
                 final_view[y : y + h, x : x + w, :] = v.image
-                cls.add_title(final_view, (x, y), v.title)
+
+                if add_title:
+                    cls.add_title(final_view, (x, y), v.title)
                 x += w
                 hmax = max(hmax, h)
             y += hmax
@@ -237,6 +261,7 @@ class Renderer(object):
         fps=30,
         grid_size=None,
         skip_views=False,
+        add_title=True
     ):
         """Render a list of view using the given renderer.
 
@@ -260,9 +285,9 @@ class Renderer(object):
         if skip_views and record_file is None:
             raise ValueError("When skip_views is desired, a record_file must be provided.")
         if isinstance(views[0], list):
-            view = self.get_user_defined_grid_view(views)
+            view = self.get_user_defined_grid_view(views, add_title)
         else:
-            view = self.get_grid_view(views, cell_grid_size=cell_grid_size, grid_size=grid_size)
+            view = self.get_grid_view(views, cell_grid_size=cell_grid_size, grid_size=grid_size, add_title=add_title)
         if not skip_views:
             self.renderer_to_fn[renderer](view)
         if record_file is not None and self.out is None:

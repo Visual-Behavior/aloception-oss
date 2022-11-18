@@ -163,11 +163,47 @@ class BoundingBoxes3D(aloscene.tensors.AugmentedTensor):
         vertices = torch.cat([vertices, ones], dim=1)
         # vertices_2d = cam_intrinsic @ cam_extrinsic @ vertices # (n, 4, 8)
         vertices = cam_extrinsic @ vertices  # (n, 4, 8)
+
         if not include_vertice_behind_image_plan and vertices.shape[0] > 0:
             behind_plan_filter = vertices[:, 2, :].max(-1).values > 0
             vertices = vertices[behind_plan_filter]
+
+        # find values where depth is negative
+        neg_mask = vertices[:, 2] < 0.0
+
+        if torch.any(neg_mask):
+            neg_coord = torch.where(neg_mask)
+            # find the 2 other points linked to the first
+            pair1 = (neg_coord[1] + 4) % 8
+            pair2 = neg_coord[1] - (neg_coord[1] % 2) * 2 + 1
+
+            # find the linked point that is the further away in 3d space
+            p1 = vertices[neg_coord[0], :, neg_coord[1]]
+            p2 = torch.stack([vertices[neg_coord[0], :, pair1], vertices[neg_coord[0], :, pair2]], dim=0)
+            norm = torch.linalg.norm(p1 - p2, dim=2, keepdims=True)
+            max_mask = (norm == torch.max(norm, dim=0)[0]).squeeze()
+
+        # invert depth of points with a negative one
+        vertices[:, 2] = torch.sign(vertices[:, 2]) * vertices[:, 2]
+
+        # fix points with zero depth
+        zeros = torch.where(vertices[:, 2] == 0.0)
+        vertices[zeros[0], 2, zeros[1]] = 1e-6
+
         vertices_2d = cam_intrinsic @ vertices
         vertices_2d = vertices_2d[:, 0:2] / torch.unsqueeze(vertices_2d[:, 2], dim=1)  # (n, 2, 8)
+
+        if torch.any(neg_mask):
+            # extend line of points that had negative depth
+            p1 = vertices_2d[neg_coord[0], :, neg_coord[1]]
+            p2 = torch.stack([vertices_2d[neg_coord[0], :, pair1], vertices_2d[neg_coord[0], :, pair2]], dim=0)
+            p2 = p2[max_mask]
+            v = p1 - p2
+            norm = torch.linalg.norm(v, dim=1, keepdims=True)
+            # extend size to two times the sum of pinhole coordinates which should be longer than any line in the image
+            extended = p1 + 2 * torch.sum(cam_intrinsic[:2, 2]) * v / norm
+            vertices_2d[neg_coord[0], :, neg_coord[1]] = extended
+
         return vertices_2d.transpose(1, 2)
 
     @staticmethod
@@ -490,7 +526,6 @@ class BoundingBoxes3D(aloscene.tensors.AugmentedTensor):
         frame_size = frame.HW
         cam_intrinsic = frame.cam_intrinsic.as_tensor()
         cam_extrinsic = frame.cam_extrinsic.as_tensor()
-
         if mode == "3D":
             # Get vertices proj
             vertices_3d_proj = (

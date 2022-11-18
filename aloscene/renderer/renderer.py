@@ -62,11 +62,12 @@ def put_adapative_cv2_text(
     (w, h), _ = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, (size_h + size_w) / 2, -1)
 
     # Decrease text size if too long
-    if w > (frame_size[1] / (views_counter / 2)) and views_counter:
-        size_h /= 2
-        size_w /= 2
+    if views_counter:
+        if w > (frame_size[1] / (views_counter / 2)):
+            size_h /= 2
+            size_w /= 2
 
-        (w, h), _ = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, (size_h + size_w) / 2, -1)
+            (w, h), _ = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, (size_h + size_w) / 2, -1)
 
     pos_x = int(pos_x)
     pos_y = int(pos_y)

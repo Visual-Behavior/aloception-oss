@@ -860,13 +860,14 @@ class AugmentedTensor(torch.Tensor):
     def _resize(self, *args, **kwargs):
         raise Exception("This Augmented tensor should implement this method")
 
-    def rotate(self, angle, **kwargs):
+    def rotate(self, angle, center=None,**kwargs):
         """
         Rotate AugmentedTensor, and its labels recursively
 
         Parameters
         ----------
         angle : float
+        center : list or tuple of coordinates in absolute format. Default is the center of the image
 
         Returns
         -------
@@ -876,12 +877,12 @@ class AugmentedTensor(torch.Tensor):
 
         def rotate_func(label):
             try:
-                label_rotated = label._rotate(angle, **kwargs)
+                label_rotated = label._rotate(angle, center,**kwargs)
                 return label_rotated
             except AttributeError:
                 return label
 
-        rotated = self._rotate(angle, **kwargs)
+        rotated = self._rotate(angle, center,**kwargs)
         rotated.recursive_apply_on_children_(rotate_func)
 
         return rotated

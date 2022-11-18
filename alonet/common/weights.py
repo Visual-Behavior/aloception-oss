@@ -32,7 +32,8 @@ WEIGHT_NAME_TO_FILES = {
 
 
 def load_weights(
-        model, weights=None,
+        model,
+        weights=None,
         run_id=None,
         project_run_id=None,
         checkpoint="best",
@@ -51,7 +52,7 @@ def load_weights(
     device: torch.device
         Device to load the weights into
     """
-    assert not (run_id is None and weights is None), "run_id or weights must be set."
+    assert run_id is not None or weights is not None, "run_id or weights must be set."
 
     if weights is None:
         if project_run_id is None:
@@ -77,8 +78,7 @@ def load_weights(
         model.load_state_dict(checkpoint, strict=strict_load_weights)
         print(f"Weights loaded from {weights}")
     elif weights in WEIGHT_NAME_TO_FILES:
-        weights_dir = os.path.join(vb_folder(create_if_not_found=True), "weights")
-        weights_dir = os.path.join(weights_dir, weights)
+        weights_dir = os.path.join(vb_folder(create_if_not_found=True), "weights", weights)
         if not os.path.exists(weights_dir):
             os.makedirs(weights_dir)
         for f in WEIGHT_NAME_TO_FILES[weights]:

@@ -12,6 +12,31 @@ from alodataset.utils.kitti import load_calib_cam_to_cam
 
 
 class KittiStereoFlowSFlow2015(BaseDataset, SplitMixin):
+    """
+    Stereo, Flow, SceneFlow Tasks from Kitti 2015 dataset.
+    Parameters
+    ----------
+    name : str
+        Name of the dataset
+    sequence_start : int
+        20 images are available for each item. Only image 10 and 11 are annotated.
+        sequence_start is the first image to load.
+    sequence_end : int
+        sequence_end is the last image to load.
+    grayscale : bool
+        If True, load images in grayscale.
+    load : List[str]
+        List of data to load. Available data are:
+        - right: right image
+        - disp_noc: disparity map without occlusions
+        - disp_occ: disparity map with occlusions
+        - flow_occ: flow map with occlusions
+        - flow_noc: flow map without occlusions
+        - scene_flow: scene flow map
+        - obj_map: object map
+    split : str
+        Split of the dataset. Can be "training" or "testing".
+    """
     SPLIT_FOLDERS = {Split.TRAIN: "training", Split.TEST: "testing"}
 
     def __init__(

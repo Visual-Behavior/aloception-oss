@@ -11,6 +11,25 @@ from alodataset.utils.kitti import load_calib_cam_to_cam, sequence_indices
 
 
 class KittiTrackingDataset(BaseDataset, SplitMixin):
+    """
+    Tracking task from KITTI dataset.
+    Parameters
+    ----------
+    name : str
+        Name of the dataset
+    sequences : int | list[int] | None
+        List of sequences to load. If None, all sequences are loaded.
+    right_frame : bool
+        If True, load the right frame.
+    sequence_size : int
+        Number of frames in a sequence.
+    skip : int
+        Number of frames to skip between two frames in a sequence.
+    sequence_skip : int
+        Nunber of sequences to skip between each item.
+    split : str
+        Split of the dataset. Can be "training" or "testing".
+    """
     SPLIT_FOLDERS = {Split.TRAIN: "training", Split.TEST: "testing"}
     LABELS = ["Car", "Van", "Truck", "Pedestrian", "Person_sitting", "Cyclist", "Tram", "Misc", "DontCare"]
 

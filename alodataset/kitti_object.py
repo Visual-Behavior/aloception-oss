@@ -11,6 +11,19 @@ from alodataset.utils.kitti import load_calib_cam_to_cam
 
 
 class KittiObjectDataset(BaseDataset, SplitMixin):
+    """
+    Object Task from KITTI dataset.
+    Parameters
+    ----------
+    name : str
+        Name of the dataset.
+    right_frame : bool
+        If True, load the right frame.
+    context_images : int
+        Number of image before the main frame to load (max 3).
+    split : str
+        Split of the dataset. Can be 'training' or 'testing'.
+    """
     SPLIT_FOLDERS = {Split.TRAIN: "training", Split.TEST: "testing"}
     LABELS = ["Car", "Van", "Truck", "Pedestrian", "Person_sitting", "Cyclist", "Tram", "Misc", "DontCare"]
 

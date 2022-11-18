@@ -10,6 +10,28 @@ from alodataset.utils.kitti import load_calib_cam_to_cam, sequence_indices
 
 
 class KittiOdometryDataset(BaseDataset, SplitMixin):
+    """
+    Odometry Task from KITTI dataset.
+    Parameters
+    ----------
+    name : str
+        Name of the dataset
+    sequences : str | List[str] | None
+        List of sequences to load. If None, all sequences are loaded.
+    grayscale : bool
+        If True, load grayscale images. Otherwise, load RGB images.
+    right_frame : bool
+        If True, load right frame images.
+    sequence_size : int
+        Number of images per item.
+    skip : int
+        Number of images to skip between each image in the sequence.
+    sequence_skip : int
+        Nunber of sequences to skip between each item.
+    split : str
+        Split of the dataset. Can be 'training' or 'testing'.
+    """
+
     def __init__(
         self,
         name="kitti_odometry",

@@ -9,7 +9,26 @@ from aloscene.camera_calib import CameraIntrinsic, CameraExtrinsic
 
 from alodataset.utils.kitti import load_calib_cam_to_cam
 
+
 class KittiRoadDataset(BaseDataset, SplitMixin):
+    """
+    Road task from Kitti dataset.
+    Parameters
+    ----------
+    name : str
+        Name of the dataset.
+    right_frame : bool
+        If True, load the right frame.
+    grayscale : bool
+        If True, load the grayscale images.
+    environement : str
+        Environement to load. Must be in ['um', 'umm', 'uu'].
+    obj : str
+        Can be set to 'lane' if environement is 'um'.
+    split : str
+        Split of the dataset. Can be 'training' or 'testing'.
+    """
+
     SPLIT_FOLDERS = {Split.TRAIN: "training", Split.TEST: "testing"}
 
     def __init__(self, name="kitti_road", right_frame=False, grayscale=False, environement="um", obj="road", **kwargs):

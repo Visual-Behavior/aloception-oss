@@ -96,6 +96,20 @@ def add_argparse_args(parent_parser, add_pl_args=True, mode="training"):
         const="wandb",
         help="Log results, can specify logger, by default %(default)s. If set but value not provided:wandb",
     )
+    parser.add_argument(
+        "--log_save_dir",
+        type=str,
+        default=None,
+        nargs="?",
+        help="Path to save training log, by default %(default)s. If not set, use the default value in alonet_config.json",
+    )
+    parser.add_argument(
+        "--cp_save_dir",
+        type=str,
+        default=None,
+        nargs="?",
+        help="Path to save training checkpoint, by default %(default)s. If not set, use the default value in alonet_config.json",
+    )
     parser.add_argument("--cpu", action="store_true", help="Use the CPU instead of scaling on the vaiable GPUs")
     parser.add_argument("--run_id", type=str, help="Load the weights from this saved experiment")
     parser.add_argument(
@@ -206,7 +220,7 @@ def load_training(
     return lit_model
 
 
-def set_save_dir_config(key, default_dir=None):
+def set_save_dir_config(key):
     """
     Create /home/USER/.aloception/alonet_config.json with path to log/weights save dir.
     """
@@ -217,10 +231,8 @@ def set_save_dir_config(key, default_dir=None):
     with open(streaming_config) as f:
         content = json.loads(f.read())
     key = f"{key}_save_dir"
-    if default_dir is not None:
-        default_dir_message = f"Do you want to use the default dir {default_dir} ? (Y)es or Please write a new directory for {key}: "
-    else:
-        default_dir_message = f"Please write a new directory for {key}: "
+    default_dir = vb_folder()
+    default_dir_message = f"Do you want to use the default dir {default_dir} ? (Y)es or Please write a new directory for {key}: "
     if key not in content:
         save_dir = _user_prompt(
             f"{key} is not set in config file. " + default_dir_message
@@ -233,9 +245,9 @@ def set_save_dir_config(key, default_dir=None):
     return content[key]
 
 
-def get_dir_from_config(args, key, project):
+def get_dir_from_config(args, key):
     """
-    Get the directory to save log/weights from the config in
+    Get the directory to save log/checkpoint from the config in
     /home/USER/.aloception/alonet_config.json or from args if the dir is set.
     This file will be created if not exist.
 
@@ -243,25 +255,25 @@ def get_dir_from_config(args, key, project):
     ----------
     args: Namespace
     key: str
-        log or weights
+        log or checkpoint
 
     Return
     ------
-    The directory to save log/weights
+    The directory to save log/checkpoint
     """
-    assert key in ["log", "weights"], "Value of key must be log or weights"
-    save_dir = args.log_save_dir if key == "log" else args.weights_save_dir
+    assert key in ["log", "checkpoint"], "Value of key must be log or checkpoint"
+    save_dir = args.log_save_dir if key == "log" else args.cp_save_dir
 
     # get dir from config.json file if save_dir is not Set. Create the file if not exist
     if save_dir is None:
         streaming_config = os.path.join(vb_folder(create_if_not_found=True), "alonet_config.json")
         if not os.path.exists(streaming_config):
-            save_dir = set_save_dir_config(key, default_dir=os.path.join(vb_folder(), f"project_{project}"))
+            save_dir = set_save_dir_config(key)
         with open(streaming_config) as f:
             content = json.loads(f.read())
         key_dir = f"{key}_save_dir"
         if key_dir not in content:
-            save_dir = set_save_dir_config(key, default_dir=os.path.join(vb_folder(), f"project_{project}"))
+            return set_save_dir_config(key)
         else:
             return content[key_dir]
     else:
@@ -276,7 +288,7 @@ def get_expe_infos(project, expe_name, args=None):
     expe_name = expe_name or args.expe_name
     if args is not None and not args.no_suffix:
         expe_name = "{}_{:%B-%d-%Y-%Hh-%M}".format(expe_name, datetime.datetime.now())
-    project_dir = os.path.join(get_dir_from_config(args, "log", project), f"project_{project}")
+    project_dir = os.path.join(get_dir_from_config(args, "log"), f"project_{project}")
     expe_dir = os.path.join(project_dir, expe_name)
     return project_dir, expe_dir, expe_name
 
@@ -296,7 +308,7 @@ def run_pl_training(
         args.save = False
         args.cpu = False
         args.log_save_dir = None
-        args.weights_save_dir = None
+        args.cp_save_dir = None
 
     # Set the experiment name ID
     project_dir, expe_dir, expe_name = get_expe_infos(project, expe_name, args)
@@ -321,11 +333,16 @@ def run_pl_training(
 
     if args.log is not None:
         # get dir to save log
-        log_project_dir = os.path.join(get_dir_from_config(args, "weights", project), f"project_{project}")
-        save_dir = os.path.join(log_project_dir, expe_name)
+        save_dir = os.path.join(get_dir_from_config(args, "checkpoint"), f"project_{project}", expe_name)
+        
+        # create path
         if args.log == "wandb":
+            save_dir = os.path.join(save_dir, "wandb")
+            os.makedirs(save_dir, exist_ok=True)
             logger = WandbLogger(name=expe_name, save_dir=save_dir, project=project, id=expe_name)
         elif args.log == "tensorboard":
+            save_dir = os.path.join(save_dir, "tensorboard")
+            os.makedirs(save_dir, exist_ok=True)
             logger = TensorBoardLogger(save_dir=save_dir, name=expe_name, sub_dir=expe_name)
         else:
             raise ValueError("Unknown or not implemented logger")

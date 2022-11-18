@@ -28,7 +28,7 @@ def put_adapative_cv2_text(
     text_color=None,
     background_color=None,
     square_background=True,
-    views_counter=None
+    grid_size=None
 ):
     """Put Text on the given frame with adaptive size.
 
@@ -50,20 +50,17 @@ def put_adapative_cv2_text(
         Background RGB color, by default None.
     square_background: bool, optional
         Add square background if True, by default True.
-    views_counter: int, optional
+    grid_size: int, optional
         Number of views in the final image, by default None.
     """
     size_h, size_w = adapt_text_size_to_frame(1.0, frame_size)
 
+    # Adapt text size to the number of views
+    if grid_size:
+        size_h /= grid_size
+        size_w /= grid_size
+
     (w, h), _ = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, (size_h + size_w) / 2, -1)
-
-    # Decrease text size if too long
-    if views_counter:
-        if w > (frame_size[1] / (views_counter / 2)):
-            size_h /= 2
-            size_w /= 2
-
-            (w, h), _ = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, (size_h + size_w) / 2, -1)
 
     pos_x = int(pos_x)
     pos_y = int(pos_y)
@@ -235,7 +232,7 @@ class Renderer(object):
             line[:, start : start + target_display_shape[1], :] = views[v].image
 
             if add_title:
-                cls.add_title(line, (start, 0), views[v].title, len(views))
+                cls.add_title(line, (start, 0), views[v].title, grid_size)
 
             v += 1
             if v % grid_size == 0 or v == len(views):
@@ -245,7 +242,7 @@ class Renderer(object):
         return np.concatenate(lines, axis=0)
 
     @staticmethod
-    def add_title(array, start, title, views_counter):
+    def add_title(array, start, title, grid_size):
         """Add a box with view title.
 
         Parameters
@@ -256,7 +253,7 @@ class Renderer(object):
             Top-left corner of title box.
         title : str
             Title of the view.
-        views_counter : int
+        grid_size : int
             Number of views.
         """
         if title is None:
@@ -269,7 +266,7 @@ class Renderer(object):
                                    start[1],
                                    text_color=(1, 1, 1),
                                    background_color=(0, 0, 0),
-                                   views_counter=views_counter)
+                                   grid_size=grid_size)
 
     @classmethod
     def get_user_defined_grid_view(cls, views, add_title):

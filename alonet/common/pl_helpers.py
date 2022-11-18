@@ -4,8 +4,11 @@ import pytorch_lightning as pl
 from pytorch_lightning.loggers import TensorBoardLogger, WandbLogger
 import datetime
 import os
+import json
 import re
 import torch
+
+from alodataset.base_dataset import _user_prompt
 
 parser = ArgumentParser()
 
@@ -15,6 +18,7 @@ def vb_folder(create_if_not_found=False):
     alofolder = os.path.join(home, ".aloception")
     if not os.path.exists(alofolder):
         if create_if_not_found:
+            print(f"{alofolder} cannot be found so will be created.")
             os.mkdir(alofolder)
         else:
             raise Exception(
@@ -202,6 +206,68 @@ def load_training(
     return lit_model
 
 
+def set_save_dir_config(key, default_dir=None):
+    """
+    Create /home/USER/.aloception/alonet_config.json with path to log/weights save dir.
+    """
+    streaming_config = os.path.join(vb_folder(create_if_not_found=True), "alonet_config.json")
+    if not os.path.exists(streaming_config):
+        with open(streaming_config, "w") as f:  # Json init as empty config
+            json.dump(dict(), f, indent=4)
+    with open(streaming_config) as f:
+        content = json.loads(f.read())
+    key = f"{key}_save_dir"
+    if default_dir is not None:
+        default_dir_message = f"Do you want to use the default dir {default_dir} ? (Y)es or Please write a new directory for {key}: "
+    else:
+        default_dir_message = f"Please write a new directory for {key}: "
+    if key not in content:
+        save_dir = _user_prompt(
+            f"{key} is not set in config file. " + default_dir_message
+        )
+        if save_dir.lower() in ["y", "yes"]:
+            save_dir = default_dir
+    content[key] = save_dir
+    with open(streaming_config, "w") as f:  # Save new directory
+        json.dump(content, f, indent=4)
+    return content[key]
+
+
+def get_dir_from_config(args, key, project):
+    """
+    Get the directory to save log/weights from the config in
+    /home/USER/.aloception/alonet_config.json or from args if the dir is set.
+    This file will be created if not exist.
+
+    Parameters
+    ----------
+    args: Namespace
+    key: str
+        log or weights
+
+    Return
+    ------
+    The directory to save log/weights
+    """
+    assert key in ["log", "weights"], "Value of key must be log or weights"
+    save_dir = args.log_save_dir if key == "log" else args.weights_save_dir
+
+    # get dir from config.json file if save_dir is not Set. Create the file if not exist
+    if save_dir is None:
+        streaming_config = os.path.join(vb_folder(create_if_not_found=True), "alonet_config.json")
+        if not os.path.exists(streaming_config):
+            save_dir = set_save_dir_config(key, default_dir=os.path.join(vb_folder(), f"project_{project}"))
+        with open(streaming_config) as f:
+            content = json.loads(f.read())
+        key_dir = f"{key}_save_dir"
+        if key_dir not in content:
+            save_dir = set_save_dir_config(key, default_dir=os.path.join(vb_folder(), f"project_{project}"))
+        else:
+            return content[key_dir]
+    else:
+        return save_dir
+
+
 def get_expe_infos(project, expe_name, args=None):
     """
     Get the directories for the project and the experimentation
@@ -210,7 +276,7 @@ def get_expe_infos(project, expe_name, args=None):
     expe_name = expe_name or args.expe_name
     if args is not None and not args.no_suffix:
         expe_name = "{}_{:%B-%d-%Y-%Hh-%M}".format(expe_name, datetime.datetime.now())
-    project_dir = os.path.join(vb_folder(), f"project_{project}")
+    project_dir = os.path.join(get_dir_from_config(args, "log", project), f"project_{project}")
     expe_dir = os.path.join(project_dir, expe_name)
     return project_dir, expe_dir, expe_name
 
@@ -229,6 +295,8 @@ def run_pl_training(
         args.logger = "wandb"
         args.save = False
         args.cpu = False
+        args.log_save_dir = None
+        args.weights_save_dir = None
 
     # Set the experiment name ID
     project_dir, expe_dir, expe_name = get_expe_infos(project, expe_name, args)
@@ -252,10 +320,13 @@ def run_pl_training(
             expe_dir = os.path.join(run_id_project_dir, args.run_id)
 
     if args.log is not None:
+        # get dir to save log
+        log_project_dir = os.path.join(get_dir_from_config(args, "weights", project), f"project_{project}")
+        save_dir = os.path.join(log_project_dir, expe_name)
         if args.log == "wandb":
-            logger = WandbLogger(name=expe_name, project=project, id=expe_name)
+            logger = WandbLogger(name=expe_name, save_dir=save_dir, project=project, id=expe_name)
         elif args.log == "tensorboard":
-            logger = TensorBoardLogger(save_dir="tensorboard/", name=expe_name, sub_dir=expe_name)
+            logger = TensorBoardLogger(save_dir=save_dir, name=expe_name, sub_dir=expe_name)
         else:
             raise ValueError("Unknown or not implemented logger")
     else:

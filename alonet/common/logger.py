@@ -200,3 +200,19 @@ def log_hist(trainer, key, hist):
         trainer.logger.experiment.add_histogram(key, hist, trainer.global_step)
     else:
         warnings.warn("hist logging not implemented for current logger")
+
+
+def log_hyperparams(trainer, dict):
+    """Log hyperparameters to the current logger
+
+    Parameters
+    ----------
+    trainer: pytorch_lightning.Trainer
+        The pytorch_lightning current trainer
+    dict : Namespace or Dict containing the hyperparameters
+    """
+    if isinstance(trainer.logger, WandbLogger):
+        trainer.logger.experiment.log_hyperparams(dict)
+
+    elif isinstance(trainer.logger, TensorBoardLogger):
+        warnings.warn("hyperparameters logging not implemented for current logger")

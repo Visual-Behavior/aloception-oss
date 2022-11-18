@@ -495,7 +495,6 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
             x1, y1, x2, y2 = box.as_tensor()
 
             if label is not None:
-                print("label", label)
                 if isinstance(label, list):
                     label_sum = sum([int(label_value[b]) for label_value in label])
                     color = self._GLOBAL_COLOR_SET[int(label_sum) % len(self._GLOBAL_COLOR_SET)]

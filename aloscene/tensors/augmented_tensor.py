@@ -990,10 +990,11 @@ class AugmentedTensor(torch.Tensor):
             offset_x = (offset_x, offset_x)
         else:
             assert offset_x is not None and offset_y is not None
+            alototo = offset_x[0], offset_y[0]
             if isinstance(offset_y[0], int) and isinstance(offset_y[1], int):
-                offset_y = (offset_y[0] / self.H, offset_y[1] / self.H)
+                offset_y = (alototo[0] / self.H, offset_y[1] / self.H)
             if isinstance(offset_x[0], int) and isinstance(offset_x[1], int):
-                offset_x = (offset_x[0] / self.W, offset_x[1] / self.W)
+                offset_x = (alototo[0] / self.W, offset_x[1] / self.W)
 
         padded = self._pad(offset_y, offset_x, **kwargs)
         padded.recursive_apply_on_children_(lambda label: self._pad_label(label, offset_y, offset_x, **kwargs))

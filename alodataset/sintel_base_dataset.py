@@ -2,13 +2,13 @@ import itertools
 import torch
 import os
 
-from aloscene.io.disparity import load_disp_png
+from alodataset import BaseDataset, SequenceMixin, Split
 from aloscene import Frame, Flow, Mask, Disparity
+from aloscene.io.disparity import load_disp_png
 from aloscene.utils.data_utils import DLtoLD
-from alodataset import BaseDataset, SequenceMixin
 
 
-class SintelBaseDataset(BaseDataset, SequenceMixin):
+class SintelBaseDataset(BaseDataset, Split, SequenceMixin):
     """
     Abstract Base Class for MPI Sintel datasets
 
@@ -55,7 +55,7 @@ class SintelBaseDataset(BaseDataset, SequenceMixin):
         "temple_3",
     ]
 
-    def __init__(self, training=True,cameras=None, labels=None, passes=None, sintel_sequences=None, name="Sintel_base", **kwargs):
+    def __init__(self, cameras=None, labels=None, passes=None, sintel_sequences=None, name="Sintel_base", **kwargs):
         super(SintelBaseDataset, self).__init__(name=name, **kwargs)
 
         if self.sequence_skip != 0:
@@ -68,11 +68,7 @@ class SintelBaseDataset(BaseDataset, SequenceMixin):
         if self.sample:
             return
         self._assert_inputs()
-        if training:
-            self.split = "training"
-        else:
-            self.split = "testing"
-
+        SPLIT_FOLDERS = {Split.VAL: "validation", Split.TRAIN: "training", Split.TEST: "testing"}
         self.items = self._get_sequences()
 
     def _assert_inputs(self):

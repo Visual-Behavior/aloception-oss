@@ -105,7 +105,7 @@ class SintelDisparityDataset(SintelBaseDataset):
 
 
 if __name__ == "__main__":
-    dataset = SintelDisparityDataset(sample=False, training=False)
+    dataset = SintelDisparityDataset(sample=False)
     banana=dataset.getitem(0)
     print(banana)
     banana["right"].get_view().render()

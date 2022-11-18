@@ -2,13 +2,13 @@ import itertools
 import torch
 import os
 
-from alodataset import BaseDataset, SequenceMixin, Split
+from alodataset import BaseDataset, SequenceMixin, Split, SplitMixin
 from aloscene import Frame, Flow, Mask, Disparity
 from aloscene.io.disparity import load_disp_png
 from aloscene.utils.data_utils import DLtoLD
 
 
-class SintelBaseDataset(BaseDataset, Split, SequenceMixin):
+class SintelBaseDataset(BaseDataset, SplitMixin, SequenceMixin):
     """
     Abstract Base Class for MPI Sintel datasets
 
@@ -28,6 +28,8 @@ class SintelBaseDataset(BaseDataset, Split, SequenceMixin):
     CAMERAS = NotImplemented
     LABELS = NotImplemented
     PASSES = NotImplemented
+
+    SPLIT_FOLDERS = {Split.VAL: "validation", Split.TRAIN: "training", Split.TEST: "testing"}
 
     SINTEL_SEQUENCES = [
         "alley_1",
@@ -68,7 +70,6 @@ class SintelBaseDataset(BaseDataset, Split, SequenceMixin):
         if self.sample:
             return
         self._assert_inputs()
-        SPLIT_FOLDERS = {Split.VAL: "validation", Split.TRAIN: "training", Split.TEST: "testing"}
         self.items = self._get_sequences()
 
     def _assert_inputs(self):
@@ -97,7 +98,7 @@ class SintelBaseDataset(BaseDataset, Split, SequenceMixin):
 
     def _get_folder(self, sintel_seq, feature_or_label):
         dset_dir = self.dataset_dir
-        return os.path.join(dset_dir, self.split, feature_or_label, sintel_seq)
+        return os.path.join(dset_dir, self.get_split_folder(), feature_or_label, sintel_seq)
 
     @property
     def _left_img_dir(self, sintel_pass=None):

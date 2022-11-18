@@ -311,7 +311,7 @@ class SpatialAugmentedTensor(AugmentedTensor):
         return tensor
 
     @staticmethod
-    def batch_list(sa_tensors: list, pad_boxes: bool = False, pad_points2d: bool = False):
+    def batch_list(sa_tensors: list, pad_boxes: bool = False, pad_points2d: bool = False, intersection=False):
         """Given a list of Spatial Augmeted tensor of potentially different size (otherwise cat is enough) this method
         will create a new set of frame of same size (the max size across the frames)
         and add to each frame a mask with 1. on the padded area.
@@ -378,7 +378,11 @@ class SpatialAugmentedTensor(AugmentedTensor):
             padded_spatial_tensor = spatial_tensor.pad(h_pad, w_pad, pad_boxes=pad_boxes, pad_points2d=pad_points2d)
             n_padded_list.append(padded_spatial_tensor)
 
+        old_intersect = AugmentedTensor.BATCH_LIST_INTERSECT
+        AugmentedTensor.BATCH_LIST_INTERSECT = intersection
+        print("AugmentedTensor.BATCH_LIST_INTERSECT: ", AugmentedTensor.BATCH_LIST_INTERSECT )
         n_augmented_tensors = torch.cat(n_padded_list, dim=0)
+        AugmentedTensor.BATCH_LIST_INTERSECT = old_intersect
 
         # Set the new mask and tensor buffer filled up with zeros and ones
         # Also, for normalized frames, the zero value is actually different based on the mean/std

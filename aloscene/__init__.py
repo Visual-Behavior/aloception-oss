@@ -21,8 +21,8 @@ from .renderer import Renderer
 from typing import Union
 
 
-def batch_list(tensors):
-    return SpatialAugmentedTensor.batch_list(tensors)
+def batch_list(tensors, intersection=False):
+    return SpatialAugmentedTensor.batch_list(tensors, intersection=intersection)
 
 
 _renderer = None

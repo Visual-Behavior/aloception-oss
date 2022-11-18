@@ -240,7 +240,7 @@ class BoundingBoxes3D(aloscene.tensors.AugmentedTensor):
         names = boxes.names
         labels = boxes.labels
         boxes3d = boxes.as_tensor()
-        if cam_extrinsic.names[0] == "T":
+        if cam_extrinsic.names[0] == "T" or (len(cam_extrinsic.shape) == 3 and cam_extrinsic.names[0] is None):
             # We suppose that cam_extrinsic is temporally consistent
             cam_extrinsic = cam_extrinsic.as_tensor()[0]
         elif len(cam_extrinsic.shape) == 2:
@@ -288,11 +288,12 @@ class BoundingBoxes3D(aloscene.tensors.AugmentedTensor):
         -------
         cropped: BoundingBoxes3D
         """
-        if cam_extrinsic.names[0] == "T":
+
+        if cam_extrinsic.names[0] == "T" or (len(cam_extrinsic.shape) == 3 and cam_extrinsic.names[0] is None):
             # We suppose that cam_extrinsic is temporally consistent
             cam_extrinsic = cam_extrinsic.as_tensor()[0]
         assert len(cam_extrinsic.shape) == 2
-        if cam_intrinsic.names[0] == "T":
+        if cam_intrinsic.names[0] == "T" or (len(cam_intrinsic.shape) == 3 and cam_intrinsic.names[0] is None):
             # We suppose that cam_intrinsic is temporally consistent
             cam_intrinsic = cam_intrinsic.as_tensor()[0]
         assert len(cam_intrinsic.shape) == 2

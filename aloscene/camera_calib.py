@@ -99,8 +99,11 @@ class CameraIntrinsic(AugmentedTensor):
         """
         frame_size: (H, W)
         """
-        assert abs(self.skew) < 1e-3
-        cam_intrinsic = self.clone()
+        if len(self.shape) == 3:
+            cam_intrinsic = self[0].clone()
+        else:
+            cam_intrinsic = self.clone()
+        assert abs(cam_intrinsic.skew) < 1e-3
         cam_intrinsic[..., 0, 2] = frame_size[1] - cam_intrinsic[..., 0, 2]
         return cam_intrinsic
 

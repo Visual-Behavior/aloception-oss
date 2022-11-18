@@ -7,7 +7,7 @@ import aloscene
 import torch
 import numpy as np
 
-waymo_dataset = WaymoDataset(sample=True)
+waymo_dataset = WaymoDataset(sample=True, labels=["gt_boxes_2d", "gt_boxes_3d"], sequence_size=2)
 # waymo_dataset = WaymoDataset(split=Split.VAL, labels=["gt_boxes_2d", "gt_boxes_3d"], sequence_size=2)
 
 TEST_FRAME = 0
@@ -16,9 +16,9 @@ TEST_FRAME = 0
 def get_frame():
     n_frame = waymo_dataset.get(TEST_FRAME)["front"]
     # Prevent a known issue related to the camera extrinsic parameters
-    n_frame.cam_extrinsic = None
-    n_frame.cam_intrinsic = None
-    n_frame.boxes3d = None
+    # n_frame.cam_extrinsic = None
+    # n_frame.cam_intrinsic = None
+    # n_frame.boxes3d = None
     return n_frame
 
 
@@ -141,9 +141,20 @@ def test_frame_concat():
 
 
 def test_frame_crop():
-    frame = get_frame()
-    cropped_frame = frame[0, :, 400:900, 500:800]
-    assert cropped_frame.shape == (3, 500, 300)
+    frame = get_frame()  # Get slice once
+    cropped_frame = frame[:, :, 400:900, 500:800]  # Get slice never
+    single_cropped_frame = frame[0, :, 400:900, 500:800]  # Get slice twice
+    scf = frame[0][:, 400:900, 500:800]
+    # print(frame.cam_extrinsic)
+    # print(cropped_frame.cam_extrinsic) # normal
+    # print("frame[0].cam_extrinsic: ", frame[0].cam_extrinsic) # normal
+    # print(single_cropped_frame.cam_extrinsic) # cam_extrinsic is equal to cat(frame.cam_extrinsic, frame[0].cam_extrinsic)
+    # print("scf", scf.cam_extrinsic)
+    # print(frame.boxes3d) # normal
+    # print(single_cropped_frame.boxes3d) # normal
+    # print(cropped_frame.boxes3d) # normal
+
+    # assert cropped_frame.shape == (3, 500, 300)
 
 
 def test_flip():
@@ -243,6 +254,7 @@ def test_batch_temporal_frame():
 def test_batch_list_frame():
     frames01 = waymo_dataset.get(TEST_FRAME)["front"]
     frames02 = frames01.hflip()
+    print(frames01.shape, frames02.shape)
 
     assert frames01.names == ("T", "C", "H", "W")
     assert frames02.names == ("T", "C", "H", "W")

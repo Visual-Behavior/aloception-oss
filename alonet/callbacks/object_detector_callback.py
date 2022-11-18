@@ -66,7 +66,7 @@ class ObjectDetectorCallback(pl.Callback):
             else:
                 target_boxes = frames.boxes2d[b]
 
-            frame = frames[b].as_numpy()
+            frame = frames[b].as_image()
 
             # wandb_img = wandb.Image(frame, boxes=boxes)
             # images.append(wandb_img)
@@ -167,7 +167,7 @@ class ObjectDetectorCallback(pl.Callback):
                         if id < len(labels_names)
                     }
 
-            frame = frames[b].as_numpy()
+            frame = frames[b].as_image()
 
             # Get panoptic view
             target_masks = target_masks.mask2id(return_cats=self.one_color_per_class)

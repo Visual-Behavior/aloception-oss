@@ -350,7 +350,7 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         """
         self._append_child("scene_flow", scene_flow, name)
 
-    def as_numpy(self, dtype=torch.uint8):
+    def as_image(self, dtype=torch.uint8):
         """Convert the frame to numpy array uint8 format.
 
         Parameters

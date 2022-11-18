@@ -577,7 +577,14 @@ class SpatialAugmentedTensor(AugmentedTensor):
         pad_right = int(round(offset_x[1] * self.W))
 
         padding = [pad_left, pad_top, pad_right, pad_bottom]
-        tensor_padded = F.pad(self.rename(None), padding, **kwargs).reset_names()
+
+        tensor_padded = F.pad(
+            self.rename(None),
+            padding,
+            fill=kwargs.get("fill", 0),
+            padding_mode=kwargs.get("padding_mode", "constant"),
+        ).reset_names()
+
         return tensor_padded
 
     def _getitem_child(self, label, label_name, idx):

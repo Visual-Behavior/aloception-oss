@@ -474,7 +474,6 @@ class AugmentedTensor(torch.Tensor):
 
         # do the merge as an intersection between tensors
         intersection = AugmentedTensor.BATCH_LIST_INTERSECT
-        print("[intersection]", intersection)
 
         """Merge tensors together and their associated labels"""
         labels_dict2list = {}
@@ -595,8 +594,6 @@ class AugmentedTensor(torch.Tensor):
 
     @classmethod
     def __torch_function__(cls, func, types, args=(), kwargs=None):
-        # print(f"[torch_function] {func.__name__}")
-
         self = _torch_function_get_self(cls, func, types, args, kwargs)
 
         def _merging_frame(args):

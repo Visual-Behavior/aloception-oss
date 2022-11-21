@@ -530,6 +530,7 @@ class AugmentedTensor(torch.Tensor):
         # Merge all labels together
         for label_name in labels_dict2list:
             if self._child_property[label_name]["mergeable"]:
+
                 if isinstance(labels_dict2list[label_name], dict):
                     for key in list(labels_dict2list[label_name].keys()):
                         if len(labels_dict2list[label_name][key]) != dim_size:
@@ -551,6 +552,11 @@ class AugmentedTensor(torch.Tensor):
                     args[0] = labels_dict2list[label_name]
                     labels_dict2list[label_name] = func(*tuple(args), **kwargs)
                 setattr(n_tensor, label_name, labels_dict2list[label_name])
+            elif (None in labels_dict2list[label_name]):
+                if intersection:
+                    setattr(n_tensor, label_name, None)
+                else:
+                    raise RuntimeError(f"Error during merging. Label '{label_name}' is set for some tensors but not all.")
             else:
                 setattr(n_tensor, label_name, labels_dict2list[label_name])
 

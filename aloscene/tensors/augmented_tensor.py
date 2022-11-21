@@ -485,11 +485,15 @@ class AugmentedTensor(torch.Tensor):
         for tensor in tensor_list:
 
             for prop in tensor._property_list:
-                if prop in prop_name_to_value:
-                    assert prop_name_to_value[prop] == getattr(
-                        tensor, prop
-                    ), f"Trying to merge augmented tensor with different property: {prop}, {prop_name_to_value[prop]}, {getattr(tensor, prop)}"
-                prop_name_to_value[prop] = getattr(tensor, prop)
+
+                if prop in prop_name_to_value and prop_name_to_value[prop] != getattr(tensor, prop):
+                    if intersection:
+                        setattr(n_tensor, prop, None)
+                    else:
+                        values = set([prop_name_to_value[prop], getattr(tensor, prop)])
+                        raise RuntimeError(f"Encountered different values for property '{prop}' while merging AugmentedTensor: {values}")
+                else:
+                    prop_name_to_value[prop] = getattr(tensor, prop)
 
             for label_name in tensor._children_list:
                 label_value = getattr(tensor, label_name)
@@ -532,7 +536,7 @@ class AugmentedTensor(torch.Tensor):
                             if intersection:# labels_dict2list[label_name][key] = None
                                 del labels_dict2list[label_name][key]
                             else:
-                                raise ValueError()
+                                raise RuntimeError(f"Error during merging. Some tensors have label '{label_name}' with key '{key}' and some don't")
                         else:
                             args = list(args)
                             args[0] = labels_dict2list[label_name][key]

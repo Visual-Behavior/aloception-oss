@@ -85,6 +85,7 @@ def train_loader(dataset, batch_size=1, num_workers=2, sampler=torch.utils.data.
         drop_last=True,
         collate_fn=dataset._collate_fn,
         num_workers=num_workers,
+        pin_memory=True,
     )
 
     return data_loader
@@ -122,7 +123,7 @@ class BaseDataset(torch.utils.data.Dataset):
         sample: bool = False,
         **kwargs,
     ):
-        """ Streaming dataset
+        """Streaming dataset
 
         Parameters
         ----------

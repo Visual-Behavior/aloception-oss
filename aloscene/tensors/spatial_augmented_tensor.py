@@ -386,7 +386,7 @@ class SpatialAugmentedTensor(AugmentedTensor):
             padded_spatial_tensor = spatial_tensor.pad(h_pad, w_pad, pad_boxes=pad_boxes, pad_points2d=pad_points2d)
             n_padded_list.append(padded_spatial_tensor)
 
-        # batch the tensors witch torch.cat ; et flag to specify desired behavior of torch.cat
+        # batch the tensors witch torch.cat ; set flag to specify desired behavior of torch.cat
         # necessary because torch.cat cannot accept kwargs (like intersection) that are not in the original signature
         intersect_old_value = AugmentedTensor.BATCH_LIST_INTERSECT
         AugmentedTensor.BATCH_LIST_INTERSECT = intersection

@@ -533,7 +533,7 @@ class AugmentedTensor(torch.Tensor):
                 if isinstance(labels_dict2list[label_name], dict):
                     for key in list(labels_dict2list[label_name].keys()):
                         if len(labels_dict2list[label_name][key]) != dim_size:
-                            if intersection:# labels_dict2list[label_name][key] = None
+                            if intersection:
                                 del labels_dict2list[label_name][key]
                             else:
                                 raise RuntimeError(f"Error during merging. Some tensors have label '{label_name}' with key '{key}' and some don't")

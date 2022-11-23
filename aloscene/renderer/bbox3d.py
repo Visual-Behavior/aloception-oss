@@ -35,23 +35,23 @@ def _draw_3D_box(image, vertices_2d, color1=None, color2=None, class_names=None,
             color2 = colors[i] ** 2
         # plt.imshow(image)
         # plt.show()
-        for i in range(4):
-            point_1_ = points[2 * i]
-            point_2_ = points[2 * i + 1]
+        for j in range(4):
+            point_1_ = points[2 * j]
+            point_2_ = points[2 * j + 1]
             cv2.line(image, (point_1_[0], point_1_[1]), (point_2_[0], point_2_[1]), color1, 2)
             # plt.imshow(image)
             # plt.show()
 
-        for i in range(4):
-            point_1_ = points[i]
-            point_2_ = points[i + 4]
+        for k in range(4):
+            point_1_ = points[k]
+            point_2_ = points[k + 4]
             cv2.line(image, (point_1_[0], point_1_[1]), (point_2_[0], point_2_[1]), color1, 2)
             # plt.imshow(image)
             # plt.show()
 
-        for i in [0, 1, 4, 5]:
-            point_1_ = points[i]
-            point_2_ = points[i + 2]
+        for l in [0, 1, 4, 5]:
+            point_1_ = points[l]
+            point_2_ = points[l + 2]
             cv2.line(image, (point_1_[0], point_1_[1]), (point_2_[0], point_2_[1]), color1, 2)
             # plt.imshow(image)
             # plt.show()
@@ -78,7 +78,7 @@ def _draw_3D_box(image, vertices_2d, color1=None, color2=None, class_names=None,
                 # (point_1_[0], point_1_[1]),
                 cv2.FONT_HERSHEY_SIMPLEX,
                 0.5,
-                (1.0, 0, 0),
+                color1,
                 1,
                 cv2.LINE_AA,
             )

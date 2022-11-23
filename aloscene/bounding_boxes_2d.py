@@ -423,8 +423,6 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
         else:
             return self.rel_area()
 
-    _GLOBAL_COLOR_SET = np.random.uniform(0, 1, (300, 3))
-
     def get_view(
         self,
         frame: Union[Tensor, None] = None,
@@ -461,7 +459,6 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
             boxes_abs = self.xyxy().abs_pos(frame.HW)
 
         # Get an imave with values between 0 and 1
-        frame_size = frame.HW
         frame = frame.norm01().cpu().rename(None).permute([1, 2, 0]).detach().contiguous().numpy()
         # Draw bouding boxes
 
@@ -470,9 +467,10 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
             labels = boxes_abs.labels
         elif isinstance(boxes_abs.labels, dict):
             labels = []
-            for k, v in boxes_abs.labels.items():
-                if isinstance(v, aloscene.Labels):
-                    labels.append(v)
+            # Sorting the labels set to always have the same order
+            for label_key in sorted(boxes_abs.labels.keys()):
+                if isinstance(boxes_abs.labels[label_key], aloscene.Labels):
+                    labels.append(boxes_abs.labels[label_key])
             labels = [labels] * len(boxes_abs)
         else:
             labels = [None] * len(boxes_abs)

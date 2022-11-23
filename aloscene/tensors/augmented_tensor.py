@@ -24,13 +24,14 @@ def _torch_function_get_self(cls, func, types, args, kwargs):
         elif isinstance(a, tuple):
             return _torch_function_get_self(cls, func, types, list(a), kwargs)
     return None
-        
+
 
 class AugmentedTensor(torch.Tensor):
     """Tensor with attached labels"""
 
     # Common dim names that must be aligned to handle label on a Tensor.
     COMMON_DIM_NAMES = ["B", "T"]
+    _GLOBAL_COLOR_SET = np.random.uniform(0, 1, (300, 3))
 
     # Ignore named tansors userwarning.
     ERROR_MSG = "Named tensors and all their associated APIs are an experimental feature and subject to change"
@@ -567,7 +568,7 @@ class AugmentedTensor(torch.Tensor):
 
     @classmethod
     def __torch_function__(cls, func, types, args=(), kwargs=None):
-        
+
         self = _torch_function_get_self(cls, func, types, args, kwargs)
 
         def _merging_frame(args):

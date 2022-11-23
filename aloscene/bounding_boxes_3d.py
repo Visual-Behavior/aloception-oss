@@ -502,9 +502,11 @@ class BoundingBoxes3D(aloscene.tensors.AugmentedTensor):
             frame = frame.norm01().cpu().rename(None).permute([1, 2, 0]).detach().contiguous().numpy()
             if isinstance(self.labels, dict):
                 labels_list = []
-                for value in self.labels.values():
-                    labels_list.append(value)
+                # Sorting the labels set to always have the same order
+                for label_key in sorted(self.labels.keys()):
+                    labels_list.append(self.labels[label_key])
                 class_names = []
+                color = []
                 for index in range(len(labels_list[0])):
                     text = []
                     for label in labels_list:
@@ -512,13 +514,16 @@ class BoundingBoxes3D(aloscene.tensors.AugmentedTensor):
                             label.labels_names[int(label[index])] if label.labels_names else str(int(label[index]))
                         )
                     class_names.append(" , ".join(text))
+                    labels_sum = sum([int(label[index]) for label in labels_list])
+                    color.append(self._GLOBAL_COLOR_SET[labels_sum % len(self._GLOBAL_COLOR_SET)])
                 labels = range(len(class_names))
             else:
                 labels = [int(label_value) for label_value in self.labels]
                 class_names = (
-                    self.labels.labels_names if self.labels.labels_names else [int(label) for label in labels]
+                    self.labels.labels_names if self.labels.labels_names else range(len(labels))
                 )
-            draw_3D_box(frame, vertices_3d_proj, class_names=class_names, labels=labels)
+                color = [self._GLOBAL_COLOR_SET[int(label) % len(self._GLOBAL_COLOR_SET)] for label in labels]
+            draw_3D_box(frame, vertices_3d_proj, class_names=class_names, labels=labels, colors=color)
             return View(frame, **kwargs)
         elif mode == "2D":
             enclosing_2d = self.get_enclosing_box_2d(self, cam_intrinsic, cam_extrinsic, frame_size)

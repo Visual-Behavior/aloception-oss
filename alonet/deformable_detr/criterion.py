@@ -13,6 +13,7 @@ def sigmoid_focal_loss(
     num_boxes: torch.Tensor,
     alpha: float = 0.25,
     gamma: float = 2,
+    weight: torch.Tensor = None,
 ) -> torch.Tensor:
     """Sigmoid focal loss for classification
 
@@ -38,7 +39,7 @@ def sigmoid_focal_loss(
         Scalar
     """
     prob = inputs.sigmoid()
-    ce_loss = F.binary_cross_entropy_with_logits(inputs, targets, reduction="none")
+    ce_loss = F.binary_cross_entropy_with_logits(inputs, targets, weight, reduction="none")
     p_t = prob * targets + (1 - prob) * (1 - targets)
     loss = ce_loss * ((1 - p_t) ** gamma)
 
@@ -152,12 +153,15 @@ class DeformableCriterion(DetrCriterion):
 
         if frames.labels is not None and "traffic_lights_annotated" in frames.labels:
             # multiply traffic_light class by zero when not available in labels (removes gradient)
-            pred_logits[:, :, -1] = pred_logits[:, :, -1] * frames.labels[
-                "traffic_lights_annotated"
-            ].as_tensor().unsqueeze(-1)
+            weight = torch.ones_like(pred_logits)
+            weight[:, :, -1] = weight[:, :, -1] * frames.labels["traffic_lights_annotated"].as_tensor().unsqueeze(-1)
+        else:
+            weight = None
 
         loss_focal = (
-            sigmoid_focal_loss(pred_logits, target_classes_onehot, num_boxes, alpha=self.focal_alpha, gamma=2)
+            sigmoid_focal_loss(
+                pred_logits, target_classes_onehot, num_boxes, alpha=self.focal_alpha, gamma=2, weight=weight
+            )
             * pred_logits.shape[1]
         )
         losses = {"loss_focal_label": loss_focal}  # Compute loss_focal_label instead of loss_ce

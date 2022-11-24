@@ -16,7 +16,7 @@ _sandbox/
 logs/*
 *.mar
 *.pt
-
+cuda_op/
 # Distribution / packaging
 .Python
 build/

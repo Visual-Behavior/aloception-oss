@@ -571,7 +571,7 @@ class AugmentedTensor(torch.Tensor):
         self = _torch_function_get_self(cls, func, types, args, kwargs)
 
         def _merging_frame(args):
-            if len(args) >= 1 and isinstance(args[0], list):
+            if len(args) >= 1 and isinstance(args[0], (list, tuple)):
                 for el in args[0]:
                     if isinstance(el, cls):
                         return True

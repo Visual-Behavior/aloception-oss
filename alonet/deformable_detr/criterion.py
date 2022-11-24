@@ -8,7 +8,11 @@ from alonet.detr import DetrCriterion
 
 
 def sigmoid_focal_loss(
-    inputs: torch.Tensor, targets: torch.Tensor, num_boxes: torch.Tensor, alpha: float = 0.25, gamma: float = 2
+    inputs: torch.Tensor,
+    targets: torch.Tensor,
+    num_boxes: torch.Tensor,
+    alpha: float = 0.25,
+    gamma: float = 2,
 ) -> torch.Tensor:
     """Sigmoid focal loss for classification
 
@@ -45,7 +49,7 @@ def sigmoid_focal_loss(
 
 
 class DeformableCriterion(DetrCriterion):
-    """ This class computes the loss for Deformable DETR. The process happens in two steps
+    """This class computes the loss for Deformable DETR. The process happens in two steps
 
         1) we compute hungarian assignment between ground truth boxes and the outputs of the model
         2) we supervise each pair of matched ground-truth / prediction (supervise class and box)
@@ -90,7 +94,7 @@ class DeformableCriterion(DetrCriterion):
     def loss_labels(
         self, outputs: dict, frames: aloscene.Frame, indices: list, num_boxes: torch.Tensor, **kwargs
     ) -> torch.Tensor:
-        """Compute the clasification loss
+        """Compute the classification loss
 
         Parameters
         ----------
@@ -145,6 +149,13 @@ class DeformableCriterion(DetrCriterion):
         # remove "phantom" class from onehot
         # target_classes_onehot (b, nb_slots, nb_classes)
         target_classes_onehot = target_classes_onehot[:, :, :-1]
+
+        if frames.labels is not None and "traffic_lights_annotated" in frames.labels:
+            # multiply traffic_light class by zero when not available in labels (removes gradient)
+            pred_logits[:, :, -1] = pred_logits[:, :, -1] * frames.labels[
+                "traffic_lights_annotated"
+            ].as_tensor().unsqueeze(-1)
+
         loss_focal = (
             sigmoid_focal_loss(pred_logits, target_classes_onehot, num_boxes, alpha=self.focal_alpha, gamma=2)
             * pred_logits.shape[1]

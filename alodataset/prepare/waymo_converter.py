@@ -65,7 +65,7 @@ save_track_id = True
 
 
 class Waymo2KITTIConverter(object):
-    def __init__(self, load_dir, save_dir, num_proc=1):
+    def __init__(self, load_dir, save_dir, num_proc=1, depth=False):
         """
         Parameters
         ----------
@@ -95,7 +95,7 @@ class Waymo2KITTIConverter(object):
         self.num_proc = int(num_proc)
 
         self.tfrecord_pathnames = sorted(glob(join(self.load_dir, "*.tfrecord")))
-
+        self.depth = depth
         self.label_save_dir = "label"
         self.label_all_save_dir = "label_all"
         self.image_save_dir = "image"
@@ -136,18 +136,18 @@ class Waymo2KITTIConverter(object):
                 return False
             else:
                 img_nb.append(len([img for img in os.listdir(img_dir) if img.endswith("jpg")]))
-
-            depth_dir = join(sgmt_dir, self.depth_save_dir + str(i))
-            if not isdir(depth_dir):
-                return False
-            else:
-                depth_nb.append(len([dpt for dpt in os.listdir(depth_dir) if dpt.endswith("npz")]))
+            if self.depth:
+                depth_dir = join(sgmt_dir, self.depth_save_dir + str(i))
+                if not isdir(depth_dir):
+                    return False
+                else:
+                    depth_nb.append(len([dpt for dpt in os.listdir(depth_dir) if dpt.endswith("npz")]))
 
         # image and depth numbers in each subdirs should be equal
-        if sum(img_nb) / len(img_nb) != img_nb[0] or sum(depth_nb) / len(depth_nb) != img_nb[0]:
+        if sum(img_nb) / len(img_nb) != img_nb[0]:
             return False
 
-        elif len([dpt for dpt in os.listdir(depth_dir) if dpt.endswith("npz")]) != img_nb[0]:
+        if self.depth and (sum(depth_nb) / len(depth_nb) != img_nb[0] or len([dpt for dpt in os.listdir(depth_dir) if dpt.endswith("npz")]) != img_nb[0]):
             return False
 
         # if all the checks are passed
@@ -178,8 +178,8 @@ class Waymo2KITTIConverter(object):
 
             # save images
             self.save_image(frame, frame_idx, sgmt_name)
-
-            self.save_dense_depth(frame, frame_idx, sgmt_name)
+            if self.depth:
+                self.save_dense_depth(frame, frame_idx, sgmt_name)
 
             # parse calibration files
             calibs[frame_idx] = self.save_calib(frame, frame_idx, sgmt_name)

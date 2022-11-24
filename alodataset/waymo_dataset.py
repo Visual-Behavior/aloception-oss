@@ -151,7 +151,10 @@ class WaymoDataset(BaseDataset, SequenceMixin, SplitMixin):
                     self.preloaded_calib[segment] = pkl.load(f)
 
             # Create the sequence ids
-            ids = os.listdir(os.path.join(segment_folder, "image0"))
+            if self.load_rescaled:
+                ids = os.listdir(os.path.join(segment_folder, f"image0:{self.load_rescaled:.1f}"))
+            else:
+                ids = os.listdir(os.path.join(segment_folder, "image0"))
             num_step = max(int(el_id[0:3]) for el_id in ids)
             self.segment_size[segment] = num_step
 
@@ -245,7 +248,12 @@ class WaymoDataset(BaseDataset, SequenceMixin, SplitMixin):
             labels={"class": labels_2d, "track_id": track_id},
         )
         if "traffic_lights" in self.labels:
-            boxes_2d.traffic_lights_annotated = self.preloaded_traffic_lights[segment][int(sequence_id)] is not None
+            frame.append_labels(
+                Labels(
+                    torch.tensor([self.preloaded_traffic_lights[segment][int(sequence_id)] is not None]), names=(None,)
+                ),
+                "traffic_lights_annotated",
+            )
         return boxes_2d
 
     def get_frame_camera_parameters(
@@ -459,6 +467,7 @@ class WaymoDataset(BaseDataset, SequenceMixin, SplitMixin):
 
         # Stack along the first dimension
         frames = torch.cat(frames, dim=0).type(torch.float32)
+
         return frames
 
     def getitem(self, idx) -> Dict[str, aloscene.Frame]:
@@ -569,7 +578,7 @@ def main():
     waymo_dataset = WaymoDataset(labels=["gt_boxes_2d", "gt_boxes_3d", "depth", "traffic_lights"], load_rescaled=4.0)
     # waymo_dataset.prepare()
 
-    for frames in waymo_dataset.train_loader(batch_size=1):
+    for frames in waymo_dataset.train_loader(batch_size=2):
         frames = Frame.batch_list([frame["front"] for frame in frames])
         frames.get_view([frames.boxes3d, frames.boxes2d]).render()
 

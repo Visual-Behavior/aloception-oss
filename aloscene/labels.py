@@ -50,11 +50,10 @@ class Labels(aloscene.tensors.AugmentedTensor):
             raise Exception("One hot not yet supported (todo)")
 
         tensor = super().__new__(cls, x, *args, names=names, **kwargs)
-
         if len(tensor.shape) == 0 and encoding == "id":
             raise Exception("aloscene.Labels must be at least 1 dimensional (N,) with encoding=id.")
         elif len(tensor.shape) == 1 and encoding == "one_hot":
-            raise Exception("aloscene.Labels must be at least 2 dimensional (N,) with encoding=`one_hot`")
+            raise Exception("aloscene.Labels must be at least 2 dimensional (N, None) with encoding=`one_hot`")
 
         # Encoding
         if encoding not in ["one_hot", "id"]:

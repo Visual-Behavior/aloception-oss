@@ -1,28 +1,28 @@
-import io
-import os
-import time
 from typing import Dict, List, Tuple, Union
+import time
+import os
+import io
 
 
-import torch
 import numpy as np
+import torch
 
 
 try:
-    import onnx
     import onnx_graphsurgeon as gs
-    import tensorrt as trt
     import pycuda.driver as cuda
+    import tensorrt as trt
+    import onnx
     prod_package_error = None
 except Exception as e:
     prod_package_error = e
     pass
 
 
-from contextlib import redirect_stdout, ExitStack
 from alonet.torch2trt.onnx_hack import scope_name_workaround, get_scope_names, rename_tensors_
 from alonet.torch2trt import TRTEngineBuilder, TRTExecutor, utils
 from alonet.torch2trt.utils import get_nodes_by_op, rename_nodes_
+from contextlib import redirect_stdout, ExitStack
 
 
 class BaseTRTExporter:
@@ -111,16 +111,16 @@ class BaseTRTExporter:
             raise prod_package_error
         self.opset_version = opset_version
         self.model = model
-        self.input_names = input_names
-        self.onnx_path = onnx_path
-        self.do_constant_folding = do_constant_folding
-        self.input_shapes = input_shapes
-        self.batch_size = batch_size
-        self.verbose = verbose
         self.device = device
-        self.precision = precision
+        self.verbose = verbose
         self.custom_opset = None  # to be redefine in child class if needed
+        self.onnx_path = onnx_path
+        self.precision = precision
+        self.batch_size = batch_size
+        self.input_names = input_names
+        self.input_shapes = input_shapes
         self.use_scope_names = use_scope_names
+        self.do_constant_folding = do_constant_folding
         self.operator_export_type = operator_export_type
         if dynamic_axes is not None:
             assert opt_profiles is not None, "If dynamic_axes are to be used, opt_profiles must be provided"
@@ -215,10 +215,11 @@ class BaseTRTExporter:
         for n in clip_nodes:
             handle_op_Clip(n)
 
-        from onnxsim import simplify
         model = onnx.load(self.onnx_path)
         check = False
-        model_simp, check = simplify(model)
+        if self.dynamic_axes is None:
+            from onnxsim import simplify
+            model_simp, check = simplify(model)
 
         if check:
             print("\n[INFO] Simplified ONNX model validated. Graph optimized...")
@@ -288,6 +289,10 @@ class BaseTRTExporter:
         np_m_outputs = {key: val.cpu().numpy() for key, val in zip(onames, m_outputs) if isinstance(val, torch.Tensor)}
         # print("Model input shapes:", [val.shape for val in np_inputs])
         # print("Model output keys:", np_m_outputs.keys(), "shapes:", [val.shape for val in np_m_outputs.values()])
+        
+        # Convert to list for dynamic axese assertions
+        self.input_names = list(self.input_names)
+        onames = list(onames)
 
         # Export to ONNX
         with ExitStack() as stack:
@@ -301,20 +306,19 @@ class BaseTRTExporter:
                 inputs,  # model input (or a tuple for multiple inputs)
                 self.onnx_path,  # where to save the model
                 export_params=True,  # store the trained parameter weights inside the model file
+                output_names=onames,
+                enable_onnx_checker=True,
+                input_names=self.input_names,  # the model's input names
+                dynamic_axes=self.dynamic_axes,
+                custom_opsets=self.custom_opset,
                 opset_version=self.opset_version,  # the ONNX version to export the model to
                 do_constant_folding=self.do_constant_folding,  # whether to execute constant folding for optimization
                 verbose=self.verbose or self.use_scope_names,  # verbose mandatory in scope names procedure
-                input_names=self.input_names,  # the model's input names
-                output_names=onames,
-                custom_opsets=self.custom_opset,
-                enable_onnx_checker=True,
                 operator_export_type=self.operator_export_type,
-                dynamic_axes=self.dynamic_axes,
             )
 
             if self.use_scope_names:
                 onnx_export_log = buffer.getvalue()
-            
 
         graph = gs.import_onnx(onnx.load(self.onnx_path))
         graph.toposort()

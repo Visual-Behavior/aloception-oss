@@ -292,7 +292,7 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
                 focal_length = focal_length * theta * dist_coef / r.abs()
             elif projection == "kumler_bauer":
                 focal_length = (
-                    distortion[0] * torch.sin(distortion[1] * theta) * focal_length / (distortion[2] * r.abs())
+                    distortion[0] * torch.sin(distortion[1] * theta) / r.abs()
                 )
 
             # find points behind camera

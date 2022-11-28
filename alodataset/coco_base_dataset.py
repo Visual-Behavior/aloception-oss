@@ -357,8 +357,8 @@ class ConvertCocoPolysToMask(object):
 if __name__ == "__main__":
     coco_dataset = CocoBaseDataset(sample=False, img_folder="test2017")
     #checking if regular getitem works
-    alocat = coco_dataset[0]
-    alocat.get_view().render()
+    frame = coco_dataset[0]
+    frame.get_view().render()
 
     #check if dataloader works
     for f, frames in enumerate(coco_dataset.train_loader(batch_size=2)):

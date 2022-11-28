@@ -19,7 +19,6 @@ class WaymoDataset(BaseDataset, SequenceMixin, SplitMixin):
 
     LABELS = ["gt_boxes_2d", "gt_boxes_3d", "camera_parameters", "traffic_lights"]
     CAMERAS = ["front", "front_left", "front_right", "side_left", "side_right"]
-    CLASSES = ["UNKNOWN", "VEHICLE", "PEDESTRIAN", "SIGN", "CYCLIST"]
 
     SPLIT_FOLDERS = {Split.VAL: "validation", Split.TRAIN: "training", Split.TEST: "testing"}
 
@@ -30,6 +29,7 @@ class WaymoDataset(BaseDataset, SequenceMixin, SplitMixin):
         random_step: int = None,
         labels: List[str] = [],
         load_rescaled: float = None,
+        traffic_lights_only: bool = False,
         **kwargs,
     ):
         """WaymoDataset
@@ -52,6 +52,7 @@ class WaymoDataset(BaseDataset, SequenceMixin, SplitMixin):
 
         """
         super(WaymoDataset, self).__init__(name="waymo", **kwargs)
+        self.CLASSES = ["UNKNOWN", "VEHICLE", "PEDESTRIAN", "SIGN", "CYCLIST"]
         if "traffic_lights" in labels:
             self.CLASSES.append("TRAFFIC_LIGHTS")
         if self.sample:
@@ -60,10 +61,13 @@ class WaymoDataset(BaseDataset, SequenceMixin, SplitMixin):
 
         self.random_step = random_step
         self.load_rescaled = load_rescaled
-
+        self.traffic_lights_only = traffic_lights_only
+        if self.traffic_lights_only:
+            assert "traffic_lights" in labels
         # Will be filled into the load() method
         self.preloaded_labels_2d = {}
         self.preloaded_labels_3d = {}
+        # self.has_traffic_lights = []
         self.preloaded_calib = {}
         self.preloaded_traffic_lights = {}
 
@@ -135,12 +139,21 @@ class WaymoDataset(BaseDataset, SequenceMixin, SplitMixin):
         for segment in self.segments:
             segment_folder = os.path.join(self.dataset_dir, self.get_split_folder(), segment)
             # Load Boxes 2D labels
+            if "traffic_lights" in self.labels:
+                with open(os.path.join(segment_folder, "traffic_lights_label.pkl"), "rb") as f:
+                    tfl = pkl.load(f)
+                    broke = False
+                    for anns in tfl:
+                        if anns is not None:
+                            self.preloaded_traffic_lights[segment] = tfl
+                            broke = True
+                            break
+            if self.traffic_lights_only and not broke:
+                continue
+
             if "gt_boxes_2d" in self.labels:
                 with open(os.path.join(segment_folder, "camera_label.pkl"), "rb") as f:
                     self.preloaded_labels_2d[segment] = pkl.load(f)
-            if "traffic_lights" in self.labels:
-                with open(os.path.join(segment_folder, "traffic_lights_label.pkl"), "rb") as f:
-                    self.preloaded_traffic_lights[segment] = pkl.load(f)
             # Load boxes 3D labels
             if "gt_boxes_3d" in self.labels:
                 with open(os.path.join(segment_folder, "lidar_label.pkl"), "rb") as f:
@@ -157,28 +170,57 @@ class WaymoDataset(BaseDataset, SequenceMixin, SplitMixin):
                 ids = os.listdir(os.path.join(segment_folder, "image0"))
             num_step = max(int(el_id[0:3]) for el_id in ids)
             self.segment_size[segment] = num_step
-
             if "all" in self.cameras:
-                for _ in range(len(self.CAMERAS)):
+                for camera in self.CAMERAS:
                     sequences = more_itertools.windowed(
                         range(num_step), self.sequence_size, step=self.sequence_skip + 1
                     )
                     # Update the sequence list
-                    self.items.update(
-                        {
-                            len(self.items) + idx: {"sequence": sequence, "segment": segment}
-                            for idx, sequence in enumerate(sequences)
-                        }
-                    )
+                    for sequence in sequences:
+                        if "traffic_lights" in self.labels and self.traffic_lights_only:
+                            for timestep in sequence:
+                                tfl = self.preloaded_traffic_lights[segment][timestep]
+                                if tfl is not None and len(tfl[self.CAMERAS.index(camera)]) != 0:
+                                    self.items.update(
+                                        {len(self.items): {"camera": camera, "sequence": sequence, "segment": segment}}
+                                    )
+                                    break
+                        else:
+                            self.items.update(
+                                {len(self.items): {"camera": camera, "sequence": sequence, "segment": segment}}
+                            )
+                        # if "traffic_lights" in self.labels:
+                        #     has_tlights = False
+                        #     for timestep in sequence:
+                        #         tfl = self.preloaded_traffic_lights[segment][timestep]
+                        #         if tfl is not None and len(tfl[self.CAMERAS.index(camera)]) != 0:
+                        #             has_tlights = True
+                        #             break
+                        #     self.has_traffic_lights.append(has_tlights)
+
             else:
+
                 sequences = more_itertools.windowed(range(num_step), self.sequence_size, step=self.sequence_skip + 1)
                 # Update the sequence list
-                self.items.update(
-                    {
-                        len(self.items) + idx: {"sequence": sequence, "segment": segment}
-                        for idx, sequence in enumerate(sequences)
-                    }
-                )
+                for sequence in sequences:
+                    if "traffic_lights" in self.labels and self.traffic_lights_only:
+                        for timestep in sequence:
+                            tfl = self.preloaded_traffic_lights[segment][timestep]
+                            if tfl is not None and len(tfl[self.CAMERAS.index(camera)]) != 0:
+                                self.items.update(
+                                    {len(self.items): {"camera": camera, "sequence": sequence, "segment": segment}}
+                                )
+                                break
+                    else:
+                        self.items.update({len(self.items): {"sequence": sequence, "segment": segment}})
+                    # if "traffic_lights" in self.labels:
+                    #     has_tlights = False
+                    #     for timestep, cam in product(sequence, self.cameras):
+                    #         tfl = self.preloaded_traffic_lights[segment][timestep]
+                    #         if tfl is not None and len(tfl[self.CAMERAS.index(cam)]) != 0:
+                    #             has_tlights = True
+                    #             break
+                    #     self.has_traffic_lights.append(has_tlights)
 
     def get_frame_boxes2d(
         self, frame: Frame, camera: str, segment: str, sequence_id: int, idstring2int
@@ -490,11 +532,9 @@ class WaymoDataset(BaseDataset, SequenceMixin, SplitMixin):
 
         sequence_data = self.items[idx]
         data = {}
-        for o_id, camera in enumerate(self.cameras):
+        for camera in self.cameras:
             if camera == "all":
-                # Choose a camera at random among the possible cameraw
-                sampled_camera = self.CAMERAS[idx % len(self.CAMERAS)]
-                frames = self.get_frames(sampled_camera, sequence_data["segment"], sequence_data["sequence"])
+                frames = self.get_frames(sequence_data["camera"], sequence_data["segment"], sequence_data["sequence"])
             else:
                 frames = self.get_frames(camera, sequence_data["segment"], sequence_data["sequence"])
             data[camera] = frames
@@ -575,11 +615,19 @@ class WaymoDataset(BaseDataset, SequenceMixin, SplitMixin):
 
 def main():
     """Main"""
-    waymo_dataset = WaymoDataset(labels=["gt_boxes_2d", "gt_boxes_3d", "depth", "traffic_lights"], load_rescaled=4.0)
+    waymo_dataset = WaymoDataset(
+        cameras=["all"],
+        labels=["gt_boxes_2d", "gt_boxes_3d", "depth", "traffic_lights"],
+        load_rescaled=4.0,
+        traffic_lights_only=True,
+    )
+    print(len(waymo_dataset))
     # waymo_dataset.prepare()
-
-    for frames in waymo_dataset.train_loader(batch_size=2):
-        frames = Frame.batch_list([frame["front"] for frame in frames])
+    for frames in waymo_dataset.train_loader(
+        batch_size=1,
+    ):
+        frames = Frame.batch_list([frame["all"] for frame in frames])
+        print(frames.boxes2d["gt_boxes_2d"][0][0].labels)
         frames.get_view([frames.boxes3d, frames.boxes2d]).render()
 
 

@@ -5,12 +5,11 @@ import numpy as np
 import torchvision
 import torch
 import os
-
-
 from alodataset import BaseDataset, Split, SequenceMixin, SplitMixin
 import aloscene
 from aloscene import Labels, Frame, BoundingBoxes2D, BoundingBoxes3D
 from aloscene.camera_calib import CameraExtrinsic, CameraIntrinsic
+from itertools import product
 
 waymo2alo = torch.tensor([[0.0, -1.0, 0.0, 0.0], [0.0, 0.0, -1.0, 0.0], [1.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 1.0]])
 
@@ -135,6 +134,7 @@ class WaymoDataset(BaseDataset, SequenceMixin, SplitMixin):
                             - key: int, camera id + 1
                             - value: np.ndarray of shape (3, 4) for cam_intrisic or shape (4, 4) for cam_extrinsic
         """
+        print("Loading sequences...")
         self.segments = self.segments if self.segments is not None else self.get_segments()
         for segment in self.segments:
             segment_folder = os.path.join(self.dataset_dir, self.get_split_folder(), segment)
@@ -204,7 +204,7 @@ class WaymoDataset(BaseDataset, SequenceMixin, SplitMixin):
                 # Update the sequence list
                 for sequence in sequences:
                     if "traffic_lights" in self.labels and self.traffic_lights_only:
-                        for timestep in sequence:
+                        for timestep, camera in product(sequence, self.cameras):
                             tfl = self.preloaded_traffic_lights[segment][timestep]
                             if tfl is not None and len(tfl[self.CAMERAS.index(camera)]) != 0:
                                 self.items.update(

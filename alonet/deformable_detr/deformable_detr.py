@@ -85,6 +85,7 @@ class DeformableDETR(nn.Module):
         return_intermediate_dec: bool = True,
         strict_load_weights: bool = True,
         tracing=False,
+        add_channel=False,
     ):
         super().__init__()
         self.device = device
@@ -112,7 +113,7 @@ class DeformableDETR(nn.Module):
             num_backbone_outs = len(backbone.strides) - 1  # Ignore backbone.layer1
             input_proj_list = []
             for i in range(1, num_backbone_outs + 1):  # Ignore backbone.layer1
-                in_channels = backbone.num_channels[i]
+                in_channels = backbone.num_channels[i] + (1 if add_channel else 0)
                 input_proj_list.append(
                     nn.Sequential(
                         nn.Conv2d(in_channels, self.hidden_dim, kernel_size=1),
@@ -132,7 +133,9 @@ class DeformableDETR(nn.Module):
             self.input_proj = nn.ModuleList(
                 [
                     nn.Sequential(
-                        nn.Conv2d(backbone.num_channels[0], self.hidden_dim, kernel_size=1),
+                        nn.Conv2d(
+                            backbone.num_channels[0] + (1 if add_channel else 0), self.hidden_dim, kernel_size=1
+                        ),
                         nn.GroupNorm(32, self.hidden_dim),
                     )
                 ]

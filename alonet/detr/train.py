@@ -53,7 +53,7 @@ class LitDetr(pl.LightningModule):
                 raise Exception(f"Weights of custom model doesnt match with {self.weights} weights")
         else:
             self.model = self.build_model()
-        # Buld matcher
+        # Build matcher
         self.matcher = self.build_matcher()
         # Build criterion
         self.criterion = self.build_criterion(matcher=self.matcher)

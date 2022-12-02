@@ -48,6 +48,7 @@ class DeformableTransformer(nn.Module):
         enc_n_points=4,
         two_stage=False,
         two_stage_num_proposals=300,
+        dec_depth=False,
     ):
         """Init Deformable Transformer
 
@@ -86,6 +87,7 @@ class DeformableTransformer(nn.Module):
         self.nhead = nhead
         self.two_stage = two_stage
         self.two_stage_num_proposals = two_stage_num_proposals
+        self.dec_depth = dec_depth
 
         if encoder is None:
             encoder_layer = encoder_layer or DeformableTransformerEncoderLayer(
@@ -160,7 +162,7 @@ class DeformableTransformer(nn.Module):
 
             scale = torch.cat([valid_W.unsqueeze(-1), valid_H.unsqueeze(-1)], 1).view(N_, 1, 1, 2)
             grid = (grid.unsqueeze(0).expand(N_, -1, -1, -1) + 0.5) / scale
-            wh = torch.ones_like(grid) * 0.05 * (2.0 ** lvl)
+            wh = torch.ones_like(grid) * 0.05 * (2.0**lvl)
             proposal = torch.cat((grid, wh), -1).view(N_, -1, 4)
             proposals.append(proposal)
             _cur += H_ * W_
@@ -198,7 +200,7 @@ class DeformableTransformer(nn.Module):
         valid_ratio = torch.cat([valid_ratio_w, valid_ratio_h], 1)  # (b, 2)
         return valid_ratio
 
-    def forward(self, srcs, masks, pos_embeds, query_embed=None, **kwargs):
+    def forward(self, srcs, masks, pos_embeds, query_embed=None, depths=None, **kwargs):
         assert self.two_stage or query_embed is not None
 
         transformer_outputs = {}
@@ -206,6 +208,7 @@ class DeformableTransformer(nn.Module):
         # prepare input for encoder
         src_flatten = []
         mask_flatten = []
+        depth_flatten = []
         lvl_pos_embed_flatten = []
         if "is_export_onnx" in kwargs:
             spatial_shapes = []
@@ -225,6 +228,8 @@ class DeformableTransformer(nn.Module):
             lvl_pos_embed_flatten.append(lvl_pos_embed)
             src_flatten.append(src)
             mask_flatten.append(mask)
+            if self.dec_depth:
+                depth_flatten.append(depths[lvl].flatten(2).transpose(1, 2))
 
         src_flatten = torch.cat(src_flatten, 1)
         mask_flatten = torch.cat(mask_flatten, 1)
@@ -242,7 +247,6 @@ class DeformableTransformer(nn.Module):
         memory = self.encoder(
             src_flatten, spatial_shapes, level_start_index, valid_ratios, lvl_pos_embed_flatten, mask_flatten, **kwargs
         )
-
         # prepare input for decoder
         bs, _, c = memory.shape
         if self.two_stage:
@@ -267,11 +271,20 @@ class DeformableTransformer(nn.Module):
             tgt = tgt.unsqueeze(0).expand(bs, -1, -1)
             reference_points = self.reference_points(query_embed).sigmoid()
 
+        # Add depth to encoder features for cross attention
+        if self.dec_depth:
+            dec_memory = torch.cat(
+                [memory, torch.cat(depth_flatten, 1)],
+                -1,
+            )
+        else:
+            dec_memory = memory
+
         # decoder
         dec_outputs = self.decoder(
             tgt,
             reference_points,
-            memory,
+            dec_memory,
             spatial_shapes,
             level_start_index,
             valid_ratios,
@@ -414,7 +427,7 @@ class DeformableTransformerDecoderLayer(nn.Module):
         super().__init__()
 
         # cross attention
-        self.cross_attn = MSDeformAttn(d_model, n_levels, n_heads, n_points)
+        self.cross_attn = MSDeformAttn(d_model, n_levels, n_heads, n_points, add_channel=True)
         self.dropout1 = nn.Dropout(dropout)
         self.norm1 = nn.LayerNorm(d_model)
 

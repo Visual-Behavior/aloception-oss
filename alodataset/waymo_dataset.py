@@ -29,6 +29,7 @@ class WaymoDataset(BaseDataset, SequenceMixin, SplitMixin):
         labels: List[str] = [],
         load_rescaled: float = None,
         traffic_lights_only: bool = False,
+        drop_classes: list = [],
         **kwargs,
     ):
         """WaymoDataset
@@ -57,7 +58,7 @@ class WaymoDataset(BaseDataset, SequenceMixin, SplitMixin):
         if self.sample:
             self.cameras = self.CAMERAS
             return
-
+        self.drop_classes = [self.CLASSES.index(class_name) for class_name in drop_classes]
         self.random_step = random_step
         self.load_rescaled = load_rescaled
         self.traffic_lights_only = traffic_lights_only
@@ -255,6 +256,9 @@ class WaymoDataset(BaseDataset, SequenceMixin, SplitMixin):
             # add trafic lights annotations
             anns = anns + self.preloaded_traffic_lights[segment][int(sequence_id)][int(camera_id)]
 
+        if self.drop_classes:
+            anns = list(filter(lambda ann: ann["class"] not in self.drop_classes, anns))
+
         boxes = np.zeros((len(anns), 4))
         labels = np.zeros((len(anns)))
         track_id = np.zeros((len(anns)))
@@ -392,6 +396,9 @@ class WaymoDataset(BaseDataset, SequenceMixin, SplitMixin):
         """
         camera_id = str(self.CAMERAS.index(camera))
         anns = self.preloaded_labels_3d[segment][int(sequence_id)][camera_id]
+
+        if self.drop_classes:
+            anns = list(filter(lambda ann: ann["class"] not in self.drop_classes, anns))
 
         np_boxes3d = np.zeros((len(anns), 7))
         np_boxes3d_proj = np.zeros((len(anns), 4))
@@ -619,7 +626,8 @@ def main():
         cameras=["all"],
         labels=["gt_boxes_2d", "gt_boxes_3d", "depth", "traffic_lights"],
         load_rescaled=4.0,
-        traffic_lights_only=True,
+        # traffic_lights_only=True,
+        drop_classes=["VEHICLE"]
     )
     print(len(waymo_dataset))
     # waymo_dataset.prepare()

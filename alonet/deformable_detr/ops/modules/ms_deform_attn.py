@@ -30,7 +30,7 @@ def _is_power_of_2(n):
 
 
 class MSDeformAttn(nn.Module):
-    def __init__(self, d_model=256, n_levels=4, n_heads=8, n_points=4):
+    def __init__(self, d_model=256, n_levels=4, n_heads=8, n_points=4, add_channel=False):
         """
         Multi-Scale Deformable Attention Module
         :param d_model      hidden dimension
@@ -58,7 +58,7 @@ class MSDeformAttn(nn.Module):
 
         self.sampling_offsets = nn.Linear(d_model, n_heads * n_levels * n_points * 2)
         self.attention_weights = nn.Linear(d_model, n_heads * n_levels * n_points)
-        self.value_proj = nn.Linear(d_model, d_model)
+        self.value_proj = nn.Linear(d_model + 1 * add_channel, d_model)
         self.output_proj = nn.Linear(d_model, d_model)
 
         self._reset_parameters()

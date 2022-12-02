@@ -10,7 +10,7 @@ import aloscene
 class DeformableDetrR50Refinement(DeformableDETR):
     """Deformable Detr with Resnet50 backbone with box refinement"""
 
-    def __init__(self, *args, return_intermediate_dec: bool = True, num_classes=91, **kwargs):
+    def __init__(self, *args, return_intermediate_dec: bool = True, num_classes=91, add_depth=False, **kwargs):
         backbone = self.build_backbone(
             backbone_name="resnet50", train_backbone=True, return_interm_layers=True, dilation=False
         )
@@ -27,9 +27,12 @@ class DeformableDetrR50Refinement(DeformableDETR):
             dec_n_points=4,
             enc_n_points=4,
             return_intermediate_dec=return_intermediate_dec,
+            add_depth=add_depth,
         )
 
-        super().__init__(backbone, transformer, *args, num_classes=num_classes, with_box_refine=True, **kwargs)
+        super().__init__(
+            backbone, transformer, *args, num_classes=num_classes, with_box_refine=True, add_depth=add_depth, **kwargs
+        )
 
 
 if __name__ == "__main__":

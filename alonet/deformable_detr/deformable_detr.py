@@ -85,7 +85,7 @@ class DeformableDETR(nn.Module):
         return_intermediate_dec: bool = True,
         strict_load_weights: bool = True,
         tracing=False,
-        add_channel=False,
+        add_depth=False,
     ):
         super().__init__()
         self.device = device
@@ -97,6 +97,7 @@ class DeformableDETR(nn.Module):
         self.return_dec_outputs = return_dec_outputs
         self.return_enc_outputs = return_enc_outputs
         self.return_bb_outputs = return_bb_outputs
+        self.add_depth = add_depth
 
         if activation_fn not in ["sigmoid", "softmax"]:
             raise Exception(f"activation_fn = {activation_fn} must be one of this two values: 'sigmoid' or 'softmax'.")
@@ -113,7 +114,7 @@ class DeformableDETR(nn.Module):
             num_backbone_outs = len(backbone.strides) - 1  # Ignore backbone.layer1
             input_proj_list = []
             for i in range(1, num_backbone_outs + 1):  # Ignore backbone.layer1
-                in_channels = backbone.num_channels[i] + (1 if add_channel else 0)
+                in_channels = backbone.num_channels[i] + (1 if add_depth else 0)
                 input_proj_list.append(
                     nn.Sequential(
                         nn.Conv2d(in_channels, self.hidden_dim, kernel_size=1),
@@ -133,9 +134,7 @@ class DeformableDETR(nn.Module):
             self.input_proj = nn.ModuleList(
                 [
                     nn.Sequential(
-                        nn.Conv2d(
-                            backbone.num_channels[0] + (1 if add_channel else 0), self.hidden_dim, kernel_size=1
-                        ),
+                        nn.Conv2d(backbone.num_channels[0] + (1 if add_depth else 0), self.hidden_dim, kernel_size=1),
                         nn.GroupNorm(32, self.hidden_dim),
                     )
                 ]
@@ -238,6 +237,7 @@ class DeformableDETR(nn.Module):
         # ==== Transformer
         srcs = []
         masks = []
+        depth = []
         # Project feature maps from the backbone
         for lf, feat in enumerate(features[1:]):  # bacbone.layer1 ignored
             src = feat[0]
@@ -246,6 +246,7 @@ class DeformableDETR(nn.Module):
             )  # Squeeze from (B, 1, H, W) to (B, H, W), casting for TensorRT compability
             srcs.append(self.input_proj[lf](src))
             masks.append(mask)
+            depth.append(src[:, -1:])
             assert mask is not None
         # If the number of ft maps from backbone is less than the required self.num_feature_levels,
         # we project the last feature map
@@ -253,8 +254,10 @@ class DeformableDETR(nn.Module):
             _len_srcs = len(srcs)
             for lf in range(_len_srcs, self.num_feature_levels):
                 if lf == _len_srcs:
+                    depth.append(torch.nn.functional.max_pool2d(features[-1][0][:, -1:], 3, 2, 1))
                     src = self.input_proj[lf](features[-1][0])
                 else:
+                    depth.append(torch.nn.functional.max_pool2d(srcs[-1, -1:], 3, 2, 1))
                     src = self.input_proj[lf](srcs[-1])
                 mask = F.interpolate(frame_masks.float(), size=src.shape[-2:]).to(torch.bool)
                 pos_l = self.backbone[1]((src, mask)).to(src.dtype)
@@ -263,7 +266,9 @@ class DeformableDETR(nn.Module):
                 pos.append(pos_l)
 
         query_embeds = self.query_embed.weight
-        transformer_outptus = self.transformer(srcs, masks, pos[1:], query_embeds, **kwargs)
+        transformer_outptus = self.transformer(
+            srcs, masks, pos[1:], query_embeds, depth if self.add_depth else None, **kwargs
+        )
 
         # Feature reconstruction with features[-1][0] = input_proj(features[-1][0])
         if self.return_bb_outputs:
@@ -650,6 +655,7 @@ class DeformableDETR(nn.Module):
         dec_n_points: int = 4,
         enc_n_points: int = 4,
         return_intermediate_dec: bool = True,
+        add_depth=False,
     ):
         """Build transformer
 
@@ -695,6 +701,7 @@ class DeformableDETR(nn.Module):
             dec_n_points=dec_n_points,
             enc_n_points=enc_n_points,
             return_intermediate_dec=return_intermediate_dec,
+            dec_depth=add_depth,
         )
 
 

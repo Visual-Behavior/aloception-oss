@@ -557,7 +557,7 @@ class SpatialAugmentedTensor(AugmentedTensor):
         except AttributeError:
             return label
 
-    def _pad(self, offset_y: tuple, offset_x: tuple, **kwargs):
+    def _pad(self, offset_y: tuple, offset_x: tuple, value=0, **kwargs):
         """Pad `self` based on the given offset
 
         Parameters

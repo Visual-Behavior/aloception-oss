@@ -1,7 +1,7 @@
 from aloscene.renderer import View
 from alodataset import WaymoDataset, Split
 
-frame = WaymoDataset(split=Split.VAL, cameras=["front"], labels=["gt_boxes_2d"]).get(42)["front"]
+frame = WaymoDataset(split=Split.VAL, cameras=["front"], labels=["gt_boxes_2d"]).get(2)["front"]
 
 ######
 # Here are some example of the operations that can be done on a frame

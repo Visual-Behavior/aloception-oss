@@ -6,6 +6,26 @@ from typing import *
 import copy
 
 
+def _torch_function_get_self(cls, func, types, args, kwargs):
+    """ Based on this dicussion https://github.com/pytorch/pytorch/issues/63767
+
+    "A simple solution would be to scan the args for the first subclass of this class.
+    My question is more: will forcing this to be a subclass actually be a problem for some use case?
+    Or are we saying that this code that requires a pure method is actually not well structured and should be written differently?"
+
+    " No, that isn't the case here. self is guaranteed to be in args /kwargssomewhere."
+    What I understand is that looking into args to get self is acceptable in the current API.
+    """
+    for a in args:
+        if isinstance(a, cls):
+            return a
+        elif isinstance(a, list):
+            return _torch_function_get_self(cls, func, types, a, kwargs)
+        elif isinstance(a, tuple):
+            return _torch_function_get_self(cls, func, types, list(a), kwargs)
+    return None
+        
+
 class AugmentedTensor(torch.Tensor):
     """Tensor with attached labels"""
 
@@ -544,11 +564,16 @@ class AugmentedTensor(torch.Tensor):
         for t in range(len(self)):
             yield self[t]
 
-    def __torch_function__(self, func, types, args=(), kwargs=None):
+
+    @classmethod
+    def __torch_function__(cls, func, types, args=(), kwargs=None):
+        
+        self = _torch_function_get_self(cls, func, types, args, kwargs)
+
         def _merging_frame(args):
-            if len(args) >= 1 and isinstance(args[0], list):
+            if len(args) >= 1 and isinstance(args[0], (list, tuple)):
                 for el in args[0]:
-                    if isinstance(el, type(self)):
+                    if isinstance(el, cls):
                         return True
                 return False
             return False
@@ -559,11 +584,12 @@ class AugmentedTensor(torch.Tensor):
         if func.__name__ == "__reduce_ex__":
             self.rename_(None, auto_restore_names=True)
             tensor = super().__torch_function__(func, types, args, kwargs)
+            #tensor = super().torch_func_method(func, types, args, kwargs)
         else:
             tensor = super().__torch_function__(func, types, args, kwargs)
+            #tensor = super().torch_func_method(func, types, args, kwargs)
 
         if isinstance(tensor, type(self)):
-
             tensor._property_list = self._property_list
             tensor._children_list = self._children_list
             tensor._child_property = self._child_property
@@ -936,7 +962,7 @@ class AugmentedTensor(torch.Tensor):
         except AttributeError:
             return label
 
-    def pad(self, offset_y: tuple, offset_x: tuple, **kwargs):
+    def pad(self, offset_y: tuple = None, offset_x: tuple = None, multiple: int = None, **kwargs):
         """
         Pad AugmentedTensor, and its labels recursively
 
@@ -948,16 +974,34 @@ class AugmentedTensor(torch.Tensor):
         offset_x: tuple of float or tuple of int
             (percentage left_offset, percentage right_offset) Percentage based on the previous size. If tuple of int
             the absolute value will be converted to float (percentage) before to be applied.
+        multiple: int
+            pad the tensor to the next multiple of `multiple`
 
         Returns
         -------
-        croped : aloscene AugmentedTensor
-            croped tensor
+        cropped : aloscene AugmentedTensor
+            cropped tensor
         """
-        if isinstance(offset_y[0], int) and isinstance(offset_y[1], int):
-            offset_y = (offset_y[0] / self.H, offset_y[1] / self.H)
-        if isinstance(offset_x[0], int) and isinstance(offset_x[1], int):
-            offset_x = (offset_x[0] / self.W, offset_x[1] / self.W)
+        if multiple is not None:
+            assert offset_x is None and offset_y is None
+            if not self.H % multiple == 0:
+                offset_y0 = int(np.floor((multiple - self.H % multiple) / 2))
+                offset_y1 = int(np.ceil((multiple - self.H % multiple) / 2))
+                offset_y = (offset_y0 / self.H, offset_y1 / self.H)
+            else:  # already a multiple of H
+                offset_y = (0, 0)
+            if not self.W % multiple == 0:
+                offset_x0 = int(np.floor((multiple - self.W % multiple) / 2))
+                offset_x1 = int(np.ceil((multiple - self.W % multiple) / 2))
+                offset_x = (offset_x0 / self.W, offset_x1 / self.W)
+            else:  # already a multiple of W
+                offset_x = (0, 0)
+        else:
+            assert offset_x is not None and offset_y is not None
+            if isinstance(offset_y[0], int) and isinstance(offset_y[1], int):
+                offset_y = (offset_y[0] / self.H, offset_y[1] / self.H)
+            if isinstance(offset_x[0], int) and isinstance(offset_x[1], int):
+                offset_x = (offset_x[0] / self.W, offset_x[1] / self.W)
 
         padded = self._pad(offset_y, offset_x, **kwargs)
         padded.recursive_apply_on_children_(lambda label: self._pad_label(label, offset_y, offset_x, **kwargs))

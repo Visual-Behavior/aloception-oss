@@ -6,14 +6,16 @@ in a :mod:`Frame object <aloscene.frame>`. Ideal for object detection applicatio
 import os
 import numpy as np
 import torch
+
+from alodataset import BaseDataset
+from aloscene import BoundingBoxes2D, Frame, Labels, Mask
 from collections import defaultdict
+from pathlib import Path
 from pycocotools import mask as coco_mask
 from pycocotools.coco import COCO
 from typing import Dict, Union
 
-from alodataset import BaseDataset
-from aloscene import BoundingBoxes2D, Frame, Labels, Mask
-from pathlib import Path
+
 
 class CocoBaseDataset(BaseDataset):
     """
@@ -78,7 +80,7 @@ class CocoBaseDataset(BaseDataset):
             return
         else:
             assert img_folder is not None, "When sample = False, img_folder must be given."
-            assert ann_file is not None or  "test"  in img_folder, "When sample = False and the test split is not used, ann_file must be given."
+            assert ann_file is not None or "test" in img_folder, "When sample = False and the test split is not used, ann_file must be given."
 
 
         # Create properties
@@ -86,7 +88,7 @@ class CocoBaseDataset(BaseDataset):
 
         if "test" in img_folder:
             #get a list of  indices that don't rely on the annotation file
-            self.items= list(sorted([int(Path(os.path.join(self.img_folder, f)).stem) for f in os.listdir(self.img_folder) if os.path.isfile(os.path.join(self.img_folder, f))]))
+            self.items = [int(Path(os.path.join(self.img_folder, f)).stem) for f in os.listdir(self.img_folder) if os.path.isfile(os.path.join(self.img_folder, f))]
             return
 
         self.coco = COCO(os.path.join(self.dataset_dir, ann_file))
@@ -240,9 +242,7 @@ class CocoBaseDataset(BaseDataset):
         image_id = self.items[idx]
         if "test" in self.img_folder:
             #get the filename from image_id without relying on annotation file
-            frame = Frame(os.path.join(self.img_folder, f"{str(image_id).zfill(12)}.jpg"))
-
-            return frame
+            return Frame(os.path.join(self.img_folder, f"{str(image_id).zfill(12)}.jpg"))
 
         frame = Frame(os.path.join(self.img_folder, self.coco.loadImgs(image_id)[0]["file_name"]))
 
@@ -357,8 +357,8 @@ class ConvertCocoPolysToMask(object):
 if __name__ == "__main__":
     coco_dataset = CocoBaseDataset(sample=False, img_folder="test2017")
     #checking if regular getitem works
-    stuff=coco_dataset.getitem(0)
-    stuff.get_view().render()
+    frame = coco_dataset[0]
+    frame.get_view().render()
 
     #check if dataloader works
     for f, frames in enumerate(coco_dataset.train_loader(batch_size=2)):

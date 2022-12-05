@@ -89,7 +89,8 @@ class DeformableDETR(nn.Module):
         super().__init__()
         self.device = device
         self.num_feature_levels = num_feature_levels
-        self.transformer = transformer
+        self.backbone = backbone
+
         self.num_queries = num_queries
         self.return_intermediate_dec = return_intermediate_dec
         self.hidden_dim = transformer.d_model
@@ -98,18 +99,17 @@ class DeformableDETR(nn.Module):
         self.return_bb_outputs = return_bb_outputs
 
         if activation_fn not in ["sigmoid", "softmax"]:
-            raise Exception(f"activation_fn = {activation_fn} must be one of this two values: 'sigmoid' or 'softmax'.")
+            raise Exception(
+                f"activation_fn = {activation_fn} must be one of this two values: 'sigmoid' or 'softmax'.")
 
         self.activation_fn = activation_fn
         self.background_class = num_classes if self.activation_fn == "softmax" else None
         num_classes += 1 if self.activation_fn == "softmax" else 0  # Add bg class
 
-        self.class_embed = nn.Linear(self.hidden_dim, num_classes)
-        self.bbox_embed = MLP(self.hidden_dim, self.hidden_dim, 4, 3)
-        self.query_embed = nn.Embedding(num_queries, self.hidden_dim * 2)
         # Projection for Multi-scale features
         if num_feature_levels > 1:
-            num_backbone_outs = len(backbone.strides) - 1  # Ignore backbone.layer1
+            num_backbone_outs = len(backbone.strides) - \
+                1  # Ignore backbone.layer1
             input_proj_list = []
             for i in range(1, num_backbone_outs + 1):  # Ignore backbone.layer1
                 in_channels = backbone.num_channels[i]
@@ -122,7 +122,8 @@ class DeformableDETR(nn.Module):
             for _ in range(num_feature_levels - num_backbone_outs):
                 input_proj_list.append(
                     nn.Sequential(
-                        nn.Conv2d(in_channels, self.hidden_dim, kernel_size=3, stride=2, padding=1),
+                        nn.Conv2d(in_channels, self.hidden_dim,
+                                  kernel_size=3, stride=2, padding=1),
                         nn.GroupNorm(32, self.hidden_dim),
                     )
                 )
@@ -132,13 +133,18 @@ class DeformableDETR(nn.Module):
             self.input_proj = nn.ModuleList(
                 [
                     nn.Sequential(
-                        nn.Conv2d(backbone.num_channels[0], self.hidden_dim, kernel_size=1),
+                        nn.Conv2d(
+                            backbone.num_channels[0], self.hidden_dim, kernel_size=1),
                         nn.GroupNorm(32, self.hidden_dim),
                     )
                 ]
             )
+        self.query_embed = nn.Embedding(num_queries, self.hidden_dim * 2)
 
-        self.backbone = backbone
+        self.transformer = transformer
+        self.class_embed = nn.Linear(self.hidden_dim, num_classes)
+        self.bbox_embed = MLP(self.hidden_dim, self.hidden_dim, 4, 3)
+
         self.aux_loss = aux_loss
         self.with_box_refine = with_box_refine
         self.tracing = tracing
@@ -157,16 +163,20 @@ class DeformableDETR(nn.Module):
 
         num_pred = transformer.decoder.num_layers
         self.num_decoder_layers = transformer.decoder.num_layers
+
         if with_box_refine:
             self.class_embed = _get_clones(self.class_embed, num_pred)
             self.bbox_embed = _get_clones(self.bbox_embed, num_pred)
-            nn.init.constant_(self.bbox_embed[0].layers[-1].bias.data[2:], -2.0)
+            nn.init.constant_(
+                self.bbox_embed[0].layers[-1].bias.data[2:], -2.0)
             # hack implementation for iterative bounding box refinement
             self.transformer.decoder.bbox_embed = self.bbox_embed
         else:
             nn.init.constant_(self.bbox_embed.layers[-1].bias.data[2:], -2.0)
-            self.class_embed = nn.ModuleList([self.class_embed for _ in range(num_pred)])
-            self.bbox_embed = nn.ModuleList([self.bbox_embed for _ in range(num_pred)])
+            self.class_embed = nn.ModuleList(
+                [self.class_embed for _ in range(num_pred)])
+            self.bbox_embed = nn.ModuleList(
+                [self.bbox_embed for _ in range(num_pred)])
             self.transformer.decoder.bbox_embed = None
 
         self.device = device
@@ -175,11 +185,13 @@ class DeformableDETR(nn.Module):
 
         if weights is not None:
             if (
-                weights in ["deformable-detr-r50", "deformable-detr-r50-refinement"]
+                weights in ["deformable-detr-r50",
+                            "deformable-detr-r50-refinement"]
                 or ".pth" in weights
                 or ".ckpt" in weights
             ):
-                alonet.common.load_weights(self, weights, device, strict_load_weights=strict_load_weights)
+                alonet.common.load_weights(
+                    self, weights, device, strict_load_weights=strict_load_weights)
             else:
                 raise ValueError(f"Unknown weights: '{weights}'")
 
@@ -225,7 +237,8 @@ class DeformableDETR(nn.Module):
         # ==== Backbone
         features, pos = self.backbone(frames, **kwargs)
 
-        assert next(self.parameters()).is_cuda, "DeformableDETR cannot run on CPU (due to MSdeformable op)"
+        assert next(self.parameters(
+        )).is_cuda, "DeformableDETR cannot run on CPU (due to MSdeformable op)"
 
         if self.tracing:
             frame_masks = frames[:, 3:4]
@@ -253,19 +266,23 @@ class DeformableDETR(nn.Module):
                     src = self.input_proj[lf](features[-1][0])
                 else:
                     src = self.input_proj[lf](srcs[-1])
-                mask = F.interpolate(frame_masks.float(), size=src.shape[-2:]).to(torch.bool)
+                mask = F.interpolate(frame_masks.float(),
+                                     size=src.shape[-2:]).to(torch.bool)
                 pos_l = self.backbone[1]((src, mask)).to(src.dtype)
                 srcs.append(src)
-                masks.append(mask.float()[:, 0].bool())  # [:,0] to squeeze the channel dimension
+                # [:,0] to squeeze the channel dimension
+                masks.append(mask.float()[:, 0].bool())
                 pos.append(pos_l)
 
         query_embeds = self.query_embed.weight
-        transformer_outptus = self.transformer(srcs, masks, pos[1:], query_embeds, **kwargs)
+        transformer_outptus = self.transformer(
+            srcs, masks, pos[1:], query_embeds, **kwargs)
 
         # Feature reconstruction with features[-1][0] = input_proj(features[-1][0])
         if self.return_bb_outputs:
             features[-1] = (srcs[-2], masks[-2])
-        forward_head = self.forward_heads(transformer_outptus, bb_outputs=(features, pos[:-1]))
+        forward_head = self.forward_heads(
+            transformer_outptus, bb_outputs=(features, pos[:-1]))
 
         if self.tracing:
             forward_head.pop("activation_fn")  # Not include in exportation
@@ -367,13 +384,15 @@ class DeformableDETR(nn.Module):
         }
 
         if self.aux_loss:
-            out["aux_outputs"] = self._set_aux_loss(outputs_class, outputs_coord, activation_fn=out["activation_fn"])
+            out["aux_outputs"] = self._set_aux_loss(
+                outputs_class, outputs_coord, activation_fn=out["activation_fn"])
 
         if self.return_dec_outputs:
             out["dec_outputs"] = transformer_outptus["hs"]
 
         if self.return_enc_outputs:
-            out["enc_outputs"] = transformer_outptus["memory"][-2]  # Encoder layer used from PanopticHead
+            # Encoder layer used from PanopticHead
+            out["enc_outputs"] = transformer_outptus["memory"][-2]
 
         if self.return_bb_outputs:
             features, pos = bb_outputs
@@ -417,7 +436,8 @@ class DeformableDETR(nn.Module):
             (torch.Tensor, torch.Tensor) being the predicted labels and scores
         """
         assert (m_outputs) is not None
-        activation_fn = m_outputs.get("activation_fn") or activation_fn or self.activation_fn
+        activation_fn = m_outputs.get(
+            "activation_fn") or activation_fn or self.activation_fn
         if activation_fn == "softmax":
             outs_probs = F.softmax(m_outputs["pred_logits"], -1)
         else:
@@ -465,7 +485,8 @@ class DeformableDETR(nn.Module):
         activation_fn = activation_fn or self.activation_fn
 
         if outs_scores is None or outs_labels is None:
-            outs_labels, outs_scores = self.get_outs_labels(m_outputs, activation_fn=activation_fn)
+            outs_labels, outs_scores = self.get_outs_labels(
+                m_outputs, activation_fn=activation_fn)
 
         filters = []
         for scores, labels in zip(outs_scores, outs_labels):
@@ -474,7 +495,8 @@ class DeformableDETR(nn.Module):
                 if softmax_threshold is None:
                     filters.append(labels != self.background_class)
                 else:
-                    filters.append((labels != self.background_class) & (scores > softmax_threshold))
+                    filters.append((labels != self.background_class)
+                                   & (scores > softmax_threshold))
             else:
                 sigmoid_threshold = 0.2 if threshold is None else threshold
                 filters.append(scores > sigmoid_threshold)
@@ -521,7 +543,8 @@ class DeformableDETR(nn.Module):
             boxes = boxes[b_filter]
             labels = labels[b_filter]
             scores = scores[b_filter]
-            boxes_labels = aloscene.Labels(labels.type(torch.float32), encoding="id", scores=scores, names=("N",))
+            boxes_labels = aloscene.Labels(labels.type(
+                torch.float32), encoding="id", scores=scores, names=("N",))
             boxes = aloscene.BoundingBoxes2D(
                 boxes.cpu(), boxes_format="xcyc", absolute=False, names=("N", None), labels=boxes_labels
             )
@@ -543,7 +566,8 @@ class DeformableDETR(nn.Module):
             Default architecture to encode input with values and theirs position
         """
         N_steps = hidden_dim // 2
-        position_embed = alonet.transformers.PositionEmbeddingSine(N_steps, normalize=True, center=True)
+        position_embed = alonet.transformers.PositionEmbeddingSine(
+            N_steps, normalize=True, center=True)
         return position_embed
 
     def build_backbone(
@@ -616,7 +640,7 @@ class DeformableDETR(nn.Module):
             n_points=dec_n_points,
         )
 
-    def build_decoder(self, hidden_dim,num_feature_levels=4,dec_layers: int = 6, return_intermediate_dec: bool = True):
+    def build_decoder(self, hidden_dim, num_feature_levels=4, dec_layers: int = 6, return_intermediate_dec: bool = True):
         """Build decoder layer
 
         Parameters
@@ -633,7 +657,8 @@ class DeformableDETR(nn.Module):
         :class:`~alonet.deformable.deformable_transformer.DeformableTransformerDecoder`
             Transformer decoder
         """
-        decoder_layer = self.build_decoder_layer(hidden_dim=hidden_dim,num_feature_levels=num_feature_levels)
+        decoder_layer = self.build_decoder_layer(
+            hidden_dim=hidden_dim, num_feature_levels=num_feature_levels)
 
         return DeformableTransformerDecoder(decoder_layer, dec_layers, return_intermediate_dec)
 
@@ -680,7 +705,8 @@ class DeformableDETR(nn.Module):
         :mod:`Transformer <alonet.detr.transformer>`
             Transformer module
         """
-        decoder = self.build_decoder(hidden_dim=hidden_dim,num_feature_levels=num_feature_levels)
+        decoder = self.build_decoder(
+            hidden_dim=hidden_dim, num_feature_levels=num_feature_levels)
 
         return DeformableTransformer(
             decoder=decoder,

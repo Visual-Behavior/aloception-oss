@@ -25,8 +25,10 @@ def coords2rtheta(
     h, w = size
     focal = K.focal_length[..., 0]
     principal_point = K.principal_points[..., :]
+    valid_names = []
     for name in K.names:
         if name in ["B", "T"]:
+            valid_names.append(name)
             focal = focal[0, ...]
             principal_point = principal_point[0, ...]
     principal_point = principal_point[:, None, None]
@@ -36,6 +38,8 @@ def coords2rtheta(
     coords = coords - principal_point
     r_d = coords[:2, ...] * coords[:2, ...]
     r_d = torch.sqrt(torch.sum(r_d, dim=0, keepdim=True))
+    for _ in range(len(valid_names)):
+        r_d = r_d.unsqueeze(0)
 
     if projection == "pinhole":
         theta = torch.atan(r_d / focal)
@@ -45,14 +49,16 @@ def coords2rtheta(
     elif projection == "kumler_bauer":
         # distortion [k1, k2]
         assert (
-            isinstance(distortion, Sequence) and len(distortion) == 2
-        ), f"Kumler-Bauer projection needs 2 distortion coefficients (alpha (in pixel), beta), found {len(distortion)}"
-        theta = torch.arcsin(r_d / distortion[0]) / distortion[1]
+            isinstance(distortion, (Sequence, torch.Tensor))
+        ), f"Kumler-Bauer projection needs to be Sequence or torch.Tensor. Found {type(distortion)}"
+        k1 = distortion[..., 0][..., None, None, None]
+        k2 = distortion[..., 1][..., None, None, None]
+        theta = torch.arcsin(r_d / k1) / k2
     else:
         raise NotImplementedError
 
-    theta = AugmentedTensor(theta, names=("C", "H", "W"))
-    r_d = AugmentedTensor(r_d, names=("C", "H", "W"))
+    theta = AugmentedTensor(theta, names=valid_names + ["C", "H", "W"])
+    r_d = AugmentedTensor(r_d, names=valid_names + ["C", "H", "W"])
 
     return r_d, theta
 

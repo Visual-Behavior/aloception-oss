@@ -237,8 +237,8 @@ class DeformableTransformer(nn.Module):
         if isinstance(spatial_shapes, list):
             spatial_shapes = torch.cat(spatial_shapes, 0)
 
-        level_start_index = torch.cat((spatial_shapes.new_zeros((1,)), spatial_shapes.prod(1).cumsum(0)[:-1])).type(
-            torch.int32
+        level_start_index = torch.cat(
+            (spatial_shapes.new_zeros((1,)), spatial_shapes.prod(1).cumsum(0)[:-1].type(torch.int32))
         )
         _valid_ratios = [self.get_valid_ratio(m) for m in masks]
         valid_ratios = torch.stack(_valid_ratios, 1)
@@ -427,7 +427,7 @@ class DeformableTransformerDecoderLayer(nn.Module):
         super().__init__()
 
         # cross attention
-        self.cross_attn = MSDeformAttn(d_model, n_levels, n_heads, n_points, add_channel=True)
+        self.cross_attn = MSDeformAttn(d_model, n_levels, n_heads, n_points, add_channel=False)
         self.dropout1 = nn.Dropout(dropout)
         self.norm1 = nn.LayerNorm(d_model)
 

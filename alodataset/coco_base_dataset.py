@@ -95,14 +95,16 @@ class CocoBaseDataset(BaseDataset):
         self._ids_renamed = classes
         self.label_names = label_names
         if classes is not None:
-            notclass = [label for label in classes if label not in self.label_names]
+            notclass = [
+                label for label in classes if label not in self.label_names]
             if len(notclass) > 0:  # Ignore all labels not in classes
                 raise Exception(
                     f"The {notclass} classes dont match in label_names list. Possible values: {self.label_names}"
                 )
 
             self.label_names = classes
-            self._ids_renamed = [-1 if label not in classes else classes.index(label) for label in label_names]
+            self._ids_renamed = [-1 if label not in classes else classes.index(
+                label) for label in label_names]
             self._ids_renamed = np.array(self._ids_renamed)
 
             # Check each annotation and keep only that have at least 1 box in classes list
@@ -122,10 +124,12 @@ class CocoBaseDataset(BaseDataset):
         self.label_types, self.label_types_names = None, None
         if return_multiple_labels:
             dict_cats = {
-                lbl: self.coco.loadCats(self.coco.getCatIds(lbl))[0] if lbl != "N/A" else {}
+                lbl: self.coco.loadCats(self.coco.getCatIds(lbl))[
+                    0] if lbl != "N/A" else {}
                 for lbl in self.label_names
             }
-            self.label_types, self.label_types_names = self._get_label_types(dict_cats)
+            self.label_types, self.label_types_names = self._get_label_types(
+                dict_cats)
 
     def _get_label_types(self, dict_cats: Dict[dict, list]):
         label_types, label_types_names = defaultdict(list), defaultdict(list)
@@ -139,7 +143,8 @@ class CocoBaseDataset(BaseDataset):
 
         # Remove duplicate types names and add N/A class
         for ltype in label_types_names:
-            label_types_names[ltype] = sorted(list(set(label_types_names[ltype])))
+            label_types_names[ltype] = sorted(
+                list(set(label_types_names[ltype])))
             label_types_names[ltype].append("N/A")
 
         # Get encoding for each category
@@ -147,15 +152,18 @@ class CocoBaseDataset(BaseDataset):
             cat = dict_cats[lbl]
             for ltype in label_types_names:
                 if len(cat) > 0:
-                    label_types[ltype].append(label_types_names[ltype].index(cat[ltype]))
+                    label_types[ltype].append(
+                        label_types_names[ltype].index(cat[ltype]))
                 else:
-                    label_types[ltype].append(label_types_names[ltype].index("N/A"))
+                    label_types[ltype].append(
+                        label_types_names[ltype].index("N/A"))
 
         return label_types, label_types_names
 
     def _fix_classes(self, new_label_size):
         if new_label_size > len(self.label_names):
-            self.label_names += ["N/A"] * (new_label_size - len(self.label_names))
+            self.label_names += ["N/A"] * \
+                (new_label_size - len(self.label_names))
         else:
             raise ValueError(
                 f"fix_classes_len must be higher than the lenght of label_names ({len(self.label_names)})."
@@ -163,7 +171,8 @@ class CocoBaseDataset(BaseDataset):
 
     def _append_labels(self, element: Union[BoundingBoxes2D, Mask], target):
         def append_new_labels(element, ltensor, lnames, name):
-            label_2d = Labels(ltensor.to(torch.float32), labels_names=lnames, names=("N"), encoding="id")
+            label_2d = Labels(ltensor.to(torch.float32),
+                              labels_names=lnames, names=("N"), encoding="id")
             element.append_labels(label_2d, name=name)
 
         labels = target["labels"]
@@ -177,11 +186,13 @@ class CocoBaseDataset(BaseDataset):
         # Append supercategory labels
         for ktype in self.label_types:
             append_new_labels(
-                element, torch.as_tensor(self.label_types[ktype])[labels], self.label_types_names[ktype], ktype
+                element, torch.as_tensor(self.label_types[ktype])[
+                    labels], self.label_types_names[ktype], ktype
             )
 
         # Append specific labels
-        append_new_labels(element, target["iscrowd"].to(torch.float32), None, "iscrowd")
+        append_new_labels(element, target["iscrowd"].to(
+            torch.float32), None, "iscrowd")
 
     def _target2aloscene(self, target, frame):
         # Clean index by unique classes filtered
@@ -231,7 +242,8 @@ class CocoBaseDataset(BaseDataset):
             return BaseDataset.__getitem__(self, idx)
 
         image_id = self.items[idx]
-        frame = Frame(os.path.join(self.img_folder, self.coco.loadImgs(image_id)[0]["file_name"]))
+        frame = Frame(os.path.join(self.img_folder,
+                      self.coco.loadImgs(image_id)[0]["file_name"]))
         target = self.coco.loadAnns(self.coco.getAnnIds(image_id))
         target = {"image_id": image_id, "annotations": target}
         _, target = self.prepare(frame, target)
@@ -263,7 +275,8 @@ class ConvertCocoPolysToMask(object):
     def convert_coco_poly_to_mask(self, segmentations, height, width):
         masks = []
         for polygons in segmentations:
-            assert len(polygons) > 0, "Annotations file has not info about segmentation"
+            assert len(
+                polygons) > 0, "Annotations file has not info about segmentation"
             if isinstance(polygons, list):
                 polygons = coco_mask.frPyObjects(polygons, height, width)
             mask = coco_mask.decode(polygons)
@@ -330,7 +343,8 @@ class ConvertCocoPolysToMask(object):
 
         # for conversion to coco api
         area = torch.tensor([obj["area"] for obj in anno])
-        iscrowd = torch.tensor([obj["iscrowd"] if "iscrowd" in obj else 0 for obj in anno])
+        iscrowd = torch.tensor(
+            [obj["iscrowd"] if "iscrowd" in obj else 0 for obj in anno])
         target["area"] = area[keep]
         target["iscrowd"] = iscrowd[keep]
 
@@ -341,7 +355,8 @@ class ConvertCocoPolysToMask(object):
 
 
 if __name__ == "__main__":
-    coco_dataset = CocoBaseDataset(sample=True)
+    coco_dataset = CocoBaseDataset(sample=False)
+    item = coco_dataset.getitem(0)
     for f, frames in enumerate(coco_dataset.train_loader(batch_size=2)):
         frames = Frame.batch_list(frames)
         frames.get_view().render()

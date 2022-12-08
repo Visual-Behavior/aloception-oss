@@ -77,25 +77,28 @@ class CocoDetection2Detr(Data2Detr):
             self.train_dataset = alodataset.CocoBaseDataset(
                 transform_fn=self.train_transform, sample=self.sample, **self.train_loader_kwargs
             )
-            self.sample = self.train_dataset.sample or self.sample  # Update sample if user prompt is given
+            # Update sample if user prompt is given
+            self.sample = self.train_dataset.sample or self.sample
             self.val_dataset = alodataset.CocoBaseDataset(
                 transform_fn=self.val_transform, sample=self.sample, **self.val_loader_kwargs
             )
-            self.sample = self.val_dataset.sample or self.sample  # Update sample if user prompt is given
-            self.label_names = self.val_dataset.label_names if hasattr(self.val_dataset, "label_names") else None
+            # Update sample if user prompt is given
+            self.sample = self.val_dataset.sample or self.sample
+            self.label_names = self.val_dataset.label_names if hasattr(
+                self.val_dataset, "label_names") else None
 
 
 if __name__ == "__main__":
     # setup data
     loader_kwargs = dict(
-        name="rabbits",
-        train_folder="train",
-        train_ann="train/_annotations.coco.json",
-        val_folder="valid",
-        val_ann="valid/_annotations.coco.json",
+        name="coco",
+        train_folder="train2017",
+        train_ann="annotations/instances_train2017.json",
+
     )
 
-    args = CocoDetection2Detr.add_argparse_args(ArgumentParser()).parse_args()  # Help provider
+    args = CocoDetection2Detr.add_argparse_args(
+        ArgumentParser()).parse_args()  # Help provider
     coco = CocoDetection2Detr(args, **loader_kwargs)
     coco.prepare_data()
     coco.setup()

@@ -266,7 +266,7 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
 
         y_points = y_points.reshape((-1,))
         x_points = x_points.reshape((-1,))
-        z_points = self.as_tensor().reshape(target_shape)
+        z_points = z_points.reshape(target_shape)
 
         points_3d_shape = tuple(list(target_shape)[:-1] + [self.H * self.W] + [3])
         points_3d = torch.zeros(points_3d_shape, device=self.device)
@@ -296,9 +296,14 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
                 )
 
             # find points behind camera
-            behind = theta > (np.pi / 2)
-            xy = torch.zeros([*behind.shape[:-1], 2], dtype=torch.bool, device=behind.device)
-            behind = torch.cat([xy, behind], dim=-1)
+            behind = (theta > (np.pi / 2)).squeeze()
+            repeats = []
+            for name in intrinsic.names:
+                if name in ["B", "T"]:
+                    behind = behind.unsqueeze(0)
+                    repeats.append(1)
+            behind = behind.unsqueeze(-1).repeat(repeats + [1, 3])
+            behind[..., -1] = False
 
         points_3d[..., 0] = x_points - principal_points[..., 0:1]
         points_3d[..., 1] = y_points - principal_points[..., 1:]

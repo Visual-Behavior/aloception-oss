@@ -93,12 +93,14 @@ class View(object):
         if location is not None:
             plt.figure(figsize=figsize, tight_layout=True)
             plt.imshow(self.image)
+            plt.title("Frame" if self.title is None else self.title, self.image[:, :, ::-1])
             plt.savefig(location)
             plt.close()
 
         if method == self.MATPLOTLIB:
             plt.figure(figsize=figsize, tight_layout=True)
             plt.imshow(self.image)
+            plt.title("Frame" if self.title is None else self.title, self.image[:, :, ::-1])
             plt.show()
             plt.close()
 

@@ -99,7 +99,7 @@ class DeformableTransformer(nn.Module):
 
         if decoder is None:
             decoder_layer = decoder_layer or DeformableTransformerDecoderLayer(
-                d_model, dim_feedforward, dropout, activation, num_feature_levels, nhead, dec_n_points
+                d_model, dim_feedforward, dropout, activation, num_feature_levels, nhead, dec_n_points, dec_depth
             )
             self.decoder = DeformableTransformerDecoder(decoder_layer, num_decoder_layers, return_intermediate_dec)
         else:
@@ -422,12 +422,20 @@ class DeformableTransformerEncoder(nn.Module):
 
 class DeformableTransformerDecoderLayer(nn.Module):
     def __init__(
-        self, d_model=256, dim_feedforward=1024, dropout=0.1, activation="relu", n_levels=4, n_heads=8, n_points=4
+        self,
+        d_model=256,
+        dim_feedforward=1024,
+        dropout=0.1,
+        activation="relu",
+        n_levels=4,
+        n_heads=8,
+        n_points=4,
+        add_cross_attn_channel=False,
     ):
         super().__init__()
 
         # cross attention
-        self.cross_attn = MSDeformAttn(d_model, n_levels, n_heads, n_points, add_channel=False)
+        self.cross_attn = MSDeformAttn(d_model, n_levels, n_heads, n_points, add_channel=add_cross_attn_channel)
         self.dropout1 = nn.Dropout(dropout)
         self.norm1 = nn.LayerNorm(d_model)
 

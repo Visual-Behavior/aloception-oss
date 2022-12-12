@@ -252,7 +252,11 @@ class WaymoDataset(BaseDataset, SequenceMixin, SplitMixin):
 
         anns = self.preloaded_labels_2d[segment][int(sequence_id)][camera_id]
 
-        if "traffic_lights" in self.labels and self.preloaded_traffic_lights[segment][int(sequence_id)] is not None:
+        if (
+            "traffic_lights" in self.labels
+            and segment in self.preloaded_traffic_lights
+            and self.preloaded_traffic_lights[segment][int(sequence_id)] is not None
+        ):
             # add trafic lights annotations
             anns = anns + self.preloaded_traffic_lights[segment][int(sequence_id)][int(camera_id)]
 
@@ -296,7 +300,13 @@ class WaymoDataset(BaseDataset, SequenceMixin, SplitMixin):
         if "traffic_lights" in self.labels:
             frame.append_labels(
                 Labels(
-                    torch.tensor([self.preloaded_traffic_lights[segment][int(sequence_id)] is not None]), names=(None,)
+                    torch.tensor(
+                        [
+                            segment in self.preloaded_traffic_lights
+                            and self.preloaded_traffic_lights[segment][int(sequence_id)] is not None
+                        ]
+                    ),
+                    names=(None,),
                 ),
                 "traffic_lights_annotated",
             )
@@ -627,7 +637,7 @@ def main():
         labels=["gt_boxes_2d", "gt_boxes_3d", "depth", "traffic_lights"],
         load_rescaled=4.0,
         # traffic_lights_only=True,
-        drop_classes=["VEHICLE"]
+        drop_classes=["VEHICLE"],
     )
     print(len(waymo_dataset))
     # waymo_dataset.prepare()

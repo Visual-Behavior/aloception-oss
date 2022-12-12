@@ -223,7 +223,11 @@ class MetricsCallback(pl.Callback):
                 self.val_metrics[dataloader_idx][key] = []
             elif not "histogram" in key and not "scatter" in key:
                 pl_module.log(
-                    logging_name, outputs["metrics"][key], on_epoch=True, add_dataloader_idx=False, rank_zero_only=True
+                    logging_name,
+                    outputs["metrics"][key],
+                    on_epoch=True,
+                    add_dataloader_idx=True,
+                    rank_zero_only=True,
                 )
 
     @rank_zero_only
@@ -263,6 +267,5 @@ class MetricsCallback(pl.Callback):
             raise Exception(
                 "The lightning training_step must return a dict with the  `metrics` key to use this Callback"
             )
-
         self._process_validation(outputs, dataloader_idx)
         self._log_validation(outputs, pl_module, trainer, dataloader_idx)

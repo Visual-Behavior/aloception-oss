@@ -50,11 +50,13 @@ class DetrCriterion(nn.Module):
         self.losses = losses
 
         # Define the weight dict
-        loss_weights = {"loss_ce": loss_ce_weight, "loss_bbox": loss_boxes_weight, "loss_giou": loss_giou_weight}
+        loss_weights = {"loss_ce": loss_ce_weight,
+                        "loss_bbox": loss_boxes_weight, "loss_giou": loss_giou_weight}
         if aux_loss_stage > 0:
             aux_loss_weights = {}
             for i in range(aux_loss_stage - 1):
-                aux_loss_weights.update({k + f"_{i}": v for k, v in loss_weights.items()})
+                aux_loss_weights.update(
+                    {k + f"_{i}": v for k, v in loss_weights.items()})
             loss_weights.update(aux_loss_weights)
         self.loss_weights = loss_weights
 
@@ -80,7 +82,8 @@ class DetrCriterion(nn.Module):
 
         # Select the target labels in each batch and concat everything
         target_classes_pos = torch.cat(
-            [boxes2d.labels.as_tensor()[indices[b][1]] for b, boxes2d in enumerate(frames.boxes2d)]
+            [boxes2d.labels.as_tensor()[indices[b][1]]
+             for b, boxes2d in enumerate(frames.boxes2d)]
         )
         target_classes_pos = target_classes_pos.type(torch.long)
 
@@ -95,7 +98,8 @@ class DetrCriterion(nn.Module):
         empty_weight = torch.ones(num_classes, device=target_classes.device)
         empty_weight[background_class] = self.eos_coef
 
-        loss_ce = F.cross_entropy(pred_logits.transpose(1, 2), target_classes, empty_weight)
+        loss_ce = F.cross_entropy(pred_logits.transpose(
+            1, 2), target_classes, empty_weight)
         losses = {"loss_ce": loss_ce}
 
         return losses
@@ -135,10 +139,12 @@ class DetrCriterion(nn.Module):
             ],
             dim=0,
         )
-        target_boxes = aloscene.BoundingBoxes2D(target_boxes, boxes_format="xcyc", absolute=False)
+        target_boxes = aloscene.BoundingBoxes2D(
+            target_boxes, boxes_format="xcyc", absolute=False)
 
         # L1 loss
-        loss_bbox = F.l1_loss(pred_boxes.as_tensor(), target_boxes.as_tensor(), reduction="none")
+        loss_bbox = F.l1_loss(pred_boxes.as_tensor(),
+                              target_boxes.as_tensor(), reduction="none")
         losses["loss_bbox"] = loss_bbox.sum() / num_boxes
 
         # Giou loss
@@ -150,7 +156,8 @@ class DetrCriterion(nn.Module):
 
     def _get_src_permutation_idx(self, indices, **kwargs):
         # permute predictions following indices
-        batch_idx = torch.cat([torch.full_like(src, i) for i, (src, _) in enumerate(indices)])
+        batch_idx = torch.cat([torch.full_like(src, i)
+                              for i, (src, _) in enumerate(indices)])
         src_idx = torch.cat([src for (src, _) in indices])
         return batch_idx, src_idx
 
@@ -237,7 +244,8 @@ class DetrCriterion(nn.Module):
 
         # Select the target labels in each batch and concat everything
         target_classes_pos = torch.cat(
-            [boxes2d.labels.as_tensor()[indices[b][1]] for b, boxes2d in enumerate(frames.boxes2d)]
+            [boxes2d.labels.as_tensor()[indices[b][1]]
+             for b, boxes2d in enumerate(frames.boxes2d)]
         )
         target_classes_pos = target_classes_pos.type(torch.long)
 
@@ -254,37 +262,44 @@ class DetrCriterion(nn.Module):
         gt_objects_filter = target_classes != background_class
         gt_pred_clases = pred_classes[gt_objects_filter]
         len_gt_objects_filter = len(target_classes[gt_objects_filter])
-        len_gt_pred_clases = len(gt_pred_clases[gt_pred_clases != background_class])
+        len_gt_pred_clases = len(
+            gt_pred_clases[gt_pred_clases != background_class])
         if len_gt_objects_filter != 0 and len_gt_pred_clases != 0:
-            metrics["objectness_recall"] = len_gt_pred_clases / len_gt_objects_filter
+            metrics["objectness_recall"] = len_gt_pred_clases / \
+                len_gt_objects_filter
         elif len_gt_pred_clases > 0:
             metrics["objectness_recall"] = 0
 
         # Recall
         # percentage of detect class among all the GT class
-        metrics["recall"] = (gt_pred_clases == target_classes[gt_objects_filter]).to(torch.float16).mean()
+        metrics["recall"] = (gt_pred_clases == target_classes[gt_objects_filter]).to(
+            torch.float16).mean()
 
         # objectness_true_pos
         # Among the positive prediction of the model. how much are really positive ? (class invariant)
         pred_pos_filter = pred_classes != background_class
         pred_gt_classes = target_classes[pred_pos_filter]
         len_pred_pos_filter = len(pred_classes[pred_pos_filter])
-        len_pred_gt_classes = len(pred_gt_classes[pred_gt_classes != background_class])
+        len_pred_gt_classes = len(
+            pred_gt_classes[pred_gt_classes != background_class])
         if len_pred_pos_filter != 0 and len_pred_gt_classes != 0:
-            metrics["objectness_true_pos"] = len_pred_gt_classes / len_pred_pos_filter
+            metrics["objectness_true_pos"] = len_pred_gt_classes / \
+                len_pred_pos_filter
         elif len_pred_gt_classes > 0:
             metrics["objectness_true_pos"] = 0
 
         # precision
         # Among the positive prediction of the model. how much are well classify ?
         if len(pred_gt_classes) > 0:
-            metrics["precision"] = (pred_gt_classes == pred_classes[pred_pos_filter]).to(torch.float16).mean()
+            metrics["precision"] = (pred_gt_classes == pred_classes[pred_pos_filter]).to(
+                torch.float16).mean()
 
         # true_neg
         # Among the negative predictions of the model, how much are really negative ? (class invariant)
         pred_neg_filter = pred_classes == background_class
         pred_gt_classes = target_classes[pred_neg_filter]
-        len_pred_gt_classes = len(pred_gt_classes[pred_gt_classes == background_class])
+        len_pred_gt_classes = len(
+            pred_gt_classes[pred_gt_classes == background_class])
         len_pred_classes = len(pred_classes[pred_neg_filter])
         if len_pred_classes != 0 and len_pred_gt_classes != 0:
             metrics["true_neg"] = len_pred_gt_classes / len_pred_classes
@@ -295,7 +310,8 @@ class DetrCriterion(nn.Module):
         # Among all the negative slot, how may are predicted as negative ? (class invariant)
         gt_neg_filter = target_classes == background_class
         gt_pred_clases = pred_classes[gt_neg_filter]
-        len_gt_pred_clases = len(gt_pred_clases[gt_pred_clases == background_class])
+        len_gt_pred_clases = len(
+            gt_pred_clases[gt_pred_clases == background_class])
         len_target_classes = len(target_classes[gt_neg_filter])
         if len_gt_pred_clases != 0 and len_target_classes != 0:
             metrics["slot_true_neg"] = len_gt_pred_clases / len_target_classes
@@ -333,7 +349,8 @@ class DetrCriterion(nn.Module):
 
         # Select the target labels in each batch and concat everything
         target_classes_pos = torch.cat(
-            [boxes2d.labels.as_tensor()[indices[b][1]] for b, boxes2d in enumerate(frames.boxes2d)]
+            [boxes2d.labels.as_tensor()[indices[b][1]]
+             for b, boxes2d in enumerate(frames.boxes2d)]
         )
         target_classes_pos = target_classes_pos.type(torch.long)
         pred_classes = outputs["pred_logits"].argmax(-1)
@@ -344,8 +361,10 @@ class DetrCriterion(nn.Module):
         target_classes[idx] = target_classes_pos
 
         # Predicted class and target class histogram
-        histogram_p_class = pred_classes[pred_classes != background_class].flatten()
-        histogram_t_class = target_classes[target_classes != background_class].flatten()
+        histogram_p_class = pred_classes[pred_classes !=
+                                         background_class].flatten()
+        histogram_t_class = target_classes[target_classes != background_class].flatten(
+        )
 
         # Scatter predicted objects size & Objects position
         pred_boxes = outputs["pred_boxes"]
@@ -355,9 +374,11 @@ class DetrCriterion(nn.Module):
 
         pred_boxes = pred_boxes[pred_classes != background_class]
         scatter_p_boxes_size = pred_boxes[:, 2:]
-        scatter_p_boxes_pos = torch.cat([pred_boxes[:, 0:1], 1 - pred_boxes[:, 1:2]], dim=-1)
+        scatter_p_boxes_pos = torch.cat(
+            [pred_boxes[:, 0:1], 1 - pred_boxes[:, 1:2]], dim=-1)
         scatter_t_boxes_size = target_boxes[:, 2:]
-        scatter_t_boxes_pos = torch.cat([target_boxes[:, 0:1], 1 - target_boxes[:, 1:2]], dim=-1)
+        scatter_t_boxes_pos = torch.cat(
+            [target_boxes[:, 0:1], 1 - target_boxes[:, 1:2]], dim=-1)
 
         return {
             "histogram_p_class": histogram_p_class.to(torch.float32),
@@ -399,14 +420,16 @@ class DetrCriterion(nn.Module):
         assert frames.boxes2d[0].labels is not None and frames.boxes2d[0].labels.encoding == "id"
         matcher_frames = matcher_frames if matcher_frames is not None else frames
 
-        outputs_without_aux = {k: v for k, v in m_outputs.items() if k != "aux_outputs"}
+        outputs_without_aux = {k: v for k,
+                               v in m_outputs.items() if k != "aux_outputs"}
 
         # Retrieve the matching between the outputs of the last layer and the targets
         indices = self.matcher(outputs_without_aux, matcher_frames, **kwargs)
 
         # Compute the average number of target boxes accross all nodes, for normalization purposes
         num_boxes = sum(boxes2d.labels.shape[0] for boxes2d in frames.boxes2d)
-        num_boxes = torch.as_tensor([num_boxes], dtype=torch.float, device=next(iter(m_outputs.values())).device)
+        num_boxes = torch.as_tensor(
+            [num_boxes], dtype=torch.float, device=next(iter(m_outputs.values())).device)
 
         if is_dist_avail_and_initialized():
             torch.distributed.all_reduce(num_boxes)
@@ -415,11 +438,13 @@ class DetrCriterion(nn.Module):
         # Compute all the requested losses
         losses = {}
         for loss in self.losses:
-            losses.update(self.get_loss(loss, m_outputs, frames, indices, num_boxes))
+            losses.update(self.get_loss(
+                loss, m_outputs, frames, indices, num_boxes))
 
         metrics = self.get_metrics(m_outputs, frames, indices, num_boxes)
         if compute_statistical_metrics:
-            metrics.update(self.get_statistical_metrics(m_outputs, frames, indices, num_boxes))
+            metrics.update(self.get_statistical_metrics(
+                m_outputs, frames, indices, num_boxes))
 
         # In case of auxiliary losses, we repeat this process with the output of each intermediate layer.
         if "aux_outputs" in m_outputs:
@@ -434,12 +459,14 @@ class DetrCriterion(nn.Module):
                     if loss == "labels":
                         # Logging is enabled only for the last layer
                         kwargs.update({"log": False})
-                    l_dict = self.get_loss(loss, aux_outputs, frames, indices, num_boxes, **kwargs)
+                    l_dict = self.get_loss(
+                        loss, aux_outputs, frames, indices, num_boxes, **kwargs)
                     l_dict = {k + f"_{i}": v for k, v in l_dict.items()}
 
                     losses.update(l_dict)
 
-        total_loss = sum(losses[k] * self.loss_weights[k] for k in losses.keys())
+        total_loss = sum(losses[k] * self.loss_weights[k]
+                         for k in losses.keys())
         # TODO reduce losses over all GPUs for logging purposes
         losses.update(metrics)
 

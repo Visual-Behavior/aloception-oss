@@ -1,3 +1,6 @@
+from torchvision.transforms import InterpolationMode
+from torchvision.transforms import functional as F
+
 from logging import warning
 from shutil import ExecError
 import matplotlib
@@ -464,3 +467,16 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         planar = euclidean * torch.cos(theta)
         planar.is_planar = True
         return planar
+
+    def _resize(self, size, interpolation=InterpolationMode.NEAREST, **kwargs):
+        h = self.relative_to_absolute(size[0], "h", assert_integer=False)
+        w = self.relative_to_absolute(size[1], "w", assert_integer=False)
+        if (kwargs.pop("pool_depth", False) is True) and (self.H > h):
+            kernel_size = 1
+            while self.H // (kernel_size + 1) > h:
+                kernel_size = kernel_size + 1
+            if not self.is_absolute:  # if we're working with inverse depth, use maxpool over minpool
+                self = torch.nn.functional.max_pool2d(self.rename(None), kernel_size).reset_names()
+            else:
+                self = -torch.nn.functional.max_pool2d(-self.rename(None), kernel_size).reset_names()
+        return F.resize(self.rename(None), (h, w), interpolation=interpolation).reset_names()

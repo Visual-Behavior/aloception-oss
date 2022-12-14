@@ -1,20 +1,14 @@
+import numpy as np
+import matplotlib
+import torch
 from torchvision.transforms import InterpolationMode
 from torchvision.transforms import functional as F
-
-from logging import warning
-from shutil import ExecError
-import matplotlib
-from matplotlib.pyplot import sca
-import torch
 from typing import *
-import warnings
+
 import aloscene
 from aloscene import Mask
 from aloscene.renderer import View
 from aloscene.utils.depth_utils import coords2rtheta, add_colorbar
-import numpy as np
-from typing import Union, Tuple
-
 from aloscene.io.depth import load_depth
 
 

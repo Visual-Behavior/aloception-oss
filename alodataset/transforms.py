@@ -14,7 +14,7 @@ from aloscene import Frame
 
 
 class AloTransform(object):
-    def __init__(self, same_on_sequence: bool = True, same_on_frames: bool = False):
+    def __init__(self, same_on_sequence: bool = True, same_on_frames: bool = False, p: float = 0.5):
         """Alo Transform. Each transform in the project should
         inhert from this class.
 
@@ -26,10 +26,14 @@ class AloTransform(object):
         same_on_frames: bool or float
             Apply the same transformations on each frame.
             If float, between 0 and 1, probability to apply same transformation on each frame
+        p : float
+            probability to apply the transformation
+
         """
         self.same_on_sequence = same_on_sequence
         self.same_on_frames = same_on_frames
         self.sample_params()
+        self.p = p
 
     def _init_same_on(self):
         def _prob_to_bool(param):
@@ -61,6 +65,10 @@ class AloTransform(object):
         frames (dict|list|Frame)
             Could be a dict mapping frame's name to `Frame`, or a list of `Frame`, or a `Frame`.
         """
+        unif = random.random()
+        if not unif < self.p:
+            return frames
+
         seqid2params = {}
         frame_params = None
 
@@ -895,3 +903,151 @@ class DynamicCropTransform(AloTransform):
             )
 
         return F.crop(frame, top, left, crop_h, crop_w)
+
+
+class RandomMotionBlur(AloTransform):
+    """Randomly introduces motion blur.
+    
+    Parameters
+    ----------
+        max_filter_size : int
+            Max filter size to use, the higher the more blured the image.
+    
+    """
+    def __init__(self, max_filter_size=10, *args, **kwargs):
+        assert isinstance(max_filter_size, int)
+        self.max_filter_size = max_filter_size
+        self.v_filter_size = 2
+        self.h_filter_size = 2
+
+        super().__init__(*args, **kwargs)
+
+    def sample_params(self):
+        v_filter_size = random.randint(2, self.max_filter_size)
+        h_filter_size = random.randint(2, self.max_filter_size)
+
+        v_filter_size = v_filter_size // 2 * 2 + 1
+        h_filter_size = h_filter_size // 2 * 2 + 1
+
+        return (h_filter_size, v_filter_size)
+
+    def set_params(self, h_size, v_size):
+        self.h_filter_size = h_size
+        self.v_filter_size = v_size
+    
+    @torch.no_grad()
+    def apply(self, frame):
+        c, h, w = frame.shape
+        mid_v = torch.ones((1, self.v_filter_size))
+        mid_h = torch.ones((1, self.h_filter_size))
+
+        filter_v = torch.zeros((3, 1, self.v_filter_size, self.v_filter_size))
+        filter_h = torch.zeros((3, 1, self.h_filter_size, self.h_filter_size))
+
+        filter_v[:, :, :, int((self.v_filter_size) / 2)] = mid_v / torch.sum(mid_v)
+        filter_h[:, :, int((self.h_filter_size) / 2), :] = mid_h / torch.sum(mid_h)
+
+        frame_ = frame.clone().norm255().batch()
+        frame_ = frame_.rename(None)
+
+        frame_ = torch.nn.functional.conv2d(frame_.as_tensor(), filter_v, padding="same", groups=3)
+        frame_ = torch.nn.functional.conv2d(frame_, filter_h, padding="same", groups=3)
+
+        frame_ = frame_.reset_names()[0].norm_as(frame)
+        assert (c, h, w) == frame_.shape
+        return frame_
+
+
+class RandomMotionBlurV2(AloTransform):
+    """Randomly introduces motion blur.
+    
+    Parameters
+    ----------
+        max_filter_size : int
+            Max filter size to use, the higher the more blured the image.
+
+    """
+    def __init__(self, max_filter_size=10, *args, **kwargs):
+        assert isinstance(max_filter_size, int)
+        self.max_filter_size = max_filter_size
+        self.v_filter_size = 2
+        self.h_filter_size = 2
+
+        super().__init__(*args, **kwargs)
+
+    def sample_params(self):
+        v_filter_size = random.randint(2, self.max_filter_size)
+        h_filter_size = random.randint(2, self.max_filter_size)
+
+        return (h_filter_size, v_filter_size)
+
+    def set_params(self, h_size, v_size):
+        self.h_filter_size = h_size
+        self.v_filter_size = v_size
+    
+    @staticmethod
+    def h_trans(frame, size):
+        v_left_frames = [frame[:, :, i:] for i in range(1, size // 2 + 1)]
+        v_left_frames = [torch.nn.functional.pad(x, pad=(0, i + 1),  value=0) for i, x in enumerate(v_left_frames)]
+        
+        v_right_frames = [frame[:, :, :-i] for i in range(1, size // 2 + 1)]
+        v_right_frames = [torch.nn.functional.pad(x, pad=(i + 1, 0),  value=0) for i, x in enumerate(v_right_frames)]
+
+        v_frames = [*v_left_frames, frame, *v_right_frames]
+        return v_frames
+    
+    @staticmethod
+    def v_trans(frame, size):
+        h_top_frames = [frame[:, i:, :] for i in range(1, size // 2 + 1)]
+        h_top_frames = [torch.nn.functional.pad(x, pad=(0, 0, 0, i + 1),  value=0) for i, x in enumerate(h_top_frames)]
+        
+        h_bot_frames = [frame[:, :-i, :] for i in range(1, size // 2 + 1)]
+        h_bot_frames = [torch.nn.functional.pad(x, pad=(0, 0, i + 1, 0),  value=0) for i, x in enumerate(h_bot_frames)]
+
+        h_frames = [*h_top_frames, frame, *h_bot_frames]
+        return h_frames
+
+    @torch.no_grad()
+    def apply(self, frame):
+        self.v_filter_size, self.h_filter_size = 10, 10
+
+        # NORM 255 IS MANDATORY, CUDA ERRORS OCCUR OTHERWISE
+        blured = frame.clone().norm255().as_tensor()
+
+        v_frames = self.v_trans(blured, self.v_filter_size)
+        h_frames = self.h_trans(blured, self.h_filter_size)
+
+        v_frame = sum(v_frames) / self.v_filter_size
+        h_frame = sum(h_frames) / self.h_filter_size
+        
+        blured = (h_frame + v_frame) / 2
+        blured = Frame(blured)
+        
+        blured = blured.norm_as(frame)
+        blured.__dict__ = frame.__dict__.copy()
+        return blured
+
+class RandomMotionBlurV3(RandomMotionBlurV2):
+    @staticmethod
+    def h_trans(frame, size):
+        c, h, _ = frame.shape
+        v_left_frames = [frame[:, :, i:] for i in range(1, size // 2 + 1)]
+        v_left_frames = [torch.cat([f, torch.zeros((c, h, i + 1))], dim=2) for i, f in enumerate(v_left_frames)]
+        
+        v_right_frames = [frame[:, :, :-i] for i in range(1, size // 2 + 1)]
+        v_right_frames = [torch.cat([torch.zeros((c, h, i + 1)), f], dim=2) for i, f in enumerate(v_right_frames)]
+
+        v_frames = [*v_left_frames, frame, *v_right_frames]
+        return v_frames
+    
+    @staticmethod
+    def v_trans(frame, size):
+        c, _, w = frame.shape
+        h_top_frames = [frame[:, i:, :] for i in range(1, size // 2 + 1)]
+        h_top_frames = [torch.cat([f, torch.zeros((c, i + 1, w))], dim=1) for i, f in enumerate(h_top_frames)]
+        
+        h_bot_frames = [frame[:, :-i, :] for i in range(1, size // 2 + 1)]
+        h_bot_frames = [torch.cat([torch.zeros((c, i + 1, w)), f], dim=1) for i, f in enumerate(h_bot_frames)]
+
+        h_frames = [*h_top_frames, frame, *h_bot_frames]
+        return h_frames

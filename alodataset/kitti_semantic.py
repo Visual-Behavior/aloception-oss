@@ -5,8 +5,7 @@ import torch
 from typing import Union
 
 from alodataset import BaseDataset, Split, SplitMixin
-from aloscene import Frame, Mask, Labels, BoundingBoxes2D
-from aloscene.camera_calib import CameraIntrinsic, CameraExtrinsic
+from aloscene import Frame, Mask, Labels
 
 
 class KittiSemanticDataset(BaseDataset, SplitMixin):

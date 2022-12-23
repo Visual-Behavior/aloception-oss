@@ -143,11 +143,7 @@ class KittiOdometryDataset(BaseDataset, SplitMixin):
         for id, seq in enumerate(item["temporal_sequence"]):
             left_frame = Frame(
                 os.path.join(
-                    self.dataset_dir,
-                    "sequences",
-                    sequence,
-                    f"image_{0 if self.grayscale else 2}",
-                    f"{seq:06d}.png",
+                    self.dataset_dir, "sequences", sequence, f"image_{0 if self.grayscale else 2}", f"{seq:06d}.png"
                 )
             )
             left_frame.baseline = self.seq_params[sequence]["baseline"]

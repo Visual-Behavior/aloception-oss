@@ -1009,8 +1009,6 @@ class RandomMotionBlurV2(AloTransform):
 
     @torch.no_grad()
     def apply(self, frame):
-        self.v_filter_size, self.h_filter_size = 10, 10
-
         # NORM 255 IS MANDATORY, CUDA ERRORS OCCUR OTHERWISE
         blured = frame.clone().norm255().as_tensor()
 

@@ -90,7 +90,7 @@ Alternatively, you can clone the repository and use:
 pip install -e aloception-oss/
 ```
 
-Or setup the repo yourself in your env and install the dependencies 
+Or setup the repo yourself in your env and install the dependencies
 
 ```sh
 pip install -r requirements.txt
@@ -228,6 +228,13 @@ Here is a list of all the datasets you can use on Aloception. If you're dataset 
 | SintelDisparityDataset | alodataset.SintelDisparityDataset | `python alodataset/sintel_disparity_dataset.py`
 | SintelFlowDataset | alodataset.SintelFlowDataset | `python alodataset/sintel_flow_dataset.py`
 | MOT17 | alodataset.Mot17 | `python alodataset/mot17.py`
+| KittiObject | alodataset.KittiObjectDataset | `python alodataset/kitti_object.py`
+| KittiOdometry | alodataset.KittiOdometryDataset | `python alodataset/kitti_odometry.py`
+| KittiRoad | alodataset.KittiRoadDataset | `python alodataset/kitti_road.py`
+| KittiSemantic | alodataset.KittiSemanticDataset | `python alodataset/kitti_semantic.py`
+| KittiStereoFlowSceneFlow | alodataset.KittiStereoFlowSFlow2015 | `python alodataset/kitti_stereo_flow_sflow2015.py`
+| KittiStereoFlow | alodataset.KittiStereoFlow2012 | `python alodataset/kitti_stereo_flow2012.py`
+| KittiTracking | alodataset.KittiTrackingDataset | `python alodataset/kitti_tracking.py`
 
 
 

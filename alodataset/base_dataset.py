@@ -23,6 +23,13 @@ DATASETS_DOWNLOAD_PATHS = {
     "SintelDisparity": "https://storage.googleapis.com/visualbehavior-sample/SintelDisparity.pkl",
     "SintelFlow": "https://storage.googleapis.com/visualbehavior-sample/SintelFlow.pkl",
     "SintelMulti": "https://storage.googleapis.com/visualbehavior-sample/SintelMulti.pkl",
+    "kitti_object": "https://storage.googleapis.com/visualbehavior-sample/KittiObject.pkl",
+    "kitti_odometry": "https://storage.googleapis.com/visualbehavior-sample/kitti_odometry.pkl",
+    "kitti_road": "https://storage.googleapis.com/visualbehavior-sample/kitti_road.pkl",
+    "kitti_semantic": "https://storage.googleapis.com/visualbehavior-sample/kitti_semantic.pkl",
+    "kitti_stereo2015" : "https://storage.googleapis.com/visualbehavior-sample/kitti_stereo2015.pkl",
+    "kitti_stereo2012" : "https://storage.googleapis.com/visualbehavior-sample/kitti_stereo2012.pkl",
+    "kitti_tracking": "https://storage.googleapis.com/visualbehavior-sample/kitti_tracking.pkl",
 }
 
 

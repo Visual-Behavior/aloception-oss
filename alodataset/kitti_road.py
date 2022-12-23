@@ -19,7 +19,7 @@ class KittiRoadDataset(BaseDataset, SplitMixin):
         assert obj == "road" or (obj == "lane" and environement == "um"), "Type must be 'road' or 'lane'"
 
         if self.sample:
-            raise NotImplementedError("Sample mode is not implemented for KittiRoadDataset")
+            return
 
         self.obj = obj
         self.grayscale = grayscale
@@ -82,6 +82,6 @@ class KittiRoadDataset(BaseDataset, SplitMixin):
 if __name__ == "__main__":
     from random import randint
 
-    dataset = KittiRoadDataset()
-    obj = dataset.getitem(randint(0, len(dataset)))
+    dataset = KittiRoadDataset(sample=True)
+    obj = dataset.getitem(randint(0, len(dataset) - 1))
     obj["left"].get_view().render()

@@ -32,7 +32,7 @@ class KittiTrackingDataset(BaseDataset, SplitMixin):
         self.sequence_skip = sequence_skip
 
         if self.sample:
-            raise NotImplementedError("Sample mode is not implemented for KittiTrackingDataset")
+            return
 
         self.dataset_dir = os.path.join(self.dataset_dir, self.get_split_folder())
 
@@ -235,6 +235,6 @@ class KittiTrackingDataset(BaseDataset, SplitMixin):
 if __name__ == "__main__":
     from random import randint
 
-    dataset = KittiTrackingDataset(right_frame=False)
-    obj = dataset.getitem(randint(0, len(dataset)))
+    dataset = KittiTrackingDataset(right_frame=False, sample=True)
+    obj = dataset.getitem(randint(0, len(dataset) - 1))
     obj["left"].get_view().render()

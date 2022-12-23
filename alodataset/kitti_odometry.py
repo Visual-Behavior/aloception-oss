@@ -30,7 +30,7 @@ class KittiOdometryDataset(BaseDataset, SplitMixin):
         self.sequence_skip = sequence_skip
 
         if self.sample:
-            raise NotImplementedError("Sample mode is not implemented for KittiOdometryDataset")
+            return
 
         self.dataset_dir = os.path.join(self.dataset_dir, "dataset")
 
@@ -194,6 +194,6 @@ class KittiOdometryDataset(BaseDataset, SplitMixin):
 if __name__ == "__main__":
     from random import randint
 
-    dataset = KittiOdometryDataset(sequences=["00", "01"], sequence_skip=40, skip=28, sequence_size=5)
-    obj = dataset.getitem(randint(0, len(dataset)))
+    dataset = KittiOdometryDataset(sequences=["00", "01"], sequence_skip=40, skip=28, sequence_size=5, sample=True)
+    obj = dataset.getitem(randint(0, len(dataset) - 1))
     obj["left"].get_view().render()

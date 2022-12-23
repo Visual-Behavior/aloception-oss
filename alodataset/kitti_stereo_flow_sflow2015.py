@@ -38,7 +38,7 @@ class KittiStereoFlowSFlow2015(BaseDataset, SplitMixin):
         self.load = load
 
         if self.sample:
-            raise NotImplementedError("Sample mode is not implemented for KittiStereoFlowSFlow2015")
+            return
 
         assert sequence_start <= sequence_end, "sequence_start should be less than sequence_end"
 
@@ -323,6 +323,6 @@ class KittiStereoFlowSFlow2015(BaseDataset, SplitMixin):
 if __name__ == "__main__":
     from random import randint
 
-    dataset = KittiStereoFlowSFlow2015(sequence_start=10, sequence_end=11, grayscale=False)
-    obj = dataset.getitem(randint(0, len(dataset)))
+    dataset = KittiStereoFlowSFlow2015(sequence_start=10, sequence_end=11, grayscale=False, sample=True)
+    obj = dataset.getitem(randint(0, len(dataset) - 1))
     obj["left"].get_view().render()

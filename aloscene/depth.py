@@ -465,7 +465,7 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
     def _resize(self, size, interpolation=InterpolationMode.NEAREST, **kwargs):
         h = self.relative_to_absolute(size[0], "h", assert_integer=False)
         w = self.relative_to_absolute(size[1], "w", assert_integer=False)
-        if (kwargs.pop("pool_depth_2", False) is True) and (self.H > h):
+        if (kwargs.pop("pool_depth", False) is True) and (self.H > h):
             kernel_size = 1
             while self.H // (kernel_size + 1) > h:
                 kernel_size = kernel_size + 1
@@ -474,7 +474,7 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
             else:
                 self = -torch.nn.functional.max_pool2d(-self.rename(None), kernel_size).reset_names()
             return F.resize(self.rename(None), (h, w), interpolation=interpolation).reset_names()
-        elif (kwargs.pop("pool_depth", False) is True) and (self.H > h):
+        elif (kwargs.pop("pool_depth_2", False) is True) and (self.H > h):
             pool_level = h // (h * 2) + 1
             inter_size = pool_level * (h * 2)
             inter_size = (inter_size, inter_size)

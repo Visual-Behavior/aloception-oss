@@ -471,21 +471,18 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         w = self.relative_to_absolute(size[1], "w", assert_integer=False)
         if (kwargs.pop("pool_depth", False) is True) and (self.H > h):
             kernel_size = 1
-            pool_level = 1
-            while self.H // (kernel_size + 1) > h:
+            while self.H // (kernel_size + 1) >= h:
                 kernel_size = kernel_size + 1
-                if self.H % kernel_size == 0:
-                    pool_level = kernel_size
             if not self.is_absolute:  # if we're working with inverse depth, use maxpool over minpool
-                self = torch.nn.functional.max_pool2d(self.rename(None), pool_level).reset_names()
+                self = torch.nn.functional.max_pool2d(self.rename(None), kernel_size).reset_names()
             else:
-                self = -torch.nn.functional.max_pool2d(-self.rename(None), pool_level).reset_names()
+                self = -torch.nn.functional.max_pool2d(-self.rename(None), kernel_size).reset_names()
             return F.resize(self.rename(None), (h, w), interpolation=interpolation).reset_names()
         elif (kwargs.pop("pool_depth_2", False) is True) and (self.H > h):
             pool_level = h // (h * 2) + 1
             inter_size = pool_level * (h * 2)
             inter_size = (inter_size, inter_size)
-            self = F.resize(self.rename(None), inter_size, interpolation=interpolation).reset_name()
+            self = F.resize(self.rename(None), inter_size, interpolation=interpolation).reset_names()
             if self.is_absolute:
                 return -torch.nn.functional.max_pool2d(-self.rename(None), pool_level * 2).reset_names()
             else:

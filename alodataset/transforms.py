@@ -10,7 +10,7 @@ import torchvision.transforms.functional as F
 from torch.distributions.uniform import Uniform
 import torchvision
 
-from aloscene import Frame
+from aloscene import Frame, Flow
 
 
 class AloTransform(object):
@@ -1025,6 +1025,7 @@ class RandomMotionBlurV2(AloTransform):
         blured.__dict__ = frame.__dict__.copy()
         return blured
 
+
 class RandomMotionBlurV3(RandomMotionBlurV2):
     @staticmethod
     def h_trans(frame, size):
@@ -1049,3 +1050,130 @@ class RandomMotionBlurV3(RandomMotionBlurV2):
 
         h_frames = [*h_top_frames, frame, *h_bot_frames]
         return h_frames
+
+
+class RandomFlowMotionBlur(AloTransform):
+    """Introduces motion blur from optical flow.
+    
+    Idea : Let OpticalFlow : x, y --> x', y'
+    retrive the indexes betwe x, x' and y, y'
+    i.e x -> x1 ... -> x' , y -> y1 ... -> y'
+    blurred_frame = mean(frame[x, y], frame[x1, y1], ..., frame[x', y'])
+
+
+    Parameters
+    ----------
+        subframes : int
+            Number of intermediate frames.
+        flow_model : nn.Module
+            Model to use for optical flow inference in case flow is not passed.
+        model_kwargs : Dict
+            Optical flow model kwargs.
+        intensity : float
+            Motion blur intensity. If this arg is set, the value will not be random anymore.
+
+    """
+    def __init__(
+            self,
+            subframes: int = 10,
+            flow_model=None,
+            model_kwargs={},
+            intensity=None,
+            **kwargs,
+            ):
+        super().__init__(**kwargs)
+        if intensity is not None:
+            print(f"Intensity is set to {intensity}, its value will no more be random.")
+        self.rand = intensity is None
+        self.intensity = intensity
+        self.subframes = subframes
+        self.flow_model = flow_model
+        self.model_kwargs = model_kwargs
+
+    def sample_params(self):
+        if self.rand:
+            return (random.random(),)
+        else:
+            return self.intensity
+
+    def set_params(self, intensity):
+        self.intensity = intensity
+
+    def _get_flow_model_kwargs(self, frame1, frame2):
+        """Can be overrided to adapt the model's kwargs"""
+        frame1 = Frame(frame1).norm_minmax_sym().batch()
+        frame2 = Frame(frame2).norm_minmax_sym().batch()
+
+        return {"frame1": frame1, "frame2": frame2, **self.model_kwargs}
+    
+    @staticmethod
+    def _adapt_model_output(output):
+        """Adapts model output to be an optical flow of size [2, H, W] where the first channel 
+        is the OF over X axis and the second is over Y axis
+        
+        Example with alonet/raft/raft ... ->
+
+        """
+        return output[-1]["up_flow"].squeeze()
+
+    @torch.no_grad()
+    def apply(self, frame, flow=None, p_frame=None):
+        # NORM 255 MANDATORY TO AVOID CUDA ERRORS
+        frame_ = frame.clone().norm255().as_tensor()
+        if p_frame is not None:
+            p_frame = p_frame.clone().norm255().as_tensor()
+
+        if flow is None:
+            if self.flow_model is None:
+                raise RuntimeError("One of 'flow' or 'flow_model' is required")
+            output = self.flow_model(**self._get_flow_model_kwargs(frame, p_frame))
+            flow = self._adapt_model_output(output)
+        if isinstance(flow, Flow):
+            flow = flow.as_tensor()
+        else:
+            flow_cls = flow.__class__.__name__
+            assert isinstance(flow, torch.Tensor), f"Flow must be an instance of torch.Tensor got {flow_cls} instead"
+
+        # Resize given the blur intensity
+        HW_ = frame.shape[-2:]
+        HW = flow.shape[-2:]
+
+        if HW != HW_:
+            flow = torch.nn.functional.interpolate(flow.unsqueeze(0), size=HW_, mode="nearest")
+            flow = flow.squeeze()
+        
+        flow = flow * self.intensity
+
+        # XY Coordinates
+        coords = torch.meshgrid(torch.arange(HW_[0]), torch.arange(HW_[1]))
+
+        # X+X_displacement, Y+Y_displacement
+        map_coords = [coords[0] + flow[0], coords[1] + flow[1]]
+
+        # Map coridinates of intermediate points X -> X, intemediate X points ..., X + X_displacement (same for Y)
+        subcoords = [
+            [
+                (coords[0] - map_coords[0]) * i / self.subframes + coords[0],   # X
+                (coords[0] - map_coords[0]) * i / self.subframes + coords[1]]   # Y
+                for i in range(self.subframes + 1)
+            ]
+
+        # Round and clamp indexes (float -> int + Occlusion)
+        subcoords = [
+            [
+                torch.round(torch.clamp(s[0], min=0, max=HW_[0] - 1)).long(),
+                torch.round(torch.clamp(s[1], min=0, max=HW_[1] - 1)).long()
+            ]
+            for s in subcoords]
+
+        # Frame to indexed intermediate frames
+        frame_ = [frame_[:, subcoord[0], subcoord[1]] for subcoord in subcoords]
+
+        # Mean
+        frame_ = sum(frame_) / (self.subframes + 1)
+        frame_ = Frame(frame_)
+        frame_ = frame_.norm_as(frame)
+
+        # Restore frame frame props and childs (avoid apply on child)
+        frame_.__dict__ = frame.__dict__.copy()
+        return frame_

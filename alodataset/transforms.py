@@ -1081,10 +1081,11 @@ class RandomFlowMotionBlur(AloTransform):
             intensity=None,
             **kwargs,
             ):
-        super().__init__(**kwargs)
         if intensity is not None:
             print(f"Intensity is set to {intensity}, its value will no more be random.")
         self.rand = intensity is None
+        super().__init__(**kwargs)
+
         self.intensity = intensity
         self.subframes = subframes
         self.flow_model = flow_model

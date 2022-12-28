@@ -1095,7 +1095,7 @@ class RandomFlowMotionBlur(AloTransform):
         if self.rand:
             return (random.random(),)
         else:
-            return self.intensity
+            return (self.intensity,)
 
     def set_params(self, intensity):
         self.intensity = intensity

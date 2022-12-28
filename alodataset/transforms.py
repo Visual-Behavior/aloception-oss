@@ -958,7 +958,7 @@ class RandomMotionBlur(AloTransform):
         return frame_
 
 
-class RandomMotionBlurV2(AloTransform):
+class RandomFocusBlurV2(AloTransform):
     """Randomly introduces motion blur.
     
     Parameters
@@ -1026,7 +1026,7 @@ class RandomMotionBlurV2(AloTransform):
         return blured
 
 
-class RandomMotionBlurV3(RandomMotionBlurV2):
+class RandomFocusBlurV3(RandomFocusBlurV2):
     @staticmethod
     def h_trans(frame, size):
         c, h, _ = frame.shape

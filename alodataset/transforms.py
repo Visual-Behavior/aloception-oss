@@ -1109,7 +1109,6 @@ class RandomFlowMotionBlur(AloTransform):
             raise RuntimeError("Unknown intensity type")
 
     def set_params(self, intensity):
-        print(intensity)
         self.intensity = intensity
 
     def _get_flow_model_kwargs(self, frame1, frame2):

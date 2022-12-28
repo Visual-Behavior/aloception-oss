@@ -1081,23 +1081,35 @@ class RandomFlowMotionBlur(AloTransform):
             intensity=None,
             **kwargs,
             ):
-        if intensity is not None:
-            print(f"Intensity is set to {intensity}, its value will no more be random.")
-        self.rand = intensity is None
-        super().__init__(**kwargs)
+        self.rand = True
+        if isinstance(intensity, float):
+            self.rand = False
+        elif isinstance(intensity, list):
+            assert all([isinstance(x, float) for x in intensity])
+            assert intensity[0] < intensity[1]
+            assert len(intensity) == 2
+        else:
+            raise RuntimeError("Unknown intensity type")
 
         self.intensity = intensity
         self.subframes = subframes
         self.flow_model = flow_model
         self.model_kwargs = model_kwargs
+        super().__init__(**kwargs)
 
     def sample_params(self):
-        if self.rand:
-            return (random.random(),)
-        else:
+        if isinstance(self.intensity, float):
             return (self.intensity,)
+        elif isinstance(self.intensity, list):
+            intensity = random.random()
+            min_, max_ = self.intensity
+            intensity = intensity * (max_ - min_) + self.intensity[0]
+            return (intensity,)
+        else:
+            raise RuntimeError("Unknown intensity type")
 
     def set_params(self, intensity):
+        print(intensity)
         self.intensity = intensity
 
     def _get_flow_model_kwargs(self, frame1, frame2):

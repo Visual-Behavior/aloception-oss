@@ -689,7 +689,10 @@ class DeformableDETR(nn.Module):
         :mod:`Transformer <alonet.detr.transformer>`
             Transformer module
         """
-        decoder = self.build_decoder(add_cross_attn_channel=add_depth)
+        try:
+            decoder = self.build_decoder(add_cross_attn_channel=add_depth)
+        except:
+            decoder = self.build_decoder()
 
         return DeformableTransformer(
             decoder=decoder,

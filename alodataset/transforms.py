@@ -10,7 +10,7 @@ import torchvision.transforms.functional as F
 from torch.distributions.uniform import Uniform
 import torchvision
 
-from aloscene import Frame, Flow
+from aloscene import Frame, Flow, Mask
 
 
 class AloTransform(object):
@@ -905,7 +905,7 @@ class DynamicCropTransform(AloTransform):
         return F.crop(frame, top, left, crop_h, crop_w)
 
 
-class RandomMotionBlur(AloTransform):
+class RandomFocusBlur(AloTransform):
     """Randomly introduces motion blur.
     
     Parameters
@@ -1081,20 +1081,16 @@ class RandomFlowMotionBlur(AloTransform):
             intensity=None,
             **kwargs,
             ):
-        self.rand = True
-        if isinstance(intensity, float):
-            self.rand = False
-        elif isinstance(intensity, list):
+        if isinstance(intensity, list):
             assert all([isinstance(x, float) for x in intensity])
             assert intensity[0] < intensity[1]
             assert len(intensity) == 2
-        else:
-            raise RuntimeError("Unknown intensity type")
 
-        self.intensity = intensity
-        self.subframes = subframes
-        self.flow_model = flow_model
+        self.intensity = 1. if intensity is None else intensity
         self.model_kwargs = model_kwargs
+        self.flow_model = flow_model
+        self.inter_intensity = None
+        self.subframes = subframes
         super().__init__(**kwargs)
 
     def sample_params(self):
@@ -1103,13 +1099,13 @@ class RandomFlowMotionBlur(AloTransform):
         elif isinstance(self.intensity, list):
             intensity = random.random()
             min_, max_ = self.intensity
-            intensity = intensity * (max_ - min_) + self.intensity[0]
+            intensity = intensity * (max_ - min_) + min_
             return (intensity,)
         else:
             raise RuntimeError("Unknown intensity type")
 
     def set_params(self, intensity):
-        self.intensity = intensity
+        self.inter_intensity = intensity
 
     def _get_flow_model_kwargs(self, frame1, frame2):
         """Can be overrided to adapt the model's kwargs"""
@@ -1154,7 +1150,7 @@ class RandomFlowMotionBlur(AloTransform):
             flow = torch.nn.functional.interpolate(flow.unsqueeze(0), size=HW_, mode="nearest")
             flow = flow.squeeze()
         
-        flow = flow * self.intensity
+        flow = flow * self.inter_intensity
 
         # XY Coordinates
         coords = torch.meshgrid(torch.arange(HW_[0]), torch.arange(HW_[1]))
@@ -1189,3 +1185,78 @@ class RandomFlowMotionBlur(AloTransform):
         # Restore frame frame props and childs (avoid apply on child)
         frame_.__dict__ = frame.__dict__.copy()
         return frame_
+
+
+class RandomCornersMask(AloTransform):
+    """Radomly masks frame corners.
+
+    Parameters
+    ----------
+        max_mask_size: Union[int, float]
+            maximum distance between the last pixel of the mask and the furthest image
+            pixel in the normal. the distance is given in portion of image size.
+        p_sides : List[foat]
+            probability that a side of the image will be masked
+            ## p_sides = [top, bottom, right, left]
+
+    """
+    def __init__(
+            self,
+            max_mask_size: float = 0.2,
+            p_sides: List = [0.2, 0.2, 0.2, 0.2],
+            **kwargs,
+            ):
+        assert len(p_sides) == 4
+        assert isinstance(p_sides, list)
+        assert isinstance(max_mask_size, float)
+        assert max_mask_size >= 0 and max_mask_size < 1
+        assert all([isinstance(x, float) for x in p_sides])
+        
+        # Random var param
+        self.max_mask_size = max_mask_size
+        self.p_sides = p_sides
+
+        # Variable
+        self.mask_size = max_mask_size
+        self.mask_side = [False] * 4
+
+        super().__init__(**kwargs)
+
+    def sample_params(self):
+        mask_size = random.random() * self.max_mask_size
+        mask_side = [random.random() < p_side for p_side in self.p_sides]
+
+        return (mask_size, mask_side)
+
+    def set_params(self, mask_size, mask_side):
+        self.mask_size = mask_size
+        self.mask_side = mask_side
+
+    @torch.no_grad()
+    def apply(self, frame):
+        top_bottom_mask_size = int(frame.shape[-2] * self.mask_size)
+        left_right_mask_size = int(frame.shape[-1] * self.mask_size)
+
+        frame_ = frame.clone().norm255().as_tensor()
+        mask = torch.ones((1, *frame_.shape[-2:]))
+        for i in range(4):
+            ## Top, Bottom, Right, Left.
+            if not self.mask_side[i]:
+                continue
+            if i == 0:
+                mask[:, :top_bottom_mask_size, :] = 0
+            elif i == 1:
+                mask[:, :, :left_right_mask_size] = 0
+            elif i == 2:
+                mask[:, -top_bottom_mask_size:, :] = 0
+            else:
+                mask[:, :, -left_right_mask_size:] = 0
+
+        frame_ *= mask
+
+        frame_ = Frame(frame_)
+        frame_ = frame_.norm_as(frame)
+
+        # Restore frame frame props and childs (avoid apply on child)
+        frame_.__dict__ = frame.__dict__.copy()
+        return frame_, Mask(mask, names=("C", "H", "W"))

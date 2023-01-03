@@ -86,9 +86,9 @@ class LitDeformableDetr(LitDetr):
     def build_criterion(
         self,
         matcher: DeformableDetrHungarianMatcher,
-        loss_label_weight=1,
-        loss_boxes_weight=5,
-        loss_giou_weight=2,
+        loss_label_weight=1.0,
+        loss_boxes_weight=1.0,
+        loss_giou_weight=0.0,
         losses=["labels", "boxes"],
         aux_loss_stage=6,
         eos_coef=0.1,

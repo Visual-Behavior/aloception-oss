@@ -88,7 +88,7 @@ class LitDeformableDetr(LitDetr):
         matcher: DeformableDetrHungarianMatcher,
         loss_label_weight=1.0,
         loss_boxes_weight=1.0,
-        loss_giou_weight=0.0,
+        loss_giou_weight=1.0,
         losses=["labels", "boxes"],
         aux_loss_stage=6,
         eos_coef=0.1,

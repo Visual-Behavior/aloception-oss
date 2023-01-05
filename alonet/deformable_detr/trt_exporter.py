@@ -3,16 +3,18 @@
 
 import argparse
 import os
+import onnx
 import torch
 import numpy as np
 import onnx_graphsurgeon as gs
+from alonet.torch2trt import utils
 
 from torch.onnx import register_custom_op_symbolic
 
 from aloscene import Frame
 from alonet.deformable_detr import DeformableDetrR50, DeformableDetrR50Refinement
 from alonet.torch2trt import BaseTRTExporter, MS_DEFORM_IM2COL_PLUGIN_LIB, load_trt_custom_plugins
-from alonet.torch2trt.utils import get_nodes_by_op
+from alonet.torch2trt.utils import get_nodes_by_op, get_node_by_name
 
 CUSTOM_OP_VERSION = 9
 
@@ -47,7 +49,10 @@ class DeformableDetrTRTExporter(BaseTRTExporter):
         self.do_constant_folding = False
         self.custom_opset = {"alonet_custom": 1}
 
-    def adapt_graph(self, graph: gs.Graph):
+    def _adapt_graph(self, graph, **kwargs):
+        return self.adapt_graph(graph, **kwargs)
+
+    def adapt_graph(self, graph, **kwargs):
         # batch_size = graph.inputs[0].shape[0] # test
 
         # ======= Add nodes for MsDeformIm2ColTRT ===========
@@ -118,13 +123,40 @@ class DeformableDetrTRTExporter(BaseTRTExporter):
         tensor_input = torch.cat(tensor_input, dim=1)  # [b, 4, H, W]
         return (tensor_input,), {"is_export_onnx": None}
 
+    def _onnx2engine(self, **kwargs):
+        """
+        Export TensorRT engine from an ONNX file
+
+        Returns
+        -------
+        engine: tensorrt.ICudaEngine
+        """
+        # MANDATORY FOR GRID_SAMPLER, SIMPLIFICATION AFTER EXPORTATION
+        graph = gs.import_onnx(onnx.load(self.onnx_path))
+        graph.toposort()
+
+        # === Modify ONNX graph for TensorRT compability
+        graph = self._adapt_graph(graph, **kwargs)
+        utils.print_graph_io(graph)
+
+        # === Export adapted onnx for TRT engine
+        onnx.save(gs.export_onnx(graph), self.onnx_path)
+
+        # === Build engine
+        self.engine_builder.export_engine(self.engine_path)
+        return self.engine_builder.engine
+
 
 if __name__ == "__main__":
     # test script
-    from alonet.common.weights import vb_fodler
 
-    load_trt_plugins_for_deformable_detr()
+    from alonet.common.weights import vb_fodler
+    from alonet.torch2trt.onnx_hack import _add_grid_sampler_to_opset13
+
+
+    # load_trt_plugins_for_deformable_detr()
     device = torch.device("cuda")
+    _add_grid_sampler_to_opset13()
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--refinement", action="store_true", help="If set, use box refinement")
@@ -150,5 +182,6 @@ if __name__ == "__main__":
     exporter = DeformableDetrTRTExporter(
         model=model, weights=model_name, input_shapes=(input_shape,), input_names=["img"], device=device, **vars(args)
     )
-
-    exporter.export_engine()
+    # exporter._onnx2engine()
+    exporter._torch2onnx()
+    # exporter.export_engine()

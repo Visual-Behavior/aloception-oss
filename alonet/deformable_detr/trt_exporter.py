@@ -182,6 +182,4 @@ if __name__ == "__main__":
     exporter = DeformableDetrTRTExporter(
         model=model, weights=model_name, input_shapes=(input_shape,), input_names=["img"], device=device, **vars(args)
     )
-    # exporter._onnx2engine()
-    exporter._torch2onnx()
-    # exporter.export_engine()
+    exporter.export_engine()

@@ -123,29 +123,6 @@ class DeformableDetrTRTExporter(BaseTRTExporter):
         tensor_input = torch.cat(tensor_input, dim=1)  # [b, 4, H, W]
         return (tensor_input,), {"is_export_onnx": None}
 
-    def _onnx2engine(self, **kwargs):
-        """
-        Export TensorRT engine from an ONNX file
-
-        Returns
-        -------
-        engine: tensorrt.ICudaEngine
-        """
-        # MANDATORY FOR GRID_SAMPLER, SIMPLIFICATION AFTER EXPORTATION
-        graph = gs.import_onnx(onnx.load(self.onnx_path))
-        graph.toposort()
-
-        # === Modify ONNX graph for TensorRT compability
-        graph = self._adapt_graph(graph, **kwargs)
-        utils.print_graph_io(graph)
-
-        # === Export adapted onnx for TRT engine
-        onnx.save(gs.export_onnx(graph), self.onnx_path)
-
-        # === Build engine
-        self.engine_builder.export_engine(self.engine_path)
-        return self.engine_builder.engine
-
 
 if __name__ == "__main__":
     # test script

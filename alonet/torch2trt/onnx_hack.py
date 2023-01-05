@@ -140,3 +140,23 @@ def rename_nodes_(graph, verbose=False):
                         node.name = new_name
 
     return graph
+
+def _add_grid_sampler_to_opset13():
+        ## Credits https://github.com/pytorch/pytorch/issues/27212#issuecomment-1059773074
+
+        from torch.onnx import register_custom_op_symbolic
+        import torch.onnx.symbolic_helper as sym_help
+
+        def grid_sampler(g, input, grid, mode, padding_mode, align_corners):
+            mode = sym_help._maybe_get_const(mode, "i")
+            padding_mode = sym_help._maybe_get_const(padding_mode, "i")
+            mode_str = ['bilinear', 'nearest', 'bicubic'][mode]
+            padding_mode_str = ['zeros', 'border', 'reflection'][padding_mode]
+            align_corners = int(sym_help._maybe_get_const(align_corners, "b"))
+
+            return g.op("com.microsoft::GridSample", input, grid,
+                        mode_s=mode_str,
+                        padding_mode_s=padding_mode_str,
+                        align_corners_i=align_corners)
+            
+        register_custom_op_symbolic('::grid_sampler', grid_sampler, 1)

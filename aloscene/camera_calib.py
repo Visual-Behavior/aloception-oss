@@ -77,7 +77,8 @@ class CameraIntrinsic(AugmentedTensor):
 
     def __init__(self, x=None, *args, **kwargs):
         if x is not None:
-            assert x.shape[-2] == 3 and x.shape[-1] == 4
+            assert x.shape[-1] == 4
+            assert x.shape[-2] == 3 or x.shape[-2] == 4
         super().__init__(x)
 
     @property

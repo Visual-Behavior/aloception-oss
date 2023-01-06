@@ -136,7 +136,7 @@ class BaseTRTExporter:
         else:
             trt_logger = trt.Logger(trt.Logger.WARNING)
 
-        self.engine_builder = TRTEngineBuilder(self.onnx_path, logger=trt_logger, opt_profiles=opt_profiles, calibrator=calibrator)
+        self.engine_builder = TRTEngineBuilder(self.get_onnx_path(), logger=trt_logger, opt_profiles=opt_profiles, calibrator=calibrator)
 
         if profiling_verbosity == 0:
             self.engine_builder.profiling_verbosity = "LAYER_NAMES_ONLY"
@@ -160,6 +160,10 @@ class BaseTRTExporter:
             self.engine_builder.strict_type = False
         else:
             raise Exception(f"precision {precision} not supported")
+    
+    def get_onnx_path(self):
+        # Flexibility for some engines
+        return self.onnx_path
 
     def build_torch_model(self):
         """Build PyTorch model and load weight with the given name

@@ -48,6 +48,10 @@ class DeformableDetrTRTExporter(BaseTRTExporter):
         self.weights = weights
         self.do_constant_folding = False
         self.custom_opset = {"alonet_custom": 1}
+        self.adapted_onnx_path = self.onnx_path.replace(".onnx", "_TRTadapted") + ".onnx"
+
+    def get_onnx_path(self):
+        return self.onnx_path.replace(".onnx", "_TRTadapted") + ".onnx"
 
     def _adapt_graph(self, graph, **kwargs):
         return self.adapt_graph(graph, **kwargs)
@@ -113,6 +117,28 @@ class DeformableDetrTRTExporter(BaseTRTExporter):
         graph.cleanup()
         return graph
 
+    def _onnx2engine(self, **kwargs):
+        """
+        Export TensorRT engine from an ONNX file
+        Returns
+        -------
+        engine: tensorrt.ICudaEngine
+        """
+        # MANDATORY DETR PREPROCESSING BEFORE EXPORTATION
+        graph = gs.import_onnx(onnx.load(self.onnx_path))
+        graph.toposort()
+
+        # === Modify ONNX graph for TensorRT compability
+        graph = self.adapt_graph(graph, **kwargs)
+        utils.print_graph_io(graph)
+
+        # === Export adapted onnx for TRT engine
+        onnx.save(gs.export_onnx(graph), self.adapted_onnx_path)
+
+        # === Build engine
+        self.engine_builder.export_engine(self.engine_path)
+        return self.engine_builder.engine
+
     def prepare_sample_inputs(self):
         assert len(self.input_shapes) == 1, "DETR takes only 1 input"
         shape = self.input_shapes[0]
@@ -131,7 +157,7 @@ if __name__ == "__main__":
     from alonet.torch2trt.onnx_hack import _add_grid_sampler_to_opset13
 
 
-    # load_trt_plugins_for_deformable_detr()
+    load_trt_plugins_for_deformable_detr()
     device = torch.device("cuda")
     _add_grid_sampler_to_opset13()
 

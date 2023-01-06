@@ -12,9 +12,10 @@ from alonet.torch2trt import utils
 from torch.onnx import register_custom_op_symbolic
 
 from aloscene import Frame
+from alonet.torch2trt.utils import get_nodes_by_op
+from alonet.torch2trt.onnx_hack import _add_grid_sampler_to_opset13
 from alonet.deformable_detr import DeformableDetrR50, DeformableDetrR50Refinement
 from alonet.torch2trt import BaseTRTExporter, MS_DEFORM_IM2COL_PLUGIN_LIB, load_trt_custom_plugins
-from alonet.torch2trt.utils import get_nodes_by_op, get_node_by_name
 
 CUSTOM_OP_VERSION = 9
 
@@ -44,6 +45,7 @@ def load_trt_plugins_for_deformable_detr():
 
 class DeformableDetrTRTExporter(BaseTRTExporter):
     def __init__(self, model_name="deformable-detr-r50", weights="deformable-detr-r50", *args, **kwargs):
+        _add_grid_sampler_to_opset13()
         super().__init__(*args, **kwargs)
         self.weights = weights
         self.do_constant_folding = False
@@ -151,15 +153,10 @@ class DeformableDetrTRTExporter(BaseTRTExporter):
 
 
 if __name__ == "__main__":
-    # test script
-
     from alonet.common.weights import vb_fodler
-    from alonet.torch2trt.onnx_hack import _add_grid_sampler_to_opset13
-
 
     load_trt_plugins_for_deformable_detr()
     device = torch.device("cuda")
-    _add_grid_sampler_to_opset13()
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--refinement", action="store_true", help="If set, use box refinement")

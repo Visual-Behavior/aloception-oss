@@ -253,11 +253,11 @@ class DeformableDETR(nn.Module):
         if self.num_feature_levels > len(srcs):
             _len_srcs = len(srcs)
             for lf in range(_len_srcs, self.num_feature_levels):
-                if lf == _len_srcs:
-                    depth.append(torch.nn.functional.max_pool2d(features[-1][0][:, -1:], 3, 2, 1))
+                 if lf == _len_srcs:
+                    depth.append(1.0 / torch.nn.functional.max_pool2d(1.0 / features[-1][0][:, -1:], 3, 2, 1))
                     src = self.input_proj[lf](features[-1][0])
                 else:
-                    depth.append(torch.nn.functional.max_pool2d(srcs[-1, -1:], 3, 2, 1))
+                    depth.append(1.0 / torch.nn.functional.max_pool2d(1.0 / srcs[-1, -1:], 3, 2, 1))
                     src = self.input_proj[lf](srcs[-1])
                 mask = F.interpolate(frame_masks.float(), size=src.shape[-2:]).to(torch.bool)
                 pos_l = self.backbone[1]((src, mask)).to(src.dtype)

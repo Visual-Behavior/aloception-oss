@@ -253,7 +253,7 @@ class DeformableDETR(nn.Module):
         if self.num_feature_levels > len(srcs):
             _len_srcs = len(srcs)
             for lf in range(_len_srcs, self.num_feature_levels):
-                 if lf == _len_srcs:
+                if lf == _len_srcs:
                     depth.append(1.0 / torch.nn.functional.max_pool2d(1.0 / features[-1][0][:, -1:], 3, 2, 1))
                     src = self.input_proj[lf](features[-1][0])
                 else:

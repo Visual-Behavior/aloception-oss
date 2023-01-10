@@ -58,3 +58,8 @@ Evaluation on 1000 images COCO with box refinement
  box             | 44.93 | 62.24 | 60.26 | 58.00 | 55.76 | 52.51 | 48.07 | 42.99 | 36.13 | 24.28 |  9.02 |
 -------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+
 ```
+
+## Exportation
+```bash
+python trt_exporter.py --refinement --HW 320 480 --verbose --ignore_adapt_graph
+```

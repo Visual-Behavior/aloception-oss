@@ -3,16 +3,19 @@
 
 import argparse
 import os
+import onnx
 import torch
 import numpy as np
 import onnx_graphsurgeon as gs
+from alonet.torch2trt import utils
 
 from torch.onnx import register_custom_op_symbolic
 
 from aloscene import Frame
+from alonet.torch2trt.utils import get_nodes_by_op
+from alonet.torch2trt.onnx_hack import _add_grid_sampler_to_opset13
 from alonet.deformable_detr import DeformableDetrR50, DeformableDetrR50Refinement
 from alonet.torch2trt import BaseTRTExporter, MS_DEFORM_IM2COL_PLUGIN_LIB, load_trt_custom_plugins
-from alonet.torch2trt.utils import get_nodes_by_op
 
 CUSTOM_OP_VERSION = 9
 
@@ -42,12 +45,20 @@ def load_trt_plugins_for_deformable_detr():
 
 class DeformableDetrTRTExporter(BaseTRTExporter):
     def __init__(self, model_name="deformable-detr-r50", weights="deformable-detr-r50", *args, **kwargs):
+        _add_grid_sampler_to_opset13()
         super().__init__(*args, **kwargs)
         self.weights = weights
         self.do_constant_folding = False
         self.custom_opset = {"alonet_custom": 1}
+        self.adapted_onnx_path = self.onnx_path.replace(".onnx", "_TRTadapted") + ".onnx"
 
-    def adapt_graph(self, graph: gs.Graph):
+    def get_onnx_path(self):
+        return self.onnx_path.replace(".onnx", "_TRTadapted") + ".onnx"
+
+    def _adapt_graph(self, graph, **kwargs):
+        return self.adapt_graph(graph, **kwargs)
+
+    def adapt_graph(self, graph, **kwargs):
         # batch_size = graph.inputs[0].shape[0] # test
 
         # ======= Add nodes for MsDeformIm2ColTRT ===========
@@ -108,6 +119,29 @@ class DeformableDetrTRTExporter(BaseTRTExporter):
         graph.cleanup()
         return graph
 
+    def _onnx2engine(self, **kwargs):
+        """
+        Export TensorRT engine from an ONNX file
+        Returns
+        -------
+        engine: tensorrt.ICudaEngine
+        """
+        # MANDATORY DETR PREPROCESSING BEFORE EXPORTATION
+        graph = gs.import_onnx(onnx.load(self.onnx_path))
+        graph.toposort()
+
+        # === Modify ONNX graph for TensorRT compability
+        # Adaptation no more needed after explicitly fixing operators
+        # graph = self.adapt_graph(graph, **kwargs)
+        utils.print_graph_io(graph)
+
+        # === Export adapted onnx for TRT engine
+        onnx.save(gs.export_onnx(graph), self.adapted_onnx_path)
+
+        # === Build engine
+        self.engine_builder.export_engine(self.engine_path)
+        return self.engine_builder.engine
+
     def prepare_sample_inputs(self):
         assert len(self.input_shapes) == 1, "DETR takes only 1 input"
         shape = self.input_shapes[0]
@@ -120,7 +154,6 @@ class DeformableDetrTRTExporter(BaseTRTExporter):
 
 
 if __name__ == "__main__":
-    # test script
     from alonet.common.weights import vb_fodler
 
     load_trt_plugins_for_deformable_detr()
@@ -150,5 +183,4 @@ if __name__ == "__main__":
     exporter = DeformableDetrTRTExporter(
         model=model, weights=model_name, input_shapes=(input_shape,), input_names=["img"], device=device, **vars(args)
     )
-
     exporter.export_engine()

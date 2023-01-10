@@ -131,7 +131,8 @@ class DeformableDetrTRTExporter(BaseTRTExporter):
         graph.toposort()
 
         # === Modify ONNX graph for TensorRT compability
-        graph = self.adapt_graph(graph, **kwargs)
+        # Adaptation no more needed after explicitly fixing operators
+        # graph = self.adapt_graph(graph, **kwargs)
         utils.print_graph_io(graph)
 
         # === Export adapted onnx for TRT engine

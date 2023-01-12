@@ -515,12 +515,14 @@ class SpatialAugmentedTensor(AugmentedTensor):
             return self.rename(None).view(shapes).reset_names()
         return F.resize(self.rename(None), (h, w), interpolation=interpolation).reset_names()
 
-    def _rotate(self, angle, **kwargs):
+    def _rotate(self, angle, center=None,**kwargs):
         """Rotate SpatialAugmentedTensor, but not its labels
 
         Parameters
         ----------
         angle : float
+        center : list or tuple of coordinates in absolute format. Default is the center of the image
+
 
         Returns
         -------
@@ -531,7 +533,7 @@ class SpatialAugmentedTensor(AugmentedTensor):
         assert not (
             ("N" in self.names and self.size("N") == 0) or ("C" in self.names and self.size("C") == 0)
         ), "rotation is not possible on an empty tensor"
-        return F.rotate(self.rename(None), angle).reset_names()
+        return F.rotate(self.rename(None), angle,center=center).reset_names()
 
     def _crop(self, H_crop: tuple, W_crop: tuple, **kwargs):
         """Crop the SpatialAugmentedTensor

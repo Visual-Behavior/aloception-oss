@@ -93,7 +93,8 @@ class Points2D(aloscene.tensors.AugmentedTensor):
 
         if points_format not in Points2D.FORMATS:
             raise Exception(
-                "Point2d:Format `{}` not supported. Cound be one of {}".format(points_format, Points2D.FORMATS)
+                "Point2d:Format `{}` not supported. Cound be one of {}".format(
+                    points_format, Points2D.FORMATS)
             )
 
         tensor = super().__new__(cls, x, *args, names=names, **kwargs)
@@ -106,8 +107,10 @@ class Points2D(aloscene.tensors.AugmentedTensor):
         tensor.add_property("padded_size", None)
 
         if absolute and frame_size is None:
-            raise Exception("If the points format are absolute, the `frame_size` must be set")
-        assert frame_size is None or (isinstance(frame_size, tuple) and len(frame_size) == 2)
+            raise Exception(
+                "If the points format are absolute, the `frame_size` must be set")
+        assert frame_size is None or (isinstance(
+            frame_size, tuple) and len(frame_size) == 2)
         tensor.add_property("frame_size", frame_size)
 
         return tensor
@@ -198,9 +201,11 @@ class Points2D(aloscene.tensors.AugmentedTensor):
         if tensor.absolute and frame_size != tensor.frame_size:
 
             if tensor.points_format == "xy":
-                mul_tensor = torch.tensor([[frame_size[1], frame_size[0]]], device=self.device)
+                mul_tensor = torch.tensor(
+                    [[frame_size[1], frame_size[0]]], device=self.device)
             else:
-                mul_tensor = torch.tensor([[frame_size[0], frame_size[1]]], device=self.device)
+                mul_tensor = torch.tensor(
+                    [[frame_size[0], frame_size[1]]], device=self.device)
 
             tensor = tensor.rel_pos()
             tensor = tensor.mul(mul_tensor)
@@ -226,9 +231,11 @@ class Points2D(aloscene.tensors.AugmentedTensor):
         else:
 
             if tensor.points_format == "xy":
-                mul_tensor = torch.tensor([[frame_size[1], frame_size[0]]], device=self.device)
+                mul_tensor = torch.tensor(
+                    [[frame_size[1], frame_size[0]]], device=self.device)
             else:
-                mul_tensor = torch.tensor([[frame_size[0], frame_size[1]]], device=self.device)
+                mul_tensor = torch.tensor(
+                    [[frame_size[0], frame_size[1]]], device=self.device)
 
             tensor = tensor.mul(mul_tensor)
             tensor.frame_size = frame_size
@@ -262,9 +269,11 @@ class Points2D(aloscene.tensors.AugmentedTensor):
         # Back to relative before to get the absolute pos
         if tensor.absolute:
             if tensor.points_format == "xy":
-                div_tensor = torch.tensor([[self.frame_size[1], self.frame_size[0]]], device=self.device)
+                div_tensor = torch.tensor(
+                    [[self.frame_size[1], self.frame_size[0]]], device=self.device)
             else:
-                div_tensor = torch.tensor([[self.frame_size[0], self.frame_size[1]]], device=self.device)
+                div_tensor = torch.tensor(
+                    [[self.frame_size[0], self.frame_size[1]]], device=self.device)
             tensor = tensor.div(div_tensor)
             tensor.absolute = False
 
@@ -302,7 +311,8 @@ class Points2D(aloscene.tensors.AugmentedTensor):
         elif points_format == "yx":
             return self.yx()
         else:
-            raise Exception(f"desired points_format {points_format} is not handle")
+            raise Exception(
+                f"desired points_format {points_format} is not handle")
 
     _GLOBAL_COLOR_SET = np.random.uniform(0, 1, (300, 3))
 
@@ -330,7 +340,8 @@ class Points2D(aloscene.tensors.AugmentedTensor):
 
         if frame is not None:
             if len(frame.shape) > 3:
-                raise Exception(f"Expect image of shape c,h,w. Found image with shape {frame.shape}")
+                raise Exception(
+                    f"Expect image of shape c,h,w. Found image with shape {frame.shape}")
             assert isinstance(frame, Frame)
         else:
             size = self.frame_size if self.absolute else (300, 300)
@@ -345,11 +356,13 @@ class Points2D(aloscene.tensors.AugmentedTensor):
 
         # Get an imave with values between 0 and 1
         frame_size = (frame.H, frame.W)
-        frame = frame.norm01().cpu().rename(None).permute([1, 2, 0]).detach().contiguous().numpy()
+        frame = frame.norm01().cpu().rename(None).permute(
+            [1, 2, 0]).detach().contiguous().numpy()
         # Draw points
 
         # Try to retrieve the associated label ID (if any)
-        labels = points_abs.labels if isinstance(points_abs.labels, aloscene.Labels) else [None] * len(points_abs)
+        labels = points_abs.labels if isinstance(
+            points_abs.labels, aloscene.Labels) else [None] * len(points_abs)
         if labels_set is not None and not isinstance(points_abs.labels, dict):
             raise Exception(
                 f"Trying to display a set of points labels ({labels_set}) while the points do not have multiple set of labels"
@@ -370,7 +383,8 @@ class Points2D(aloscene.tensors.AugmentedTensor):
             x1, y1 = box.as_tensor()
             color = (0, 1, 0)
             if label is not None:
-                color = self._GLOBAL_COLOR_SET[int(label) % len(self._GLOBAL_COLOR_SET)]
+                color = self._GLOBAL_COLOR_SET[int(
+                    label) % len(self._GLOBAL_COLOR_SET)]
 
                 put_adapative_cv2_text(
                     frame,
@@ -429,30 +443,37 @@ class Points2D(aloscene.tensors.AugmentedTensor):
             abs_size = tuple(s * fs for s, fs in zip(size, points.frame_size))
             return points.abs_pos(abs_size)
 
-    def _rotate(self, angle, **kwargs):
+    def _rotate(self, angle, center=None, **kwargs):
         """Rotate Point2d, but not their labels
 
         Parameters
         ----------
-        size : float
+        angle : float
+        center : list or tuple of coordinates in absolute format. Default is the center of the image
 
         Returns
         -------
         points : aloscene.Point2d
             rotated points
         """
-        points = self.xy()
+        assert self.frame_size is not None
         H, W = self.frame_size
+        points = self.xy().abs_pos((H, W))
+
         angle_rad = angle * np.pi / 180
         rot_mat = torch.tensor([[np.cos(angle_rad), np.sin(angle_rad)], [-np.sin(angle_rad), np.cos(angle_rad)]]).to(
             torch.float32
         )
-        tr_mat = torch.tensor([W / 2, H / 2])
+        if center is None:
+            tr_mat = torch.tensor([W / 2, H / 2])
+        else:
+            tr_mat = torch.tensor(center)
         for i in range(points.shape[0]):
             points[i] = torch.matmul(rot_mat, points[i] - tr_mat) + tr_mat
 
         max_size = torch.as_tensor([W, H], dtype=torch.float32)
-        points_filter = (points >= 0).as_tensor() & (points <= max_size).as_tensor()
+        points_filter = (points >= 0).as_tensor() & (
+            points <= max_size).as_tensor()
         points_filter = points_filter[:, 0] & points_filter[:, 1]
         points = points[points_filter]
 
@@ -476,7 +497,8 @@ class Points2D(aloscene.tensors.AugmentedTensor):
             (start, end) between 0 and 1
         """
         if self.padded_size is not None:
-            raise Exception("Can't crop when padded size is not Note. Call fit_to_padded_size() first")
+            raise Exception(
+                "Can't crop when padded size is not Note. Call fit_to_padded_size() first")
 
         absolute = self.absolute
         frame_size = self.frame_size
@@ -495,8 +517,10 @@ class Points2D(aloscene.tensors.AugmentedTensor):
         # Crop points
         cropped_points = n_points - torch.as_tensor([x, y])
 
-        cropped_points_filter = (cropped_points >= 0).as_tensor() & (cropped_points < max_size).as_tensor()
-        cropped_points_filter = cropped_points_filter[:, 0] & cropped_points_filter[:, 1]
+        cropped_points_filter = (cropped_points >= 0).as_tensor() & (
+            cropped_points < max_size).as_tensor()
+        cropped_points_filter = cropped_points_filter[:,
+                                                      0] & cropped_points_filter[:, 1]
         cropped_points = cropped_points[cropped_points_filter]
 
         cropped_points.frame_size = (h, w)
@@ -504,7 +528,8 @@ class Points2D(aloscene.tensors.AugmentedTensor):
 
         # Put back the instance into the same state as before
         if absolute:
-            n_frame_size = ((H_crop[1] - H_crop[0]) * frame_size[0], (W_crop[1] - W_crop[0]) * frame_size[1])
+            n_frame_size = ((H_crop[1] - H_crop[0]) * frame_size[0],
+                            (W_crop[1] - W_crop[0]) * frame_size[1])
             cropped_points = cropped_points.abs_pos(n_frame_size)
         else:
             cropped_points.frame_size = None
@@ -525,28 +550,34 @@ class Points2D(aloscene.tensors.AugmentedTensor):
         >>> padded_points = points.fit_to_padded_size()
         """
         if self.padded_size is None:
-            raise Exception("Trying to fit to padded size without any previous stored padded_size.")
+            raise Exception(
+                "Trying to fit to padded size without any previous stored padded_size.")
 
         if not self.absolute:
             offset_y = (self.padded_size[0][0], self.padded_size[0][1])
             offset_x = (self.padded_size[1][0], self.padded_size[1][1])
         else:
-            offset_y = (self.padded_size[0][0] / self.frame_size[0], self.padded_size[0][1] / self.frame_size[0])
-            offset_x = (self.padded_size[1][0] / self.frame_size[1], self.padded_size[1][1] / self.frame_size[1])
+            offset_y = (self.padded_size[0][0] / self.frame_size[0],
+                        self.padded_size[0][1] / self.frame_size[0])
+            offset_x = (self.padded_size[1][0] / self.frame_size[1],
+                        self.padded_size[1][1] / self.frame_size[1])
 
         if not self.absolute:
             points = self.abs_pos((100, 100)).xy()
             h_shift = points.frame_size[0] * offset_y[0]
             w_shift = points.frame_size[1] * offset_x[0]
-            points = points + torch.as_tensor([[w_shift, h_shift]], device=points.device)
-            points.frame_size = (100 * (1.0 + offset_y[0] + offset_y[1]), 100 * (1.0 + offset_x[0] + offset_x[1]))
+            points = points + \
+                torch.as_tensor([[w_shift, h_shift]], device=points.device)
+            points.frame_size = (
+                100 * (1.0 + offset_y[0] + offset_y[1]), 100 * (1.0 + offset_x[0] + offset_x[1]))
             points = points.get_with_format(self.points_format)
             points = points.rel_pos()
         else:
             points = self.xy()
             h_shift = points.frame_size[0] * offset_y[0]
             w_shift = points.frame_size[1] * offset_x[0]
-            points = points + torch.as_tensor([[w_shift, h_shift]], device=points.device)
+            points = points + \
+                torch.as_tensor([[w_shift, h_shift]], device=points.device)
             points.frame_size = (
                 points.frame_size[0] * (1.0 + offset_y[0] + offset_y[1]),
                 points.frame_size[1] * (1.0 + offset_x[0] + offset_x[1]),
@@ -583,8 +614,10 @@ class Points2D(aloscene.tensors.AugmentedTensor):
                 pr_frame_size = (1, 1)
 
             n_padded_size = (
-                (pr_frame_size[0] * offset_y[0], pr_frame_size[0] * offset_y[1]),
-                (pr_frame_size[1] * offset_x[0], pr_frame_size[1] * offset_x[1]),
+                (pr_frame_size[0] * offset_y[0],
+                 pr_frame_size[0] * offset_y[1]),
+                (pr_frame_size[1] * offset_x[0],
+                 pr_frame_size[1] * offset_x[1]),
             )
 
             if n_points.padded_size is not None:
@@ -597,21 +630,25 @@ class Points2D(aloscene.tensors.AugmentedTensor):
             return n_points
 
         if self.padded_size is not None:
-            raise Exception("Padding with pad_points True while padded_size is not None is not supported Yet.")
+            raise Exception(
+                "Padding with pad_points True while padded_size is not None is not supported Yet.")
 
         if not self.absolute:
             points = self.abs_pos((100, 100)).xy()
             h_shift = points.frame_size[0] * offset_y[0]
             w_shift = points.frame_size[1] * offset_x[0]
-            points = points + torch.as_tensor([[w_shift, h_shift]], device=points.device)
-            points.frame_size = (100 * (1.0 + offset_y[0] + offset_y[1]), 100 * (1.0 + offset_x[0] + offset_x[1]))
+            points = points + \
+                torch.as_tensor([[w_shift, h_shift]], device=points.device)
+            points.frame_size = (
+                100 * (1.0 + offset_y[0] + offset_y[1]), 100 * (1.0 + offset_x[0] + offset_x[1]))
             points = points.get_with_format(self.points_format)
             points = points.rel_pos()
         else:
             points = self.xy()
             h_shift = points.frame_size[0] * offset_y[0]
             w_shift = points.frame_size[1] * offset_x[0]
-            points = points + torch.as_tensor([[w_shift, h_shift]], device=points.device)
+            points = points + \
+                torch.as_tensor([[w_shift, h_shift]], device=points.device)
             points.frame_size = (
                 points.frame_size[0] * (1.0 + offset_y[0] + offset_y[1]),
                 points.frame_size[1] * (1.0 + offset_x[0] + offset_x[1]),
@@ -645,10 +682,12 @@ class Points2D(aloscene.tensors.AugmentedTensor):
 
         # shift the points
         n_points = self.clone().rel_pos().xy()
-        n_points += torch.as_tensor([[shift_x, shift_y]])  # , device=self.device)
+        # , device=self.device)
+        n_points += torch.as_tensor([[shift_x, shift_y]])
 
         # filter points outside of the image
-        points_filter = (n_points >= 0).as_tensor() & (n_points <= 1).as_tensor()
+        points_filter = (n_points >= 0).as_tensor() & (
+            n_points <= 1).as_tensor()
         points_filter = points_filter[:, 0] & points_filter[:, 1]
         n_points = n_points[points_filter]
         n_points = n_points.reset_names()

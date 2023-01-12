@@ -130,7 +130,7 @@ class SpatialAugmentedTensor(AugmentedTensor):
         """
         _views = [v for v in views if isinstance(v, View)]
         if len(_views) > 0:
-            return View(Renderer.get_grid_view(_views, grid_size=None, cell_grid_size=size, **kwargs),title=title)
+            return View(Renderer.get_grid_view(_views, grid_size=None, cell_grid_size=size, **kwargs), title=title)
 
         # Include type
         include_type = [

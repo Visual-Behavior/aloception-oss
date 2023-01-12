@@ -4,8 +4,6 @@ import math
 import matplotlib.pyplot as plt
 import matplotlib
 from abc import ABC, abstractmethod
-import numpy as np
-import cv2
 
 
 def adapt_text_size_to_frame(size, frame_size):
@@ -93,14 +91,16 @@ class View(object):
         if location is not None:
             plt.figure(figsize=figsize, tight_layout=True)
             plt.imshow(self.image)
-            plt.title("Frame" if self.title is None else self.title, self.image[:, :, ::-1])
+            if self.title is not None:
+                plt.title(self.title)
             plt.savefig(location)
             plt.close()
 
         if method == self.MATPLOTLIB:
             plt.figure(figsize=figsize, tight_layout=True)
             plt.imshow(self.image)
-            plt.title("Frame" if self.title is None else self.title, self.image[:, :, ::-1])
+            if self.title is not None:
+                plt.title(self.title)
             plt.show()
             plt.close()
 

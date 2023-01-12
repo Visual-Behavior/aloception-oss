@@ -331,6 +331,18 @@ def run_pl_training(
             resume_from_checkpoint = ckpt_path
             expe_dir = os.path.join(run_id_project_dir, args.run_id)
 
+    if args.log is not None:
+        if args.log == "wandb":
+            logger = WandbLogger(name=expe_name, project=project, id=expe_name)
+            logger.log_hyperparams(args)
+
+        elif args.log == "tensorboard":
+            logger = TensorBoardLogger(save_dir="tensorboard/", name=expe_name, sub_dir=expe_name)
+        else:
+            raise ValueError("Unknown or not implemented logger")
+    else:
+        logger = None
+  
     if args.save:
         monitor = getattr(args, "monitor", "val_loss")
         checkpoint_callback = ModelCheckpoint(

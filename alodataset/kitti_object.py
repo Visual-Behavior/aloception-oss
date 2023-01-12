@@ -11,6 +11,26 @@ from alodataset.utils.kitti import load_calib_cam_to_cam
 
 
 class KittiObjectDataset(BaseDataset, SplitMixin):
+    """
+    Object Task from KITTI dataset.
+    Parameters
+    ----------
+    name : str
+        Name of the dataset.
+    right_frame : bool
+        If True, load the right frame.
+    context_images : int
+        Number of image before the main frame to load (max 3).
+    split : Split
+        Split of the dataset. Can be `Split.TRAIN` or `Split.TEST`.
+
+    Examples
+    --------
+    >>> # Get all the training samples:
+    >>> dataset = KittiObjectDataset(right_frame=True, context_images=3, split=Split.TRAIN)
+    >>> # Get the annotated image from the left camera from the testing set:
+    >>> dataset = KittiObjectDataset(right_frame=False, context_images=0, split=Split.TEST)
+    """
     SPLIT_FOLDERS = {Split.TRAIN: "training", Split.TEST: "testing"}
     LABELS = ["Car", "Van", "Truck", "Pedestrian", "Person_sitting", "Cyclist", "Tram", "Misc", "DontCare"]
 

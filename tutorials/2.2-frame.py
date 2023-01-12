@@ -7,7 +7,7 @@ frame = WaymoDataset(
     cameras=["front"],
     labels=["gt_boxes_2d"],
     sequence_size=2,  #  --> Let's use sequence of two frame
-).get(42)["front"]
+).get(2)["front"]
 
 ######
 # The frame tensors and its labels

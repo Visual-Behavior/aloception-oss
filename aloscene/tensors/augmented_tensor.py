@@ -323,8 +323,17 @@ class AugmentedTensor(torch.Tensor):
                     label, lambda l: self._getitem_child(l, name, idx), on_list=False
                 )
 
-        if isinstance(idx, torch.Tensor):
-            tensor = torch.Tensor.__getitem__(self.rename(None), idx).reset_names()
+        if isinstance(idx, AugmentedTensor):
+            tensor = torch.Tensor.__getitem__(self.rename(None), idx.as_tensor())
+
+            tensor = tensor.reset_names() if len(self.shape) == len(tensor.shape) else tensor.as_tensor()
+
+        elif isinstance(idx, torch.Tensor):
+            tensor = torch.Tensor.__getitem__(self.rename(None), idx)
+
+            tensor = tensor.reset_names() if len(self.shape) == len(tensor.shape) else tensor.as_tensor()
+
+
             # if not idx.dtype == torch.bool:
             #    if not torch.equal(idx ** 3, idx):
             #        raise IndexError(f"Unvalid mask. Expected mask elements to be in [0, 1, True, False]")
@@ -571,7 +580,7 @@ class AugmentedTensor(torch.Tensor):
         self = _torch_function_get_self(cls, func, types, args, kwargs)
 
         def _merging_frame(args):
-            if len(args) >= 1 and isinstance(args[0], list):
+            if len(args) >= 1 and isinstance(args[0], (list, tuple)):
                 for el in args[0]:
                     if isinstance(el, cls):
                         return True
@@ -894,13 +903,14 @@ class AugmentedTensor(torch.Tensor):
     def _resize(self, *args, **kwargs):
         raise Exception("This Augmented tensor should implement this method")
 
-    def rotate(self, angle, **kwargs):
+    def rotate(self, angle, center=None,**kwargs):
         """
         Rotate AugmentedTensor, and its labels recursively
 
         Parameters
         ----------
         angle : float
+        center : list or tuple of coordinates in absolute format. Default is the center of the image
 
         Returns
         -------
@@ -910,12 +920,12 @@ class AugmentedTensor(torch.Tensor):
 
         def rotate_func(label):
             try:
-                label_rotated = label._rotate(angle, **kwargs)
+                label_rotated = label._rotate(angle, center,**kwargs)
                 return label_rotated
             except AttributeError:
                 return label
 
-        rotated = self._rotate(angle, **kwargs)
+        rotated = self._rotate(angle, center,**kwargs)
         rotated.recursive_apply_on_children_(rotate_func)
 
         return rotated
@@ -962,7 +972,7 @@ class AugmentedTensor(torch.Tensor):
         except AttributeError:
             return label
 
-    def pad(self, offset_y: tuple, offset_x: tuple, **kwargs):
+    def pad(self, offset_y: tuple = None, offset_x: tuple = None, multiple: int = None, **kwargs):
         """
         Pad AugmentedTensor, and its labels recursively
 
@@ -974,16 +984,34 @@ class AugmentedTensor(torch.Tensor):
         offset_x: tuple of float or tuple of int
             (percentage left_offset, percentage right_offset) Percentage based on the previous size. If tuple of int
             the absolute value will be converted to float (percentage) before to be applied.
+        multiple: int
+            pad the tensor to the next multiple of `multiple`
 
         Returns
         -------
-        croped : aloscene AugmentedTensor
-            croped tensor
+        cropped : aloscene AugmentedTensor
+            cropped tensor
         """
-        if isinstance(offset_y[0], int) and isinstance(offset_y[1], int):
-            offset_y = (offset_y[0] / self.H, offset_y[1] / self.H)
-        if isinstance(offset_x[0], int) and isinstance(offset_x[1], int):
-            offset_x = (offset_x[0] / self.W, offset_x[1] / self.W)
+        if multiple is not None:
+            assert offset_x is None and offset_y is None
+            if not self.H % multiple == 0:
+                offset_y0 = int(np.floor((multiple - self.H % multiple) / 2))
+                offset_y1 = int(np.ceil((multiple - self.H % multiple) / 2))
+                offset_y = (offset_y0 / self.H, offset_y1 / self.H)
+            else:  # already a multiple of H
+                offset_y = (0, 0)
+            if not self.W % multiple == 0:
+                offset_x0 = int(np.floor((multiple - self.W % multiple) / 2))
+                offset_x1 = int(np.ceil((multiple - self.W % multiple) / 2))
+                offset_x = (offset_x0 / self.W, offset_x1 / self.W)
+            else:  # already a multiple of W
+                offset_x = (0, 0)
+        else:
+            assert offset_x is not None and offset_y is not None
+            if isinstance(offset_y[0], int) and isinstance(offset_y[1], int):
+                offset_y = (offset_y[0] / self.H, offset_y[1] / self.H)
+            if isinstance(offset_x[0], int) and isinstance(offset_x[1], int):
+                offset_x = (offset_x[0] / self.W, offset_x[1] / self.W)
 
         padded = self._pad(offset_y, offset_x, **kwargs)
         padded.recursive_apply_on_children_(lambda label: self._pad_label(label, offset_y, offset_x, **kwargs))

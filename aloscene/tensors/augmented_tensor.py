@@ -323,8 +323,17 @@ class AugmentedTensor(torch.Tensor):
                     label, lambda l: self._getitem_child(l, name, idx), on_list=False
                 )
 
-        if isinstance(idx, torch.Tensor):
-            tensor = torch.Tensor.__getitem__(self.rename(None), idx).reset_names()
+        if isinstance(idx, AugmentedTensor):
+            tensor = torch.Tensor.__getitem__(self.rename(None), idx.as_tensor())
+
+            tensor = tensor.reset_names() if len(self.shape) == len(tensor.shape) else tensor.as_tensor()
+
+        elif isinstance(idx, torch.Tensor):
+            tensor = torch.Tensor.__getitem__(self.rename(None), idx)
+
+            tensor = tensor.reset_names() if len(self.shape) == len(tensor.shape) else tensor.as_tensor()
+
+
             # if not idx.dtype == torch.bool:
             #    if not torch.equal(idx ** 3, idx):
             #        raise IndexError(f"Unvalid mask. Expected mask elements to be in [0, 1, True, False]")

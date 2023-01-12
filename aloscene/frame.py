@@ -520,13 +520,22 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         >>> frame_custom_norm = frame.norm_resnet(name="custom")
         """
         if name == "resnet":
-            return self.mean_std_norm(mean=self._resnet_mean_std[0], std=self._resnet_mean_std[1], name="resnet")
+            return self.norm_resnet()
         elif mean_std is not None and len(mean_std) == 2:
             return self.mean_std_norm(mean=mean_std[0], std=mean_std[1], name=name)
         elif self.mean_std is not None:
             return self.mean_std_norm(mean=self.mean_std[0], std=self.mean_std[1], name=name)
         else:
             raise Exception("Please pass a mean_std tuple or use the resnet norm")
+
+    def norm_resnet(self) -> Frame:
+        """Normalized the current frame based on the normalized use on resnet on pytorch. This method will
+        simply call `frame.mean_std_norm()` with the resnet mean/std and the name `resnet`.
+        Examples
+        --------
+        >>> frame_resnet = frame.norm_resnet()
+        """
+        return self.mean_std_norm(mean=self._resnet_mean_std[0], std=self._resnet_mean_std[1], name="resnet")
 
     def __get_view__(self, title=None):
         """Create a view of the frame"""

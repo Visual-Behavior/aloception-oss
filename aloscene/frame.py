@@ -488,9 +488,12 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         tensor = self
 
         if mean is None or std is None :
-            mean=tensor.mean_std[0]
-            std=tensor.mean_std[1]
-            name="default"
+            if tensor.mean_std is not None :
+                mean=tensor.mean_std[0]
+                std=tensor.mean_std[1]
+                name="default"
+            else :
+                raise Exception("Tensor doesn't have stored mean_std parameters. Please pass these parameters to the function")
 
         mean_tensor, std_tensor = self._get_mean_std_tensor(
             tensor.shape, tensor.names, (mean,std), device=tensor.device

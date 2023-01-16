@@ -10,9 +10,17 @@ import aloscene
 class DeformableDetrR50Refinement(DeformableDETR):
     """Deformable Detr with Resnet50 backbone with box refinement"""
 
-    def __init__(self, *args, return_intermediate_dec: bool = True, num_classes=91, add_depth=False, **kwargs):
+    def __init__(
+        self,
+        *args,
+        return_intermediate_dec: bool = True,
+        num_classes=91,
+        add_depth=False,
+        backbone_name="resnet50",
+        **kwargs
+    ):
         backbone = self.build_backbone(
-            backbone_name="resnet50", train_backbone=True, return_interm_layers=True, dilation=False
+            backbone_name=backbone_name, train_backbone=True, return_interm_layers=True, dilation=False
         )
         position_embed = self.build_positional_encoding(hidden_dim=256)
         backbone = Joiner(backbone, position_embed)
@@ -44,7 +52,7 @@ if __name__ == "__main__":
     parser.add_argument("image_path", type=str, help="Path to the image for inference")
     args = parser.parse_args()
 
-    model = DeformableDetrR50Refinement(weights="deformable-detr-r50-refinement").eval()
+    model = DeformableDetrR50Refinement(backbone_name="mobilenet").eval()
 
     image_path = args.image_path
     frame = aloscene.Frame(image_path).norm_resnet()

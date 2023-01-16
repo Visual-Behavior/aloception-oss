@@ -21,7 +21,9 @@ from torch.nn.init import xavier_uniform_, constant_
 from alonet import ALONET_ROOT
 
 from ..functions import MSDeformAttnFunction, load_MultiScaleDeformableAttention
-
+from alonet.deformable_detr.ops.functions.ms_deform_attn_func import (
+    ms_deform_attn_core_pytorch,
+    )
 
 def _is_power_of_2(n):
     if (not isinstance(n, int)) or (n < 0):
@@ -134,17 +136,11 @@ class MSDeformAttn(nn.Module):
                 "Last dim of reference_points must be 2 or 4, but get {} instead.".format(reference_points.shape[-1])
             )
         if "is_tracing" in kwargs:
-            # TensorRT deformable attention plugin requires batch dimension on all tensors
-            if "is_export_onnx" in kwargs:
-                input_spatial_shapes = torch.unsqueeze(input_spatial_shapes, 0)
-                input_level_start_index = torch.unsqueeze(input_level_start_index, 0)
-            output = torch.ops.alonet_custom.ms_deform_attn_forward(
+            output = ms_deform_attn_core_pytorch(
                 value,
                 input_spatial_shapes,
-                input_level_start_index,
                 sampling_locations,
                 attention_weights,
-                self.im2col_step,
             )
         else:
             output = MSDeformAttnFunction.apply(

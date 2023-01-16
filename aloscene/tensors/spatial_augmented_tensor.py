@@ -72,8 +72,8 @@ class SpatialAugmentedTensor(AugmentedTensor):
     def dummy(cls, size: tuple, names: tuple):
         dummy_class = cls(torch.ones(size))
         mask_size = list(size)
-        if 'C' in names:
-            mask_size[names.index('C')] = 1
+        if "C" in names:
+            mask_size[names.index("C")] = 1
         mask_size = tuple(mask_size)
         dummy_class.append_mask(aloscene.Mask(torch.ones(mask_size), names=names))
         return dummy_class
@@ -110,7 +110,7 @@ class SpatialAugmentedTensor(AugmentedTensor):
     def append_cam_extrinsic(self, cam_extrinsic: CameraExtrinsic):
         self._append_child("cam_extrinsic", cam_extrinsic)
 
-    def get_view(self, views: list = [], exclude=[], size=None, grid_size=None, **kwargs):
+    def get_view(self, views: list = [], exclude=[], size=None, grid_size=None, title=None, **kwargs):
         """Render the spatial augmented tensor.
 
         Parameters
@@ -130,7 +130,7 @@ class SpatialAugmentedTensor(AugmentedTensor):
         """
         _views = [v for v in views if isinstance(v, View)]
         if len(_views) > 0:
-            return View(Renderer.get_grid_view(_views, grid_size=None, cell_grid_size=size, **kwargs))
+            return View(Renderer.get_grid_view(_views, grid_size=None, cell_grid_size=size, **kwargs), title=title)
 
         # Include type
         include_type = [
@@ -194,7 +194,7 @@ class SpatialAugmentedTensor(AugmentedTensor):
             grid_size = None
 
         view = Renderer.get_grid_view(n_views, grid_size=grid_size, cell_grid_size=size, **kwargs)
-        return View(view)
+        return View(view, title=title)
 
     def relative_to_absolute(self, x, dim, assert_integer=False):
         dim = dim.lower()

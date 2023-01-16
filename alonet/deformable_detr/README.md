@@ -11,6 +11,8 @@ cd alonet/deformable_detr/ops
 python test.py # should yield True
 ```
 
+:warning: If you encounter ```error: parameter packs not expanded with ‘...’``` you may need to downgrade gcc and g++ to version <= 10
+
 ## Getting started
 
 Here is a simple example to get started with **Deformable Detr** and aloception. To learn more about Deformable, you can checkout the <a href="https://visual-behavior.github.io/aloception-oss/tutorials/training_deformable_detr.html">Deformable Tutorials<a/>.
@@ -55,4 +57,9 @@ Evaluation on 1000 images COCO with box refinement
 -------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+
  box             | 44.93 | 62.24 | 60.26 | 58.00 | 55.76 | 52.51 | 48.07 | 42.99 | 36.13 | 24.28 |  9.02 |
 -------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+
+```
+
+## Exportation
+```bash
+python trt_exporter.py --refinement --HW 320 480 --verbose --ignore_adapt_graph
 ```

@@ -3,6 +3,7 @@ from shutil import ExecError
 import matplotlib
 from matplotlib.pyplot import sca
 import torch
+from typing import *
 import warnings
 import aloscene
 from aloscene import Mask
@@ -233,7 +234,7 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         intrinsic = camera_intrinsic if camera_intrinsic is not None else self.cam_intrinsic
         projection = projection if projection is not None else self.projection
         distortion = distortion if distortion is not None else self.distortion
-        assert projection in ["pinhole", "equidistant"], "Only pinhole and equidistant are supported."
+        assert projection in ["pinhole", "equidistant", "kumler_bauer"], "Only pinhole, equidistant and kumler_bauer are supported."
 
         # if self is not planar depth, we must convert to planar depth before projecting to 3d points
         if self.is_planar:
@@ -265,7 +266,7 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
 
         y_points = y_points.reshape((-1,))
         x_points = x_points.reshape((-1,))
-        z_points = self.as_tensor().reshape(target_shape)
+        z_points = z_points.reshape(target_shape)
 
         points_3d_shape = tuple(list(target_shape)[:-1] + [self.H * self.W] + [3])
         points_3d = torch.zeros(points_3d_shape, device=self.device)
@@ -285,12 +286,24 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
             for _ in range(len(target_shape[:-1])):
                 theta = theta.unsqueeze(0)
             r = torch.tan(theta)
-            focal_length = focal_length * theta * distortion / r.abs()
+
+            if projection == "equidistant":
+                dist_coef = distortion[0] if isinstance(distortion, Sequence) else distortion
+                focal_length = focal_length * theta * dist_coef / r.abs()
+            elif projection == "kumler_bauer":
+                focal_length = (
+                    distortion[0] * torch.sin(distortion[1] * theta) * focal_length / (distortion[2] * r.abs())
+                )
 
             # find points behind camera
-            behind = theta > (np.pi / 2)
-            xy = torch.zeros([*behind.shape[:-1], 2], dtype=torch.bool, device=behind.device)
-            behind = torch.cat([xy, behind], dim=-1)
+            behind = (theta > (np.pi / 2)).squeeze()
+            repeats = []
+            for name in intrinsic.names:
+                if name in ["B", "T"]:
+                    behind = behind.unsqueeze(0)
+                    repeats.append(1)
+            behind = behind.unsqueeze(-1).repeat(repeats + [1, 3])
+            behind[..., -1] = False
 
         points_3d[..., 0] = x_points - principal_points[..., 0:1]
         points_3d[..., 1] = y_points - principal_points[..., 1:]
@@ -389,7 +402,11 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         if not self.is_planar:
             print("This tensor is already a euclidian depth tensor so no transform is performed")
             return self.clone()
-        assert projection in ["pinhole", "equidistant"], "Only pinhole and equidistant projection are supported"
+        assert projection in [
+            "pinhole",
+            "equidistant",
+            "kumler_bauer",
+        ], "Only pinhole, equidistant and kumler_bauer projection are supported"
 
         planar = self
         camera_intrinsic = camera_intrinsic if camera_intrinsic is not None else self.cam_intrinsic
@@ -430,7 +447,11 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         if self.is_planar:
             print("This tensor is already a planar depth tensor so no transform is done.")
             return self.clone()
-        assert projection in ["pinhole", "equidistant"], "Only pinhole and equidistant projection are supported"
+        assert projection in [
+            "pinhole",
+            "equidistant",
+            "kumler_bauer",
+        ], "Only pinhole, equidistant and kumler_bauer projection are supported"
 
         euclidean = self
         camera_intrinsic = camera_intrinsic if camera_intrinsic is not None else self.cam_intrinsic

@@ -316,7 +316,7 @@ class SpatialAugmentedTensor(AugmentedTensor):
         return tensor
 
     @staticmethod
-    def batch_list(sa_tensors: list, pad_boxes: bool = False, pad_points2d: bool = False):
+    def batch_list(sa_tensors: list, pad_boxes: bool = False, pad_points2d: bool = False, intersection=False):
         """Given a list of Spatial Augmeted tensor of potentially different size (otherwise cat is enough) this method
         will create a new set of frame of same size (the max size across the frames)
         and add to each frame a mask with 1. on the padded area.
@@ -330,6 +330,14 @@ class SpatialAugmentedTensor(AugmentedTensor):
             list of spatial augmented tensors within the list
         pad_boxes: bool
             By default, do not rescale the boxes attached to the sptial augmented Tensor (see explanation in boxes2d.pad)
+        pad_point2d: bool
+            By default, False
+        intersection: bool
+            By default, an error is thrown if the tensors do not have the same children.
+                Example1 : two frames from which only one has flow label.
+                Example2 : two frames with different values for baseline property.
+            If intersection is True, the batched tensor will have only children that exist in all original tensors.
+            The properties with different values will be set to None.
 
         Returns
         -----------
@@ -383,7 +391,12 @@ class SpatialAugmentedTensor(AugmentedTensor):
             padded_spatial_tensor = spatial_tensor.pad(h_pad, w_pad, pad_boxes=pad_boxes, pad_points2d=pad_points2d)
             n_padded_list.append(padded_spatial_tensor)
 
+        # batch the tensors witch torch.cat ; set flag to specify desired behavior of torch.cat
+        # necessary because torch.cat cannot accept kwargs (like intersection) that are not in the original signature
+        intersect_old_value = AugmentedTensor.BATCH_LIST_INTERSECT
+        AugmentedTensor.BATCH_LIST_INTERSECT = intersection
         n_augmented_tensors = torch.cat(n_padded_list, dim=0)
+        AugmentedTensor.BATCH_LIST_INTERSECT = intersect_old_value
 
         # Set the new mask and tensor buffer filled up with zeros and ones
         # Also, for normalized frames, the zero value is actually different based on the mean/std

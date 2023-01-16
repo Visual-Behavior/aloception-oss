@@ -24,10 +24,12 @@ def _torch_function_get_self(cls, func, types, args, kwargs):
         elif isinstance(a, tuple):
             return _torch_function_get_self(cls, func, types, list(a), kwargs)
     return None
-        
+
 
 class AugmentedTensor(torch.Tensor):
     """Tensor with attached labels"""
+
+    BATCH_LIST_INTERSECT = False
 
     # Common dim names that must be aligned to handle label on a Tensor.
     COMMON_DIM_NAMES = ["B", "T"]
@@ -473,25 +475,33 @@ class AugmentedTensor(torch.Tensor):
             else:
                 for s in range(len(sub_label)):
                     _fillup_dict(dm[s], sub_label[s], dim + 1, target_dim)
-
         _fillup_dict(dict_merge[key], label, 0, target_dim)
 
         return dict_merge
 
     def _merge_tensor(self, n_tensor, tensor_list, func, types, args=(), kwargs=None):
+
+        # do the merge as an intersection between tensors
+        intersection = AugmentedTensor.BATCH_LIST_INTERSECT
+
         """Merge tensors together and their associated labels"""
         labels_dict2list = {}
         # Setup the new structure before to merge
         prop_name_to_value = {}
 
+        dim_size = len(tensor_list)
         for tensor in tensor_list:
 
             for prop in tensor._property_list:
-                if prop in prop_name_to_value:
-                    assert prop_name_to_value[prop] == getattr(
-                        tensor, prop
-                    ), f"Trying to merge augmented tensor with different property: {prop}, {prop_name_to_value[prop]}, {getattr(tensor, prop)}"
-                prop_name_to_value[prop] = getattr(tensor, prop)
+
+                if prop in prop_name_to_value and prop_name_to_value[prop] != getattr(tensor, prop):
+                    if intersection:
+                        setattr(n_tensor, prop, None)
+                    else:
+                        values = set([prop_name_to_value[prop], getattr(tensor, prop)])
+                        raise RuntimeError(f"Encountered different values for property '{prop}' while merging AugmentedTensor: {values}")
+                else:
+                    prop_name_to_value[prop] = getattr(tensor, prop)
 
             for label_name in tensor._children_list:
                 label_value = getattr(tensor, label_name)
@@ -528,11 +538,23 @@ class AugmentedTensor(torch.Tensor):
         # Merge all labels together
         for label_name in labels_dict2list:
             if self._child_property[label_name]["mergeable"]:
+
                 if isinstance(labels_dict2list[label_name], dict):
-                    for key in labels_dict2list[label_name]:
-                        args = list(args)
-                        args[0] = labels_dict2list[label_name][key]
-                        labels_dict2list[label_name][key] = func(*tuple(args), **kwargs)
+                    for key in list(labels_dict2list[label_name].keys()):
+                        if len(labels_dict2list[label_name][key]) != dim_size:
+                            if intersection:
+                                del labels_dict2list[label_name][key]
+                            else:
+                                raise RuntimeError(f"Error during merging. Some tensors have label '{label_name}' with key '{key}' and some don't")
+                        else:
+                            args = list(args)
+                            args[0] = labels_dict2list[label_name][key]
+                            labels_dict2list[label_name][key] = func(*tuple(args), **kwargs)
+                    # if we removed all keys, set this child to None
+                    if intersection and not labels_dict2list[label_name]:
+                        labels_dict2list[label_name] = None
+                elif intersection and (len(labels_dict2list[label_name]) != dim_size or (None in labels_dict2list[label_name])):
+                    labels_dict2list[label_name] = None
                 else:
                     args = list(args)
                     args[0] = labels_dict2list[label_name]
@@ -576,7 +598,6 @@ class AugmentedTensor(torch.Tensor):
 
     @classmethod
     def __torch_function__(cls, func, types, args=(), kwargs=None):
-        
         self = _torch_function_get_self(cls, func, types, args, kwargs)
 
         def _merging_frame(args):

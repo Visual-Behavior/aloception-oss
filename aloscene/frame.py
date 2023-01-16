@@ -379,7 +379,7 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
             tensor = (tensor + 1.0) / 2.0
         elif tensor.mean_std is not None:
             mean_tensor, std_tensor = self._get_mean_std_tensor(
-                tensor.shape, tensor.names, tensor._resnet_mean_std, device=tensor.device
+                tensor.shape, tensor.names, tensor.mean_std, device=tensor.device
             )
             tensor = tensor * std_tensor
             tensor = tensor + mean_tensor
@@ -437,7 +437,7 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
             tensor = (tensor + 1.0) * 255.0 / 2.0
         elif tensor.mean_std is not None:
             mean_tensor, std_tensor = self._get_mean_std_tensor(
-                tensor.shape, tensor.names, tensor._resnet_mean_std, device=tensor.device
+                tensor.shape, tensor.names, tensor.mean_std, device=tensor.device
             )
             tensor = tensor * std_tensor
             tensor = tensor + mean_tensor
@@ -465,13 +465,16 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
             tensor = 2 * tensor - 1.0
         elif tensor.normalization == "255":
             tensor = 2 * (tensor / 255.0) - 1.0
+        elif tensor.mean_std is not None:
+            tensor=tensor.norm01()
+            tensor = 2 * tensor - 1.0
         else:
             raise Exception(f"Can't convert from {tensor.normalization} to norm255")
         tensor.mean_std = None
         tensor.normalization = "minmax_sym"
         return tensor
 
-    def mean_std_norm(self, mean, std, name) -> Frame:
+    def mean_std_norm(self, mean=None, std=None, name=None) -> Frame:
         """Normnalize the tensor from the current tensor
         normalization to the expected resnet normalization (x - mean) / std
         with x normalized with value between 0 and 1.
@@ -483,14 +486,24 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         >>> normalized_frame = frame.mean_std_norm(mean, std, "my_norm")
         """
         tensor = self
+
+        if mean is None or std is None :
+            mean=tensor.mean_std[0]
+            std=tensor.mean_std[1]
+            name="default"
+
         mean_tensor, std_tensor = self._get_mean_std_tensor(
-            tensor.shape, tensor.names, tensor._resnet_mean_std, device=tensor.device
+            tensor.shape, tensor.names, (mean,std), device=tensor.device
         )
         if tensor.normalization == "01":
             tensor = tensor - mean_tensor
             tensor = tensor / std_tensor
         elif tensor.normalization == "255":
             tensor = tensor.div(255)
+            tensor = tensor - mean_tensor
+            tensor = tensor / std_tensor
+        elif tensor.normalization == "minmax_sym":
+            tensor = (tensor + 1.0) / 2.0
             tensor = tensor - mean_tensor
             tensor = tensor / std_tensor
         elif tensor.mean_std is not None and tensor.mean_std[0] == mean and tensor.mean_std[1] == std:

@@ -544,7 +544,7 @@ class AugmentedTensor(torch.Tensor):
                     # if we removed all keys, set this child to None
                     if intersection and not labels_dict2list[label_name]:
                         labels_dict2list[label_name] = None
-                elif intersection and len(labels_dict2list[label_name]) != dim_size or (None in labels_dict2list[label_name]):
+                elif intersection and (len(labels_dict2list[label_name]) != dim_size or (None in labels_dict2list[label_name])):
                     labels_dict2list[label_name] = None
                 else:
                     args = list(args)

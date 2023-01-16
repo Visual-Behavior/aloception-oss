@@ -16,7 +16,7 @@ from alonet.transformers import MLP
 
 from alonet.detr import Detr
 from alonet.deformable_detr.utils import inverse_sigmoid
-from alonet.deformable_detr.backbone import Backbone, Joiner
+from alonet.deformable_detr.backbone import Backbone, Joiner, MobileNetBackbone
 from alonet.deformable_detr.deformable_transformer import (
     DeformableTransformer,
     DeformableTransformerDecoderLayer,
@@ -111,7 +111,7 @@ class DeformableDETR(nn.Module):
         self.query_embed = nn.Embedding(num_queries, self.hidden_dim * 2)
         # Projection for Multi-scale features
         if num_feature_levels > 1:
-            num_backbone_outs = len(backbone.strides) - 1  # Ignore backbone.layer1
+            num_backbone_outs = len(backbone.num_channels) - 1  # Ignore backbone.layer1
             input_proj_list = []
             for i in range(1, num_backbone_outs + 1):  # Ignore backbone.layer1
                 in_channels = backbone.num_channels[i] + (1 if add_depth else 0)
@@ -580,8 +580,10 @@ class DeformableDETR(nn.Module):
         alonet.deformable_detr.backbone.Backbone
             Resnet backbone
         """
-
-        return Backbone(backbone_name, train_backbone, return_interm_layers, dilation)
+        if "resnet" in backbone_name:
+            return Backbone(backbone_name, train_backbone, return_interm_layers, dilation)
+        elif "mobilenet" in backbone_name:
+            return MobileNetBackbone()
 
     def build_decoder_layer(
         self,

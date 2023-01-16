@@ -5,11 +5,13 @@ Backbone modules for Deformable DETR
 import torchvision
 from torch import nn
 from torchvision.models._utils import IntermediateLayerGetter
-
-
+import torch
+import torchvision.transforms.functional as tvF
+from typing import Dict, List, Union
 from alonet.detr.backbone import BackboneBase as DetrBackboneBase
 from alonet.detr.backbone import Joiner as DetrJoiner
 from alonet.detr.backbone import is_main_process, FrozenBatchNorm2d
+from timm.models.mobilenetv3 import mobilenetv3_large_100
 
 
 class BackboneBase(DetrBackboneBase):
@@ -61,3 +63,31 @@ class Joiner(DetrJoiner):
         super().__init__(backbone, position_embedding, tracing)
         self.strides = backbone.strides
         self.num_channels = backbone.num_channels
+
+
+class MobileNetBackbone(nn.Module):
+    def __init__(
+        self,
+        tracing: bool = False,
+    ) -> None:
+        super().__init__()
+        self.backbone = mobilenetv3_large_100(features_only=True, out_indices=(1, 2, 3, 4))
+        self.tracing = tracing
+        self.strides = [32]
+        self.num_channels = [24, 40, 112, 960]
+
+    def forward(self, frames, **kwargs):
+        if "is_tracing" in kwargs:
+            frame_masks = frames[:, 3:4]
+            frames = frames[:, :3]
+        else:
+            frame_masks = frames.mask.as_tensor()
+            frames = frames.as_tensor()
+
+        xs = self.backbone(frames)
+        out: Dict[str, torch.Tensor] = {}
+        for i, x in enumerate(xs):
+            n_mask = tvF.resize(frame_masks, x.shape[-2:])
+            n_mask = n_mask.to(torch.bool)
+            out[str(i)] = (x, n_mask)
+        return out

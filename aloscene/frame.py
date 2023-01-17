@@ -466,7 +466,7 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         elif tensor.normalization == "255":
             tensor = 2 * (tensor / 255.0) - 1.0
         elif tensor.mean_std is not None:
-            tensor=tensor.norm01()
+            tensor = tensor.norm01()
             tensor = 2 * tensor - 1.0
         else:
             raise Exception(f"Can't convert from {tensor.normalization} to norm255")

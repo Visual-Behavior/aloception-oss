@@ -11,7 +11,9 @@ from typing import Dict, List, Union
 from alonet.detr.backbone import BackboneBase as DetrBackboneBase
 from alonet.detr.backbone import Joiner as DetrJoiner
 from alonet.detr.backbone import is_main_process, FrozenBatchNorm2d
-from timm.models.mobilenetv3 import mobilenetv3_large_100
+from timm.models.mobilenetv3 import mobilenetv3_large_100, tf_mobilenetv3_large_minimal_100
+import math
+import torch.nn.functional as F
 
 
 class BackboneBase(DetrBackboneBase):
@@ -65,13 +67,57 @@ class Joiner(DetrJoiner):
         self.num_channels = backbone.num_channels
 
 
+def get_same_padding(x: int, k: int, s: int, d: int):
+    return max((math.ceil(x / s) - 1) * s + (k - 1) * d + 1 - x, 0)
+
+# TIM == 0.4.5 | TRT ADJUSTED
+def pad_same(x, k: List[int], s: List[int], d: List[int] = (1, 1), value: float = 0):
+    ih, iw = x.size()[-2:]
+    pad_h, pad_w = get_same_padding(ih, k[0], s[0], d[0]), get_same_padding(iw, k[1], s[1], d[1])
+    if pad_h > 0 or pad_w > 0:
+        n, c, h, w = x.shape
+        if pad_w // 2 > 0:
+            x = torch.cat((torch.zeros((n, c, h, pad_w // 2)).to(x.device)), dim=3)
+        if pad_w - pad_w // 2 > 0:
+            x = torch.cat((x, torch.zeros((n, c, h, pad_w - pad_w // 2)).to(x.device)), dim=3)
+        if pad_h - pad_h // 2 > 0:
+            x = torch.cat((x, torch.zeros((n, c, pad_h - pad_h // 2, w + pad_w)).to(x.device)), dim=2)
+        if pad_h // 2 > 0:
+            x = torch.cat((torch.zeros((n, c, pad_h // 2, w + pad_w)).to(x.device), x), dim=2)
+    return x
+
+
+def conv2d_same(
+        x,
+        weight,
+        bias=None,
+        stride=(1, 1),
+        padding=(0, 0),
+        dilation=(1, 1),
+        groups=1
+        ):
+    x = pad_same(x, weight.shape[-2:], stride, dilation)
+    return F.conv2d(x, weight, bias, stride, (0, 0), dilation, groups)
+
+
+def adjusted_trt_forward_conv2dstem(conv2dstem):
+    def adj_forward(self, x):
+        return conv2d_same(x, self.weight, self.bias, self.stride, self.padding, self.dilation, self.groups)
+    
+    funcType = type(conv2dstem.forward)
+    conv2dstem.forward = funcType(adj_forward, conv2dstem)
+    return conv2dstem
+
+
 class MobileNetBackbone(nn.Module):
     def __init__(
         self,
         tracing: bool = False,
     ) -> None:
         super().__init__()
-        self.backbone = mobilenetv3_large_100(features_only=True, out_indices=(1, 2, 3, 4))
+        self.backbone = tf_mobilenetv3_large_minimal_100(features_only=True, out_indices=(1, 2, 3, 4))
+        # TRT > 8.5.0 fiendly
+        self.backbone.conv_stem = adjusted_trt_forward_conv2dstem(self.backbone.conv_stem)
         self.tracing = tracing
         self.strides = [32]
         self.num_channels = [24, 40, 112, 960]

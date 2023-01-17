@@ -9,6 +9,7 @@ except Exception as prod_package_error:
 
 
 from typing import Dict, List, Tuple
+from time import sleep
 
 
 def GiB(val):
@@ -34,6 +35,7 @@ class TRTEngineBuilder:
         logger=None,
         opt_profiles: Dict[str, Tuple[List[int]]] = None,
         profiling_verbosity: str = "LAYER_NAMES_ONLY",
+        max_workspace_size: int = 1,
     ):
         """
         Parameters
@@ -50,6 +52,8 @@ class TRTEngineBuilder:
             Used for INT8 quantization
         opt_profiles : Dict[str, Tuple[List[int]]], by default None
             Optimization profiles (one by each dynamic axis), with the minimum, minimum and maximum values.
+        max_workspace_size : int
+            Maximum work size in GiB.
 
         Raises
         ------
@@ -64,7 +68,7 @@ class TRTEngineBuilder:
         self.INT8_allowed = INT8_allowed
         self.onnx_file_path = onnx_file_path
         self.calibrator = calibrator
-        self.max_workspace_size = GiB(8)
+        self.max_workspace_size = GiB(max_workspace_size)
         self.strict_type = strict_type
         self.logger = logger
         self.engine = None
@@ -156,11 +160,21 @@ class TRTEngineBuilder:
                 raise AttributeError("unknown profiling_verbosity")
             # FP16
             if self.FP16_allowed:
+                if not builder.platform_has_fast_fp16:
+                    print("FP16 is not optimized in this platform. Check " +
+                    "https://docs.nvidia.com/deeplearning/tensorrt/support-matrix/index.html#hardware-precision-matrix"
+                    )
+                    # Fast logs, sleep for logs readability
+                    sleep(0.5)
                 config.set_flag(trt.BuilderFlag.FP16)
             # INT8
             if self.INT8_allowed:
                 if not builder.platform_has_fast_int8:
-                    raise RuntimeError('INT8 not supported on this platform')
+                    print("FP16 is not optimized in this platform. Check " +
+                    "https://docs.nvidia.com/deeplearning/tensorrt/support-matrix/index.html#hardware-precision-matrix"
+                    )
+                    # Fast logs, sleep for logs readability
+                    sleep(0.5)
                 config.set_quantization_flag(trt.QuantizationFlag.CALIBRATE_BEFORE_FUSION)
                 config.set_flag(trt.BuilderFlag.INT8)
                 config.int8_calibrator = self.calibrator

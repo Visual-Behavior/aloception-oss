@@ -12,6 +12,7 @@ import aloscene
 from aloscene.camera_calib import CameraExtrinsic, CameraIntrinsic
 from aloscene.utils.data_utils import LDtoDL
 
+import warnings
 
 class SpatialAugmentedTensor(AugmentedTensor):
     """Spatial Augmented Tensor. Used to represets any 2D data. The spatial augmented tensor can be used as a
@@ -110,7 +111,7 @@ class SpatialAugmentedTensor(AugmentedTensor):
     def append_cam_extrinsic(self, cam_extrinsic: CameraExtrinsic):
         self._append_child("cam_extrinsic", cam_extrinsic)
 
-    def get_view(self, views: list = [], exclude=[], size=None, grid_size=None, title=None, **kwargs):
+    def get_view(self, views: list = [], exclude=[], size=None, grid_size=None, title=None, add_title=True, **kwargs):
         """Render the spatial augmented tensor.
 
         Parameters
@@ -130,7 +131,7 @@ class SpatialAugmentedTensor(AugmentedTensor):
         """
         _views = [v for v in views if isinstance(v, View)]
         if len(_views) > 0:
-            return View(Renderer.get_grid_view(_views, grid_size=None, cell_grid_size=size, **kwargs), title=title)
+            return View(Renderer.get_grid_view(_views, grid_size=None, cell_grid_size=size, add_title=add_title, **kwargs), title=title)
 
         # Include type
         include_type = [
@@ -193,10 +194,10 @@ class SpatialAugmentedTensor(AugmentedTensor):
         else:
             grid_size = None
 
-        view = Renderer.get_grid_view(n_views, grid_size=grid_size, cell_grid_size=size, **kwargs)
+        view = Renderer.get_grid_view(n_views, grid_size=grid_size, cell_grid_size=size, add_title=add_title, **kwargs)
         return View(view, title=title)
 
-    def relative_to_absolute(self, x, dim, assert_integer=False):
+    def relative_to_absolute(self, x, dim, assert_integer=False, warn_non_integer=False):
         dim = dim.lower()
         assert dim in ["h", "w"], "dim should be 'h' or 'w'"
         ref = self.H if dim == "h" else self.W
@@ -204,15 +205,20 @@ class SpatialAugmentedTensor(AugmentedTensor):
 
         if assert_integer:
             assert x.is_integer(), f"relative coordinates {x} have produced non-integer absolute coordinates"
+
+        if warn_non_integer and not x.is_integer():
+            warnings.warn(f"relative coordinates {x} have produced non-integer absolute coordinates")
+
         return round(x)
 
-    def temporal(self, dim=0):
+    def temporal(self, dim=None):
         """Add a temporal dimension on the tensor
 
         Parameters
         ----------
-        dim : int
-            The dim on which to add the temporal dimension. Can be 0 or 1
+        dim : int or None
+            The dim on which to add the temporal dimension. Can be 0 or 1 or None.
+            None automatically determine position of T dim in respect of convention.
 
         Returns
         -------
@@ -221,6 +227,16 @@ class SpatialAugmentedTensor(AugmentedTensor):
         """
         if "T" in self.names:  # Already a temporal frame
             return self
+
+        if dim is None:
+            if self.names[0] == "B":
+                dim = 1
+            elif "B" in self.names:
+                raise Exception(
+                    "Cannot autodetermine temporal dimension position : tensor doesn't follow convention (B, T, ...) )"
+                )
+            else:
+                dim = 0
 
         def set_n_names(names):
             pass
@@ -300,7 +316,7 @@ class SpatialAugmentedTensor(AugmentedTensor):
         return tensor
 
     @staticmethod
-    def batch_list(sa_tensors: list, pad_boxes: bool = False, pad_points2d: bool = False):
+    def batch_list(sa_tensors: list, pad_boxes: bool = False, pad_points2d: bool = False, intersection=False):
         """Given a list of Spatial Augmeted tensor of potentially different size (otherwise cat is enough) this method
         will create a new set of frame of same size (the max size across the frames)
         and add to each frame a mask with 1. on the padded area.
@@ -314,6 +330,14 @@ class SpatialAugmentedTensor(AugmentedTensor):
             list of spatial augmented tensors within the list
         pad_boxes: bool
             By default, do not rescale the boxes attached to the sptial augmented Tensor (see explanation in boxes2d.pad)
+        pad_point2d: bool
+            By default, False
+        intersection: bool
+            By default, an error is thrown if the tensors do not have the same children.
+                Example1 : two frames from which only one has flow label.
+                Example2 : two frames with different values for baseline property.
+            If intersection is True, the batched tensor will have only children that exist in all original tensors.
+            The properties with different values will be set to None.
 
         Returns
         -----------
@@ -367,7 +391,12 @@ class SpatialAugmentedTensor(AugmentedTensor):
             padded_spatial_tensor = spatial_tensor.pad(h_pad, w_pad, pad_boxes=pad_boxes, pad_points2d=pad_points2d)
             n_padded_list.append(padded_spatial_tensor)
 
+        # batch the tensors witch torch.cat ; set flag to specify desired behavior of torch.cat
+        # necessary because torch.cat cannot accept kwargs (like intersection) that are not in the original signature
+        intersect_old_value = AugmentedTensor.BATCH_LIST_INTERSECT
+        AugmentedTensor.BATCH_LIST_INTERSECT = intersection
         n_augmented_tensors = torch.cat(n_padded_list, dim=0)
+        AugmentedTensor.BATCH_LIST_INTERSECT = intersect_old_value
 
         # Set the new mask and tensor buffer filled up with zeros and ones
         # Also, for normalized frames, the zero value is actually different based on the mean/std
@@ -385,7 +414,7 @@ class SpatialAugmentedTensor(AugmentedTensor):
 
         return n_augmented_tensors
 
-    def _relative_to_absolute_hs_ws(self, hs=None, ws=None, assert_integer=True):
+    def _relative_to_absolute_hs_ws(self, hs=None, ws=None, assert_integer=True, warn_non_integer=False):
         """
         Parameters
         ----------
@@ -398,9 +427,9 @@ class SpatialAugmentedTensor(AugmentedTensor):
         assert hs is None or isinstance(hs, (list, tuple)), "hs should be a list or a tuple of floats"
         assert ws is None or isinstance(ws, (list, tuple)), "ws should be a list or a tuple of floats"
         if hs is not None:
-            hs = [self.relative_to_absolute(h, "H", assert_integer) for h in hs]
+            hs = [self.relative_to_absolute(h, "H", assert_integer=assert_integer, warn_non_integer=warn_non_integer) for h in hs]
         if ws is not None:
-            ws = [self.relative_to_absolute(w, "W", assert_integer) for w in ws]
+            ws = [self.relative_to_absolute(w, "W", assert_integer=assert_integer, warn_non_integer=warn_non_integer) for w in ws]
         return hs, ws
 
     def _hflip_label(self, label, **kwargs):
@@ -499,12 +528,14 @@ class SpatialAugmentedTensor(AugmentedTensor):
             return self.rename(None).view(shapes).reset_names()
         return F.resize(self.rename(None), (h, w), interpolation=interpolation).reset_names()
 
-    def _rotate(self, angle, **kwargs):
+    def _rotate(self, angle, center=None,**kwargs):
         """Rotate SpatialAugmentedTensor, but not its labels
 
         Parameters
         ----------
         angle : float
+        center : list or tuple of coordinates in absolute format. Default is the center of the image
+
 
         Returns
         -------
@@ -515,7 +546,7 @@ class SpatialAugmentedTensor(AugmentedTensor):
         assert not (
             ("N" in self.names and self.size("N") == 0) or ("C" in self.names and self.size("C") == 0)
         ), "rotation is not possible on an empty tensor"
-        return F.rotate(self.rename(None), angle).reset_names()
+        return F.rotate(self.rename(None), angle,center=center).reset_names()
 
     def _crop(self, H_crop: tuple, W_crop: tuple, **kwargs):
         """Crop the SpatialAugmentedTensor
@@ -532,7 +563,8 @@ class SpatialAugmentedTensor(AugmentedTensor):
         cropped sa_tensor: aloscene.SpatialAugmentedTensor
             cropped SpatialAugmentedTensor
         """
-        H_crop, W_crop = self._relative_to_absolute_hs_ws(H_crop, W_crop, assert_integer=False)
+
+        H_crop, W_crop = self._relative_to_absolute_hs_ws(H_crop, W_crop, assert_integer=False, warn_non_integer=True)
         hmin, hmax = H_crop
         wmin, wmax = W_crop
         slices = self.get_slices({"H": slice(hmin, hmax), "W": slice(wmin, wmax)})
@@ -546,7 +578,7 @@ class SpatialAugmentedTensor(AugmentedTensor):
         except AttributeError:
             return label
 
-    def _pad(self, offset_y: tuple, offset_x: tuple, value=0, **kwargs):
+    def _pad(self, offset_y: tuple, offset_x: tuple, **kwargs):
         """Pad the based on the given offset
 
         Parameters
@@ -558,7 +590,7 @@ class SpatialAugmentedTensor(AugmentedTensor):
 
         Returns
         -------
-        padded
+            padded tensor
         """
         pad_top = int(round(offset_y[0] * self.H))
         pad_bottom = int(round(offset_y[1] * self.H))
@@ -566,7 +598,14 @@ class SpatialAugmentedTensor(AugmentedTensor):
         pad_right = int(round(offset_x[1] * self.W))
 
         padding = [pad_left, pad_top, pad_right, pad_bottom]
-        tensor_padded = F.pad(self.rename(None), padding, padding_mode="constant", fill=value).reset_names()
+
+        tensor_padded = F.pad(
+            self.rename(None),
+            padding,
+            fill=kwargs.get("fill", 0),
+            padding_mode=kwargs.get("padding_mode", "constant"),
+        ).reset_names()
+
         return tensor_padded
 
     def _getitem_child(self, label, label_name, idx):

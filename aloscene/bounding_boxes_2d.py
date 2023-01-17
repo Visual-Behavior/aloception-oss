@@ -33,7 +33,7 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
     x: list | torch.Tensor | np.array
         BoundingBoxes2D data. See explanation above for details.
     boxes_format: str
-        One of `xyxy` (y_min, x_min, y_max, x_max), `yxyx` (x_min, y_min, x_max, y_max) or `xcyc` (xc, yc, width,
+        One of `xyxy` (x_min, y_min, x_max, y_max), `yxyx` (y_min, x_min, y_max, x_max) or `xcyc` (xc, yc, width,
         height)
     absolute: bool
         Whether your boxes are encoded as absolute value or relative values (between 0 and 1). If absolute is True,
@@ -55,11 +55,11 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
     --------
     >>> boxes2d = aloscene.BoundingBoxes2D(
     ...     [[0.5, 0.5, 01, 01], [0.4, 0.30, 0.2, 0.3]],
-    ...     points_format="xcyc", absolute=False
+    ...     boxes_format="xcyc", absolute=False
     ....)
     >>> boxes2d = aloscene.BoundingBoxes2D(
     ...     [[512, 458, 20, 30], [280, 200, 100, 42]],
-    ...     points_format="xcyc", absolute=True, frame_size=(1200, 1200)
+    ...     boxes_format="xcyc", absolute=True, frame_size=(1200, 1200)
         )
     """
 
@@ -466,7 +466,16 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
         # Draw bouding boxes
 
         # Try to retrieve the associated label ID (if any)
-        labels = boxes_abs.labels if isinstance(boxes_abs.labels, aloscene.Labels) else [None] * len(boxes_abs)
+        if isinstance(boxes_abs.labels, aloscene.Labels):
+            labels = boxes_abs.labels
+        elif isinstance(boxes_abs.labels, dict):
+            labels = []
+            for k, v in boxes_abs.labels.items():
+                if isinstance(v, aloscene.Labels):
+                    labels.append(v)
+            labels = [labels] * len(boxes_abs)
+        else:
+            labels = [None] * len(boxes_abs)
         if labels_set is not None and not isinstance(boxes_abs.labels, dict):
             raise Exception(
                 f"Trying to display a boxes labels set ({labels_set}) while boxes do not have multiple set of labels"
@@ -486,10 +495,23 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
             x1, y1, x2, y2 = box.as_tensor()
 
             if label is not None:
-                color = self._GLOBAL_COLOR_SET[int(label) % len(self._GLOBAL_COLOR_SET)]
-                cv2.putText(
-                    frame, str(int(label)), (int(x2), int(y1)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1, cv2.LINE_AA
-                )
+                if isinstance(label, list):
+                    label_sum = sum([int(label_value[b]) for label_value in label])
+                    color = self._GLOBAL_COLOR_SET[int(label_sum) % len(self._GLOBAL_COLOR_SET)]
+                    text = []
+                    for label_elm in label:
+                        text.append(
+                            str(
+                                label_elm.labels_names[int(label_elm[b])]
+                                if label_elm.labels_names
+                                else int(label_elm[b])
+                            )
+                        )
+                    text = ", ".join(text)
+                else:
+                    color = self._GLOBAL_COLOR_SET[int(label) % len(self._GLOBAL_COLOR_SET)]
+                    text = label.labels_names[int(label)] if label.labels_names else int(label)
+                cv2.putText(frame, str(text), (int(x2), int(y1)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1, cv2.LINE_AA)
                 cv2.rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), color, 3)
             else:
                 color = (0, 1, 0)

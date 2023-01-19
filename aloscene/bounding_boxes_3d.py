@@ -1,7 +1,7 @@
 # from __future__ import annotations
 import torch
 from torch import Tensor
-
+import numpy as np
 from typing import Union, Tuple
 
 import aloscene
@@ -38,6 +38,8 @@ class BoundingBoxes3D(aloscene.tensors.AugmentedTensor):
     - The Y axis is positive downwards
     - The Z axis is positive forwards
     """
+
+    color_set_3d = np.random.uniform(0, 1, (300, 3))
 
     @staticmethod
     def __new__(cls, x, labels: Union[dict, Labels, None] = None, names=("N", None), *args, **kwargs):
@@ -441,7 +443,7 @@ class BoundingBoxes3D(aloscene.tensors.AugmentedTensor):
         """
         return self.giou3d(self, boxes2, enclosing_type, ret_iou3d)
 
-    def get_view(self, frame, size: Union[tuple, None] = None, mode: str = "3D", **kwargs) -> View:
+    def get_view(self, frame, size: Union[tuple, None] = None, mode: str = "3D", dims=None, **kwargs) -> View:
         """Create a View instance from a Frame
 
         Parameters
@@ -457,6 +459,10 @@ class BoundingBoxes3D(aloscene.tensors.AugmentedTensor):
         -------
         View
         """
+        if mode == "BEV":
+            bev_boxes = self.bev_boxes()
+            return bev_boxes.get_view(size=size, mode="BEV", dims=dims)
+
         assert frame.cam_intrinsic is not None
         assert frame.cam_extrinsic is not None
         frame_size = frame.HW
@@ -472,12 +478,16 @@ class BoundingBoxes3D(aloscene.tensors.AugmentedTensor):
             )
             # Draw bbox 3d
             frame = frame.norm01().cpu().rename(None).permute([1, 2, 0]).detach().contiguous().numpy()
-            draw_3D_box(frame, vertices_3d_proj)
+            draw_3D_box(frame, vertices_3d_proj, labels=self.labels, colors=self.color_set_3d)
             return View(frame, **kwargs)
         elif mode == "2D":
             enclosing_2d = self.get_enclosing_box_2d(self, cam_intrinsic, cam_extrinsic, frame_size)
             return enclosing_2d.get_view(frame, size)
-        elif mode == "BEV":
-            raise NotImplementedError()
         else:
             Exception("view mode {mode} is not supported")
+
+
+if __name__ == "__main__":
+    # plot BEV
+    box = BoundingBoxes3D(torch.tensor([[0, 0, 0, 1, 1, 1, 0], [1, 0, 0, 1, 1, 1, torch.pi / 4]]))
+    box.get_view(None, mode="BEV", size=(1000, 1000)).render()

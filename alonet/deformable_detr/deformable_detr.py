@@ -85,6 +85,7 @@ class DeformableDETR(nn.Module):
         return_intermediate_dec: bool = True,
         strict_load_weights: bool = True,
         tracing=False,
+        include_preprocessing=False,
     ):
         print("WARNING : you are using DeformableDETR or an unherited class. Please launch aloception-oss/alonet/deformable_detr/ops/make.sh before proceeding with training. Please refer to the README for more info")
         super().__init__()
@@ -97,6 +98,7 @@ class DeformableDETR(nn.Module):
         self.return_dec_outputs = return_dec_outputs
         self.return_enc_outputs = return_enc_outputs
         self.return_bb_outputs = return_bb_outputs
+        self.include_preprocessing = include_preprocessing
 
         if activation_fn not in ["sigmoid", "softmax"]:
             raise Exception(f"activation_fn = {activation_fn} must be one of this two values: 'sigmoid' or 'softmax'.")
@@ -192,6 +194,22 @@ class DeformableDETR(nn.Module):
     def tracing(self, is_tracing):
         self._tracing = is_tracing
         self.backbone.tracing = is_tracing
+    
+    @staticmethod
+    def in_img_preprocess(frames):
+        frames = frames.permute(0, 3, 1, 2)
+        frames = frames.div(255)
+        
+        n_shape = [1] * len(frames.shape)
+        n_shape[1] = 3
+        
+        mean_std = ((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
+        std_tensor = torch.tensor(mean_std[1], device=frames.device).view(tuple(n_shape))
+        mean_tensor = torch.tensor(mean_std[0], device=frames.device).view(tuple(n_shape))
+
+        frames = frames - mean_tensor
+        frames = frames / std_tensor
+        return frames
 
     @assert_and_export_onnx(check_mean_std=True, input_mean_std=INPUT_MEAN_STD)
     def forward(self, frames: aloscene.Frame, **kwargs):
@@ -222,16 +240,22 @@ class DeformableDETR(nn.Module):
             - :attr:`enc_outputs`: Optional, only returned when transformer encoder outputs are activated.
             - :attr:`dec_outputs`: Optional, only returned when transformer decoder outputs are activated.
         """
-
-        # ==== Backbone
-        features, pos = self.backbone(frames, **kwargs)
-
         assert next(self.parameters()).is_cuda, "DeformableDETR cannot run on CPU (due to MSdeformable op)"
 
         if self.tracing:
-            frame_masks = frames[:, 3:4]
+            if self.include_preprocessing:
+                frame_masks = torch.zeros((1, 1, *frames.shape[1:3]), dtype=torch.float32)
+                frame_masks = frame_masks.to(frames.device)
+                frames = self.in_img_preprocess(frames)
+            else:
+                frame_masks = torch.zeros((1, 1, *frames.shape[-2:]), dtype=torch.float32)
+                frame_masks = frame_masks.to(frames.device)
+            frames = torch.cat([frames, frame_masks], dim=1)
         else:
             frame_masks = frames.mask.as_tensor()
+
+        # ==== Backbone
+        features, pos = self.backbone(frames, **kwargs)
 
         # ==== Transformer
         srcs = []

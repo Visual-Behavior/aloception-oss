@@ -11,8 +11,6 @@ def _draw_3D_box(image, vertices_2d, color1=None, color2=None, class_names=None,
     ----------
     vertices_2d of shape (nbox, 8, 2)
     """
-    if colors is not None:
-        assert len(colors) == vertices_2d.shape[0]
     for i in range(vertices_2d.shape[0]):
         label = labels[i] if labels is not None and len(labels) > 0 else None
         if class_names is None:

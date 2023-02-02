@@ -234,3 +234,22 @@ class Mask(aloscene.tensors.SpatialAugmentedTensor):
         else:
             labels = [None] * len(self)
         return labels
+
+
+    def _spatial_shift(self, shift_y: float, shift_x: float, **kwargs):
+            """
+            Spatially shift the Mask.
+            This function is empty for now because the 1st implementation created issues.
+            The only purpose of this is to stop triggering the warning message.
+            Parameters
+            ----------
+            shift_y: float
+                Shift percentage on the y axis. Could be negative or positive
+            shift_x: float
+                Shift percentage on the x axis. Could ne negative or positive.
+            Returns
+            -------
+            shifted_tensor: aloscene.AugmentedTensor
+                shifted tensor
+            """
+            return self

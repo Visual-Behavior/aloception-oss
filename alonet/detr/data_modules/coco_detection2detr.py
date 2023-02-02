@@ -88,20 +88,23 @@ class CocoDetection2Detr(Data2Detr):
 if __name__ == "__main__":
     # setup data
     loader_kwargs = dict(
-        name="rabbits",
-        train_folder="train",
-        train_ann="train/_annotations.coco.json",
-        val_folder="valid",
-        val_ann="valid/_annotations.coco.json",
+        name="coco",
+        train_folder="train2017",
+        train_ann="annotations/instances_train2017.json",
+        val_folder="val2017",
+        val_ann="annotations/instances_val2017.json",
     )
 
     args = CocoDetection2Detr.add_argparse_args(ArgumentParser()).parse_args()  # Help provider
     coco = CocoDetection2Detr(args, **loader_kwargs)
     coco.prepare_data()
     coco.setup()
+    iterator=iter(coco.train_dataloader())
+    for i in range(2):
+        samples = next(iterator)
+        samples[0].get_view().render()
+    # samples = next()
+    # samples[0].get_view().render()
 
-    samples = next(iter(coco.train_dataloader()))
-    samples[0].get_view().render()
-
-    samples = next(iter(coco.val_dataloader()))
-    samples[0].get_view().render()
+    # samples = next(iter(coco.val_dataloader()))
+    # samples[0].get_view().render()

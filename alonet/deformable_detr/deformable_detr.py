@@ -618,11 +618,15 @@ class DeformableDETR(nn.Module):
             n_points=dec_n_points,
         )
 
-    def build_decoder(self, dec_layers: int = 6, return_intermediate_dec: bool = True):
+    def build_decoder(self, hidden_dim=256, num_feature_levels=4, dec_layers: int = 6, return_intermediate_dec: bool = True):
         """Build decoder layer
 
         Parameters
         ----------
+        hidden_dim : int, optional
+            Hidden dimension size, by default 256
+        num_feature_levels : int, optional
+            Number of feature levels, by default 4
         dec_layers : int, optional
             Number of decoder layers, by default 6
         return_intermediate_dec : bool, optional
@@ -633,7 +637,7 @@ class DeformableDETR(nn.Module):
         :class:`~alonet.deformable.deformable_transformer.DeformableTransformerDecoder`
             Transformer decoder
         """
-        decoder_layer = self.build_decoder_layer()
+        decoder_layer = self.build_decoder_layer(hidden_dim=hidden_dim, num_feature_levels=num_feature_levels)
 
         return DeformableTransformerDecoder(decoder_layer, dec_layers, return_intermediate_dec)
 
@@ -680,7 +684,7 @@ class DeformableDETR(nn.Module):
         :mod:`Transformer <alonet.detr.transformer>`
             Transformer module
         """
-        decoder = self.build_decoder()
+        decoder = self.build_decoder(hidden_dim=hidden_dim, num_feature_levels=num_feature_levels)
 
         return DeformableTransformer(
             decoder=decoder,

@@ -90,7 +90,7 @@ class DeformableDETR(nn.Module):
         super().__init__()
         self.device = device
         self.num_feature_levels = num_feature_levels
-        self.transformer = transformer
+        self.backbone = backbone
         self.num_queries = num_queries
         self.return_intermediate_dec = return_intermediate_dec
         self.hidden_dim = transformer.d_model
@@ -105,9 +105,7 @@ class DeformableDETR(nn.Module):
         self.background_class = num_classes if self.activation_fn == "softmax" else None
         num_classes += 1 if self.activation_fn == "softmax" else 0  # Add bg class
 
-        self.class_embed = nn.Linear(self.hidden_dim, num_classes)
-        self.bbox_embed = MLP(self.hidden_dim, self.hidden_dim, 4, 3)
-        self.query_embed = nn.Embedding(num_queries, self.hidden_dim * 2)
+
         # Projection for Multi-scale features
         if num_feature_levels > 1:
             num_backbone_outs = len(backbone.strides) - 1  # Ignore backbone.layer1
@@ -138,8 +136,11 @@ class DeformableDETR(nn.Module):
                     )
                 ]
             )
+        self.query_embed = nn.Embedding(num_queries, self.hidden_dim * 2)
+        self.transformer = transformer
+        self.class_embed = nn.Linear(self.hidden_dim, num_classes)
+        self.bbox_embed = MLP(self.hidden_dim, self.hidden_dim, 4, 3)
 
-        self.backbone = backbone
         self.aux_loss = aux_loss
         self.with_box_refine = with_box_refine
         self.tracing = tracing

@@ -332,17 +332,24 @@ def run_pl_training(
             expe_dir = os.path.join(run_id_project_dir, args.run_id)
 
     if args.log is not None:
-        if args.log == "wandb":
-            logger = WandbLogger(name=expe_name, project=project, id=expe_name)
-            logger.log_hyperparams(args)
+        # get dir to save log
+        save_dir = os.path.join(get_dir_from_config(args, "log"), f"project_{project}", expe_name)
 
+        # create path
+        if args.log == "wandb":
+            save_dir = os.path.join(save_dir, "wandb")
+            os.makedirs(save_dir, exist_ok=True)
+            logger = WandbLogger(name=expe_name, save_dir=save_dir, project=project, id=expe_name)
+            logger.log_hyperparams(args)
         elif args.log == "tensorboard":
-            logger = TensorBoardLogger(save_dir="tensorboard/", name=expe_name, sub_dir=expe_name)
+            save_dir = os.path.join(save_dir, "tensorboard")
+            os.makedirs(save_dir, exist_ok=True)
+            logger = TensorBoardLogger(save_dir=save_dir, name=expe_name, sub_dir=expe_name)
         else:
             raise ValueError("Unknown or not implemented logger")
     else:
         logger = None
-  
+
     if args.save:
         monitor = getattr(args, "monitor", "val_loss")
         checkpoint_callback = ModelCheckpoint(
@@ -354,24 +361,6 @@ def run_pl_training(
             filename="{epoch}-{step}-{" + monitor + ":.4f}",
         )
         callbacks.append(checkpoint_callback)
-
-    if args.log is not None:
-        # get dir to save log
-        save_dir = os.path.join(get_dir_from_config(args, "log"), f"project_{project}", expe_name)
-
-        # create path
-        if args.log == "wandb":
-            save_dir = os.path.join(save_dir, "wandb")
-            os.makedirs(save_dir, exist_ok=True)
-            logger = WandbLogger(name=expe_name, save_dir=save_dir, project=project, id=expe_name)
-        elif args.log == "tensorboard":
-            save_dir = os.path.join(save_dir, "tensorboard")
-            os.makedirs(save_dir, exist_ok=True)
-            logger = TensorBoardLogger(save_dir=save_dir, name=expe_name, sub_dir=expe_name)
-        else:
-            raise ValueError("Unknown or not implemented logger")
-    else:
-        logger = None
 
     # Init trainer and run training
     trainer = pl.Trainer.from_argparse_args(

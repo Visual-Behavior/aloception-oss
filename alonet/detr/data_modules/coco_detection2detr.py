@@ -99,12 +99,7 @@ if __name__ == "__main__":
     coco = CocoDetection2Detr(args, **loader_kwargs)
     coco.prepare_data()
     coco.setup()
-    iterator=iter(coco.train_dataloader())
+    iterator = iter(coco.train_dataloader())
     for i in range(2):
         samples = next(iterator)
         samples[0].get_view().render()
-    # samples = next()
-    # samples[0].get_view().render()
-
-    # samples = next(iter(coco.val_dataloader()))
-    # samples[0].get_view().render()

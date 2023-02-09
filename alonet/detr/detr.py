@@ -92,8 +92,6 @@ class Detr(nn.Module):
         self.background_class = self.num_classes if background_class is None else background_class
         self.num_classes += 1
 
-
-
         self.class_embed = self.build_class_embed()
         self.bbox_embed = self.build_bbox_embed()
 

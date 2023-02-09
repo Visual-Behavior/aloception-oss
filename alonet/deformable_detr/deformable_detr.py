@@ -105,7 +105,6 @@ class DeformableDETR(nn.Module):
         self.background_class = num_classes if self.activation_fn == "softmax" else None
         num_classes += 1 if self.activation_fn == "softmax" else 0  # Add bg class
 
-
         # Projection for Multi-scale features
         if num_feature_levels > 1:
             num_backbone_outs = len(backbone.strides) - 1  # Ignore backbone.layer1
@@ -618,7 +617,7 @@ class DeformableDETR(nn.Module):
             n_points=dec_n_points,
         )
 
-    def build_decoder(self, hidden_dim=256, num_feature_levels=4, dec_layers: int = 6, return_intermediate_dec: bool = True):
+    def build_decoder(self, dec_layers: int = 6, return_intermediate_dec: bool = True, hidden_dim: int = 256, num_feature_levels: int = 4):
         """Build decoder layer
 
         Parameters

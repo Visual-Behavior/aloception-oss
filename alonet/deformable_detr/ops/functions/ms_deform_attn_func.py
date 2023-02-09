@@ -82,7 +82,7 @@ class MSDeformAttnFunction(Function):
         return grad_value, None, None, grad_sampling_loc, grad_attn_weight, None
 
 
-def ms_deform_attn_core_pytorch(value, value_spatial_shapes, sampling_locations, attention_weights):
+def ms_deform_attn_core_pytorch(value, value_spatial_shapes, sampling_locations, attention_weights,is_fp16=False):
     # for debug and test only,
     # need to use cuda version instead
     N_, S_, M_, D_ = value.shape
@@ -99,7 +99,10 @@ def ms_deform_attn_core_pytorch(value, value_spatial_shapes, sampling_locations,
         # sampling_value_l_ = F.grid_sample(
         #     value_l_, sampling_grid_l_, mode="bilinear", padding_mode="zeros", align_corners=False
         # )
-        sampling_value_l_ = bilinear_grid_sample(value_l_, sampling_grid_l_, False)
+        if is_fp16:
+            sampling_value_l_ = torch.nn.functional.grid_sample(value_l_, sampling_grid_l_)
+        else:
+            sampling_value_l_ = bilinear_grid_sample(value_l_, sampling_grid_l_, False)
         sampling_value_list.append(sampling_value_l_)
     # (N_, Lq_, M_, L_, P_) -> (N_, M_, Lq_, L_, P_) -> (N_, M_, 1, Lq_, L_*P_)
     attention_weights = attention_weights.transpose(1, 2).reshape(N_ * M_, 1, Lq_, L_ * P_)
@@ -188,4 +191,3 @@ def bilinear_grid_sample(im, grid, align_corners):
     Id = torch.gather(im_padded, 2, x1_y1)
 
     return (Ia * wa + Ib * wb + Ic * wc + Id * wd).reshape(n, c, gh, gw)
-    

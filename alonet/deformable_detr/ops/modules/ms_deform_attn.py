@@ -135,7 +135,7 @@ class MSDeformAttn(nn.Module):
             raise ValueError(
                 "Last dim of reference_points must be 2 or 4, but get {} instead.".format(reference_points.shape[-1])
             )
-        if "is_tracing" in kwargs or value.dtype==torch.half:
+        if "is_tracing" in kwargs:
             output = ms_deform_attn_core_pytorch(
                 value,
                 input_spatial_shapes,
@@ -143,13 +143,22 @@ class MSDeformAttn(nn.Module):
                 attention_weights,
             )
         else:
-            output = MSDeformAttnFunction.apply(
-                value,
-                input_spatial_shapes,
-                input_level_start_index,
-                sampling_locations,
-                attention_weights,
-                self.im2col_step,
-            )
+            if value.dtype==torch.half:
+                output = ms_deform_attn_core_pytorch(
+                    value,
+                    input_spatial_shapes,
+                    sampling_locations,
+                    attention_weights,
+                    True,
+                )
+            else:
+                output = MSDeformAttnFunction.apply(
+                    value,
+                    input_spatial_shapes,
+                    input_level_start_index,
+                    sampling_locations,
+                    attention_weights,
+                    self.im2col_step,
+                )
         output = self.output_proj(output)
         return output

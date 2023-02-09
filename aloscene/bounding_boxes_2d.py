@@ -145,6 +145,8 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
         elif tensor.boxes_format == "xyxy":
             # Convert from xyxy to xcyc
             labels = tensor.drop_children()
+            # clip for float16
+            tensor = torch.clip(tensor,-5000,5000)
             xcyc_boxes = torch.cat(
                 [tensor[:, :2] + ((tensor[:, 2:] - tensor[:, :2]) / 2), (tensor[:, 2:] - tensor[:, :2])], dim=1
             )

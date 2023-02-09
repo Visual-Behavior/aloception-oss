@@ -135,7 +135,7 @@ class MSDeformAttn(nn.Module):
             raise ValueError(
                 "Last dim of reference_points must be 2 or 4, but get {} instead.".format(reference_points.shape[-1])
             )
-        if "is_tracing" in kwargs:
+        if "is_tracing" in kwargs or value.dtype==torch.half:
             output = ms_deform_attn_core_pytorch(
                 value,
                 input_spatial_shapes,

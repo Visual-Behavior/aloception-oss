@@ -16,6 +16,7 @@ import pytorch_lightning as pl
 
 import alonet
 import aloscene
+from torch.utils.data.sampler import RandomSampler, SequentialSampler
 
 
 class Data2Detr(pl.LightningDataModule):
@@ -122,6 +123,9 @@ class Data2Detr(pl.LightningDataModule):
         parser.add_argument(
             "--sample", action="store_true", help="Download a sample for train/val process (Default: %(default)s)"
         )
+        parser.add_argument(
+            "--sequential", action="store_true", help="Use sequential loading for train (Default: %(default)s)"
+        )
         return parent_parser
 
     def train_transform(self, frame: aloscene.Frame, same_on_sequence: bool = True, same_on_frames: bool = False):
@@ -217,7 +221,10 @@ class Data2Detr(pl.LightningDataModule):
         torch.utils.data.DataLoader
             Dataloader for training process
         """
-        return self.train_dataset.train_loader(batch_size=self.batch_size, num_workers=self.num_workers)
+        return self.train_dataset.train_loader(
+            batch_size=self.batch_size,
+            num_workers=self.num_workers,
+            sampler=SequentialSampler if self.sequential else RandomSampler)
 
     def val_dataloader(self, sampler: torch.utils.data = None):
         """Get val dataloader

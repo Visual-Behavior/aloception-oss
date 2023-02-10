@@ -16,6 +16,9 @@ import matplotlib.pyplot as plt
 
 class Mask(aloscene.tensors.SpatialAugmentedTensor):
     """
+    A mask represent which part of the SpatialAugmentedTensor are valid.
+    The value 1 mean invalid and 0 mean valid.
+
     Parameters
     ----------
     x : Union[torch.Tensor, str]
@@ -238,6 +241,8 @@ class Mask(aloscene.tensors.SpatialAugmentedTensor):
     def _spatial_shift(self, shift_y: float, shift_x: float, **kwargs):
             """
             Spatially shift the Mask.
+            This function is empty for now because the 1st implementation created issues.
+            The only purpose of this is to stop triggering the warning message.
             Parameters
             ----------
             shift_y: float
@@ -249,80 +254,4 @@ class Mask(aloscene.tensors.SpatialAugmentedTensor):
             shifted_tensor: aloscene.AugmentedTensor
                 shifted tensor
             """
-            return self #shunting this modification for now bc it doesn't work well with deformable_2dpoints
-
-            # n_frame = self.clone()
-
-            # if "N"  in self.names:
-            #     ind_name="N"
-            # elif "C" in self.names:
-            #     ind_name="C"
-
-
-            # n_chans=self.shape[self.names.index(ind_name) ]
-
-
-            # x_shift = int(shift_x * self.W)
-            # y_shift = int(shift_y * self.H)
-
-
-            # frame_data = n_frame.as_tensor()
-
-            # permute_idx = list(range(0, len(self.shape)))
-            # last_current_idx = permute_idx[-1]
-            # permute_idx[-1] = permute_idx[self.names.index(ind_name)]
-            # permute_idx[self.names.index(ind_name)] = last_current_idx
-
-            # # n_frame_mean = frame_data.permute(permute_idx)
-            # # n_frame_mean = n_frame_mean.flatten(end_dim=-2)
-            # n_frame_mean = torch.tensor([1])
-            # n_shape = [1] * len(self.shape)
-            # n_shape[self.names.index(ind_name)] = n_chans
-
-
-
-            # frame_data = torch.roll(frame_data, x_shift, dims=self.names.index("W"))
-            # # Fillup the shifted area with the mean
-
-            # if x_shift >= 1:
-            #     frame_data[self.get_slices({"W": slice(0, x_shift)})] = n_frame_mean
-            # elif x_shift <= -1:
-            #     frame_data[self.get_slices({"W": slice(x_shift, -1)})] = n_frame_mean
-
-            # frame_data = torch.roll(frame_data, y_shift, dims=self.names.index("H"))
-
-            # if y_shift >= 1:
-            #     frame_data[self.get_slices({"H": slice(0, y_shift)})] = n_frame_mean
-            # elif y_shift <= -1:
-            #     frame_data[self.get_slices({"H": slice(y_shift, -1)})] = n_frame_mean
-
-            # n_frame.data = frame_data
-
-            # return n_frame
-
-    # def _rotate(self, angle, **kwargs):
-    #     """Rotate the mask and fill the areas outside with 1 to show that these pixels become invalid
-
-    #     Parameters
-    #     ----------
-    #     angle : float
-
-    #     Returns
-    #     -------
-    #     rotated : aloscene.SpatialAugmentedTensor
-    #         rotated tensor
-    #     """
-    #     # If a SpatialAgumentedTensor is empty, rotate operation does not work. Use view instead.
-    #     assert not (
-    #         ("N" in self.names and self.size("N") == 0) or ("C" in self.names and self.size("C") == 0)
-    #     ), "rotation is not possible on an empty tensor"
-
-
-    #     labels=self.get_children()
-    #     names=self.names
-
-    #     new_mask=aloscene.Mask(F.rotate(img=self.as_tensor(), angle=angle,fill=[1]), names=names)
-    #     #new_mask.set_children(labels)
-
-
-    #     return new_mask
+            return self

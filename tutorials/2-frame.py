@@ -4,7 +4,7 @@ from alodataset import WaymoDataset, Split
 waymo_dataset = WaymoDataset(split=Split.VAL, cameras=["front"], labels=["gt_boxes_2d"])
 
 # Get a frame at some position in the dataset
-data = waymo_dataset.get(42)
+data = waymo_dataset.get(2)
 
 # The frame object is a special type of Tensor (Labeled Tensor) with special attributes and labels
 # attached to it

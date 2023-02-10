@@ -56,7 +56,7 @@ def stream_loader(dataset, num_workers=2):
     return data_loader
 
 
-def train_loader(dataset, batch_size=1, num_workers=2, sampler=torch.utils.data.RandomSampler):
+def train_loader(dataset, batch_size=1, num_workers=2, sampler=torch.utils.data.RandomSampler, sampler_kwargs={}):
     """Get training loader from the dataset
 
     Parameters
@@ -69,14 +69,15 @@ def train_loader(dataset, batch_size=1, num_workers=2, sampler=torch.utils.data.
         Number of workers, by default 2
     sampler : torch.utils.data, optional
         Callback to sampler the dataset, by default torch.utils.data.RandomSampler
+        Or instance of any class inheriting from torch.utils.data.Sampler
 
     Returns
     -------
     torch.utils.data.DataLoader
         A generator
     """
-    sampler = sampler(dataset) if sampler is not None else None
-
+    if sampler is not None and not(isinstance(sampler, torch.utils.data.Sampler)):
+        sampler = sampler(dataset, **sampler_kwargs)
     data_loader = torch.utils.data.DataLoader(
         dataset,
         # batch_sampler=batch_sampler,
@@ -339,7 +340,7 @@ class BaseDataset(torch.utils.data.Dataset):
         """
         return stream_loader(self, num_workers=num_workers)
 
-    def train_loader(self, batch_size=1, num_workers=2, sampler=torch.utils.data.RandomSampler):
+    def train_loader(self, batch_size=1, num_workers=2, sampler=torch.utils.data.RandomSampler, sampler_kwargs={}):
         """Get training loader from the dataset
 
         Parameters
@@ -358,7 +359,7 @@ class BaseDataset(torch.utils.data.Dataset):
         torch.utils.data.DataLoader
             A generator
         """
-        return train_loader(self, batch_size=batch_size, num_workers=num_workers, sampler=sampler)
+        return train_loader(self, batch_size=batch_size, num_workers=num_workers, sampler=sampler, sampler_kwargs=sampler_kwargs    )
 
     def prepare(self):
         """Prepare the dataset. Not all child class need to implement this method.

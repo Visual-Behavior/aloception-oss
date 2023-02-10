@@ -77,7 +77,8 @@ class CameraIntrinsic(AugmentedTensor):
 
     def __init__(self, x=None, *args, **kwargs):
         if x is not None:
-            assert x.shape[-2] == 3 and x.shape[-1] == 4
+            assert x.shape[-1] == 4
+            assert x.shape[-2] == 3 or x.shape[-2] == 4
         super().__init__(x)
 
     @property
@@ -158,8 +159,8 @@ class CameraIntrinsic(AugmentedTensor):
         pad_top = offset_y[0] * frame_size[0]
         pad_left = offset_x[0] * frame_size[1]
         cam_intrinsic = self.clone()
-        cam_intrinsic[..., 0, 2] += pad_top
-        cam_intrinsic[..., 1, 2] += pad_left
+        cam_intrinsic[..., 0, 2] += pad_left
+        cam_intrinsic[..., 1, 2] += pad_top
         return cam_intrinsic
 
     def get_view(self, *args, **kwargs):

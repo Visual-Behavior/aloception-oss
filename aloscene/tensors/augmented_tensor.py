@@ -1,15 +1,42 @@
 import torch
 import inspect
+import warnings
 import numpy as np
 from typing import *
 import copy
 
 
+def _torch_function_get_self(cls, func, types, args, kwargs):
+    """ Based on this dicussion https://github.com/pytorch/pytorch/issues/63767
+
+    "A simple solution would be to scan the args for the first subclass of this class.
+    My question is more: will forcing this to be a subclass actually be a problem for some use case?
+    Or are we saying that this code that requires a pure method is actually not well structured and should be written differently?"
+
+    " No, that isn't the case here. self is guaranteed to be in args /kwargssomewhere."
+    What I understand is that looking into args to get self is acceptable in the current API.
+    """
+    for a in args:
+        if isinstance(a, cls):
+            return a
+        elif isinstance(a, list):
+            return _torch_function_get_self(cls, func, types, a, kwargs)
+        elif isinstance(a, tuple):
+            return _torch_function_get_self(cls, func, types, list(a), kwargs)
+    return None
+
+
 class AugmentedTensor(torch.Tensor):
     """Tensor with attached labels"""
 
+    BATCH_LIST_INTERSECT = False
+
     # Common dim names that must be aligned to handle label on a Tensor.
     COMMON_DIM_NAMES = ["B", "T"]
+
+    # Ignore named tansors userwarning.
+    ERROR_MSG = "Named tensors and all their associated APIs are an experimental feature and subject to change"
+    warnings.filterwarnings(action='ignore', message=ERROR_MSG)
 
     @staticmethod
     def __new__(cls, x, names=None, device=None, *args, **kwargs):
@@ -298,8 +325,17 @@ class AugmentedTensor(torch.Tensor):
                     label, lambda l: self._getitem_child(l, name, idx), on_list=False
                 )
 
-        if isinstance(idx, torch.Tensor):
-            tensor = torch.Tensor.__getitem__(self.rename(None), idx).reset_names()
+        if isinstance(idx, AugmentedTensor):
+            tensor = torch.Tensor.__getitem__(self.rename(None), idx.as_tensor())
+
+            tensor = tensor.reset_names() if len(self.shape) == len(tensor.shape) else tensor.as_tensor()
+
+        elif isinstance(idx, torch.Tensor):
+            tensor = torch.Tensor.__getitem__(self.rename(None), idx)
+
+            tensor = tensor.reset_names() if len(self.shape) == len(tensor.shape) else tensor.as_tensor()
+
+
             # if not idx.dtype == torch.bool:
             #    if not torch.equal(idx ** 3, idx):
             #        raise IndexError(f"Unvalid mask. Expected mask elements to be in [0, 1, True, False]")
@@ -439,25 +475,33 @@ class AugmentedTensor(torch.Tensor):
             else:
                 for s in range(len(sub_label)):
                     _fillup_dict(dm[s], sub_label[s], dim + 1, target_dim)
-
         _fillup_dict(dict_merge[key], label, 0, target_dim)
 
         return dict_merge
 
     def _merge_tensor(self, n_tensor, tensor_list, func, types, args=(), kwargs=None):
+
+        # do the merge as an intersection between tensors
+        intersection = AugmentedTensor.BATCH_LIST_INTERSECT
+
         """Merge tensors together and their associated labels"""
         labels_dict2list = {}
         # Setup the new structure before to merge
         prop_name_to_value = {}
 
+        dim_size = len(tensor_list)
         for tensor in tensor_list:
 
             for prop in tensor._property_list:
-                if prop in prop_name_to_value:
-                    assert prop_name_to_value[prop] == getattr(
-                        tensor, prop
-                    ), f"Trying to merge augmented tensor with different property: {prop}, {prop_name_to_value[prop]}, {getattr(tensor, prop)}"
-                prop_name_to_value[prop] = getattr(tensor, prop)
+
+                if prop in prop_name_to_value and prop_name_to_value[prop] != getattr(tensor, prop):
+                    if intersection:
+                        setattr(n_tensor, prop, None)
+                    else:
+                        values = set([prop_name_to_value[prop], getattr(tensor, prop)])
+                        raise RuntimeError(f"Encountered different values for property '{prop}' while merging AugmentedTensor: {values}")
+                else:
+                    prop_name_to_value[prop] = getattr(tensor, prop)
 
             for label_name in tensor._children_list:
                 label_value = getattr(tensor, label_name)
@@ -494,11 +538,23 @@ class AugmentedTensor(torch.Tensor):
         # Merge all labels together
         for label_name in labels_dict2list:
             if self._child_property[label_name]["mergeable"]:
+
                 if isinstance(labels_dict2list[label_name], dict):
-                    for key in labels_dict2list[label_name]:
-                        args = list(args)
-                        args[0] = labels_dict2list[label_name][key]
-                        labels_dict2list[label_name][key] = func(*tuple(args), **kwargs)
+                    for key in list(labels_dict2list[label_name].keys()):
+                        if len(labels_dict2list[label_name][key]) != dim_size:
+                            if intersection:
+                                del labels_dict2list[label_name][key]
+                            else:
+                                raise RuntimeError(f"Error during merging. Some tensors have label '{label_name}' with key '{key}' and some don't")
+                        else:
+                            args = list(args)
+                            args[0] = labels_dict2list[label_name][key]
+                            labels_dict2list[label_name][key] = func(*tuple(args), **kwargs)
+                    # if we removed all keys, set this child to None
+                    if intersection and not labels_dict2list[label_name]:
+                        labels_dict2list[label_name] = None
+                elif intersection and (len(labels_dict2list[label_name]) != dim_size or (None in labels_dict2list[label_name])):
+                    labels_dict2list[label_name] = None
                 else:
                     args = list(args)
                     args[0] = labels_dict2list[label_name]
@@ -539,11 +595,15 @@ class AugmentedTensor(torch.Tensor):
         for t in range(len(self)):
             yield self[t]
 
-    def __torch_function__(self, func, types, args=(), kwargs=None):
+
+    @classmethod
+    def __torch_function__(cls, func, types, args=(), kwargs=None):
+        self = _torch_function_get_self(cls, func, types, args, kwargs)
+
         def _merging_frame(args):
-            if len(args) >= 1 and isinstance(args[0], list):
+            if len(args) >= 1 and isinstance(args[0], (list, tuple)):
                 for el in args[0]:
-                    if isinstance(el, type(self)):
+                    if isinstance(el, cls):
                         return True
                 return False
             return False
@@ -554,11 +614,12 @@ class AugmentedTensor(torch.Tensor):
         if func.__name__ == "__reduce_ex__":
             self.rename_(None, auto_restore_names=True)
             tensor = super().__torch_function__(func, types, args, kwargs)
+            #tensor = super().torch_func_method(func, types, args, kwargs)
         else:
             tensor = super().__torch_function__(func, types, args, kwargs)
+            #tensor = super().torch_func_method(func, types, args, kwargs)
 
         if isinstance(tensor, type(self)):
-
             tensor._property_list = self._property_list
             tensor._children_list = self._children_list
             tensor._child_property = self._child_property
@@ -606,6 +667,9 @@ class AugmentedTensor(torch.Tensor):
             self_ref_tensor = self.rename_(*self._saved_names)
             self_ref_tensor._saved_names = None
             return self_ref_tensor
+        elif self._saved_names is not None and not any(v is not None for v in self._saved_names):
+            self._saved_names = None
+            return self
         else:
             return self
 
@@ -860,13 +924,14 @@ class AugmentedTensor(torch.Tensor):
     def _resize(self, *args, **kwargs):
         raise Exception("This Augmented tensor should implement this method")
 
-    def rotate(self, angle, **kwargs):
+    def rotate(self, angle, center=None,**kwargs):
         """
         Rotate AugmentedTensor, and its labels recursively
 
         Parameters
         ----------
         angle : float
+        center : list or tuple of coordinates in absolute format. Default is the center of the image
 
         Returns
         -------
@@ -876,12 +941,12 @@ class AugmentedTensor(torch.Tensor):
 
         def rotate_func(label):
             try:
-                label_rotated = label._rotate(angle, **kwargs)
+                label_rotated = label._rotate(angle, center,**kwargs)
                 return label_rotated
             except AttributeError:
                 return label
 
-        rotated = self._rotate(angle, **kwargs)
+        rotated = self._rotate(angle, center,**kwargs)
         rotated.recursive_apply_on_children_(rotate_func)
 
         return rotated
@@ -928,7 +993,7 @@ class AugmentedTensor(torch.Tensor):
         except AttributeError:
             return label
 
-    def pad(self, offset_y: tuple, offset_x: tuple, **kwargs):
+    def pad(self, offset_y: tuple = None, offset_x: tuple = None, multiple: int = None, **kwargs):
         """
         Pad AugmentedTensor, and its labels recursively
 
@@ -940,16 +1005,34 @@ class AugmentedTensor(torch.Tensor):
         offset_x: tuple of float or tuple of int
             (percentage left_offset, percentage right_offset) Percentage based on the previous size. If tuple of int
             the absolute value will be converted to float (percentage) before to be applied.
+        multiple: int
+            pad the tensor to the next multiple of `multiple`
 
         Returns
         -------
-        croped : aloscene AugmentedTensor
-            croped tensor
+        cropped : aloscene AugmentedTensor
+            cropped tensor
         """
-        if isinstance(offset_y[0], int) and isinstance(offset_y[1], int):
-            offset_y = (offset_y[0] / self.H, offset_y[1] / self.H)
-        if isinstance(offset_x[0], int) and isinstance(offset_x[1], int):
-            offset_x = (offset_x[0] / self.W, offset_x[1] / self.W)
+        if multiple is not None:
+            assert offset_x is None and offset_y is None
+            if not self.H % multiple == 0:
+                offset_y0 = int(np.floor((multiple - self.H % multiple) / 2))
+                offset_y1 = int(np.ceil((multiple - self.H % multiple) / 2))
+                offset_y = (offset_y0 / self.H, offset_y1 / self.H)
+            else:  # already a multiple of H
+                offset_y = (0, 0)
+            if not self.W % multiple == 0:
+                offset_x0 = int(np.floor((multiple - self.W % multiple) / 2))
+                offset_x1 = int(np.ceil((multiple - self.W % multiple) / 2))
+                offset_x = (offset_x0 / self.W, offset_x1 / self.W)
+            else:  # already a multiple of W
+                offset_x = (0, 0)
+        else:
+            assert offset_x is not None and offset_y is not None
+            if isinstance(offset_y[0], int) and isinstance(offset_y[1], int):
+                offset_y = (offset_y[0] / self.H, offset_y[1] / self.H)
+            if isinstance(offset_x[0], int) and isinstance(offset_x[1], int):
+                offset_x = (offset_x[0] / self.W, offset_x[1] / self.W)
 
         padded = self._pad(offset_y, offset_x, **kwargs)
         padded.recursive_apply_on_children_(lambda label: self._pad_label(label, offset_y, offset_x, **kwargs))

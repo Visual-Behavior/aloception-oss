@@ -232,7 +232,7 @@ class DeformableTransformer(nn.Module):
         if isinstance(spatial_shapes, list):
             spatial_shapes = torch.cat(spatial_shapes, 0)
 
-        level_start_index = torch.cat((spatial_shapes.new_zeros((1,)), spatial_shapes.prod(1).cumsum(0)[:-1])).type(
+        level_start_index = torch.cat((spatial_shapes.new_zeros((1,)).type(torch.int32), spatial_shapes.prod(1).cumsum(0)[:-1].type(torch.int32))).type(
             torch.int32
         )
         _valid_ratios = [self.get_valid_ratio(m) for m in masks]

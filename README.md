@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="images/aloception.png" style="text-align:center; width: 50%;" alt="Logo aloception" />
+  <img src="images/aloception-oss.jpg" style="text-align:center; width: 50%;" alt="Logo aloception" />
 </p>
 
 <a href="https://visual-behavior.github.io/aloception-oss/">Documentation</a>
@@ -75,20 +75,27 @@ training pipelines with **augmented tensors**.
 
 ## Installation
 
-You first need to install PyTorch based on your hardware and environment
+You first need to install PyTorch 1.10.1 based on your hardware and environment
 configuration. Please refer to the [pytorch website](https://pytorch.org/get-started/locally/) for this installation.
 
 Once this is done, you can run:
 ```sh
-pip3 install git+https://github.com/Visual-Behavior/aloception-oss/
+pip install git+https://github.com/Visual-Behavior/aloception-oss/
 ```
 
 <br/>
 
 Alternatively, you can clone the repository and use:
 ```sh
-pip3 install -e aloception-oss/
+pip install -e aloception-oss/
 ```
+
+Or setup the repo yourself in your env and install the dependencies
+
+```sh
+pip install -r requirements.txt
+```
+
 
 ## Getting started
 

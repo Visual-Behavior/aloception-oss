@@ -10,13 +10,16 @@ import torch
 parser = ArgumentParser()
 
 
-def vb_folder():
+def vb_folder(create_if_not_found=False):
     home = os.getenv("HOME")
     alofolder = os.path.join(home, ".aloception")
     if not os.path.exists(alofolder):
-        raise Exception(
-            f"{alofolder} do not exist. Please, create the folder with the appropriate files. (Checkout documentation)"
-        )
+        if create_if_not_found:
+            os.mkdir(alofolder)
+        else:
+            raise Exception(
+                f"{alofolder} do not exist. Please, create the folder with the appropriate files. (Checkout documentation)"
+            )
     return alofolder
 
 
@@ -251,6 +254,8 @@ def run_pl_training(
     if args.log is not None:
         if args.log == "wandb":
             logger = WandbLogger(name=expe_name, project=project, id=expe_name)
+            logger.log_hyperparams(args)
+
         elif args.log == "tensorboard":
             logger = TensorBoardLogger(save_dir="tensorboard/", name=expe_name, sub_dir=expe_name)
         else:

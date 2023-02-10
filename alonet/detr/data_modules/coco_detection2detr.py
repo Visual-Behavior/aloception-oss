@@ -94,7 +94,8 @@ if __name__ == "__main__":
         name="coco",
         train_folder="train2017",
         train_ann="annotations/instances_train2017.json",
-
+        val_folder="val2017",
+        val_ann="annotations/instances_val2017.json",
     )
 
     args = CocoDetection2Detr.add_argparse_args(
@@ -102,9 +103,7 @@ if __name__ == "__main__":
     coco = CocoDetection2Detr(args, **loader_kwargs)
     coco.prepare_data()
     coco.setup()
-
-    samples = next(iter(coco.train_dataloader()))
-    samples[0].get_view().render()
-
-    samples = next(iter(coco.val_dataloader()))
-    samples[0].get_view().render()
+    iterator = iter(coco.train_dataloader())
+    for i in range(2):
+        samples = next(iterator)
+        samples[0].get_view().render()

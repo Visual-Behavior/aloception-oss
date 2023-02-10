@@ -2,6 +2,8 @@ import pytorch_lightning as pl
 from argparse import Namespace, ArgumentParser
 import torch
 import alonet
+from typing import Union
+import aloscene
 
 
 class BaseLightningModule(pl.LightningModule):
@@ -31,21 +33,8 @@ class BaseLightningModule(pl.LightningModule):
         alonet.common.pl_helpers.params_update(self, args, kwargs)
         self._init_kwargs_config.update({"model": model})
 
-        # # Load model
-        # if model is not None:
-        #     if isinstance(model, str):
-        #         self.model_name = model
-        #         self.model = self.build_model()
-        #     elif self.weights is None:
-        #         self.model = model
-        #     else:
-        #         raise Exception(f"Weights of custom model doesnt match with {self.weights} weights")
-        # else:
-        #     self.model = self.build_model()
-        # # Buld matcher
-        # self.matcher = self.build_matcher()
-        # # Build criterion
-        # self.criterion = self.build_criterion(matcher=self.matcher)
+        self.model = self.build_model()
+        self.criterion = self.build_criterion()
 
     @staticmethod
     def add_argparse_args(parent_parser, parser=None):
@@ -74,6 +63,126 @@ class BaseLightningModule(pl.LightningModule):
         )
         # TODO : add project and expe_name if not already present ?
         return parent_parser
+
+    def configure_optimizers(self):
+        """AdamW default optimizer configuration, using different learning rates for backbone and others parameters
+
+        Returns
+        -------
+        torch.optim
+            `AdamW <https://pytorch.org/docs/stable/generated/torch.optim.AdamW.html>`_ optimizer to update weights
+        """
+        param_dicts = [
+            {"params": [p for n, p in self.model.named_parameters() if p.requires_grad]},
+        ]
+        optimizer = torch.optim.AdamW(param_dicts, lr=1e-4, weight_decay=1e-4)
+        return optimizer
+
+    def build_model(self):
+        raise NotImplementedError("Should be implemented in child class.")
+
+    def build_criterion(self):
+        raise NotImplementedError("Should be implemented in child class.")
+
+    def forward(self, frames: Union[list, aloscene.Frame], **kwargs):
+        """Run a forward pass through the model.
+
+        Parameters
+        ----------
+        frames : Union[list, :mod:`Frames <aloscene.frame>`]
+            List of :mod:`~aloscene.frame` without batch dimension or a Frame with the batch dimension
+
+        Returns
+        -------
+        m_outputs: dict
+            A dict with the forward outputs.
+        """
+        # Batch list of frame if needed
+        if isinstance(frames, list):
+            frames = aloscene.Frame.batch_list(frames)
+
+        # Assert inputs content
+        self.assert_input(frames, inference=True)
+
+        m_outputs = self.model(frames)
+
+        return m_outputs
+
+    def training_step(self, frames: Union[list, aloscene.Frame], batch_idx: int):
+        """Train the model for one step
+
+        Parameters
+        ----------
+        frames : Union[list, :mod:`Frames <aloscene.frame>`]
+            List of :mod:`~aloscene.frame` without batch dimension or a Frame with the batch dimension
+        batch_idx : int
+            Batch id given by Lightning
+
+        Returns
+        -------
+        dict
+            Dictionary with the :attr:`loss` to optimize, :attr:`m_outputs` forward outputs and :attr:`metrics` to log.
+        """
+        if isinstance(frames, list):
+            frames = aloscene.Frame.batch_list(frames)
+
+        # Assert inputs content
+        self.assert_input(frames)
+
+        m_outputs = self.model(frames)
+
+        loss, metrics = self.criterion(frames, m_outputs)
+
+        outputs = {"loss": loss}
+        outputs.update({"m_outputs": m_outputs})
+        outputs.update({"metrics": metrics})
+
+        return outputs
+
+    @torch.no_grad()
+    def validation_step(self, frames: Union[list, aloscene.Frame], batch_idx: int):
+        """Run one step of validation
+
+        Parameters
+        ----------
+        frames : Union[list, :mod:`Frames <aloscene.frame>`]
+            List of :mod:`~aloscene.frame` without batch dimension or a Frame with the batch dimension
+        batch_idx : int
+            Batch id given by Lightning
+
+        Returns
+        -------
+        dict
+            Dictionary with the :attr:`loss` to optimize, and :attr:`metrics` to log.
+        """
+        # Batch list of frame if needed
+        with torch.no_grad():
+            if isinstance(frames, list):
+                frames = aloscene.Frame.batch_list(frames)
+
+            # Assert inputs content
+            self.assert_input(frames)
+
+            m_outputs = self.model(frames)
+
+            loss, metrics = self.criterion(frames, m_outputs)
+
+            outputs = {"loss": loss}
+            outputs.update({"metrics": metrics})
+
+            return outputs
+
+    def assert_input(self, frames: aloscene.Frame, inference=False):
+        """Check if input-frames have the correct format
+
+        Parameters
+        ----------
+        frames : :mod:`Frames <aloscene.frame>`
+            Input frames
+        inference : bool, optional
+            Check input from inference procedure, by default False
+        """
+        raise NotImplementedError("Should be implemented in child class.")
 
     def callbacks(self,):
         """Given a data loader, this method will return the default callbacks of the training loop.
@@ -124,5 +233,39 @@ class BaseLightningModule(pl.LightningModule):
             expe_name=expe_name,
         )
 
+    def run_validation(
+        self,
+        data_loader: torch.utils.data.DataLoader,
+        args: Namespace = None,
+        project: str = None,
+        expe_name: str = None,
+        callbacks: list = None,
+    ):
+        """
+        Validate the model using pytorch lightning
 
-# TODO : add run_validate
+        Parameters
+        ----------
+        data_loader : torch.utils.data.DataLoader
+            Dataloader use in :func:`callbacks` function
+        project : str, optional
+            Project name using to save checkpoints, by default None
+        expe_name : str, optional
+            Specific experiment name to save checkpoints, by default None
+        callbacks : list, optional
+            List of callbacks to use, by default :func:`callbacks` output
+        args : Namespace, optional
+            Additional arguments use in training process, by default None
+        """
+        # Set the default callbacks if not provide.
+        callbacks = callbacks if callbacks is not None else self.callbacks(data_loader)
+
+        alonet.common.pl_helpers.run_pl_validate(
+            # Trainer, data & callbacks
+            lit_model=self,
+            data_loader=data_loader,
+            callbacks=callbacks,
+            # Project info
+            args=args,
+            project=project,
+        )

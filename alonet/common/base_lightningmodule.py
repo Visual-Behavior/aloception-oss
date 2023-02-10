@@ -33,7 +33,7 @@ class BaseLightningModule(pl.LightningModule):
         alonet.common.pl_helpers.params_update(self, args, kwargs)
         self._init_kwargs_config.update({"model": model})
 
-        self.model = self.build_model()
+        self.model = self.build_model(weights=self.weights)
         self.criterion = self.build_criterion()
 
     @staticmethod
@@ -78,7 +78,7 @@ class BaseLightningModule(pl.LightningModule):
         optimizer = torch.optim.AdamW(param_dicts, lr=1e-4, weight_decay=1e-4)
         return optimizer
 
-    def build_model(self):
+    def build_model(self, weights):
         raise NotImplementedError("Should be implemented in child class.")
 
     def build_criterion(self):
@@ -107,6 +107,17 @@ class BaseLightningModule(pl.LightningModule):
         m_outputs = self.model(frames)
 
         return m_outputs
+
+    def inference(self, m_outputs: dict, frames: aloscene.Frame, **kwargs):
+        """Given the model forward outputs, run inference.
+
+        Parameters
+        ----------
+        m_outputs: dict
+            Dict with the model forward outptus
+
+        """
+        raise NotImplementedError("Should be implemented in child class.")
 
     def training_step(self, frames: Union[list, aloscene.Frame], batch_idx: int):
         """Train the model for one step

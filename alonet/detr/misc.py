@@ -14,7 +14,6 @@ def assert_and_export_onnx(check_mean_std=False, input_mean_std=None):
             # because torch.onnx.export accepts only torch.Tensor or None
             if hasattr(instance, "tracing") and instance.tracing:
                 assert isinstance(frames, torch.Tensor)
-                assert frames.shape[1] == 4  # rgb 3 + mask 1
                 kwargs["is_tracing"] = None
                 if is_export_onnx is None:
                     return forward(instance, frames, is_export_onnx=None, **kwargs)

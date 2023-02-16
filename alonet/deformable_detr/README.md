@@ -61,5 +61,10 @@ Evaluation on 1000 images COCO with box refinement
 
 ## Exportation
 ```bash
-python trt_exporter.py --refinement --HW 320 480 --verbose --ignore_adapt_graph
+python trt_exporter.py --refinement --HW 320 480 --verbose
+```
+or (for preprocessing included)
+
+```bash
+python trt_exporter.py --refinement --HW 320 480 --verbose
 ```

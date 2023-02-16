@@ -4,7 +4,7 @@
 
 <a href="https://visual-behavior.github.io/aloception-oss/">Documentation</a>
 
-[![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-0.3.0-green.svg)](https://conventionalcommits.org)
+[![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-0.5.0-green.svg)](https://conventionalcommits.org)
 
 # Aloception open source software
 
@@ -74,6 +74,26 @@ One can use **aloscene** independently than the two other packages to handle com
 training pipelines with **augmented tensors**.
 
 ## Installation
+
+### Docker install
+
+```
+docker build -t aloception-oss:cuda-11.3.1-pytorch1.13.1-lightning1.9.0 .
+```
+
+```
+docker run --gpus all -it -v /YOUR/WORKSPACE/:/workspace --privileged -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix aloception-oss:cuda-11.3.1-pytorch1.13.1-lightning1.9.0
+```
+
+Or without building the image
+
+```
+docker run --gpus all -it -v /YOUR/WORKSPACE/:/workspace --privileged -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix visualbehaviorofficial/aloception-oss:cuda-11.3.1-pytorch1.13.1-lightning1.9.0
+```
+
+
+
+### Pip install
 
 You first need to install PyTorch 1.10.1 based on your hardware and environment
 configuration. Please refer to the [pytorch website](https://pytorch.org/get-started/locally/) for this installation.

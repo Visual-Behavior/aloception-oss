@@ -30,7 +30,7 @@ def tensor_equal(frame1, frame2):
 
 def test_frame_from_dt():
     # Go through the loaded sequence
-    for data in waymo_dataset.stream_loader():
+    for data in waymo_dataset.stream_loader(num_workers=1):
         assert data["front"].shape[:2] == (2, 3)
         assert data["front"].names == ("T", "C", "H", "W")
         # It should be instance of list since the dataset return a sequence and the

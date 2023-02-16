@@ -81,6 +81,10 @@ training pipelines with **augmented tensors**.
 docker build -t aloception-oss:cuda-11.3.1-pytorch1.13.1-lightning1.9.0 .
 ```
 
+```
+docker run --gpus all -it -v /YOUR/WORKSPACE/:/workspace --privileged -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix aloception-oss:cuda-11.3.1-pytorch1.13.1-lightning1.9.0
+```
+
 ### Pip install
 
 You first need to install PyTorch 1.10.1 based on your hardware and environment

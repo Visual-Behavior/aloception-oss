@@ -2,6 +2,7 @@ import aloscene
 from alodataset import transforms as T
 import numpy as np
 import torch
+import random
 
 
 def test_color_jitter():
@@ -78,4 +79,10 @@ def test_color_jitter():
 
 
 if __name__ == "__main__":
+    # seed everything
+    seed = 42
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
     test_color_jitter()

@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="images/aloception.png" style="text-align:center; width: 50%;" alt="Logo aloception" />
+  <img src="images/aloception-oss.jpg" style="text-align:center; width: 50%;" alt="Logo aloception" />
 </p>
 
 <a href="https://visual-behavior.github.io/aloception-oss/">Documentation</a>
@@ -98,7 +98,7 @@ Alternatively, you can clone the repository and use:
 pip install -e aloception-oss/
 ```
 
-Or setup the repo yourself in your env and install the dependencies 
+Or setup the repo yourself in your env and install the dependencies
 
 ```sh
 pip install -r requirements.txt

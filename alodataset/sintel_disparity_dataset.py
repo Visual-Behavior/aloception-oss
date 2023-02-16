@@ -105,7 +105,9 @@ class SintelDisparityDataset(SintelBaseDataset):
 
 
 if __name__ == "__main__":
-    dataset = SintelDisparityDataset(sample=True)
+    dataset = SintelDisparityDataset(sample=False)
+    banana = dataset.getitem(0)
+    banana["right"].get_view().render()
 
     for f, frames in enumerate(dataset.train_loader(batch_size=2)):
         frames = Frame.batch_list(frames)

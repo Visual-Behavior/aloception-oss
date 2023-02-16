@@ -159,8 +159,8 @@ class CameraIntrinsic(AugmentedTensor):
         pad_top = offset_y[0] * frame_size[0]
         pad_left = offset_x[0] * frame_size[1]
         cam_intrinsic = self.clone()
-        cam_intrinsic[..., 0, 2] += pad_top
-        cam_intrinsic[..., 1, 2] += pad_left
+        cam_intrinsic[..., 0, 2] += pad_left
+        cam_intrinsic[..., 1, 2] += pad_top
         return cam_intrinsic
 
     def get_view(self, *args, **kwargs):

@@ -74,7 +74,12 @@ class Detr(nn.Module):
         tracing: bool = False,
     ):
         super().__init__()
+        self.backbone = backbone
         self.num_queries = num_queries
+        hidden_dim = transformer.d_model
+        self.hidden_dim = hidden_dim
+        self.query_embed = nn.Embedding(num_queries, hidden_dim)
+        self.input_proj = nn.Conv2d(backbone.num_channels, hidden_dim, kernel_size=1)
         self.transformer = transformer
         self.num_decoder_layers = transformer.decoder.num_layers
         self.num_classes = num_classes
@@ -87,15 +92,9 @@ class Detr(nn.Module):
         self.background_class = self.num_classes if background_class is None else background_class
         self.num_classes += 1
 
-        hidden_dim = transformer.d_model
-        self.hidden_dim = hidden_dim
-
         self.class_embed = self.build_class_embed()
         self.bbox_embed = self.build_bbox_embed()
 
-        self.query_embed = nn.Embedding(num_queries, hidden_dim)
-        self.input_proj = nn.Conv2d(backbone.num_channels, hidden_dim, kernel_size=1)
-        self.backbone = backbone
         self.aux_loss = aux_loss
         self.tracing = tracing
 

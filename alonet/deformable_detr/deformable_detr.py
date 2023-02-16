@@ -85,17 +85,20 @@ class DeformableDETR(nn.Module):
         return_intermediate_dec: bool = True,
         strict_load_weights: bool = True,
         tracing=False,
+        include_preprocessing=False,
     ):
+        print("WARNING : you are using DeformableDETR or an unherited class. Please launch aloception-oss/alonet/deformable_detr/ops/make.sh before proceeding with training. Please refer to the README for more info")
         super().__init__()
         self.device = device
         self.num_feature_levels = num_feature_levels
-        self.transformer = transformer
+        self.backbone = backbone
         self.num_queries = num_queries
         self.return_intermediate_dec = return_intermediate_dec
         self.hidden_dim = transformer.d_model
         self.return_dec_outputs = return_dec_outputs
         self.return_enc_outputs = return_enc_outputs
         self.return_bb_outputs = return_bb_outputs
+        self.include_preprocessing = include_preprocessing
 
         if activation_fn not in ["sigmoid", "softmax"]:
             raise Exception(f"activation_fn = {activation_fn} must be one of this two values: 'sigmoid' or 'softmax'.")
@@ -104,9 +107,6 @@ class DeformableDETR(nn.Module):
         self.background_class = num_classes if self.activation_fn == "softmax" else None
         num_classes += 1 if self.activation_fn == "softmax" else 0  # Add bg class
 
-        self.class_embed = nn.Linear(self.hidden_dim, num_classes)
-        self.bbox_embed = MLP(self.hidden_dim, self.hidden_dim, 4, 3)
-        self.query_embed = nn.Embedding(num_queries, self.hidden_dim * 2)
         # Projection for Multi-scale features
         if num_feature_levels > 1:
             num_backbone_outs = len(backbone.strides) - 1  # Ignore backbone.layer1
@@ -137,8 +137,11 @@ class DeformableDETR(nn.Module):
                     )
                 ]
             )
+        self.query_embed = nn.Embedding(num_queries, self.hidden_dim * 2)
+        self.transformer = transformer
+        self.class_embed = nn.Linear(self.hidden_dim, num_classes)
+        self.bbox_embed = MLP(self.hidden_dim, self.hidden_dim, 4, 3)
 
-        self.backbone = backbone
         self.aux_loss = aux_loss
         self.with_box_refine = with_box_refine
         self.tracing = tracing
@@ -191,6 +194,22 @@ class DeformableDETR(nn.Module):
     def tracing(self, is_tracing):
         self._tracing = is_tracing
         self.backbone.tracing = is_tracing
+    
+    @staticmethod
+    def in_img_preprocess(frames):
+        frames = frames.permute(0, 3, 1, 2)
+        frames = frames.div(255)
+        
+        n_shape = [1] * len(frames.shape)
+        n_shape[1] = 3
+        
+        mean_std = ((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
+        std_tensor = torch.tensor(mean_std[1], device=frames.device).view(tuple(n_shape))
+        mean_tensor = torch.tensor(mean_std[0], device=frames.device).view(tuple(n_shape))
+
+        frames = frames - mean_tensor
+        frames = frames / std_tensor
+        return frames
 
     @assert_and_export_onnx(check_mean_std=True, input_mean_std=INPUT_MEAN_STD)
     def forward(self, frames: aloscene.Frame, **kwargs):
@@ -222,15 +241,21 @@ class DeformableDETR(nn.Module):
             - :attr:`dec_outputs`: Optional, only returned when transformer decoder outputs are activated.
         """
 
+        if self.tracing:
+            if self.include_preprocessing:
+                frame_masks = torch.zeros((1, 1, *frames.shape[1:3]), dtype=torch.float32)
+                frame_masks = frame_masks.to(frames.device)
+                frames = self.in_img_preprocess(frames)
+            else:
+                frame_masks = torch.zeros((1, 1, *frames.shape[-2:]), dtype=torch.float32)
+                frame_masks = frame_masks.to(frames.device)
+            frames = torch.cat([frames, frame_masks], dim=1)
+        else:
+            assert next(self.parameters()).is_cuda, "DeformableDETR cannot run on CPU (due to MSdeformable op)"
+            frame_masks = frames.mask.as_tensor()
+
         # ==== Backbone
         features, pos = self.backbone(frames, **kwargs)
-
-        assert next(self.parameters()).is_cuda, "DeformableDETR cannot run on CPU (due to MSdeformable op)"
-
-        if self.tracing:
-            frame_masks = frames[:, 3:4]
-        else:
-            frame_masks = frames.mask.as_tensor()
 
         # ==== Transformer
         srcs = []
@@ -616,11 +641,15 @@ class DeformableDETR(nn.Module):
             n_points=dec_n_points,
         )
 
-    def build_decoder(self, dec_layers: int = 6, return_intermediate_dec: bool = True):
+    def build_decoder(self, dec_layers: int = 6, return_intermediate_dec: bool = True, hidden_dim: int = 256, num_feature_levels: int = 4):
         """Build decoder layer
 
         Parameters
         ----------
+        hidden_dim : int, optional
+            Hidden dimension size, by default 256
+        num_feature_levels : int, optional
+            Number of feature levels, by default 4
         dec_layers : int, optional
             Number of decoder layers, by default 6
         return_intermediate_dec : bool, optional
@@ -631,7 +660,7 @@ class DeformableDETR(nn.Module):
         :class:`~alonet.deformable.deformable_transformer.DeformableTransformerDecoder`
             Transformer decoder
         """
-        decoder_layer = self.build_decoder_layer()
+        decoder_layer = self.build_decoder_layer(hidden_dim=hidden_dim, num_feature_levels=num_feature_levels)
 
         return DeformableTransformerDecoder(decoder_layer, dec_layers, return_intermediate_dec)
 
@@ -678,7 +707,7 @@ class DeformableDETR(nn.Module):
         :mod:`Transformer <alonet.detr.transformer>`
             Transformer module
         """
-        decoder = self.build_decoder()
+        decoder = self.build_decoder(hidden_dim=hidden_dim, num_feature_levels=num_feature_levels)
 
         return DeformableTransformer(
             decoder=decoder,

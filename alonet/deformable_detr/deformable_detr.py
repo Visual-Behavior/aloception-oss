@@ -240,7 +240,6 @@ class DeformableDETR(nn.Module):
             - :attr:`enc_outputs`: Optional, only returned when transformer encoder outputs are activated.
             - :attr:`dec_outputs`: Optional, only returned when transformer decoder outputs are activated.
         """
-        assert next(self.parameters()).is_cuda, "DeformableDETR cannot run on CPU (due to MSdeformable op)"
 
         if self.tracing:
             if self.include_preprocessing:
@@ -252,6 +251,7 @@ class DeformableDETR(nn.Module):
                 frame_masks = frame_masks.to(frames.device)
             frames = torch.cat([frames, frame_masks], dim=1)
         else:
+            assert next(self.parameters()).is_cuda, "DeformableDETR cannot run on CPU (due to MSdeformable op)"
             frame_masks = frames.mask.as_tensor()
 
         # ==== Backbone

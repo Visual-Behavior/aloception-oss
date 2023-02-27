@@ -152,27 +152,6 @@ class AloTransform(object):
 
             return frames
 
-    # def add_new_mask(self,frame:Frame):
-    #     """Adds a mask during the transforms that can create invalid pixels"""
-    #     if frame.mask is None:
-    #     #if the frame has no mask, create a mask to keep track of the pixels becoming invalid during the transform
-    #     #then the Mask class implementation of the spatial shift is applied by recursive_apply_on_children fct
-    #         if frame.names==("H","W"):
-    #             shape=frame.shape
-    #         elif "C" in frame.names:
-    #             new_shape=[]
-    #             for i,name in enumerate(frame.names):
-    #                 if name!="C":
-    #                     new_shape.append(frame.shape[i])
-    #                 else:
-    #                     new_shape.append(1)
-
-    #             shape=torch.Size(new_shape)
-    #         else:
-    #             raise Exception(f"Expected frame.names to contain C dimension, but got {frame.names}")
-
-    #         frame.append_mask(Mask(torch.zeros(shape), names=frame.names))
-
 
 class Compose(AloTransform):
     def __init__(self, transforms: AloTransform, *args, **kwargs):
@@ -743,7 +722,6 @@ class SpatialShift(AloTransform):
         frame: Frame
             Frame to apply the transformation on
         """
-        # self.add_new_mask(frame)
 
         n_frame = frame.spatial_shift(self.percentage[0], self.percentage[1])
         return n_frame

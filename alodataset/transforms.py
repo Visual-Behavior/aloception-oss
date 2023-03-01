@@ -527,7 +527,7 @@ class RandomResizeWithAspectRatio(AloTransform):
         return frame
 
 
-class Resize(AloTransform):
+class RandomResize(AloTransform):
     def __init__(self, size: tuple, *args, **kwargs):
         """Reszie the given frame to the target frame size.
 
@@ -560,7 +560,7 @@ class Resize(AloTransform):
         return frame
 
 
-class Rotate(AloTransform):
+class RandomRotate(AloTransform):
     def __init__(self, angle: float, *args, **kwargs):
         """Rotate the given frame using the given rotation angle.
 

@@ -30,7 +30,7 @@ def tensor_equal(frame1, frame2):
 
 def test_frame_from_dt():
     # Go through the loaded sequence
-    for data in waymo_dataset.stream_loader():
+    for data in waymo_dataset.stream_loader(num_workers=1):
         assert data["front"].shape[:2] == (2, 3)
         assert data["front"].names == ("T", "C", "H", "W")
         # It should be instance of list since the dataset return a sequence and the
@@ -451,7 +451,7 @@ def test_recursive_temporal_batch_bis():
 
 def test_pad():
     S = 600
-    frame = aloscene.Frame(np.random.uniform(0, 1, (3, 600, 600)), normalization="01", names=("C", "H", "W"))
+    frame = aloscene.Frame(np.random.uniform(0, 1, (3, S, S)), normalization="01", names=("C", "H", "W"))
     frame = frame.norm_resnet()
     boxes1 = BoundingBoxes2D(
         np.array([[0.5, 0.5, 0.5, 0.5], [0.5, 0.5, 0.1, 0.1]]), boxes_format="xcyc", absolute=False, names=("N", None)
@@ -462,6 +462,11 @@ def test_pad():
     frame.append_boxes2d(boxes1, "boxes1")
     frame.append_boxes2d(boxes2, "boxes2")
     n_frame = frame.pad(offset_y=(0.0, 0.1), offset_x=(0.0, 0.1))
+
+    # test argument `multiple`
+    for m in range(1, 256):
+        new_h, new_w = frame.pad(multiple=m).shape[-2:]
+        assert (new_h % m == 0) and (new_w % m == 0)
 
 
 def test_device_propagation():

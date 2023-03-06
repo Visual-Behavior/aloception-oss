@@ -50,7 +50,7 @@ class DetrTRTExporter(BaseTRTExporter):
 
 
 if __name__ == "__main__":
-    from alonet.common.weights import vb_fodler
+    from alonet.common.pl_helpers import vb_folder
 
     # test script
     parser = argparse.ArgumentParser()
@@ -62,7 +62,7 @@ if __name__ == "__main__":
     # parser.add_argument("--image_chw")
     args = parser.parse_args()
     if args.onnx_path is None:
-        args.onnx_path = os.path.join(vb_fodler(), "weights", "detr-r50", "detr-r50.onnx")
+        args.onnx_path = os.path.join(vb_folder(), "weights", "detr-r50", "detr-r50.onnx")
     device = torch.device("cpu") if args.cpu else torch.device("cuda")
 
     input_shape = [3] + list(args.HW)

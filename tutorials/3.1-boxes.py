@@ -3,7 +3,7 @@ from alodataset import WaymoDataset, Split
 import torch
 
 frames = WaymoDataset(split=Split.VAL, cameras=["front"], labels=["gt_boxes_2d"], sequence_size=2,).get(
-    42
+    2
 )["front"]
 
 ######

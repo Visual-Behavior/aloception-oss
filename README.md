@@ -1,10 +1,10 @@
 <p align="center">
-  <img src="images/aloception.png" style="text-align:center; width: 50%;" alt="Logo aloception" />
+  <img src="images/aloception-oss.jpg" style="text-align:center; width: 50%;" alt="Logo aloception" />
 </p>
 
 <a href="https://visual-behavior.github.io/aloception-oss/">Documentation</a>
 
-[![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-0.3.0-green.svg)](https://conventionalcommits.org)
+[![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-0.5.0-green.svg)](https://conventionalcommits.org)
 
 # Aloception open source software
 
@@ -75,6 +75,26 @@ training pipelines with **augmented tensors**.
 
 ## Installation
 
+### Docker install
+
+```
+docker build -t aloception-oss:cuda-11.3.1-pytorch1.13.1-lightning1.9.0 .
+```
+
+```
+docker run --gpus all -it -v /YOUR/WORKSPACE/:/workspace --privileged -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix aloception-oss:cuda-11.3.1-pytorch1.13.1-lightning1.9.0
+```
+
+Or without building the image
+
+```
+docker run --gpus all -it -v /YOUR/WORKSPACE/:/workspace --privileged -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix visualbehaviorofficial/aloception-oss:cuda-11.3.1-pytorch1.13.1-lightning1.9.0
+```
+
+
+
+### Pip install
+
 You first need to install PyTorch 1.10.1 based on your hardware and environment
 configuration. Please refer to the [pytorch website](https://pytorch.org/get-started/locally/) for this installation.
 
@@ -90,7 +110,7 @@ Alternatively, you can clone the repository and use:
 pip install -e aloception-oss/
 ```
 
-Or setup the repo yourself in your env and install the dependencies 
+Or setup the repo yourself in your env and install the dependencies
 
 ```sh
 pip install -r requirements.txt

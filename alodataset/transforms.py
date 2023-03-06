@@ -14,7 +14,7 @@ from aloscene import Frame, Flow, Mask
 
 
 class AloTransform(object):
-    def __init__(self, same_on_sequence: bool = True, same_on_frames: bool = False, p: float = 0.5):
+    def __init__(self, same_on_sequence: bool = True, same_on_frames: bool = False, p: float = 1.0):
         """Alo Transform. Each transform in the project should
         inhert from this class.
 
@@ -561,24 +561,28 @@ class Resize(AloTransform):
 
 
 class Rotate(AloTransform):
-    def __init__(self, angle: float, *args, **kwargs):
-        """Rotate the given frame using the given rotation angle.
+    def __init__(self, angle: float, center=None, *args, **kwargs):
+        """Rotate the given frame using the given rotation angle around the given rotation center.
 
         Parameters
         ----------
         angle: float, between 0 and 360
+        center: list or tuple of coordinates.
+            Coordinates should be in absolute format (in range [0, W] and [0, H]). Default is the center of the frame.
         """
         assert isinstance(angle, float)
         self.angle = angle
+        self.center = center
         super().__init__(*args, **kwargs)
 
     def sample_params(self):
         """Sample an `angle` from the list of possible `angles`"""
-        return (self.angle,)
+        return (self.angle, self.center)
 
-    def set_params(self, angle):
+    def set_params(self, angle, center):
         """Given predefined params, set the params on the class"""
         self.angle = angle
+        self.center = center
 
     def apply(self, frame: Frame):
         """Apply the transformation
@@ -588,7 +592,7 @@ class Rotate(AloTransform):
         frame: Frame
             Frame to apply the transformation on
         """
-        frame = frame.rotate(self.angle)
+        frame = frame.rotate(self.angle, self.center)
         return frame
 
 
@@ -768,7 +772,6 @@ class ColorJitter(AloTransform, torchvision.transforms.ColorJitter):
         -------
         n_frame: aloscene.Frame
         """
-
         n_frame = frame.norm01()
 
         frame_data = n_frame.data.as_tensor()

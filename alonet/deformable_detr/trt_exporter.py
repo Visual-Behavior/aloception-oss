@@ -9,47 +9,21 @@ import numpy as np
 import onnx_graphsurgeon as gs
 from alonet.torch2trt import utils
 
-from torch.onnx import register_custom_op_symbolic
 
 from aloscene import Frame
+from alonet.torch2trt import BaseTRTExporter
 from alonet.torch2trt.utils import get_nodes_by_op
 from alonet.torch2trt.onnx_hack import _add_grid_sampler_to_opset13
 from alonet.deformable_detr import DeformableDetrR50, DeformableDetrR50Refinement
-from alonet.torch2trt import BaseTRTExporter, MS_DEFORM_IM2COL_PLUGIN_LIB, load_trt_custom_plugins
-
-CUSTOM_OP_VERSION = 9
-
-
-def symbolic_ms_deform_attn_forward(
-    g, value, value_spatial_shapes, value_level_start_index, sampling_locations, attention_weights, im2col_step
-):
-    return g.op(
-        "alonet_custom::ms_deform_attn_forward",
-        value,
-        value_spatial_shapes,
-        value_level_start_index,
-        sampling_locations,
-        attention_weights,
-        im2col_step,
-    )
-
-
-register_custom_op_symbolic(
-    "alonet_custom::ms_deform_attn_forward", symbolic_ms_deform_attn_forward, CUSTOM_OP_VERSION
-)
-
-
-def load_trt_plugins_for_deformable_detr():
-    load_trt_custom_plugins(MS_DEFORM_IM2COL_PLUGIN_LIB)
 
 
 class DeformableDetrTRTExporter(BaseTRTExporter):
-    def __init__(self, model_name="deformable-detr-r50", weights="deformable-detr-r50", *args, **kwargs):
+    def __init__(self, model_name="deformable-detr-r50", weights="deformable-detr-r50", include_preprocessing=False, *args, **kwargs):
         _add_grid_sampler_to_opset13()
         super().__init__(*args, **kwargs)
         self.weights = weights
         self.do_constant_folding = False
-        self.custom_opset = {"alonet_custom": 1}
+        self.include_preprocessing = include_preprocessing
         self.adapted_onnx_path = self.onnx_path.replace(".onnx", "_TRTadapted") + ".onnx"
 
     def get_onnx_path(self):
@@ -145,11 +119,15 @@ class DeformableDetrTRTExporter(BaseTRTExporter):
     def prepare_sample_inputs(self):
         assert len(self.input_shapes) == 1, "DETR takes only 1 input"
         shape = self.input_shapes[0]
-        x = torch.rand(shape, dtype=torch.float32)
-        x = Frame(x, names=["C", "H", "W"]).norm_resnet()
-        x = Frame.batch_list([x] * self.batch_size).to(self.device)
-        tensor_input = (x.as_tensor(), x.mask.as_tensor())
-        tensor_input = torch.cat(tensor_input, dim=1)  # [b, 4, H, W]
+        if self.include_preprocessing:
+            tensor_input = torch.rand([1 * self.batch_size] + shape, dtype=torch.float32).to(self.device)
+            tensor_input = tensor_input * 255
+        else:
+            x = torch.rand(shape, dtype=torch.float32)
+            x = Frame(x, names=["C", "H", "W"]).norm_resnet()
+            x = Frame.batch_list([x] * self.batch_size).to(self.device)
+            tensor_input = (x.as_tensor(), x.mask.as_tensor())
+            tensor_input = torch.cat(tensor_input, dim=1)  # [b, 4, H, W]
         return (tensor_input,), {"is_export_onnx": None}
 
 
@@ -157,11 +135,12 @@ if __name__ == "__main__":
     from alonet.common.pl_helpers import vb_folder
 
 
-    load_trt_plugins_for_deformable_detr()
+    # load_trt_plugins_for_deformable_detr()
     device = torch.device("cuda")
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--refinement", action="store_true", help="If set, use box refinement")
+    parser.add_argument("--include_preprocessing", action="store_true", help="Includes image preprocessing in the graph")
     parser.add_argument(
         "--HW", type=int, nargs=2, default=[1280, 1920], help="Height and width of input image, default 1280 1920"
     )
@@ -171,7 +150,11 @@ if __name__ == "__main__":
 
     if args.refinement:
         model_name = "deformable-detr-r50-refinement"
-        model = DeformableDetrR50Refinement(weights=model_name, tracing=True, aux_loss=False).eval()
+        model = DeformableDetrR50Refinement(
+            weights=model_name,
+            tracing=True,
+            aux_loss=False,
+            include_preprocessing=args.include_preprocessing).eval()
     else:
         model_name = "deformable-detr-r50"
         model = DeformableDetrR50(weights=model_name, tracing=True, aux_loss=False).eval()
@@ -179,7 +162,10 @@ if __name__ == "__main__":
     if args.onnx_path is None:
         args.onnx_path = os.path.join(vb_folder(), "weights", model_name, model_name + ".onnx")
 
-    input_shape = [3] + list(args.HW)
+    if args.include_preprocessing:
+        input_shape = list(args.HW) + [3]
+    else:
+        input_shape = [3] + list(args.HW)
 
     exporter = DeformableDetrTRTExporter(
         model=model, weights=model_name, input_shapes=(input_shape,), input_names=["img"], device=device, **vars(args)

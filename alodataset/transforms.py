@@ -14,7 +14,7 @@ from aloscene import Frame, Flow, Mask
 
 
 class AloTransform(object):
-    def __init__(self, same_on_sequence: bool = True, same_on_frames: bool = False, p: float = 0.5):
+    def __init__(self, same_on_sequence: bool = True, same_on_frames: bool = False, p: float = 1.0):
         """Alo Transform. Each transform in the project should
         inhert from this class.
 
@@ -782,7 +782,6 @@ class ColorJitter(AloTransform, torchvision.transforms.ColorJitter):
         -------
         n_frame: aloscene.Frame
         """
-
         n_frame = frame.norm01()
 
         frame_data = n_frame.data.as_tensor()

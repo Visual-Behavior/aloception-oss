@@ -175,7 +175,13 @@ class MetricsCallback(pl.Callback):
             )
 
         self._process_train_metrics(outputs)
-        if trainer.fit_loop._should_accumulate() or (trainer.global_step + 1) % trainer.log_every_n_steps != 0:
+        try:
+            # lightning 1.4
+            should_accumulate = trainer.fit_loop.should_accumulate()
+        except:
+            # lightning >= 1.5
+            should_accumulate = trainer.fit_loop._should_accumulate()
+        if should_accumulate or (trainer.global_step + 1) % trainer.log_every_n_steps != 0:
             return
 
         self._log_train_metrics(pl_module, trainer)

@@ -121,7 +121,6 @@ class MetricsCallback(pl.Callback):
     def _log_train_metrics(self, pl_module, trainer):
         # Log the results
         for key in self.metrics:
-
             if "histogram" in key and len(self.metrics[key]) > 0:
                 hist = torch.cat(self.metrics[key]).to("cpu")
                 log_hist(trainer, f"train/{key}", hist)
@@ -138,7 +137,7 @@ class MetricsCallback(pl.Callback):
                 )
 
     @rank_zero_only
-    def on_train_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx):
+    def on_train_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx=0):
         """Method called after each training batch. This class is a pytorch lightning callback, therefore
         this method will by automatically called by pytorch lightning.
 

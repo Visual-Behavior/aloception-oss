@@ -169,7 +169,6 @@ def load_training(
     weights_path = getattr(args, "weights", None) if args is not None else None
     no_run_id = args.no_run_id if no_run_id is None and "no_run_id" in args else no_run_id
 
-
     if "weights" in kwargs and kwargs["weights"] is not None:  # Highest priority
         weights_path = kwargs["weights"]
 
@@ -273,13 +272,12 @@ def run_pl_training(
     # Init trainer and run training
     trainer = pl.Trainer.from_argparse_args(
         args,
-        # default_root_dir=expe_dir,
-        gpus=-1 if not args.cpu else 0,
+        accelerator="gpu" if not args.cpu else "cpu",
         auto_select_gpus=not args.cpu,
         logger=logger,
         callbacks=callbacks,
         resume_from_checkpoint=resume_from_checkpoint,
-        accelerator=None if torch.cuda.device_count() <= 1 else "ddp",
+        strategy="ddp" if torch.cuda.device_count() >= 2 else None,
         **pl_trainer,
     )
 

@@ -34,5 +34,5 @@ WORKDIR /workspace
 RUN pip install --pre torch==${pytorch} torchvision==${torchvision} torchaudio==${torchaudio} --index-url https://download.pytorch.org/whl/nightly/cu117
 RUN pip install pytorch_lightning==${pytorch_lightning}
 
-COPY requirements-torch1.13.1.txt /install/requirements-torch1.13.1.txt
-RUN pip install -r /install/requirements-torch1.13.1.txt
+COPY requirements-torch2.1.txt /install/requirements-torch2.1.txt
+RUN pip install -r /install/requirements-torch2.1.txt

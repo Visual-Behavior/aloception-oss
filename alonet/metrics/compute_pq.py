@@ -29,11 +29,12 @@ class PQStatCat(object):
 
 
 class PQMetrics(object):
-    def __init__(self):
+    def __init__(self, iou_threshold=0.5):
         self.pq_per_cat = defaultdict(PQStatCat)
         self.class_names = None
         self.isfull = False
         self.categories = dict()
+        self.iou_threshold = iou_threshold
 
     def __getitem__(self, label_id: int):
         return self.pq_per_cat[label_id]
@@ -113,6 +114,9 @@ class PQMetrics(object):
             pq += pq_class
             sq += sq_class
             rq += rq_class
+
+        if n == 0:
+            n = 1
 
         result = {"pq": pq / n, "sq": sq / n, "rq": rq / n, "n": n}
         if print_result:
@@ -222,7 +226,7 @@ class PQMetrics(object):
                 - gt_pred_map.get((VOID, pred_label), 0)
             )
             iou = intersection / union
-            if iou > 0.5:  # Add matches from this IoU (take from original paper)
+            if iou > self.iou_threshold:  # Add matches from this IoU (take from original paper)
                 self.pq_per_cat[gt_segms[gt_label]["cat_id"]].tp += 1
                 self.pq_per_cat[gt_segms[gt_label]["cat_id"]].iou += iou
                 gt_matched.add(gt_label)

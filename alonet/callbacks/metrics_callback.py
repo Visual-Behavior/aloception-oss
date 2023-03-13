@@ -137,7 +137,7 @@ class MetricsCallback(pl.Callback):
                 )
 
     @rank_zero_only
-    def on_train_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx=0):
+    def on_train_batch_end(self, trainer, pl_module, outputs, batch, batch_idx):
         """Method called after each training batch. This class is a pytorch lightning callback, therefore
         this method will by automatically called by pytorch lightning.
 
@@ -175,12 +175,7 @@ class MetricsCallback(pl.Callback):
             )
 
         self._process_train_metrics(outputs)
-        try:
-            # lightning 1.4
-            should_accumulate = trainer.fit_loop.should_accumulate()
-        except:
-            # lightning >= 1.5
-            should_accumulate = trainer.fit_loop._should_accumulate()
+        should_accumulate = trainer.fit_loop._should_accumulate()
         if should_accumulate or (trainer.global_step + 1) % trainer.log_every_n_steps != 0:
             return
 

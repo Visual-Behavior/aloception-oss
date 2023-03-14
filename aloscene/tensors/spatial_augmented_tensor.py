@@ -526,7 +526,7 @@ class SpatialAugmentedTensor(AugmentedTensor):
         if ("N" in self.names and self.size("N") == 0) or ("C" in self.names and self.size("C") == 0):
             shapes = list(self.shape)[:-2] + [h, w]
             return self.rename(None).view(shapes).reset_names()
-        return F.resize(self.rename(None), (h, w), interpolation=interpolation, antialias=True).reset_names()
+        return F.resize(self.rename(None), (h, w), interpolation=interpolation).reset_names()
 
     def _rotate(self, angle, center=None,**kwargs):
         """Rotate SpatialAugmentedTensor, but not its labels
@@ -548,7 +548,7 @@ class SpatialAugmentedTensor(AugmentedTensor):
         ), "rotation is not possible on an empty tensor"
         return F.rotate(self.rename(None), angle,center=center).reset_names()
 
-    def _crop(self, H_crop: tuple, W_crop: tuple, warn_non_integer=True, **kwargs):
+    def _crop(self, H_crop: tuple, W_crop: tuple, **kwargs):
         """Crop the SpatialAugmentedTensor
 
         Parameters
@@ -557,8 +557,6 @@ class SpatialAugmentedTensor(AugmentedTensor):
             (start, end) between 0 and 1
         W_crop: tuple
             (start, end) between 0 and 1
-        warn_non_integer: bool
-            If True, warn if the crop is not integer
 
         Returns
         -------
@@ -566,7 +564,7 @@ class SpatialAugmentedTensor(AugmentedTensor):
             cropped SpatialAugmentedTensor
         """
 
-        H_crop, W_crop = self._relative_to_absolute_hs_ws(H_crop, W_crop, assert_integer=False, warn_non_integer=warn_non_integer)
+        H_crop, W_crop = self._relative_to_absolute_hs_ws(H_crop, W_crop, assert_integer=False, warn_non_integer=True)
         hmin, hmax = H_crop
         wmin, wmax = W_crop
         slices = self.get_slices({"H": slice(hmin, hmax), "W": slice(wmin, wmax)})

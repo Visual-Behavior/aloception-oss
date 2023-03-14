@@ -4,10 +4,10 @@ FROM nvidia/cuda:11.3.1-cudnn8-devel-ubuntu20.04
 #FROM nvidia/cuda:11.6.0-cudnn8-devel-ubuntu20.04
 
 ARG py=3.9
-ARG pytorch=1.13.1
-ARG torchvision=0.14.1
-ARG torchaudio=0.13.1
-ARG pytorch_lightning=1.9.0
+ARG pytorch=2.1.0.dev20230313+cu117
+ARG torchvision=0.15.0.dev20230313+cu117
+ARG torchaudio=2.0.0.dev20230313+cu117
+ARG pytorch_lightning=1.9.3
 ARG pycyda=11.7
 
 ENV TZ=Europe/Paris
@@ -30,8 +30,9 @@ ENV HOME /workspace
 WORKDIR /workspace
 
 # Pytorch & pytorch litning
-RUN conda install pytorch==${pytorch} torchvision==${torchvision} torchaudio==${torchaudio} pytorch-cuda=${pycuda} -c pytorch -c nvidia
+#RUN conda install py pytorch-cuda=${pycuda} -c pytorch -c nvidia
+RUN pip install --pre torch==${pytorch} torchvision==${torchvision} torchaudio==${torchaudio} --index-url https://download.pytorch.org/whl/nightly/cu117
 RUN pip install pytorch_lightning==${pytorch_lightning}
 
-COPY requirements-torch1.13.1.txt /install/requirements-torch1.13.1.txt
-RUN pip install -r /install/requirements-torch1.13.1.txt
+COPY requirements-torch2.1.txt /install/requirements-torch2.1.txt
+RUN pip install -r /install/requirements-torch2.1.txt

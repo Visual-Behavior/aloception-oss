@@ -34,5 +34,7 @@ WORKDIR /workspace
 RUN pip install --pre torch==${pytorch} torchvision==${torchvision} torchaudio==${torchaudio} --index-url https://download.pytorch.org/whl/nightly/cu117
 RUN pip install pytorch_lightning==${pytorch_lightning}
 
-COPY requirements-torch2.1.txt /install/requirements-torch2.1.txt
+COPY requirements/requirements-torch2.1.txt /install/requirements-torch2.1.txt
 RUN pip install -r /install/requirements-torch2.1.txt
+COPY ./aloscene/utils /install/utils
+RUN cd /install/utils/rotated_iou/cuda_op/; python setup.py install --user

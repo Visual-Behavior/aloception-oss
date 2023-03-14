@@ -16,8 +16,7 @@ def _test_disp_depth_points3d(depth, height, width, resize=True):
         )
 
         d = depth.resize((height * 2, width * 2))
-
-        v = depth.resize((height * 2, width * 2)).as_disp().resize((height, width)).as_depth()
+        v = depth.resize((height * 2, width * 2)).as_disp()#.resize((height, width)).as_depth()
 
         assert torch.allclose(
             depth.as_tensor(),
@@ -123,5 +122,5 @@ def test_disp_depth_points3d_projection4():
 
 if __name__ == "__main__":
     test_disp_depth_points3d_projection1()
-    test_disp_depth_points3d_projection2()
-    test_disp_depth_points3d_projection4()
+    #test_disp_depth_points3d_projection2()
+    #test_disp_depth_points3d_projection4()

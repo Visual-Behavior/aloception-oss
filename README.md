@@ -78,17 +78,17 @@ training pipelines with **augmented tensors**.
 ### Docker install
 
 ```
-docker build -t aloception-oss:cuda-11.7-pytorch2.1.0-lightning1.9.3 .
+docker build -t aloception-oss:cuda-11.3.1-pytorch1.13.1-lightning1.9.0 .
 ```
 
 ```
-docker run --gpus all -it -v /YOUR/WORKSPACE/:/workspace --privileged -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix aloception-oss:cuda-11.7-pytorch2.1.0-lightning1.9.3
+docker run --gpus all -it -v /YOUR/WORKSPACE/:/workspace --privileged -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix aloception-oss:cuda-11.3.1-pytorch1.13.1-lightning1.9.0
 ```
 
 Or without building the image
 
 ```
-docker run --gpus all -it -v /YOUR/WORKSPACE/:/workspace --privileged -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix visualbehaviorofficial/aloception-oss:cuda-11.7-pytorch2.1.0-lightning1.9.3
+docker run --gpus all -it -v /YOUR/WORKSPACE/:/workspace --privileged -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix visualbehaviorofficial/aloception-oss:cuda-11.3.1-pytorch1.13.1-lightning1.9.0
 ```
 
 

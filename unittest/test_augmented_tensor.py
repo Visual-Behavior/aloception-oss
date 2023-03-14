@@ -64,8 +64,3 @@ def test_batch_list_intersection_unmergeable_child():
     assert len(f.flow) == 2
     assert f.flow[0].shape == (2, 10, 10)
     assert f.flow[1] is None
-
-if __name__ == "__main__":
-    test_batch_list_intersection_property()
-    test_batch_list_intersection_mergeable_child()
-    test_batch_list_intersection_unmergeable_child()

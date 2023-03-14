@@ -4,7 +4,7 @@
 
 <a href="https://visual-behavior.github.io/aloception-oss/">Documentation</a>
 
-[![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-0.5.1-green.svg)](https://conventionalcommits.org)
+[![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-0.6.0-green.svg)](https://conventionalcommits.org)
 
 # Aloception open source software
 

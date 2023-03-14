@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 setup(
     name='aloception',
     author='Visual Behavior',
-    version='0.5.1',
+    version='0.6.0',
     description='Aloception is a set of package for computer vision: aloscene, alodataset, alonet.',
     packages=find_packages(include=['aloscene', 'alodataset', 'alonet']),
     url='https://visualbehavior.ai/',

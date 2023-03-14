@@ -29,11 +29,12 @@ class PQStatCat(object):
 
 
 class PQMetrics(object):
-    def __init__(self):
+    def __init__(self, iou_threshold=0.5):
         self.pq_per_cat = defaultdict(PQStatCat)
         self.class_names = None
         self.isfull = False
         self.categories = dict()
+        self.iou_threshold = iou_threshold
 
     def __getitem__(self, label_id: int):
         return self.pq_per_cat[label_id]
@@ -75,7 +76,7 @@ class PQMetrics(object):
             )
             self.isfull = False
 
-    def pq_average(self, isthing: bool = None, print_result: bool = False, **kwargs):
+    def pq_average(self, isthing: bool = None, print_result: bool = False, recall_precision: bool = False, **kwargs):
         """Calculate SQ, RQ and PQ metrics from the categories, and thing/stuff/all if desired
 
         Parameters
@@ -85,6 +86,8 @@ class PQMetrics(object):
             By default the metric is executed over both
         print_result : bool
             Print result in console, by default False
+        recall_precision : bool
+            Include precision and reacall.
 
         Returns
         -------
@@ -92,6 +95,8 @@ class PQMetrics(object):
             Dictionaries with general PQ average metrics and for each class, respectively
         """
         pq, sq, rq, n = 0, 0, 0, 0
+        t_fp, t_fn, t_tp = 0, 0, 0
+
         per_class_results = {}
         for label, label_info in self.categories.items():
             if isthing is not None:
@@ -110,11 +115,23 @@ class PQMetrics(object):
             sq_class = iou / tp if tp != 0 else 0
             rq_class = tp / (tp + 0.5 * fp + 0.5 * fn)
             per_class_results[label_info["category"]] = {"pq": pq_class, "sq": sq_class, "rq": rq_class}
+            
             pq += pq_class
             sq += sq_class
             rq += rq_class
 
+            t_fp += fp
+            t_tp += tp
+            t_fn += fn
+
+        if n == 0:
+            n = 1
+
         result = {"pq": pq / n, "sq": sq / n, "rq": rq / n, "n": n}
+        if recall_precision:
+            recall = t_tp / (t_tp + t_fn)
+            precision = t_tp / (t_tp + t_fp)
+            result.update({"precision": precision, "recall": recall})
         if print_result:
             suffix = ""
             if isthing is not None and isthing:
@@ -222,7 +239,7 @@ class PQMetrics(object):
                 - gt_pred_map.get((VOID, pred_label), 0)
             )
             iou = intersection / union
-            if iou > 0.5:  # Add matches from this IoU (take from original paper)
+            if iou > self.iou_threshold:  # Add matches from this IoU (take from original paper)
                 self.pq_per_cat[gt_segms[gt_label]["cat_id"]].tp += 1
                 self.pq_per_cat[gt_segms[gt_label]["cat_id"]].iou += iou
                 gt_matched.add(gt_label)
@@ -245,13 +262,15 @@ class PQMetrics(object):
                 continue
             self.pq_per_cat[pred_info["cat_id"]].fp += 1
 
-    def calc_map(self, print_result: bool = False):
+    def calc_map(self, print_result: bool = False, recall_precision: bool = False):
         """Calcule PQ-RQ-SQ maps
 
         Parameters
         ----------
         print_result : bool, optional
             Print results, by default False
+        recall_precision : bool.
+            Include precision and recall in returned results
 
         Returns
         -------
@@ -267,13 +286,15 @@ class PQMetrics(object):
             keys, cats = ["all"], [None]
         for key, cat in zip(keys, cats):
             if cat is not None or not self.isfull:
-                all_maps[key], all_maps_per_class[key] = self.pq_average(cat,
-                                                                        print_result,
-                                                                        clm_size=9,
-                                                                        head_elm=["PQ", "SQ", "RQ"],
-                                                                        )
+                all_maps[key], all_maps_per_class[key] = self.pq_average(
+                    cat,
+                    print_result,
+                    clm_size=9,
+                    head_elm=["PQ", "SQ", "RQ"],
+                    recall_precision=recall_precision,
+                    )
             else:
-                all_maps[key], all_maps_per_class[key] = self.pq_average(cat)
+                all_maps[key], all_maps_per_class[key] = self.pq_average(cat, recall_precision=recall_precision)
 
         if print_result and self.isfull:
             _print_head(head_elm=["PQ", "SQ", "RQ"], clm_size=9)

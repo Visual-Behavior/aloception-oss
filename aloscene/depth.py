@@ -252,7 +252,7 @@ class Depth(aloscene.tensors.SpatialAugmentedTensor):
         target_names = tuple([n for n in self.names if n not in ("C", "H", "W")] + ["N", None])
         if points is None:
             y_points, x_points = torch.meshgrid(
-                torch.arange(self.H, device=self.device), torch.arange(self.W, device=self.device)
+                torch.arange(self.H, device=self.device), torch.arange(self.W, device=self.device), indexing="ij"
             )
             # Append batch & temporal dimensions
             for _ in range(len(target_shape[:-1])):

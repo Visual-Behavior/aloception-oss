@@ -13,8 +13,8 @@ from . bounding_boxes_3d import BoundingBoxes3D
 from . oriented_boxes_2d import OrientedBoxes2D
 from . scene_flow import SceneFlow
 from . frame import Frame
-from . renderer import Renderer
-from . tensors import AugmentedTensor, SpatialAugmentedTensor
+from renderer import Renderer
+from tensors import AugmentedTensor, SpatialAugmentedTensor
 
 from typing import Union
 

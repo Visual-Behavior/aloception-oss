@@ -1,20 +1,20 @@
 ALOSCENE_ROOT = "/".join(__file__.split("/")[:-1])
-from aloscene.tensors import AugmentedTensor, SpatialAugmentedTensor
-from aloscene.labels import Labels
-from aloscene.camera_calib import CameraExtrinsic, CameraIntrinsic
-from aloscene.mask import Mask
-from aloscene.flow import Flow
-from aloscene.depth import Depth
-from aloscene.points_2d import Points2D
-from aloscene.points_3d import Points3D
-from aloscene.disparity import Disparity
-from aloscene.pose import Pose
-from aloscene.bounding_boxes_2d import BoundingBoxes2D
-from aloscene.bounding_boxes_3d import BoundingBoxes3D
-from aloscene.oriented_boxes_2d import OrientedBoxes2D
-from aloscene.scene_flow import SceneFlow
-from aloscene.frame import Frame
-from aloscene.renderer import Renderer
+from . tensors import AugmentedTensor, SpatialAugmentedTensor
+from . labels import Labels
+from . camera_calib import CameraExtrinsic, CameraIntrinsic
+from . mask import Mask
+from . flow import Flow
+from . depth import Depth
+from . points_2d import Points2D
+from . points_3d import Points3D
+from . disparity import Disparity
+from . pose import Pose
+from . bounding_boxes_2d import BoundingBoxes2D
+from . bounding_boxes_3d import BoundingBoxes3D
+from . oriented_boxes_2d import OrientedBoxes2D
+from . scene_flow import SceneFlow
+from . frame import Frame
+from . renderer import Renderer
 
 from typing import Union
 

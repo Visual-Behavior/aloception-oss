@@ -1,5 +1,4 @@
 ALOSCENE_ROOT = "/".join(__file__.split("/")[:-1])
-from . tensors import AugmentedTensor, SpatialAugmentedTensor
 from . labels import Labels
 from . camera_calib import CameraExtrinsic, CameraIntrinsic
 from . mask import Mask
@@ -15,6 +14,7 @@ from . oriented_boxes_2d import OrientedBoxes2D
 from . scene_flow import SceneFlow
 from . frame import Frame
 from . renderer import Renderer
+from . tensors import AugmentedTensor, SpatialAugmentedTensor
 
 from typing import Union
 

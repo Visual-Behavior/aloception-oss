@@ -7,11 +7,11 @@ import numpy as np
 import cv2
 
 import aloscene
-from aloscene.renderer import View
+from renderer import View
 from aloscene.labels import Labels
 from torchvision.ops.boxes import nms
 
-from aloscene.renderer import View, put_adapative_cv2_text
+from renderer import View, put_adapative_cv2_text
 
 
 class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):

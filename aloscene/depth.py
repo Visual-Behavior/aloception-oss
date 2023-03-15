@@ -7,7 +7,7 @@ from typing import *
 import warnings
 import aloscene
 from aloscene import Mask
-from aloscene.renderer import View
+from renderer import View
 from aloscene.utils.depth_utils import coords2rtheta, add_colorbar
 import numpy as np
 from typing import Union, Tuple

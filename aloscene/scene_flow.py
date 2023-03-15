@@ -4,7 +4,7 @@ from aloscene.io.flow import load_scene_flow
 from typing import Union
 import torch
 import torch.nn.functional as F
-from aloscene.renderer import View
+from renderer import View
 from aloscene.utils.flow_utils import flow_to_color
 
 

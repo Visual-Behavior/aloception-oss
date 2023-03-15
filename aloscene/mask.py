@@ -7,7 +7,7 @@ from typing import Union
 from torch import Tensor
 
 import aloscene
-from aloscene.renderer import View
+from renderer import View
 from aloscene.io.mask import load_mask
 from aloscene.labels import Labels
 

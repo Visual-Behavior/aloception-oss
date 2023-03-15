@@ -5,7 +5,7 @@ from typing import Union
 
 import aloscene
 from aloscene import Mask
-from aloscene.renderer import View
+from renderer import View
 
 from aloscene.io.disparity import load_disp
 

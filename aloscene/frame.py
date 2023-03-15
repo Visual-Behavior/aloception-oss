@@ -5,7 +5,7 @@ from typing import TypeVar, Union
 # from collections import namedtuple
 
 import aloscene
-from aloscene.renderer import View
+from renderer import View
 from aloscene import (
     BoundingBoxes2D,
     BoundingBoxes3D,

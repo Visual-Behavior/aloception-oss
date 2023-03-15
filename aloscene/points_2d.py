@@ -11,11 +11,11 @@ import numpy as np
 import cv2
 
 import aloscene
-from aloscene.renderer import View
+from renderer import View
 from aloscene.labels import Labels
 import torchvision
 from torchvision.ops.boxes import nms
-from aloscene.renderer import View, put_adapative_cv2_text, adapt_text_size_to_frame
+from renderer import View, put_adapative_cv2_text, adapt_text_size_to_frame
 
 
 class Points2D(aloscene.tensors.AugmentedTensor):

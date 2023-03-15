@@ -6,9 +6,9 @@ from typing import Union, Tuple
 
 import aloscene
 from aloscene import BoundingBoxes2D, CameraExtrinsic, CameraIntrinsic
-from aloscene.renderer import View
+from renderer import View
 from aloscene.labels import Labels
-from aloscene.renderer.bbox3d import draw_3D_box
+from renderer.bbox3d import draw_3D_box
 
 # from aloscene.camera_calib import CameraExtrinsic, CameraIntrinsic
 from aloscene.utils.math_utils import get_y_rotation_matrixes, rotation_matrix_to_euler_angles

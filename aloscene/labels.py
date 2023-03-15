@@ -7,7 +7,7 @@ import numpy as np
 import cv2
 
 import aloscene
-from aloscene.renderer import View, put_adapative_cv2_text, adapt_text_size_to_frame
+from renderer import View, put_adapative_cv2_text, adapt_text_size_to_frame
 
 
 class Labels(aloscene.tensors.AugmentedTensor):

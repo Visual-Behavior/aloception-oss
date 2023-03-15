@@ -5,7 +5,7 @@ from torchvision.transforms import InterpolationMode
 import torch
 from typing import Union
 
-from aloscene.renderer import View, Renderer
+from renderer import View, Renderer
 from .augmented_tensor import AugmentedTensor
 import inspect
 import aloscene

@@ -7,7 +7,7 @@ import numpy as np
 import cv2
 
 import aloscene
-from renderer import View
+from aloscene.renderer import View
 from aloscene.labels import Labels
 
 try:
@@ -21,7 +21,7 @@ except Exception as e:
     import_error = e
 
 
-class OrientedBoxes2D(aloscene.tensors.AugmentedTensor):
+class OrientedBoxes2D(aloscene.AugmentedTensor):
     """Oriented Boxes 2D is defined by [x, y, w, h, theta] in which:
     - x, y: center coordinates
     - w, h: width, height

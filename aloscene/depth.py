@@ -7,7 +7,7 @@ from typing import *
 import warnings
 import aloscene
 from aloscene import Mask
-from renderer import View
+from aloscene.renderer import View
 from aloscene.utils.depth_utils import coords2rtheta, add_colorbar
 import numpy as np
 from typing import Union, Tuple
@@ -15,7 +15,7 @@ from typing import Union, Tuple
 from aloscene.io.depth import load_depth
 
 
-class Depth(aloscene.tensors.SpatialAugmentedTensor):
+class Depth(aloscene.SpatialAugmentedTensor):
     """
     Depth map
 

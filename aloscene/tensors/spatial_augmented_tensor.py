@@ -5,8 +5,8 @@ from torchvision.transforms import InterpolationMode
 import torch
 from typing import Union
 
-from renderer import View, Renderer
-from .augmented_tensor import AugmentedTensor
+from aloscene.renderer import View, Renderer
+from aloscene.tensors.augmented_tensor import AugmentedTensor
 import inspect
 import aloscene
 from aloscene.camera_calib import CameraExtrinsic, CameraIntrinsic

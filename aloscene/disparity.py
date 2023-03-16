@@ -5,12 +5,12 @@ from typing import Union
 
 import aloscene
 from aloscene import Mask
-from renderer import View
+from aloscene.renderer import View
 
 from aloscene.io.disparity import load_disp
 
 
-class Disparity(aloscene.tensors.SpatialAugmentedTensor):
+class Disparity(aloscene.SpatialAugmentedTensor):
     """
     Disparity map
 

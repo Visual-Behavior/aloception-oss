@@ -5,7 +5,7 @@ from typing import TypeVar, Union
 # from collections import namedtuple
 
 import aloscene
-from renderer import View
+from aloscene.renderer import View
 from aloscene import (
     BoundingBoxes2D,
     BoundingBoxes3D,
@@ -26,7 +26,7 @@ from aloscene.io.image import load_image
 Frame = TypeVar("Frame")
 
 
-class Frame(aloscene.tensors.SpatialAugmentedTensor):
+class Frame(aloscene.SpatialAugmentedTensor):
     """Augmented Frame tensor. The `Frame` cam be created using the path to an image. Othwewise, if the frame
     is created from a existing tensor or numpy array, the frame dimensions are expected to be ("C", "H", "W").
     If this is not the case, the `names` must be passed to the tensor.

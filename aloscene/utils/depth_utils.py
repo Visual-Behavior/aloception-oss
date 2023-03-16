@@ -1,4 +1,4 @@
-from tensors import AugmentedTensor
+from aloscene import AugmentedTensor
 from typing import Union, Tuple, Sequence
 
 import matplotlib.pyplot as plt

@@ -11,14 +11,13 @@ import numpy as np
 import cv2
 
 import aloscene
-from renderer import View
+from aloscene.renderer import View, put_adapative_cv2_text, adapt_text_size_to_frame
 from aloscene.labels import Labels
 import torchvision
 from torchvision.ops.boxes import nms
-from renderer import View, put_adapative_cv2_text, adapt_text_size_to_frame
 
 
-class Points2D(aloscene.tensors.AugmentedTensor):
+class Points2D(aloscene.AugmentedTensor):
     """Points2D Augmented Tensor. Used to represents 2D points in space encoded as xy or yx. The data must be
     at least 2 dimensional (N, None) where N is the number of points.
 

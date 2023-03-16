@@ -1,6 +1,6 @@
 # from __future__ import annotations
 from typing import Tuple, Union
-from tensors.augmented_tensor import AugmentedTensor
+from aloscene.tensors.augmented_tensor import AugmentedTensor
 import aloscene
 
 

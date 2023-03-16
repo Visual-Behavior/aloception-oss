@@ -2,11 +2,11 @@ from typing import Union
 import aloscene
 from aloscene import Mask
 from aloscene.io.flow import load_flow
-from renderer import View
+from aloscene.renderer import View
 from aloscene.utils.flow_utils import flow_to_color
 
 
-class Flow(aloscene.tensors.SpatialAugmentedTensor):
+class Flow(aloscene.SpatialAugmentedTensor):
     """Optical Flow Map.
 
     Parameters

@@ -7,12 +7,12 @@ from typing import Union
 from torch import Tensor
 
 import aloscene
-from renderer import View
+from aloscene.renderer import View
 from aloscene.io.mask import load_mask
 from aloscene.labels import Labels
 
 
-class Mask(aloscene.tensors.SpatialAugmentedTensor):
+class Mask(aloscene.SpatialAugmentedTensor):
     """
     A mask represent which part of the SpatialAugmentedTensor are valid.
     The value 1 mean invalid and 0 mean valid.

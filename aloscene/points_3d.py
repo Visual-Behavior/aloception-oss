@@ -11,15 +11,12 @@ import numpy as np
 import cv2
 
 import aloscene
-from renderer import View
-from aloscene.labels import Labels
 import torchvision
 from torchvision.ops.boxes import nms
-from renderer import View, put_adapative_cv2_text, adapt_text_size_to_frame
 import itertools
 
 
-class Points3D(aloscene.tensors.AugmentedTensor):
+class Points3D(aloscene.AugmentedTensor):
     """Points3D Augmented Tensor. Used to represents 3D points (points cloud) in space encoded as xyz. The data must be
     at least 2 dimensional (N, None) where N is the number of points.
 

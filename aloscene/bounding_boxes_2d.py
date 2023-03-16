@@ -7,14 +7,14 @@ import numpy as np
 import cv2
 
 import aloscene
-from renderer import View
+from aloscene.renderer import View
 from aloscene.labels import Labels
 from torchvision.ops.boxes import nms
 
-from renderer import View, put_adapative_cv2_text
+from aloscene.renderer import View, put_adapative_cv2_text
 
 
-class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
+class BoundingBoxes2D(aloscene.AugmentedTensor):
     """BoundingBoxes2D Augmented Tensor. Used to represents 2D boxes in space encoded as `xcyc` (xc, yc, width, height
     ), `yxyx` (y_min, x_min, y_max, x_max) or `xyxy` (x_min, y_min, x_max, y_max). The data must be
     at least 2 dimensional (N, None) where N is the number of boxes. The last dimension is supposed to be 4.

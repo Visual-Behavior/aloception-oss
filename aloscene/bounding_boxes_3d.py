@@ -6,9 +6,8 @@ from typing import Union, Tuple
 
 import aloscene
 from aloscene import BoundingBoxes2D, CameraExtrinsic, CameraIntrinsic
-from renderer import View
+from aloscene.renderer import View, draw_3D_box
 from aloscene.labels import Labels
-from renderer.bbox3d import draw_3D_box
 
 # from aloscene.camera_calib import CameraExtrinsic, CameraIntrinsic
 from aloscene.utils.math_utils import get_y_rotation_matrixes, rotation_matrix_to_euler_angles
@@ -23,7 +22,7 @@ except Exception as e:
     import_error = e
 
 
-class BoundingBoxes3D(aloscene.tensors.AugmentedTensor):
+class BoundingBoxes3D(aloscene.AugmentedTensor):
     """
     Bounding Boxes 3D Tensor of shape (n, 7)
     of which the last dimension is : [xc, yc, zc, Dx, Dy, Dz, heading]

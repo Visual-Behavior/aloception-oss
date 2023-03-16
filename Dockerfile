@@ -24,17 +24,23 @@ RUN apt-get install -y gfortran
 RUN apt-get install -y libglib2.0-0
 # Create aloception user
 RUN useradd -m aloception && echo "aloception:aloception" | chpasswd && adduser aloception sudo
-USER aloception
+
 
 ENV HOME /home/aloception
 WORKDIR /home/aloception
 
-RUN wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
-RUN bash Miniconda3-latest-Linux-x86_64.sh -b -p /home/aloception/miniconda
-ENV PATH=$PATH:/home/aloception/miniconda/condabin:/home/aloception/miniconda/bin
+
+RUN wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O /tmp/miniconda.sh && \
+    /bin/bash /tmp/miniconda.sh -b -p /opt/miniconda && \
+    rm /tmp/miniconda.sh
+ENV CONDA_HOME /opt/miniconda
+ENV PATH ${CONDA_HOME}/condabin:${CONDA_HOME}/bin:${PATH}
 RUN /bin/bash -c "source activate base"
 
-RUN chown aloception:aloception /home/aloception
+RUN chown -R aloception:aloception /opt/miniconda
+#RUN chown aloception:aloception /home/aloception
+
+USER aloception
 
 # Pytorch & pytorch litning
 RUN conda install py pytorch-cuda=${pycuda} -c pytorch -c nvidia

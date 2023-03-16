@@ -7,7 +7,7 @@ setup(
     author='Visual Behavior',
     version=verions,
     description='Aloception is a set of package for computer vision: aloscene, alodataset, alonet.',
-    packages=find_packages(include=['aloscene', 'alodataset', 'alonet']),
+    packages=find_packages(include=["aloscene", "aloscene.*", "alodataset", "alodataset.*", "alonet", "alonet.*"]),
     url='https://visualbehavior.ai/',
     download_url='https://github.com/Visual-Behavior/aloception-oss',
     install_requires=[

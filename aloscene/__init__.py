@@ -1,7 +1,7 @@
 ALOSCENE_ROOT = "/".join(__file__.split("/")[:-1])
 
-import aloscene.tensors
-import aloscene.renderer
+#import aloscene.tensors
+#import aloscene.renderer
 from aloscene.tensors import AugmentedTensor, SpatialAugmentedTensor
 from aloscene.renderer import Renderer
 

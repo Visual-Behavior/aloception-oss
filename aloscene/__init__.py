@@ -19,6 +19,9 @@ from . renderer import Renderer
 from typing import Union
 
 
+import pkg_resources
+__version__ = pkg_resources.get_distribution("aloception").version
+
 def batch_list(tensors, intersection=False):
     return SpatialAugmentedTensor.batch_list(tensors, intersection=intersection)
 

@@ -18,13 +18,15 @@ RUN apt-get -y  update; apt-get -y install sudo
 
 RUN apt-get install -y build-essential nano git wget libgl1-mesa-glx
 
-# Usefull for scipy 
-RUN apt-get install -y gfortran 
-# required for aloscene
-RUN apt-get install -y libglib2.0-0
-# Create aloception user
-RUN useradd -m aloception && echo "aloception:aloception" | chpasswd && adduser aloception sudo
+# Usefull for scipy / required for aloscene
+RUN apt-get install -y gfortran  libglib2.0-0
 
+# Install gosu
+RUN apt-get install -y gosu && \
+    rm -rf /var/lib/apt/lists/*
+
+# Create aloception user
+RUN useradd --create-home --uid 1000 --shell /bin/bash aloception && usermod -aG sudo aloception && echo "aloception ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
 ENV HOME /home/aloception
 WORKDIR /home/aloception
@@ -36,9 +38,9 @@ RUN wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -
 ENV CONDA_HOME /opt/miniconda
 ENV PATH ${CONDA_HOME}/condabin:${CONDA_HOME}/bin:${PATH}
 RUN /bin/bash -c "source activate base"
-
-RUN chown -R aloception:aloception /opt/miniconda
-#RUN chown aloception:aloception /home/aloception
+# The following so that any user can install packages inside this Image
+#RUN chown -R aloception:aloception /opt/miniconda
+RUN chmod -R o+w /opt/miniconda && chmod -R o+w /home/aloception
 
 USER aloception
 
@@ -51,4 +53,14 @@ COPY --chown=aloception:aloception requirements/requirements-torch2.1.txt /home/
 RUN pip install -r /home/aloception/install/requirements-torch2.1.txt
 COPY --chown=aloception:aloception  ./aloscene/utils /home/aloception/install/utils
 
-RUN cd /home/aloception/install/utils/rotated_iou/cuda_op/; python setup.py install --user
+#USER root
+#RUN chmod -R o+w /opt/miniconda && chmod -R o+w /home/aloception
+USER root
+
+# Copy the entrypoint script
+COPY entrypoint.sh  /entrypoint.sh
+
+#USER root
+# Set the entrypoint
+ENTRYPOINT ["/entrypoint.sh"]
+#RUN cd /home/aloception/install/utils/rotated_iou/cuda_op/; python setup.py install --user

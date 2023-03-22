@@ -22,8 +22,8 @@ RUN apt-get install -y build-essential nano git wget libgl1-mesa-glx
 RUN apt-get install -y gfortran  libglib2.0-0
 
 # Install gosu
-RUN apt-get install -y gosu && \
-    rm -rf /var/lib/apt/lists/*
+#RUN apt-get install -y gosu && \
+#    rm -rf /var/lib/apt/lists/*
 
 # Create aloception user
 RUN useradd --create-home --uid 1000 --shell /bin/bash aloception && usermod -aG sudo aloception && echo "aloception ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers

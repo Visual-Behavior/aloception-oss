@@ -3,9 +3,9 @@ from setuptools import setup, find_packages
 setup(
     name='aloception',
     author='Visual Behavior',
-    version='0.6.0',
+    version='0.6.0dev',
     description='Aloception is a set of package for computer vision: aloscene, alodataset, alonet.',
-    packages=find_packages(include=['aloscene', 'alodataset', 'alonet']),
+    packages=find_packages(include=["aloscene", "aloscene.*", "alodataset", "alodataset.*", "alonet", "alonet.*"]),
     url='https://visualbehavior.ai/',
     download_url='https://github.com/Visual-Behavior/aloception-oss',
     install_requires=[

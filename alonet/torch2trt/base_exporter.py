@@ -308,7 +308,6 @@ class BaseTRTExporter:
                 self.onnx_path,  # where to save the model
                 export_params=True,  # store the trained parameter weights inside the model file
                 output_names=onames,
-                enable_onnx_checker=True,
                 input_names=self.input_names,  # the model's input names
                 dynamic_axes=self.dynamic_axes,
                 custom_opsets=self.custom_opset,

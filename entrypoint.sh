@@ -15,7 +15,30 @@ fi
 
 echo "Starting with UID : $LOCAL_USER_ID, base user: $BASE_USER"
 
-su -s /bin/bash $BASE_USER 
+export CONDA_HOME=/opt/miniconda; 
+export PATH=${CONDA_HOME}/condabin:${CONDA_HOME}/bin:${PATH}; 
+source activate base; 
+
+#su -s /bin/bash -t $BASE_USER -c "export CONDA_HOME=/opt/miniconda; export PATH=${CONDA_HOME}/condabin:${CONDA_HOME}/bin:${PATH}; source activate base; bash -i";
+#su -s /bin/bash $BASE_USER -c "export CONDA_HOME=/opt/miniconda; export PATH=${CONDA_HOME}/condabin:${CONDA_HOME}/bin:${PATH}; source activate base; $@; script -q /dev/null -c 'bash -i'"
+
+#su -s /bin/bash $BASE_USER -c "export CONDA_HOME=/opt/miniconda; export PATH=${CONDA_HOME}/condabin:${CONDA_HOME}/bin:${PATH}; source activate base; $@; script -q /dev/null -c 'bash -i'"
+if [ "$#" -ne 0 ]; then
+  su -s /bin/bash $BASE_USER -c "export CONDA_HOME=/opt/miniconda; export PATH=${CONDA_HOME}/condabin:${CONDA_HOME}/bin:${PATH}; source activate base; $@; script -q /dev/null -c 'bash -i'"
+else
+  su -s /bin/bash $BASE_USER -c "export CONDA_HOME=/opt/miniconda; export PATH=${CONDA_HOME}/condabin:${CONDA_HOME}/bin:${PATH}; source activate base; script -q /dev/null -c 'bash -i'"
+fi
+
+
+#s
+
+#exec "$@"
+#exec /usr/sbin/gosu $BASE_USER "$@"
+
+
+
+
 # Execute the provided command as the aloception user
 #exec /usr/sbin/gosu $BASE_USER "$@"
-exec "$@"
+#exec "ls"
+#exec "$@"

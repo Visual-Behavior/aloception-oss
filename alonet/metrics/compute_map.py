@@ -163,6 +163,8 @@ class ApMetrics(object):
                 "size_6": [0.04, 0.08],
                 "size_7": [0.08, 0.16],
                 "size_8": [0.16, 0.32],
+                "size_9": [0.32, 0.64],
+                "size_ 10": [0.64, 1.0],
             }
             self.ap_data_size = {
                 "box": [[APDataObject() for _ in [cl for cl in class_names]] for _ in self.objects_sizes],
@@ -256,7 +258,6 @@ class ApMetrics(object):
 
         if self.compute_per_size_ap:
             for size_idx, size_key in enumerate(self.objects_sizes):
-
                 for _class in set(list(classes) + list(gt_classes)):
                     lower_size = self.objects_sizes[size_key][0]
                     upper_size = self.objects_sizes[size_key][1]
@@ -288,6 +289,12 @@ class ApMetrics(object):
                                 ):
                                     continue
 
+                                iou = iou_func(i, j)
+
+                                if iou > max_iou_found:
+                                    max_iou_found = iou
+                                    max_match_idx = j
+
                             if max_match_idx >= 0:
                                 gt_used[max_match_idx] = True
                                 ap_obj.push(score_func(i), True)
@@ -303,7 +310,11 @@ class ApMetrics(object):
                                 # All this crowd code so that we can make sure that our eval code gives the
                                 # same result as COCOEval. There aren't even that many crowd annotations to
                                 # begin with, but accuracy is of the utmost importance.
-                                if not matched_crowd and p_bbox_area[i] >= lower_size and p_bbox_area[i] < upper_size:
+                                if (
+                                    not matched_crowd
+                                    and p_bbox_area[i] >= lower_size
+                                    and p_bbox_area[i] < upper_size
+                                ):
                                     ap_obj.push(score_func(i), False)
 
         for _class in set(list(classes) + list(gt_classes)):
@@ -523,17 +534,20 @@ class ApMetrics(object):
             if self.compute_per_size_ap:
                 all_maps_per_size[iou_type]["all"] = 0  # Make this first in the ordereddict
                 for i, size in enumerate(self.objects_sizes):
+                    name = self.objects_sizes[size]
+                    name = f"{str(name[0]*100)[:3]}-{str(name[1]*100)[:3]}"
                     if iou_type != "box_ct":
                         mAP = (
                             sum(aps50_size[i][iou_type]) / len(aps50_size[i][iou_type]) * 100
                             if len(aps50_size[i][iou_type]) > 0
                             else 0
                         )
-                        all_maps_per_size[iou_type][str(size)] = mAP
+                        all_maps_per_size[iou_type][name] = mAP
                     else:
                         # print('aps50_size[i][iou_type]', aps50_size[i][iou_type], i, iou_type)
                         mAP = sum(aps50_size[i][iou_type]) if len(aps50_size[i][iou_type]) > 0 else 0
-                        all_maps_per_size[iou_type][str(size)] = mAP
+
+                        all_maps_per_size[iou_type][name] = mAP
                 all_maps_per_size[iou_type]["all"] = sum(all_maps_per_size[iou_type].values()) / (
                     len(all_maps_per_size[iou_type].values()) - 1
                 )

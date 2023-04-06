@@ -82,13 +82,13 @@ docker build -t aloception-oss:cuda-11.3-pytorch1.13.1-lightning1.9.3 .
 ```
 
 ```
-docker run  --user=$(id -u):1000 --gpus all -it -v /YOUR/WORKSPACE/:/workspace --privileged -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix aloception-oss:cuda-11.3-pytorch1.13.1-lightning1.9.3
+docker run  -e LOCAL_USER_ID=$(id -u)  --gpus all -it -v /YOUR/WORKSPACE/:/workspace --privileged -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix aloception-oss:cuda-11.3-pytorch1.13.1-lightning1.9.3
 ```
 
 Or without building the image
 
 ```
-docker run --user=$(id -u):1000 --gpus all -it -v /YOUR/WORKSPACE/:/workspace --privileged -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix visualbehaviorofficial/aloception-oss:cuda-11.3-pytorch1.13.1-lightning1.9.3
+docker run -e LOCAL_USER_ID=$(id -u)  --gpus all -it -v /YOUR/WORKSPACE/:/workspace --privileged -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix visualbehaviorofficial/aloception-oss:cuda-11.3-pytorch1.13.1-lightning1.9.3
 ```
 
 

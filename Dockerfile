@@ -46,12 +46,15 @@ RUN chmod -R o+w /opt/miniconda && chmod -R o+w /home/aloception
 USER aloception
 
 # Pytorch & pytorch litning
-RUN conda install py pytorch-cuda=${pycuda} -c pytorch -c nvidia
-RUN pip install --pre torch==${pytorch} torchvision==${torchvision} torchaudio==${torchaudio} --index-url https://download.pytorch.org/whl/nightly/cu117
+#RUN conda install py pytorch-cuda=${pycuda} -c pytorch -c nvidia
+#RUN pip install --pre torch==${pytorch} torchvision==${torchvision} torchaudio==${torchaudio} --index-url https://download.pytorch.org/whl/nightly/cu117
+#RUN pip install pytorch_lightning==${pytorch_lightning}
+RUN conda install pytorch==${pytorch} torchvision==${torchvision} torchaudio==${torchaudio} pytorch-cuda=${pycuda} -c pytorch -c nvidia
 RUN pip install pytorch_lightning==${pytorch_lightning}
 
-COPY --chown=aloception:aloception requirements/requirements-torch2.1.txt /home/aloception/install/requirements-torch2.1.txt
-RUN pip install -r /home/aloception/install/requirements-torch2.1.txt
+
+COPY --chown=aloception:aloception requirements/requirements-torch1.13.1.txt /home/aloception/install/requirements-torch1.13.1.txt
+RUN pip install -r /home/aloception/install/requirements-torch1.13.1.txt
 COPY --chown=aloception:aloception  ./aloscene/utils /home/aloception/install/utils
 
 USER root

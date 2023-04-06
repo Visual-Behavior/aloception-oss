@@ -1,4 +1,4 @@
-import pytorch_lightning as pl
+import lightning as pl
 import alonet
 import torch
 from torch.utils.data.sampler import RandomSampler, SequentialSampler

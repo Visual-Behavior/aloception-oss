@@ -5,7 +5,7 @@ import torch.nn.functional as F
 
 from argparse import ArgumentParser
 
-import pytorch_lightning as pl
+import lightning as pl
 import wandb
 
 from typing import *

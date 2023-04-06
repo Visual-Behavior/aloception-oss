@@ -7,7 +7,7 @@ import torch
 from typing import Union
 
 from argparse import ArgumentParser, Namespace
-import pytorch_lightning as pl
+import lightning as pl
 
 from aloscene import Frame
 import aloscene
@@ -36,11 +36,10 @@ class LitDetr(pl.LightningModule):
     Arguments entered by the user (kwargs) will replace those stored in args attribute
     """
 
-    def __init__(self, args: Namespace = None, model: torch.nn = None, **kwargs):
+    def __init__(self, weights: str = None, model_name: str="detr-r50",  model = None):
         super().__init__()
-        # Update class attributes with args and kwargs inputs
-        alonet.common.pl_helpers.params_update(self, args, kwargs)
-        self._init_kwargs_config.update({"model": model})
+        self.model_name = model_name
+        self.weights = weights
 
         # Load model
         if model is not None:
@@ -58,35 +57,6 @@ class LitDetr(pl.LightningModule):
         # Build criterion
         self.criterion = self.build_criterion(matcher=self.matcher)
 
-    @staticmethod
-    def add_argparse_args(parent_parser, parser=None):
-        """Add arguments to parent parser with default values
-
-        Parameters
-        ----------
-        parent_parser : ArgumentParser
-            Object to append new arguments
-        parser : ArgumentParser.argument_group, optional
-            Argument group to append the parameters, by default None
-
-        Returns
-        -------
-        ArgumentParser
-            Object with new arguments concatenated
-        """
-        parser = parent_parser.add_argument_group("LitDetr") if parser is None else parser
-        parser.add_argument("--weights", type=str, default=None, help="One of (detr-r50). Default: None")
-        parser.add_argument("--gradient_clip_val", type=float, default=0.1, help="Gradient clipping norm (default 0.1")
-        parser.add_argument(
-            "--accumulate_grad_batches", type=int, default=4, help="Number of gradient accumulation steps (default 4)"
-        )
-        parser.add_argument(
-            "--model_name",
-            type=str,
-            default="detr-r50",
-            help="Model name to use. One of ['detr-r50']. (default detr-r50)",
-        )
-        return parent_parser
 
     def forward(self, frames: Union[list, Frame], **kwargs):
         """Run a forward pass through the model.

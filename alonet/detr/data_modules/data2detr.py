@@ -12,7 +12,7 @@ from argparse import Namespace, ArgumentParser, _ArgumentGroup
 from typing import Optional
 
 from alodataset import transforms as T  # , Split
-import pytorch_lightning as pl
+import lightning as pl
 
 import alonet
 import aloscene

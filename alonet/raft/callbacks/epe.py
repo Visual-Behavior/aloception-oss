@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-import pytorch_lightning as pl
+import lightning as pl
 import numpy as np
 import wandb
 
@@ -42,7 +42,7 @@ class RAFTEPECallback(pl.Callback):
         self.epe_per_iter = [None] * len(self.names)
 
 
-def log_iteration_epe(trainer: pl.trainer.trainer.Trainer, errors, epoch, name):
+def log_iteration_epe(trainer: pl.Trainer, errors, epoch, name):
     # log as an image
     title = f"EPE per Raft iteration [epoch:{epoch}]"
     x = np.arange(len(errors))

@@ -1,6 +1,6 @@
 from pytorch_lightning.loggers import WandbLogger, TensorBoardLogger
 import torch
-import pytorch_lightning as pl
+import lightning as pl
 from typing import *
 import aloscene
 import wandb

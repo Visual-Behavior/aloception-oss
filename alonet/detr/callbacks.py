@@ -10,7 +10,7 @@ class DetrObjectDetectorCallback(ObjectDetectorCallback):
         super().__init__(*args, **kwargs)
 
     @rank_zero_only
-    def on_train_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx):
+    def on_train_batch_end(self, trainer, pl_module, outputs, batch):
         if trainer.logger is None:
             return
         if trainer.fit_loop.should_accumulate() or (trainer.global_step + 1) % (trainer.log_every_n_steps * 10) != 0:

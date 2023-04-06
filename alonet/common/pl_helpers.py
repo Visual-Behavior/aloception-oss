@@ -1,7 +1,10 @@
 from argparse import ArgumentParser, ArgumentTypeError, Namespace, _ArgumentGroup
-from pytorch_lightning.callbacks import ModelCheckpoint
-import pytorch_lightning as pl
-from pytorch_lightning.loggers import TensorBoardLogger, WandbLogger
+
+from lightning.pytorch.cli import LightningCLI
+from lightning.pytorch.callbacks import ModelCheckpoint
+import lightning as pl
+from lightning.pytorch.loggers.wandb import WandbLogger
+from lightning.pytorch.loggers.tensorboard import TensorBoardLogger
 import datetime
 import os
 import json
@@ -70,7 +73,10 @@ def add_argparse_args(parent_parser, add_pl_args=True, mode="training"):
     parser = parent_parser.add_argument_group("pl_helper")
 
     if add_pl_args:
-        parent_parser = pl.Trainer.add_argparse_args(parent_parser)
+        #pl.Trainer.add_argparse_args(parent_parser)
+        print('Adding pl.Trainer arguments...', parent_parser)
+        parent_parser = LightningCLI(pl.Trainer).add_default_arguments_to_parser(parent_parser) 
+        
 
     if mode == "training":
         parser.add_argument("--resume", action="store_true", help="Resume all the training, not only the weights.")
@@ -362,7 +368,7 @@ def run_pl_training(
         callbacks.append(checkpoint_callback)
 
     # Init trainer and run training
-    trainer = pl.Trainer.from_argparse_args(
+    trainer = LightningCLI(pl.Trainer, #pl.Trainer.from_argparse_args(
         args,
         accelerator="gpu" if not args.cpu else "cpu",
         auto_select_gpus=not args.cpu,
@@ -375,6 +381,49 @@ def run_pl_training(
 
     # Runing training
     trainer.fit(lit_model, data_loader)
+
+
+def get_dir_from_config_v2(key):
+    """
+    Get the directory to save log/checkpoint from the config in
+    /home/USER/.aloception/alonet_config.json or from args if the dir is set.
+    This file will be created if not exist.
+
+    Parameters
+    ----------
+    args: Namespace
+    key: str
+        log or checkpoint
+
+    Return
+    ------
+    The directory to save log/checkpoint
+    """
+    streaming_config = os.path.join(vb_folder(create_if_not_found=True), "alonet_config.json")
+
+    if not os.path.exists(streaming_config):
+        save_dir = set_save_dir_config(key)
+    with open(streaming_config) as f:
+        content = json.loads(f.read())
+    key_dir = f"{key}_save_dir"
+    if key_dir not in content:
+        return set_save_dir_config(key)
+    else:
+        return content[key_dir]
+
+
+def get_wandb_logger(expe_name: str, project: str):
+    """ Create a WandbLogger instance
+    """
+    log_dir = get_dir_from_config_v2("log")
+    log_dir_project = os.path.join(log_dir, f"project_{project}/{expe_name}/wandb")
+    # Create base dir if not exist
+    if not os.path.exists(log_dir):
+        os.makedirs(log_dir, exist_ok=True)
+    if not os.path.exists(log_dir_project):
+        os.makedirs(log_dir_project, exist_ok=True)
+    save_dir = os.path.join(log_dir, f"project_{project}", expe_name)
+    return WandbLogger(name=expe_name, save_dir=save_dir, project=project, id=expe_name)
 
 
 def params_update(self, args: Namespace = None, kwargs: dict = {}):
@@ -428,7 +477,7 @@ def run_pl_validate(
     lit_model = load_training(type(lit_model), args, no_exception=True)
 
     # Init trainer
-    trainer = pl.Trainer.from_argparse_args(
+    trainer = LightningCLI(pl.Trainer, #pl.Trainer.from_argparse_args(
         args,
         # default_root_dir=expe_dir,
         gpus=-1 if not args.cpu else 0,

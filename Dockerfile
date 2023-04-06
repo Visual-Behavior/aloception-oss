@@ -4,7 +4,7 @@ ARG py=3.9
 ARG pytorch=2.1.0.dev20230313+cu117
 ARG torchvision=0.15.0.dev20230313+cu117
 ARG torchaudio=2.0.0.dev20230313+cu117
-ARG pytorch_lightning=1.9.3
+ARG pytorch_lightning=2.0
 ARG pycyda=11.7
 ARG HOME=/home/aloception
 
@@ -40,7 +40,10 @@ USER aloception
 # Pytorch & pytorch litning
 RUN conda install py pytorch-cuda=${pycuda} -c pytorch -c nvidia
 RUN pip install --pre torch==${pytorch} torchvision==${torchvision} torchaudio==${torchaudio} --index-url https://download.pytorch.org/whl/nightly/cu117
-RUN pip install pytorch_lightning==${pytorch_lightning}
+RUN pip install lightning==${pytorch_lightning}
+# required by lightning
+RUN pip install  'jsonargparse[signatures]>=4.17.0'
+
 
 COPY --chown=aloception:aloception requirements/requirements-torch2.1.txt /home/aloception/install/requirements-torch2.1.txt
 RUN pip install -r /home/aloception/install/requirements-torch2.1.txt

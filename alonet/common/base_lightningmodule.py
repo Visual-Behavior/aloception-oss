@@ -1,4 +1,4 @@
-import pytorch_lightning as pl
+import lightning as pl
 from argparse import Namespace, ArgumentParser
 import torch
 import alonet

@@ -1,6 +1,6 @@
 from torch.utils.data import SequentialSampler, RandomSampler
 
-# import pytorch_lightning as pl
+# import lightning as pl
 
 from alonet.raft.data_modules import Data2RAFT
 from alodataset import SintelDataset, Split

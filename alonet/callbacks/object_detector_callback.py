@@ -1,6 +1,6 @@
 """Callback for any object detection training that use :mod:`Frame <aloscene.frame>` as GT. """
 import torch
-import pytorch_lightning as pl
+import lightning as pl
 import wandb
 from typing import Union
 import aloscene
@@ -39,7 +39,7 @@ class ObjectDetectorCallback(pl.Callback):
         self.val_frames = val_frames
         self.one_color_per_class = one_color_per_class
 
-    def log_boxes_2d(self, frames: list, preds_boxes: list, trainer: pl.trainer.trainer.Trainer, name: str):
+    def log_boxes_2d(self, frames: list, preds_boxes: list, trainer: pl.Trainer, name: str):
         """Given a frames and predicted boxes2d, this method will log the images into wandb
 
         Parameters
@@ -48,7 +48,7 @@ class ObjectDetectorCallback(pl.Callback):
             Frame with GT boxes2d attached
         preds_boxes : list of :mod:`BoundingBoxes2D <aloscene.bounding_boxes_2d>`
             A set of predicted boxes2d
-        trainer : pl.trainer.trainer.Trainer
+        trainer : pl.Trainer
             Lightning trainer
         """
         images = []
@@ -88,7 +88,7 @@ class ObjectDetectorCallback(pl.Callback):
         self,
         frames: aloscene.Frame,
         preds_boxes: aloscene.BoundingBoxes3D,
-        trainer: pl.trainer.trainer.Trainer,
+        trainer: pl.Trainer,
         name: str,
     ):
         """Given a frames and predicted boxes3d, this method will log the images into wandb
@@ -99,7 +99,7 @@ class ObjectDetectorCallback(pl.Callback):
             Frame with GT boxes2d attached
         preds_boxes : :mod:`BoundingBoxes3D <aloscene.bounding_boxes_3d>`
             A set of predicted boxes3d
-        trainer: pl.trainer.trainer.Trainer
+        trainer: pl.Trainer
             Lightning trainer
         """
         gt_images = []
@@ -120,7 +120,7 @@ class ObjectDetectorCallback(pl.Callback):
         log_image(trainer, name + "_pred", pred_images)
         return
 
-    def log_masks(self, frames: list, pred_masks: list, trainer: pl.trainer.trainer.Trainer, name: str):
+    def log_masks(self, frames: list, pred_masks: list, trainer: pl.Trainer, name: str):
         """Given a frames and predicted masks in segmentation tasks, this method will log the images into wandb
 
         Parameters
@@ -129,7 +129,7 @@ class ObjectDetectorCallback(pl.Callback):
             Frame with GT masks attached
         preds_masks : list of :mod:`Mask <aloscene.mask>`
             A set of predicted segmentation masks
-        trainer : pl.trainer.trainer.Trainer
+        trainer : pl.Trainer
             Lightning trainer
         name : str
             Name to show in wandb

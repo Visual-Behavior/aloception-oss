@@ -1,4 +1,4 @@
-import pytorch_lightning as pl
+import lightning as pl
 import numpy as np
 import torch
 import wandb
@@ -7,7 +7,7 @@ from typing import *
 import aloscene
 
 
-def log_images_validation(frames: aloscene.Frame, trainer: pl.trainer.trainer.Trainer, name: str):
+def log_images_validation(frames: aloscene.Frame, trainer: pl.Trainer, name: str):
 
     assert tuple(frames.names) == ("B", "T", "C", "H", "W")
     assert frames.shape[0:2] == (1, 2)
@@ -31,7 +31,7 @@ def log_images_validation(frames: aloscene.Frame, trainer: pl.trainer.trainer.Tr
 
 
 def log_flow_validation(
-    frames: aloscene.Frame, flows_fw: List[aloscene.Flow], trainer: pl.trainer.trainer.Trainer, name: str
+    frames: aloscene.Frame, flows_fw: List[aloscene.Flow], trainer: pl.Trainer, name: str
 ):
     """ """
     assert all(tuple(flow.names) == ("B", "C", "H", "W") for flow in flows_fw)

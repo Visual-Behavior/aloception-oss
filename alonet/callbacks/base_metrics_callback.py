@@ -4,7 +4,7 @@ See Also
 --------
     All the possible :doc:`alonet.metrics`
 """
-import pytorch_lightning as pl
+import lightning as pl
 import aloscene
 from alonet import metrics
 from pytorch_lightning.utilities import rank_zero_only

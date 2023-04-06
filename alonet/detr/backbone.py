@@ -13,6 +13,7 @@ from torch import nn
 from torchvision.models._utils import IntermediateLayerGetter
 from typing import Dict, List, Union
 
+from torchvision.models import ResNet50_Weights
 
 from alonet.transformers.position_encoding import build_position_encoding
 import aloscene
@@ -136,7 +137,8 @@ class Backbone(BackboneBase):
     def __init__(self, name: str, train_backbone: bool, return_interm_layers: bool, dilation: bool, **kwargs):
         backbone = getattr(torchvision.models, name)(
             replace_stride_with_dilation=[False, False, dilation],
-            pretrained=is_main_process(),
+            # pretrained=is_main_process() Will be deprecated
+            weights=ResNet50_Weights.IMAGENET1K_V2,
             norm_layer=FrozenBatchNorm2d,
         )
         num_channels = 512 if name in ("resnet18", "resnet34") else 2048

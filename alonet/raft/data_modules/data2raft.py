@@ -1,4 +1,4 @@
-import pytorch_lightning as pl
+import lightning as pl
 
 import alodataset.transforms as T
 from alonet.raft.raft_transforms import SpatialTransform, EraserTransform, ColorTransform

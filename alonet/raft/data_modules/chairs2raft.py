@@ -1,5 +1,5 @@
 from torch.utils.data import SequentialSampler, RandomSampler
-import pytorch_lightning as pl
+import lightning as pl
 
 from alodataset import FlyingChairs2Dataset, Split
 from alonet.raft.data_modules import Data2RAFT

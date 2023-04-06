@@ -129,8 +129,8 @@ class PQMetrics(object):
 
         result = {"pq": pq / n, "sq": sq / n, "rq": rq / n, "n": n}
         if recall_precision:
-            recall = t_tp / (t_tp + t_fn)
-            precision = t_tp / (t_tp + t_fp)
+            recall = t_tp / (t_tp + t_fn) if t_tp + t_fn > 0 else 0
+            precision = t_tp / (t_tp + t_fp) if t_tp + t_fn > 0 else 0
             result.update({"precision": precision, "recall": recall})
         if print_result:
             suffix = ""

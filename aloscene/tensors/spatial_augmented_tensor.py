@@ -14,6 +14,7 @@ from aloscene.utils.data_utils import LDtoDL
 
 import warnings
 
+
 class SpatialAugmentedTensor(AugmentedTensor):
     """Spatial Augmented Tensor. Used to represets any 2D data. The spatial augmented tensor can be used as a
     basis for images, depth or and spatially related data. Moreover, for stereo setup, the augmented tensor
@@ -131,7 +132,10 @@ class SpatialAugmentedTensor(AugmentedTensor):
         """
         _views = [v for v in views if isinstance(v, View)]
         if len(_views) > 0:
-            return View(Renderer.get_grid_view(_views, grid_size=None, cell_grid_size=size, add_title=add_title, **kwargs), title=title)
+            return View(
+                Renderer.get_grid_view(_views, grid_size=None, cell_grid_size=size, add_title=add_title, **kwargs),
+                title=title,
+            )
 
         # Include type
         include_type = [
@@ -427,9 +431,15 @@ class SpatialAugmentedTensor(AugmentedTensor):
         assert hs is None or isinstance(hs, (list, tuple)), "hs should be a list or a tuple of floats"
         assert ws is None or isinstance(ws, (list, tuple)), "ws should be a list or a tuple of floats"
         if hs is not None:
-            hs = [self.relative_to_absolute(h, "H", assert_integer=assert_integer, warn_non_integer=warn_non_integer) for h in hs]
+            hs = [
+                self.relative_to_absolute(h, "H", assert_integer=assert_integer, warn_non_integer=warn_non_integer)
+                for h in hs
+            ]
         if ws is not None:
-            ws = [self.relative_to_absolute(w, "W", assert_integer=assert_integer, warn_non_integer=warn_non_integer) for w in ws]
+            ws = [
+                self.relative_to_absolute(w, "W", assert_integer=assert_integer, warn_non_integer=warn_non_integer)
+                for w in ws
+            ]
         return hs, ws
 
     def _hflip_label(self, label, **kwargs):
@@ -441,6 +451,9 @@ class SpatialAugmentedTensor(AugmentedTensor):
                 frame_size=self.HW, cam_intrinsic=self.cam_intrinsic, cam_extrinsic=self.cam_extrinsic, **kwargs
             )
         except AttributeError:
+            print(
+                f"[WARNING] Horizontal flip returned AttributeError on {type(label).__name__}, returning unflipped tensor."
+            )
             return label
         else:
             return label_flipped
@@ -454,6 +467,9 @@ class SpatialAugmentedTensor(AugmentedTensor):
                 frame_size=self.HW, cam_intrinsic=self.cam_intrinsic, cam_extrinsic=self.cam_extrinsic, **kwargs
             )
         except AttributeError:
+            print(
+                f"[WARNING] Vertical flip returned AttributeError on {type(label).__name__}, returning unflipped tensor."
+            )
             return label
         else:
             return label_flipped
@@ -528,7 +544,7 @@ class SpatialAugmentedTensor(AugmentedTensor):
             return self.rename(None).view(shapes).reset_names()
         return F.resize(self.rename(None), (h, w), interpolation=interpolation).reset_names()
 
-    def _rotate(self, angle, center=None,**kwargs):
+    def _rotate(self, angle, center=None, **kwargs):
         """Rotate SpatialAugmentedTensor, but not its labels
 
         Parameters
@@ -546,7 +562,7 @@ class SpatialAugmentedTensor(AugmentedTensor):
         assert not (
             ("N" in self.names and self.size("N") == 0) or ("C" in self.names and self.size("C") == 0)
         ), "rotation is not possible on an empty tensor"
-        return F.rotate(self.rename(None), angle,center=center).reset_names()
+        return F.rotate(self.rename(None), angle, center=center).reset_names()
 
     def _crop(self, H_crop: tuple, W_crop: tuple, **kwargs):
         """Crop the SpatialAugmentedTensor
@@ -576,6 +592,7 @@ class SpatialAugmentedTensor(AugmentedTensor):
             label_pad = label._pad(offset_y, offset_x, **kwargs)
             return label_pad
         except AttributeError:
+            print(f"[WARNING] Padding returned AttributeError on {type(label).__name__}, returning unpadded tensor.")
             return label
 
     def _pad(self, offset_y: tuple, offset_x: tuple, **kwargs):

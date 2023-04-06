@@ -1,25 +1,26 @@
 ALOSCENE_ROOT = "/".join(__file__.split("/")[:-1])
-from . import tensors
-from .labels import Labels
-from .camera_calib import CameraExtrinsic, CameraIntrinsic
-from .mask import Mask
-from .flow import Flow
-from .depth import Depth
-from .points_2d import Points2D
-from .points_3d import Points3D
-from .disparity import Disparity
-from .pose import Pose
-from .bounding_boxes_2d import BoundingBoxes2D
-from .bounding_boxes_3d import BoundingBoxes3D
-from .oriented_boxes_2d import OrientedBoxes2D
-from .scene_flow import SceneFlow
-from .frame import Frame
-from .tensors.spatial_augmented_tensor import SpatialAugmentedTensor
-
-from .renderer import Renderer
+from . tensors import AugmentedTensor, SpatialAugmentedTensor
+from . labels import Labels
+from . camera_calib import CameraExtrinsic, CameraIntrinsic
+from . mask import Mask
+from . flow import Flow
+from . depth import Depth
+from . points_2d import Points2D
+from . points_3d import Points3D
+from . disparity import Disparity
+from . pose import Pose
+from . bounding_boxes_2d import BoundingBoxes2D
+from . bounding_boxes_3d import BoundingBoxes3D
+from . oriented_boxes_2d import OrientedBoxes2D
+from . scene_flow import SceneFlow
+from . frame import Frame
+from . renderer import Renderer
 
 from typing import Union
 
+
+import pkg_resources
+__version__ = pkg_resources.get_distribution("aloception").version
 
 def batch_list(tensors, intersection=False):
     return SpatialAugmentedTensor.batch_list(tensors, intersection=intersection)

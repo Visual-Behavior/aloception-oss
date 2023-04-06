@@ -1,3 +1,5 @@
+from . import utils
+from . import prepare
 from .base_dataset import BaseDataset, Split
 from .sequence_mixin import SequenceMixin
 from .split_mixin import SplitMixin
@@ -17,3 +19,6 @@ from .sintel_multi_dataset import SintelMultiDataset
 from .from_directory_dataset import FromDirectoryDataset
 from .woodScape_dataset import WooodScapeDataset
 from .woodScape_split_dataset import WoodScapeSplitDataset
+
+import pkg_resources
+__version__ = pkg_resources.get_distribution("aloception").version

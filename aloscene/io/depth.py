@@ -15,7 +15,8 @@ def load_depth(path):
     if path.endswith(".npy"):
         return np.load(path)
     elif path.endswith(".npz"):
-        return list(np.load(path).values())
+        content = np.load(path)
+        return content[content.keys()[0]]
     else:
         raise ValueError(
             f"Unknown extension for depth file: {path}. As an alternative you can load the file manually\

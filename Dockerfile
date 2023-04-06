@@ -1,11 +1,19 @@
 FROM nvidia/cuda:11.3.1-cudnn8-devel-ubuntu20.04
 
+#ARG py=3.9
+#ARG pytorch=2.1.0.dev20230313+cu117
+#ARG torchvision=0.15.0.dev20230313+cu117
+#ARG torchaudio=2.0.0.dev20230313+cu117
+#ARG pytorch_lightning=1.9.3
+#ARG pycyda=11.7
 ARG py=3.9
-ARG pytorch=2.1.0.dev20230313+cu117
-ARG torchvision=0.15.0.dev20230313+cu117
-ARG torchaudio=2.0.0.dev20230313+cu117
+ARG pytorch=1.13.1
+ARG torchvision=0.14.1
+ARG torchaudio=0.13.1
 ARG pytorch_lightning=1.9.3
 ARG pycyda=11.7
+
+
 ARG HOME=/home/aloception
 
 ENV TZ=Europe/Paris

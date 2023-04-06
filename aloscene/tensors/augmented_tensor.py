@@ -7,7 +7,7 @@ import copy
 
 
 def _torch_function_get_self(cls, func, types, args, kwargs):
-    """ Based on this dicussion https://github.com/pytorch/pytorch/issues/63767
+    """Based on this dicussion https://github.com/pytorch/pytorch/issues/63767
 
     "A simple solution would be to scan the args for the first subclass of this class.
     My question is more: will forcing this to be a subclass actually be a problem for some use case?
@@ -36,7 +36,7 @@ class AugmentedTensor(torch.Tensor):
 
     # Ignore named tansors userwarning.
     ERROR_MSG = "Named tensors and all their associated APIs are an experimental feature and subject to change"
-    warnings.filterwarnings(action='ignore', message=ERROR_MSG)
+    warnings.filterwarnings(action="ignore", message=ERROR_MSG)
 
     @staticmethod
     def __new__(cls, x, names=None, device=None, *args, **kwargs):
@@ -335,7 +335,6 @@ class AugmentedTensor(torch.Tensor):
 
             tensor = tensor.reset_names() if len(self.shape) == len(tensor.shape) else tensor.as_tensor()
 
-
             # if not idx.dtype == torch.bool:
             #    if not torch.equal(idx ** 3, idx):
             #        raise IndexError(f"Unvalid mask. Expected mask elements to be in [0, 1, True, False]")
@@ -475,6 +474,7 @@ class AugmentedTensor(torch.Tensor):
             else:
                 for s in range(len(sub_label)):
                     _fillup_dict(dm[s], sub_label[s], dim + 1, target_dim)
+
         _fillup_dict(dict_merge[key], label, 0, target_dim)
 
         return dict_merge
@@ -499,7 +499,9 @@ class AugmentedTensor(torch.Tensor):
                         setattr(n_tensor, prop, None)
                     else:
                         values = set([prop_name_to_value[prop], getattr(tensor, prop)])
-                        raise RuntimeError(f"Encountered different values for property '{prop}' while merging AugmentedTensor: {values}")
+                        raise RuntimeError(
+                            f"Encountered different values for property '{prop}' while merging AugmentedTensor: {values}"
+                        )
                 else:
                     prop_name_to_value[prop] = getattr(tensor, prop)
 
@@ -545,7 +547,9 @@ class AugmentedTensor(torch.Tensor):
                             if intersection:
                                 del labels_dict2list[label_name][key]
                             else:
-                                raise RuntimeError(f"Error during merging. Some tensors have label '{label_name}' with key '{key}' and some don't")
+                                raise RuntimeError(
+                                    f"Error during merging. Some tensors have label '{label_name}' with key '{key}' and some don't"
+                                )
                         else:
                             args = list(args)
                             args[0] = labels_dict2list[label_name][key]
@@ -553,7 +557,9 @@ class AugmentedTensor(torch.Tensor):
                     # if we removed all keys, set this child to None
                     if intersection and not labels_dict2list[label_name]:
                         labels_dict2list[label_name] = None
-                elif intersection and (len(labels_dict2list[label_name]) != dim_size or (None in labels_dict2list[label_name])):
+                elif intersection and (
+                    len(labels_dict2list[label_name]) != dim_size or (None in labels_dict2list[label_name])
+                ):
                     labels_dict2list[label_name] = None
                 else:
                     args = list(args)
@@ -595,7 +601,6 @@ class AugmentedTensor(torch.Tensor):
         for t in range(len(self)):
             yield self[t]
 
-
     @classmethod
     def __torch_function__(cls, func, types, args=(), kwargs=None):
         self = _torch_function_get_self(cls, func, types, args, kwargs)
@@ -614,10 +619,10 @@ class AugmentedTensor(torch.Tensor):
         if func.__name__ == "__reduce_ex__":
             self.rename_(None, auto_restore_names=True)
             tensor = super().__torch_function__(func, types, args, kwargs)
-            #tensor = super().torch_func_method(func, types, args, kwargs)
+            # tensor = super().torch_func_method(func, types, args, kwargs)
         else:
             tensor = super().__torch_function__(func, types, args, kwargs)
-            #tensor = super().torch_func_method(func, types, args, kwargs)
+            # tensor = super().torch_func_method(func, types, args, kwargs)
 
         if isinstance(tensor, type(self)):
             tensor._property_list = self._property_list
@@ -853,6 +858,9 @@ class AugmentedTensor(torch.Tensor):
         try:
             label_flipped = label._hflip(**kwargs)
         except AttributeError:
+            print(
+                f"[WARNING] Horizontal flip returned AttributeError on {type(label).__name__}, returning unflipped tensor."
+            )
             return label
         else:
             return label_flipped
@@ -914,6 +922,7 @@ class AugmentedTensor(torch.Tensor):
                 label_resized = label._resize(size01, **kwargs)
                 return label_resized
             except AttributeError:
+                print(f"[WARNING] resize returned AttributeError on {type(label).__name__}, returning initial tensor.")
                 return label
 
         resized = self._resize(size01, **kwargs)
@@ -924,7 +933,7 @@ class AugmentedTensor(torch.Tensor):
     def _resize(self, *args, **kwargs):
         raise Exception("This Augmented tensor should implement this method")
 
-    def rotate(self, angle, center=None,**kwargs):
+    def rotate(self, angle, center=None, **kwargs):
         """
         Rotate AugmentedTensor, and its labels recursively
 
@@ -941,12 +950,15 @@ class AugmentedTensor(torch.Tensor):
 
         def rotate_func(label):
             try:
-                label_rotated = label._rotate(angle, center,**kwargs)
+                label_rotated = label._rotate(angle, center, **kwargs)
                 return label_rotated
             except AttributeError:
+                print(
+                    f"[WARNING] Rotate returned AttributeError on {type(label).__name__}, returning unrotated tensor."
+                )
                 return label
 
-        rotated = self._rotate(angle, center,**kwargs)
+        rotated = self._rotate(angle, center, **kwargs)
         rotated.recursive_apply_on_children_(rotate_func)
 
         return rotated
@@ -956,6 +968,7 @@ class AugmentedTensor(torch.Tensor):
             label_resized = label._crop(H_crop, W_crop, **kwargs)
             return label_resized
         except AttributeError:
+            print(f"[WARNING] Crop returned AttributeError on {type(label).__name__}, returning uncropped tensor.")
             return label
 
     def crop(self, H_crop: tuple, W_crop: tuple, **kwargs):
@@ -991,6 +1004,7 @@ class AugmentedTensor(torch.Tensor):
             label_pad = label._pad(offset_y, offset_x, **kwargs)
             return label_pad
         except AttributeError:
+            print(f"[WARNING] Padding returned AttributeError on {type(label).__name__}, returning unpadded tensor.")
             return label
 
     def pad(self, offset_y: tuple = None, offset_x: tuple = None, multiple: int = None, **kwargs):
@@ -1043,6 +1057,9 @@ class AugmentedTensor(torch.Tensor):
             label_shift = label._spatial_shift(shift_y, shift_x, **kwargs)
             return label_shift
         except AttributeError:
+            print(
+                f"[WARNING] Spatial shift returned AttributeError on {type(label).__name__}, returning unshifted tensor."
+            )
             return label
 
     def spatial_shift(self, shift_y: float, shift_x: float, **kwargs):

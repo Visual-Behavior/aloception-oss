@@ -115,7 +115,7 @@ class PQMetrics(object):
             sq_class = iou / tp if tp != 0 else 0
             rq_class = tp / (tp + 0.5 * fp + 0.5 * fn)
             per_class_results[label_info["category"]] = {"pq": pq_class, "sq": sq_class, "rq": rq_class}
-            
+
             pq += pq_class
             sq += sq_class
             rq += rq_class
@@ -130,7 +130,7 @@ class PQMetrics(object):
         result = {"pq": pq / n, "sq": sq / n, "rq": rq / n, "n": n}
         if recall_precision:
             recall = t_tp / (t_tp + t_fn) if t_tp + t_fn > 0 else 0
-            precision = t_tp / (t_tp + t_fp) if t_tp + t_fn > 0 else 0
+            precision = t_tp / (t_tp + t_fp) if t_tp + t_fp > 0 else 0
             result.update({"precision": precision, "recall": recall})
         if print_result:
             suffix = ""

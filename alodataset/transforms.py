@@ -76,7 +76,6 @@ class AloTransform(object):
 
         # Go through each image
         if isinstance(frames, dict):
-
             n_set = {}
 
             if same_on_sequence is None or same_on_frames is None:
@@ -86,11 +85,9 @@ class AloTransform(object):
                 )
 
             for key in frames:
-
                 # Go throguh each element of the sequence
                 # (If needed to apply save the params for each time step
                 if "T" in frames[key].names and same_on_frames and not same_on_sequence:
-
                     n_set[key] = []
                     for t in range(0, frames[key].shape[0]):
                         if t not in seqid2params:
@@ -110,7 +107,6 @@ class AloTransform(object):
                 # Different for each element of the sequence, but we don't need to save
                 # the params for each image neither
                 elif "T" in frames[key].names and not same_on_frames and not same_on_sequence:
-
                     n_set[key] = []
 
                     for t in range(0, frames[key].shape[0]):
@@ -376,7 +372,6 @@ class RandomSizePad(AloTransform):
         self._pad_bottom = pad_bottom
 
     def __call__(self, frame):
-
         print((self._pad_top, self._pad_bottom), (self._pad_left, self._pad_right))
 
         return frame.pad(
@@ -528,7 +523,7 @@ class RandomResizeWithAspectRatio(AloTransform):
 
 
 class Resize(AloTransform):
-    def __init__(self, size: tuple, *args, **kwargs):
+    def __init__(self, size: tuple, antialias=True, *args, **kwargs):
         """Reszie the given frame to the target frame size.
 
         Parameters
@@ -538,6 +533,7 @@ class Resize(AloTransform):
         """
         assert isinstance(size, tuple)
         self.size = size
+        self.antialias = antialias
         super().__init__(*args, **kwargs)
 
     def sample_params(self):
@@ -556,7 +552,7 @@ class Resize(AloTransform):
         frame: Frame
             Frame to apply the transformation on
         """
-        frame = frame.resize(self.size)
+        frame = frame.resize(self.size, antialias=self.antialias)
         return frame
 
 
@@ -910,13 +906,14 @@ class DynamicCropTransform(AloTransform):
 
 class RandomFocusBlur(AloTransform):
     """Randomly introduces motion blur.
-    
+
     Parameters
     ----------
         max_filter_size : int
             Max filter size to use, the higher the more blured the image.
-    
+
     """
+
     def __init__(self, max_filter_size=10, *args, **kwargs):
         assert isinstance(max_filter_size, int)
         self.max_filter_size = max_filter_size
@@ -937,7 +934,7 @@ class RandomFocusBlur(AloTransform):
     def set_params(self, h_size, v_size):
         self.h_filter_size = h_size
         self.v_filter_size = v_size
-    
+
     @torch.no_grad()
     def apply(self, frame):
         c, h, w = frame.shape
@@ -963,13 +960,14 @@ class RandomFocusBlur(AloTransform):
 
 class RandomFocusBlurV2(AloTransform):
     """Randomly introduces motion blur.
-    
+
     Parameters
     ----------
         max_filter_size : int
             Max filter size to use, the higher the more blured the image.
 
     """
+
     def __init__(self, max_filter_size=10, *args, **kwargs):
         assert isinstance(max_filter_size, int)
         self.max_filter_size = max_filter_size
@@ -987,25 +985,25 @@ class RandomFocusBlurV2(AloTransform):
     def set_params(self, h_size, v_size):
         self.h_filter_size = h_size
         self.v_filter_size = v_size
-    
+
     @staticmethod
     def h_trans(frame, size):
         v_left_frames = [frame[:, :, i:] for i in range(1, size // 2 + 1)]
-        v_left_frames = [torch.nn.functional.pad(x, pad=(0, i + 1),  value=0) for i, x in enumerate(v_left_frames)]
-        
+        v_left_frames = [torch.nn.functional.pad(x, pad=(0, i + 1), value=0) for i, x in enumerate(v_left_frames)]
+
         v_right_frames = [frame[:, :, :-i] for i in range(1, size // 2 + 1)]
-        v_right_frames = [torch.nn.functional.pad(x, pad=(i + 1, 0),  value=0) for i, x in enumerate(v_right_frames)]
+        v_right_frames = [torch.nn.functional.pad(x, pad=(i + 1, 0), value=0) for i, x in enumerate(v_right_frames)]
 
         v_frames = [*v_left_frames, frame, *v_right_frames]
         return v_frames
-    
+
     @staticmethod
     def v_trans(frame, size):
         h_top_frames = [frame[:, i:, :] for i in range(1, size // 2 + 1)]
-        h_top_frames = [torch.nn.functional.pad(x, pad=(0, 0, 0, i + 1),  value=0) for i, x in enumerate(h_top_frames)]
-        
+        h_top_frames = [torch.nn.functional.pad(x, pad=(0, 0, 0, i + 1), value=0) for i, x in enumerate(h_top_frames)]
+
         h_bot_frames = [frame[:, :-i, :] for i in range(1, size // 2 + 1)]
-        h_bot_frames = [torch.nn.functional.pad(x, pad=(0, 0, i + 1, 0),  value=0) for i, x in enumerate(h_bot_frames)]
+        h_bot_frames = [torch.nn.functional.pad(x, pad=(0, 0, i + 1, 0), value=0) for i, x in enumerate(h_bot_frames)]
 
         h_frames = [*h_top_frames, frame, *h_bot_frames]
         return h_frames
@@ -1020,10 +1018,10 @@ class RandomFocusBlurV2(AloTransform):
 
         v_frame = sum(v_frames) / self.v_filter_size
         h_frame = sum(h_frames) / self.h_filter_size
-        
+
         blured = (h_frame + v_frame) / 2
         blured = Frame(blured)
-        
+
         blured = blured.norm_as(frame)
         blured.__dict__ = frame.__dict__.copy()
         return blured
@@ -1035,19 +1033,19 @@ class RandomFocusBlurV3(RandomFocusBlurV2):
         c, h, _ = frame.shape
         v_left_frames = [frame[:, :, i:] for i in range(1, size // 2 + 1)]
         v_left_frames = [torch.cat([f, torch.zeros((c, h, i + 1))], dim=2) for i, f in enumerate(v_left_frames)]
-        
+
         v_right_frames = [frame[:, :, :-i] for i in range(1, size // 2 + 1)]
         v_right_frames = [torch.cat([torch.zeros((c, h, i + 1)), f], dim=2) for i, f in enumerate(v_right_frames)]
 
         v_frames = [*v_left_frames, frame, *v_right_frames]
         return v_frames
-    
+
     @staticmethod
     def v_trans(frame, size):
         c, _, w = frame.shape
         h_top_frames = [frame[:, i:, :] for i in range(1, size // 2 + 1)]
         h_top_frames = [torch.cat([f, torch.zeros((c, i + 1, w))], dim=1) for i, f in enumerate(h_top_frames)]
-        
+
         h_bot_frames = [frame[:, :-i, :] for i in range(1, size // 2 + 1)]
         h_bot_frames = [torch.cat([torch.zeros((c, i + 1, w)), f], dim=1) for i, f in enumerate(h_bot_frames)]
 
@@ -1057,7 +1055,7 @@ class RandomFocusBlurV3(RandomFocusBlurV2):
 
 class RandomFlowMotionBlur(AloTransform):
     """Introduces motion blur from optical flow.
-    
+
     Idea : Let OpticalFlow : x, y --> x', y'
     retrive the indexes betwe x, x' and y, y'
     i.e x -> x1 ... -> x' , y -> y1 ... -> y'
@@ -1076,20 +1074,21 @@ class RandomFlowMotionBlur(AloTransform):
             Motion blur intensity. If this arg is set, the value will not be random anymore.
 
     """
+
     def __init__(
-            self,
-            subframes: int = 10,
-            flow_model=None,
-            model_kwargs={},
-            intensity=None,
-            **kwargs,
-            ):
+        self,
+        subframes: int = 10,
+        flow_model=None,
+        model_kwargs={},
+        intensity=None,
+        **kwargs,
+    ):
         if isinstance(intensity, list):
             assert all([isinstance(x, float) for x in intensity])
             assert intensity[0] < intensity[1]
             assert len(intensity) == 2
 
-        self.intensity = 1. if intensity is None else intensity
+        self.intensity = 1.0 if intensity is None else intensity
         self.model_kwargs = model_kwargs
         self.flow_model = flow_model
         self.inter_intensity = None
@@ -1116,12 +1115,12 @@ class RandomFlowMotionBlur(AloTransform):
         frame2 = Frame(frame2).norm_minmax_sym().batch()
 
         return {"frame1": frame1, "frame2": frame2, **self.model_kwargs}
-    
+
     @staticmethod
     def _adapt_model_output(output):
-        """Adapts model output to be an optical flow of size [2, H, W] where the first channel 
+        """Adapts model output to be an optical flow of size [2, H, W] where the first channel
         is the OF over X axis and the second is over Y axis
-        
+
         Example with alonet/raft/raft ... ->
 
         """
@@ -1152,7 +1151,7 @@ class RandomFlowMotionBlur(AloTransform):
         if HW != HW_:
             flow = torch.nn.functional.interpolate(flow.unsqueeze(0), size=HW_, mode="nearest")
             flow = flow.squeeze()
-        
+
         flow = flow * self.inter_intensity
 
         # XY Coordinates
@@ -1164,18 +1163,20 @@ class RandomFlowMotionBlur(AloTransform):
         # Map coridinates of intermediate points X -> X, intemediate X points ..., X + X_displacement (same for Y)
         subcoords = [
             [
-                (coords[0] - map_coords[0]) * i / self.subframes + coords[0],   # X
-                (coords[0] - map_coords[0]) * i / self.subframes + coords[1]]   # Y
-                for i in range(self.subframes + 1)
-            ]
+                (coords[0] - map_coords[0]) * i / self.subframes + coords[0],  # X
+                (coords[0] - map_coords[0]) * i / self.subframes + coords[1],
+            ]  # Y
+            for i in range(self.subframes + 1)
+        ]
 
         # Round and clamp indexes (float -> int + Occlusion)
         subcoords = [
             [
                 torch.round(torch.clamp(s[0], min=0, max=HW_[0] - 1)).long(),
-                torch.round(torch.clamp(s[1], min=0, max=HW_[1] - 1)).long()
+                torch.round(torch.clamp(s[1], min=0, max=HW_[1] - 1)).long(),
             ]
-            for s in subcoords]
+            for s in subcoords
+        ]
 
         # Frame to indexed intermediate frames
         frame_ = [frame_[:, subcoord[0], subcoord[1]] for subcoord in subcoords]
@@ -1203,18 +1204,19 @@ class RandomCornersMask(AloTransform):
             ## p_sides = [top, bottom, right, left]
 
     """
+
     def __init__(
-            self,
-            max_mask_size: float = 0.2,
-            p_sides: List = [0.2, 0.2, 0.2, 0.2],
-            **kwargs,
-            ):
+        self,
+        max_mask_size: float = 0.2,
+        p_sides: List = [0.2, 0.2, 0.2, 0.2],
+        **kwargs,
+    ):
         assert len(p_sides) == 4
         assert isinstance(p_sides, list)
         assert isinstance(max_mask_size, float)
         assert max_mask_size >= 0 and max_mask_size < 1
         assert all([isinstance(x, float) for x in p_sides])
-        
+
         # Random var param
         self.max_mask_size = max_mask_size
         self.p_sides = p_sides

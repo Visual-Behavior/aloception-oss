@@ -1319,12 +1319,3 @@ class IRAugmentation(AloTransform):
         result = cv2.cvtColor(equ, cv2.COLOR_GRAY2RGB)
         result = np.transpose(result, (2, 0, 1))
         return result
-
-
-if __name__ == "__main__":
-    x = torch.rand(3, 256, 256)
-    x = Frame(x, normalization="01")
-    print("X", x)
-
-    y = IRAugmentation()(x)
-    print("Y", y)

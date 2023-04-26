@@ -523,7 +523,7 @@ class RandomResizeWithAspectRatio(AloTransform):
 
 
 class Resize(AloTransform):
-    def __init__(self, size: tuple, antialias=True, *args, **kwargs):
+    def __init__(self, size: tuple, antialias=False, *args, **kwargs):
         """Reszie the given frame to the target frame size.
 
         Parameters

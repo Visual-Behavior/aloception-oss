@@ -520,7 +520,7 @@ class SpatialAugmentedTensor(AugmentedTensor):
         assert self.names[-2] == "H" and self.names[-1] == "W", f"expected format: […, H, W], got: {self.names}"
         return F.vflip(self.rename(None)).reset_names()
 
-    def _resize(self, size, interpolation=InterpolationMode.BILINEAR, antialias=True, **kwargs):
+    def _resize(self, size, interpolation=InterpolationMode.BILINEAR, antialias=False, **kwargs):
         """Resize SpatialAugmentedTensor, but not its labels
 
         Parameters

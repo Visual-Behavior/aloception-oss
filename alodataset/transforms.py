@@ -714,6 +714,44 @@ class SpatialShift(AloTransform):
         return n_frame
 
 
+class GrayScale(AloTransform):
+    def __init__(self, *args, **kwargs):
+        """Transform the input frame to a gray frame (all channels to same value)
+
+        Parameters
+        ----------
+        frame: aloscene.Frame
+        """
+        super().__init__(*args, **kwargs)
+
+    def sample_params(self):
+        """No parameters to sample"""
+        return tuple()
+
+    def set_params(self):
+        """No parameters to set"""
+        pass
+
+    def apply(self, frame: Frame):
+        """Apply the transformation on the frame
+
+        Parameters
+        ----------
+        frame: aloscene.Frame
+
+        Returns
+        -------
+        n_frame: aloscene.Frame
+        """
+        n_frame = frame.norm01()
+        frame_data = n_frame.data.as_tensor()
+        frame_data = F.rgb_to_grayscale(frame_data, num_output_channels=3)
+        n_frame.data = frame_data
+        if n_frame.normalization != frame.normalization:
+            n_frame = n_frame.norm_as(frame)
+        return n_frame
+
+
 class ColorJitter(AloTransform, torchvision.transforms.ColorJitter):
     def __init__(
         self,

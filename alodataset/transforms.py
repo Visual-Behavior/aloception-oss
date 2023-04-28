@@ -9,6 +9,7 @@ import torchvision.transforms as T
 import torchvision.transforms.functional as F
 from torch.distributions.uniform import Uniform
 import torchvision
+import cv2
 
 from aloscene import Frame, Flow, Mask
 
@@ -910,13 +911,14 @@ class DynamicCropTransform(AloTransform):
 
 class RandomFocusBlur(AloTransform):
     """Randomly introduces motion blur.
-    
+
     Parameters
     ----------
         max_filter_size : int
             Max filter size to use, the higher the more blured the image.
-    
+
     """
+
     def __init__(self, max_filter_size=10, *args, **kwargs):
         assert isinstance(max_filter_size, int)
         self.max_filter_size = max_filter_size
@@ -937,7 +939,7 @@ class RandomFocusBlur(AloTransform):
     def set_params(self, h_size, v_size):
         self.h_filter_size = h_size
         self.v_filter_size = v_size
-    
+
     @torch.no_grad()
     def apply(self, frame):
         c, h, w = frame.shape
@@ -963,13 +965,14 @@ class RandomFocusBlur(AloTransform):
 
 class RandomFocusBlurV2(AloTransform):
     """Randomly introduces motion blur.
-    
+
     Parameters
     ----------
         max_filter_size : int
             Max filter size to use, the higher the more blured the image.
 
     """
+
     def __init__(self, max_filter_size=10, *args, **kwargs):
         assert isinstance(max_filter_size, int)
         self.max_filter_size = max_filter_size
@@ -987,25 +990,25 @@ class RandomFocusBlurV2(AloTransform):
     def set_params(self, h_size, v_size):
         self.h_filter_size = h_size
         self.v_filter_size = v_size
-    
+
     @staticmethod
     def h_trans(frame, size):
         v_left_frames = [frame[:, :, i:] for i in range(1, size // 2 + 1)]
-        v_left_frames = [torch.nn.functional.pad(x, pad=(0, i + 1),  value=0) for i, x in enumerate(v_left_frames)]
-        
+        v_left_frames = [torch.nn.functional.pad(x, pad=(0, i + 1), value=0) for i, x in enumerate(v_left_frames)]
+
         v_right_frames = [frame[:, :, :-i] for i in range(1, size // 2 + 1)]
-        v_right_frames = [torch.nn.functional.pad(x, pad=(i + 1, 0),  value=0) for i, x in enumerate(v_right_frames)]
+        v_right_frames = [torch.nn.functional.pad(x, pad=(i + 1, 0), value=0) for i, x in enumerate(v_right_frames)]
 
         v_frames = [*v_left_frames, frame, *v_right_frames]
         return v_frames
-    
+
     @staticmethod
     def v_trans(frame, size):
         h_top_frames = [frame[:, i:, :] for i in range(1, size // 2 + 1)]
-        h_top_frames = [torch.nn.functional.pad(x, pad=(0, 0, 0, i + 1),  value=0) for i, x in enumerate(h_top_frames)]
-        
+        h_top_frames = [torch.nn.functional.pad(x, pad=(0, 0, 0, i + 1), value=0) for i, x in enumerate(h_top_frames)]
+
         h_bot_frames = [frame[:, :-i, :] for i in range(1, size // 2 + 1)]
-        h_bot_frames = [torch.nn.functional.pad(x, pad=(0, 0, i + 1, 0),  value=0) for i, x in enumerate(h_bot_frames)]
+        h_bot_frames = [torch.nn.functional.pad(x, pad=(0, 0, i + 1, 0), value=0) for i, x in enumerate(h_bot_frames)]
 
         h_frames = [*h_top_frames, frame, *h_bot_frames]
         return h_frames
@@ -1020,10 +1023,10 @@ class RandomFocusBlurV2(AloTransform):
 
         v_frame = sum(v_frames) / self.v_filter_size
         h_frame = sum(h_frames) / self.h_filter_size
-        
+
         blured = (h_frame + v_frame) / 2
         blured = Frame(blured)
-        
+
         blured = blured.norm_as(frame)
         blured.__dict__ = frame.__dict__.copy()
         return blured
@@ -1035,19 +1038,19 @@ class RandomFocusBlurV3(RandomFocusBlurV2):
         c, h, _ = frame.shape
         v_left_frames = [frame[:, :, i:] for i in range(1, size // 2 + 1)]
         v_left_frames = [torch.cat([f, torch.zeros((c, h, i + 1))], dim=2) for i, f in enumerate(v_left_frames)]
-        
+
         v_right_frames = [frame[:, :, :-i] for i in range(1, size // 2 + 1)]
         v_right_frames = [torch.cat([torch.zeros((c, h, i + 1)), f], dim=2) for i, f in enumerate(v_right_frames)]
 
         v_frames = [*v_left_frames, frame, *v_right_frames]
         return v_frames
-    
+
     @staticmethod
     def v_trans(frame, size):
         c, _, w = frame.shape
         h_top_frames = [frame[:, i:, :] for i in range(1, size // 2 + 1)]
         h_top_frames = [torch.cat([f, torch.zeros((c, i + 1, w))], dim=1) for i, f in enumerate(h_top_frames)]
-        
+
         h_bot_frames = [frame[:, :-i, :] for i in range(1, size // 2 + 1)]
         h_bot_frames = [torch.cat([torch.zeros((c, i + 1, w)), f], dim=1) for i, f in enumerate(h_bot_frames)]
 
@@ -1057,7 +1060,7 @@ class RandomFocusBlurV3(RandomFocusBlurV2):
 
 class RandomFlowMotionBlur(AloTransform):
     """Introduces motion blur from optical flow.
-    
+
     Idea : Let OpticalFlow : x, y --> x', y'
     retrive the indexes betwe x, x' and y, y'
     i.e x -> x1 ... -> x' , y -> y1 ... -> y'
@@ -1076,20 +1079,21 @@ class RandomFlowMotionBlur(AloTransform):
             Motion blur intensity. If this arg is set, the value will not be random anymore.
 
     """
+
     def __init__(
-            self,
-            subframes: int = 10,
-            flow_model=None,
-            model_kwargs={},
-            intensity=None,
-            **kwargs,
-            ):
+        self,
+        subframes: int = 10,
+        flow_model=None,
+        model_kwargs={},
+        intensity=None,
+        **kwargs,
+    ):
         if isinstance(intensity, list):
             assert all([isinstance(x, float) for x in intensity])
             assert intensity[0] < intensity[1]
             assert len(intensity) == 2
 
-        self.intensity = 1. if intensity is None else intensity
+        self.intensity = 1.0 if intensity is None else intensity
         self.model_kwargs = model_kwargs
         self.flow_model = flow_model
         self.inter_intensity = None
@@ -1116,12 +1120,12 @@ class RandomFlowMotionBlur(AloTransform):
         frame2 = Frame(frame2).norm_minmax_sym().batch()
 
         return {"frame1": frame1, "frame2": frame2, **self.model_kwargs}
-    
+
     @staticmethod
     def _adapt_model_output(output):
-        """Adapts model output to be an optical flow of size [2, H, W] where the first channel 
+        """Adapts model output to be an optical flow of size [2, H, W] where the first channel
         is the OF over X axis and the second is over Y axis
-        
+
         Example with alonet/raft/raft ... ->
 
         """
@@ -1152,7 +1156,7 @@ class RandomFlowMotionBlur(AloTransform):
         if HW != HW_:
             flow = torch.nn.functional.interpolate(flow.unsqueeze(0), size=HW_, mode="nearest")
             flow = flow.squeeze()
-        
+
         flow = flow * self.inter_intensity
 
         # XY Coordinates
@@ -1164,18 +1168,20 @@ class RandomFlowMotionBlur(AloTransform):
         # Map coridinates of intermediate points X -> X, intemediate X points ..., X + X_displacement (same for Y)
         subcoords = [
             [
-                (coords[0] - map_coords[0]) * i / self.subframes + coords[0],   # X
-                (coords[0] - map_coords[0]) * i / self.subframes + coords[1]]   # Y
-                for i in range(self.subframes + 1)
-            ]
+                (coords[0] - map_coords[0]) * i / self.subframes + coords[0],  # X
+                (coords[0] - map_coords[0]) * i / self.subframes + coords[1],
+            ]  # Y
+            for i in range(self.subframes + 1)
+        ]
 
         # Round and clamp indexes (float -> int + Occlusion)
         subcoords = [
             [
                 torch.round(torch.clamp(s[0], min=0, max=HW_[0] - 1)).long(),
-                torch.round(torch.clamp(s[1], min=0, max=HW_[1] - 1)).long()
+                torch.round(torch.clamp(s[1], min=0, max=HW_[1] - 1)).long(),
             ]
-            for s in subcoords]
+            for s in subcoords
+        ]
 
         # Frame to indexed intermediate frames
         frame_ = [frame_[:, subcoord[0], subcoord[1]] for subcoord in subcoords]
@@ -1203,18 +1209,19 @@ class RandomCornersMask(AloTransform):
             ## p_sides = [top, bottom, right, left]
 
     """
+
     def __init__(
-            self,
-            max_mask_size: float = 0.2,
-            p_sides: List = [0.2, 0.2, 0.2, 0.2],
-            **kwargs,
-            ):
+        self,
+        max_mask_size: float = 0.2,
+        p_sides: List = [0.2, 0.2, 0.2, 0.2],
+        **kwargs,
+    ):
         assert len(p_sides) == 4
         assert isinstance(p_sides, list)
         assert isinstance(max_mask_size, float)
         assert max_mask_size >= 0 and max_mask_size < 1
         assert all([isinstance(x, float) for x in p_sides])
-        
+
         # Random var param
         self.max_mask_size = max_mask_size
         self.p_sides = p_sides
@@ -1263,3 +1270,52 @@ class RandomCornersMask(AloTransform):
         # Restore frame frame props and childs (avoid apply on child)
         frame_.__dict__ = frame.__dict__.copy()
         return frame_, Mask(mask, names=("C", "H", "W"))
+
+
+class IRAugmentation(AloTransform):
+    def __init__(self, *args, **kwargs):
+        """Apply transform to make the frame look like a IR image with a probability p"""
+
+        super().__init__(*args, **kwargs)
+
+    def sample_params(self):
+        """Dummy parameters"""
+        self._w = 1.0
+        self._h = 1.0
+        return (self._w, self._h)
+
+    def set_params(self, _w, _h):
+        """Given predefined params, set the params on the class"""
+        self._w = _w
+        self._h = _h
+
+    def apply(self, frame: Frame):
+        """Apply the transformation
+
+        Parameters
+        ----------
+        frame: Frame
+            Frame to apply the transformation on
+        """
+
+        newframe = frame.clone()
+        children = newframe.get_children()
+
+        new_frame = newframe.as_image()  # convert to norm255() and then to numpy image
+        new_frame = self.ir_normalize_image(new_frame)
+
+        new_aloframe = Frame(new_frame)
+        new_aloframe.set_children(children)
+        new_aloframe = new_aloframe.norm_as(frame)
+        return new_aloframe
+
+    @staticmethod
+    def ir_normalize_image(image):
+        # Convert the image to grayscale
+        gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+        # Apply histogram equalization to the grayscale image
+        equ = cv2.equalizeHist(gray)
+        # Convert the equalized grayscale image back to RGB
+        result = cv2.cvtColor(equ, cv2.COLOR_GRAY2RGB)
+        result = np.transpose(result, (2, 0, 1))
+        return result

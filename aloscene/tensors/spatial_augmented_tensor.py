@@ -520,7 +520,7 @@ class SpatialAugmentedTensor(AugmentedTensor):
         assert self.names[-2] == "H" and self.names[-1] == "W", f"expected format: […, H, W], got: {self.names}"
         return F.vflip(self.rename(None)).reset_names()
 
-    def _resize(self, size, interpolation=InterpolationMode.BILINEAR, **kwargs):
+    def _resize(self, size, interpolation=InterpolationMode.BILINEAR, antialias=False, **kwargs):
         """Resize SpatialAugmentedTensor, but not its labels
 
         Parameters
@@ -542,7 +542,7 @@ class SpatialAugmentedTensor(AugmentedTensor):
         if ("N" in self.names and self.size("N") == 0) or ("C" in self.names and self.size("C") == 0):
             shapes = list(self.shape)[:-2] + [h, w]
             return self.rename(None).view(shapes).reset_names()
-        return F.resize(self.rename(None), (h, w), interpolation=interpolation).reset_names()
+        return F.resize(self.rename(None), (h, w), interpolation=interpolation, antialias=antialias).reset_names()
 
     def _rotate(self, angle, center=None, **kwargs):
         """Rotate SpatialAugmentedTensor, but not its labels
@@ -632,7 +632,6 @@ class SpatialAugmentedTensor(AugmentedTensor):
         """
 
         def _slice_list(label_list, curr_dim_idx, dim_idx, slicer):
-
             if isinstance(label_list, torch.Tensor):
                 assert self._child_property[label_name]["mergeable"]
                 n_slice = label_list.get_slices({label_list.names[dim_idx]: slicer}, label_list)
@@ -646,14 +645,12 @@ class SpatialAugmentedTensor(AugmentedTensor):
             return n_label_list
 
         if isinstance(idx, tuple) or isinstance(idx, list):
-
             hw_crop = [None, None]
 
             dim_idx = 0
             label_dim_idx = 0
 
             for slicer_idx, slicer in enumerate(idx):
-
                 if isinstance(slicer, type(Ellipsis)):
                     dim_idx += len(self.names) - len(idx[slicer_idx:]) + 1
                     label_dim_idx += len(self.names) - len(idx[slicer_idx:]) + 1

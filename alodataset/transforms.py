@@ -77,7 +77,6 @@ class AloTransform(object):
 
         # Go through each image
         if isinstance(frames, dict):
-
             n_set = {}
 
             if same_on_sequence is None or same_on_frames is None:
@@ -87,11 +86,9 @@ class AloTransform(object):
                 )
 
             for key in frames:
-
                 # Go throguh each element of the sequence
                 # (If needed to apply save the params for each time step
                 if "T" in frames[key].names and same_on_frames and not same_on_sequence:
-
                     n_set[key] = []
                     for t in range(0, frames[key].shape[0]):
                         if t not in seqid2params:
@@ -111,7 +108,6 @@ class AloTransform(object):
                 # Different for each element of the sequence, but we don't need to save
                 # the params for each image neither
                 elif "T" in frames[key].names and not same_on_frames and not same_on_sequence:
-
                     n_set[key] = []
 
                     for t in range(0, frames[key].shape[0]):
@@ -377,7 +373,6 @@ class RandomSizePad(AloTransform):
         self._pad_bottom = pad_bottom
 
     def __call__(self, frame):
-
         print((self._pad_top, self._pad_bottom), (self._pad_left, self._pad_right))
 
         return frame.pad(
@@ -529,7 +524,7 @@ class RandomResizeWithAspectRatio(AloTransform):
 
 
 class Resize(AloTransform):
-    def __init__(self, size: tuple, *args, **kwargs):
+    def __init__(self, size: tuple, antialias=False, *args, **kwargs):
         """Reszie the given frame to the target frame size.
 
         Parameters
@@ -539,6 +534,7 @@ class Resize(AloTransform):
         """
         assert isinstance(size, tuple)
         self.size = size
+        self.antialias = antialias
         super().__init__(*args, **kwargs)
 
     def sample_params(self):
@@ -557,7 +553,7 @@ class Resize(AloTransform):
         frame: Frame
             Frame to apply the transformation on
         """
-        frame = frame.resize(self.size)
+        frame = frame.resize(self.size, antialias=self.antialias)
         return frame
 
 

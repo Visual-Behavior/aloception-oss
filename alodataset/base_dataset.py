@@ -262,7 +262,9 @@ class BaseDataset(torch.utils.data.Dataset):
         dataset_dir: str
             Path to the new directory
         """
+
         streaming_dt_config = os.path.join(self.vb_folder, "alodataset_config.json")
+        print("Path to config file: ", streaming_dt_config)
         if not os.path.exists(streaming_dt_config):
             with open(streaming_dt_config, "w") as f:  # Json init as empty config
                 json.dump(dict(), f, indent=4)

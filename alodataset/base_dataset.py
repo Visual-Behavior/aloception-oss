@@ -270,6 +270,7 @@ class BaseDataset(torch.utils.data.Dataset):
             with open(streaming_dt_config, "w") as f:  # Json init as empty config
                 json.dump(dict(), f, indent=4)
         with open(streaming_dt_config) as f:
+            print("f.Read :", f.read)
             content = json.loads(f.read())
 
         print("self name: ", self.name)

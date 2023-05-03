@@ -264,6 +264,7 @@ class BaseDataset(torch.utils.data.Dataset):
         """
 
         streaming_dt_config = os.path.join(self.vb_folder, "alodataset_config.json")
+        print("File path", streaming_dt_config)
         if not os.path.exists(streaming_dt_config):
             print("Init empty config file")
             with open(streaming_dt_config, "w") as f:  # Json init as empty config

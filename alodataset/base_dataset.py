@@ -274,7 +274,6 @@ class BaseDataset(torch.utils.data.Dataset):
 
         print("self name: ", self.name)
         print("content: ", content)
-        print("DATASETS_DOWNLOAD_PATHS: ", DATASETS_DOWNLOAD_PATHS)
         if dataset_dir is None:
             if self.name in DATASETS_DOWNLOAD_PATHS:
                 dataset_dir = _user_prompt(

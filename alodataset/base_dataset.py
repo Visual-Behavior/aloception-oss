@@ -76,7 +76,7 @@ def train_loader(dataset, batch_size=1, num_workers=2, sampler=torch.utils.data.
     torch.utils.data.DataLoader
         A generator
     """
-    if sampler is not None and not(isinstance(sampler, torch.utils.data.Sampler)):
+    if sampler is not None and not (isinstance(sampler, torch.utils.data.Sampler)):
         sampler = sampler(dataset, **sampler_kwargs)
     data_loader = torch.utils.data.DataLoader(
         dataset,
@@ -123,7 +123,7 @@ class BaseDataset(torch.utils.data.Dataset):
         sample: bool = False,
         **kwargs,
     ):
-        """ Streaming dataset
+        """Streaming dataset
 
         Parameters
         ----------
@@ -264,13 +264,16 @@ class BaseDataset(torch.utils.data.Dataset):
         """
 
         streaming_dt_config = os.path.join(self.vb_folder, "alodataset_config.json")
-        print("Path to config file: ", streaming_dt_config)
         if not os.path.exists(streaming_dt_config):
+            print("Init empty config file")
             with open(streaming_dt_config, "w") as f:  # Json init as empty config
                 json.dump(dict(), f, indent=4)
         with open(streaming_dt_config) as f:
             content = json.loads(f.read())
 
+        print("self name: ", self.name)
+        print("content: ", content)
+        print("DATASETS_DOWNLOAD_PATHS: ", DATASETS_DOWNLOAD_PATHS)
         if dataset_dir is None:
             if self.name in DATASETS_DOWNLOAD_PATHS:
                 dataset_dir = _user_prompt(
@@ -354,7 +357,9 @@ class BaseDataset(torch.utils.data.Dataset):
         torch.utils.data.DataLoader
             A generator
         """
-        return train_loader(self, batch_size=batch_size, num_workers=num_workers, sampler=sampler, sampler_kwargs=sampler_kwargs    )
+        return train_loader(
+            self, batch_size=batch_size, num_workers=num_workers, sampler=sampler, sampler_kwargs=sampler_kwargs
+        )
 
     def prepare(self):
         """Prepare the dataset. Not all child class need to implement this method.

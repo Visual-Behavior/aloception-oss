@@ -162,6 +162,8 @@ class Compose(AloTransform):
             List of transformation to apply sequentially
         """
         self.transforms = transforms
+        if "p" not in kwargs:
+            kwargs["p"] = 1.0
         super().__init__(*args, **kwargs)
 
     def sample_params(self):

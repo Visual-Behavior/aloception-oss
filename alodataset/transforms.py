@@ -205,7 +205,7 @@ class Compose(AloTransform):
 
 
 class RandomSelect(AloTransform):
-    def __init__(self, transforms1: AloTransform, transforms2: AloTransform, p: float = 0.5, *args, **kwargs):
+    def __init__(self, transforms1: AloTransform, transforms2: AloTransform, *args, **kwargs):
         """Randomly selects between transforms1 and transforms2,
         with probability p for transforms1 and (1 - p) for transforms2
 
@@ -218,7 +218,6 @@ class RandomSelect(AloTransform):
         """
         self.transforms1 = transforms1
         self.transforms2 = transforms2
-        self.p = p
         super().__init__(*args, **kwargs)
 
     def sample_params(self):

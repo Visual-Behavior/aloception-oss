@@ -76,7 +76,7 @@ def train_loader(dataset, batch_size=1, num_workers=2, sampler=torch.utils.data.
     torch.utils.data.DataLoader
         A generator
     """
-    if sampler is not None and not(isinstance(sampler, torch.utils.data.Sampler)):
+    if sampler is not None and not (isinstance(sampler, torch.utils.data.Sampler)):
         sampler = sampler(dataset, **sampler_kwargs)
     data_loader = torch.utils.data.DataLoader(
         dataset,
@@ -123,7 +123,7 @@ class BaseDataset(torch.utils.data.Dataset):
         sample: bool = False,
         **kwargs,
     ):
-        """ Streaming dataset
+        """Streaming dataset
 
         Parameters
         ----------
@@ -152,7 +152,7 @@ class BaseDataset(torch.utils.data.Dataset):
             by default False.
         """
 
-        super(BaseDataset, self).__init__(**kwargs)
+        super(BaseDataset, self).__init__()
         self.name = name
         self.sample = sample
         self.dataset_dir = self.get_dataset_dir()
@@ -352,7 +352,9 @@ class BaseDataset(torch.utils.data.Dataset):
         torch.utils.data.DataLoader
             A generator
         """
-        return train_loader(self, batch_size=batch_size, num_workers=num_workers, sampler=sampler, sampler_kwargs=sampler_kwargs    )
+        return train_loader(
+            self, batch_size=batch_size, num_workers=num_workers, sampler=sampler, sampler_kwargs=sampler_kwargs
+        )
 
     def prepare(self):
         """Prepare the dataset. Not all child class need to implement this method.

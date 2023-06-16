@@ -580,7 +580,7 @@ class SpatialAugmentedTensor(AugmentedTensor):
             cropped SpatialAugmentedTensor
         """
 
-        H_crop, W_crop = self._relative_to_absolute_hs_ws(H_crop, W_crop, assert_integer=False, warn_non_integer=True)
+        H_crop, W_crop = self._relative_to_absolute_hs_ws(H_crop, W_crop, assert_integer=False, warn_non_integer=False)
         hmin, hmax = H_crop
         wmin, wmax = W_crop
         slices = self.get_slices({"H": slice(hmin, hmax), "W": slice(wmin, wmax)})

@@ -93,8 +93,12 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
         tensor.add_property("padded_size", None)
 
         if absolute and frame_size is None:
-            raise Exception("If the boxes format are absolute, the `frame_size` must be set")
-        assert frame_size is None or (isinstance(frame_size, tuple) and len(frame_size) == 2)
+            raise Exception(
+                "If the boxes format are absolute, the `frame_size` must be set"
+            )
+        assert frame_size is None or (
+            isinstance(frame_size, tuple) and len(frame_size) == 2
+        )
         tensor.add_property("frame_size", frame_size)
 
         return tensor
@@ -146,7 +150,11 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
             # Convert from xyxy to xcyc
             labels = tensor.drop_children()
             xcyc_boxes = torch.cat(
-                [tensor[:, :2] + ((tensor[:, 2:] - tensor[:, :2]) / 2), (tensor[:, 2:] - tensor[:, :2])], dim=1
+                [
+                    tensor[:, :2] + ((tensor[:, 2:] - tensor[:, :2]) / 2),
+                    (tensor[:, 2:] - tensor[:, :2]),
+                ],
+                dim=1,
             )
             xcyc_boxes.boxes_format = "xcyc"
             xcyc_boxes.set_children(labels)
@@ -158,7 +166,8 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
             tensor = tensor.rename_(None)
             xcyc_boxes = torch.cat(
                 [
-                    tensor[:, :2].flip([1]) + ((tensor[:, 2:].flip([1]) - tensor[:, :2].flip([1])) / 2),
+                    tensor[:, :2].flip([1])
+                    + ((tensor[:, 2:].flip([1]) - tensor[:, :2].flip([1])) / 2),
                     (tensor[:, 2:].flip([1]) - tensor[:, :2].flip([1])),
                 ],
                 dim=1,
@@ -170,7 +179,9 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
             tensor.set_children(labels)
             return xcyc_boxes
         else:
-            raise Exception(f"BoundingBoxes2D:Do not know mapping from {tensor.boxes_format} to xcyc")
+            raise Exception(
+                f"BoundingBoxes2D:Do not know mapping from {tensor.boxes_format} to xcyc"
+            )
 
     def xyxy(self):
         """Get a new BoundingBoxes2D Tensor with boxes following this format:
@@ -186,7 +197,10 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
             labels = tensor.drop_children()
             # Convert from xcyc to xyxy
             n_tensor = torch.cat(
-                [tensor[:, :2] - (tensor[:, 2:] / 2), tensor[:, :2] + (tensor[:, 2:] / 2)],
+                [
+                    tensor[:, :2] - (tensor[:, 2:] / 2),
+                    tensor[:, :2] + (tensor[:, 2:] / 2),
+                ],
                 dim=1,
             )
             n_tensor.boxes_format = "xyxy"
@@ -209,7 +223,9 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
             tensor.set_children(labels)
             return n_tensor
         else:
-            raise Exception(f"BoundingBoxes2D:Do not know mapping from {tensor.boxes_format} to xyxy")
+            raise Exception(
+                f"BoundingBoxes2D:Do not know mapping from {tensor.boxes_format} to xyxy"
+            )
 
     def yxyx(self):
         """Get a new BoundingBoxes2D Tensor with boxes following this format:
@@ -255,7 +271,9 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
         elif tensor.boxes_format == "yxyx":
             return tensor
         else:
-            raise Exception(f"BoundingBoxes2D:Do not know mapping from {tensor.boxes_format} to yxyx")
+            raise Exception(
+                f"BoundingBoxes2D:Do not know mapping from {tensor.boxes_format} to yxyx"
+            )
 
     def abs_pos(self, frame_size):
         """Get a new BoundingBoxes2D Tensor with absolute position
@@ -274,18 +292,27 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
 
         # Back to relative before to get the absolute pos
         if tensor.absolute and frame_size != tensor.frame_size:
-
             if tensor.boxes_format == "xcyc" or tensor.boxes_format == "xyxy":
                 tensor = tensor.div(
                     torch.tensor(
-                        [tensor.frame_size[1], tensor.frame_size[0], tensor.frame_size[1], tensor.frame_size[0]],
+                        [
+                            tensor.frame_size[1],
+                            tensor.frame_size[0],
+                            tensor.frame_size[1],
+                            tensor.frame_size[0],
+                        ],
                         device=tensor.device,
                     )
                 )
             else:
                 tensor = tensor.div(
                     torch.tensor(
-                        [tensor.frame_size[0], tensor.frame_size[1], tensor.frame_size[0], tensor.frame_size[1]],
+                        [
+                            tensor.frame_size[0],
+                            tensor.frame_size[1],
+                            tensor.frame_size[0],
+                            tensor.frame_size[1],
+                        ],
                         device=tensor.device,
                     )
                 )
@@ -295,11 +322,17 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
         if not tensor.absolute:
             if tensor.boxes_format == "xcyc" or tensor.boxes_format == "xyxy":
                 tensor = tensor.mul(
-                    torch.tensor([frame_size[1], frame_size[0], frame_size[1], frame_size[0]], device=tensor.device)
+                    torch.tensor(
+                        [frame_size[1], frame_size[0], frame_size[1], frame_size[0]],
+                        device=tensor.device,
+                    )
                 )
             else:
                 tensor = tensor.mul(
-                    torch.tensor([frame_size[0], frame_size[1], frame_size[0], frame_size[1]], device=tensor.device)
+                    torch.tensor(
+                        [frame_size[0], frame_size[1], frame_size[0], frame_size[1]],
+                        device=tensor.device,
+                    )
                 )
             tensor.frame_size = frame_size
             tensor.absolute = True
@@ -324,14 +357,24 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
             if tensor.boxes_format == "xcyc" or tensor.boxes_format == "xyxy":
                 tensor = tensor.div(
                     torch.tensor(
-                        [tensor.frame_size[1], tensor.frame_size[0], tensor.frame_size[1], tensor.frame_size[0]],
+                        [
+                            tensor.frame_size[1],
+                            tensor.frame_size[0],
+                            tensor.frame_size[1],
+                            tensor.frame_size[0],
+                        ],
                         device=tensor.device,
                     )
                 )
             else:
                 tensor = tensor.div(
                     torch.tensor(
-                        [tensor.frame_size[0], tensor.frame_size[1], tensor.frame_size[0], tensor.frame_size[1]],
+                        [
+                            tensor.frame_size[0],
+                            tensor.frame_size[1],
+                            tensor.frame_size[0],
+                            tensor.frame_size[1],
+                        ],
                         device=tensor.device,
                     )
                 )
@@ -376,7 +419,9 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
             boxes = boxes.as_tensor()
             return (boxes[:, 2] - boxes[:, 0]).mul(boxes[:, 3] - boxes[:, 1])
         else:
-            raise Exception(f"desired boxes_format {boxes.boxes_format} is not handle to compute the area")
+            raise Exception(
+                f"desired boxes_format {boxes.boxes_format} is not handle to compute the area"
+            )
 
     def abs_area(self, frame_size: Union[tuple, None]) -> torch.Tensor:
         """Get the absolute area of the current boxes.
@@ -396,7 +441,9 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
             return self._area(self.clone())
         else:
             if frame_size is None:
-                raise Exception("Boxes are encoded as relative, the frame size must be given to compute the area.")
+                raise Exception(
+                    "Boxes are encoded as relative, the frame size must be given to compute the area."
+                )
             return self._area(self.abs_pos(frame_size))
 
     def rel_area(self) -> torch.Tensor:
@@ -423,6 +470,7 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
         else:
             return self.rel_area()
 
+    np.random.seed(165742)
     _GLOBAL_COLOR_SET = np.random.uniform(0, 1, (300, 3))
 
     def get_view(
@@ -447,7 +495,9 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
 
         if frame is not None:
             if len(frame.shape) > 3:
-                raise Exception(f"Expect image of shape c,h,w. Found image with shape {frame.shape}")
+                raise Exception(
+                    f"Expect image of shape c,h,w. Found image with shape {frame.shape}"
+                )
             assert isinstance(frame, Frame)
         else:
             size = self.frame_size if self.absolute else (300, 300)
@@ -462,7 +512,15 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
 
         # Get an imave with values between 0 and 1
         frame_size = frame.HW
-        frame = frame.norm01().cpu().rename(None).permute([1, 2, 0]).detach().contiguous().numpy()
+        frame = (
+            frame.norm01()
+            .cpu()
+            .rename(None)
+            .permute([1, 2, 0])
+            .detach()
+            .contiguous()
+            .numpy()
+        )
         # Draw bouding boxes
 
         # Try to retrieve the associated label ID (if any)
@@ -480,7 +538,11 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
             raise Exception(
                 f"Trying to display a boxes labels set ({labels_set}) while boxes do not have multiple set of labels"
             )
-        elif labels_set is not None and isinstance(boxes_abs.labels, dict) and labels_set not in boxes_abs.labels:
+        elif (
+            labels_set is not None
+            and isinstance(boxes_abs.labels, dict)
+            and labels_set not in boxes_abs.labels
+        ):
             raise Exception(
                 f"Trying to display a boxes labels set ({labels_set}) while boxes do not have this set. Avaiable set ("
                 + f"{[key for key in boxes_abs.labels]}"
@@ -497,7 +559,9 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
             if label is not None:
                 if isinstance(label, list):
                     label_sum = sum([int(label_value[b]) for label_value in label])
-                    color = self._GLOBAL_COLOR_SET[int(label_sum) % len(self._GLOBAL_COLOR_SET)]
+                    color = self._GLOBAL_COLOR_SET[
+                        int(label_sum) % len(self._GLOBAL_COLOR_SET)
+                    ]
                     text = []
                     for label_elm in label:
                         text.append(
@@ -509,9 +573,24 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
                         )
                     text = ", ".join(text)
                 else:
-                    color = self._GLOBAL_COLOR_SET[int(label) % len(self._GLOBAL_COLOR_SET)]
-                    text = label.labels_names[int(label)] if label.labels_names else int(label)
-                cv2.putText(frame, str(text), (int(x2), int(y1)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1, cv2.LINE_AA)
+                    color = self._GLOBAL_COLOR_SET[
+                        int(label) % len(self._GLOBAL_COLOR_SET)
+                    ]
+                    text = (
+                        label.labels_names[int(label)]
+                        if label.labels_names
+                        else int(label)
+                    )
+                cv2.putText(
+                    frame,
+                    str(text),
+                    (int(x2), int(y1)),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.5,
+                    color,
+                    1,
+                    cv2.LINE_AA,
+                )
                 cv2.rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), color, 3)
             else:
                 color = (0, 1, 0)
@@ -604,13 +683,21 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
         # degenerate boxes gives inf / nan results
         # so do an early check
         try:
-            assert (boxes1.as_tensor()[:, 2:] >= boxes1.as_tensor()[:, :2]).all(), f"{boxes1.as_tensor()}"
-            assert (boxes2.as_tensor()[:, 2:] >= boxes2.as_tensor()[:, :2]).all(), f"{boxes2.as_tensor()}"
+            assert (
+                boxes1.as_tensor()[:, 2:] >= boxes1.as_tensor()[:, :2]
+            ).all(), f"{boxes1.as_tensor()}"
+            assert (
+                boxes2.as_tensor()[:, 2:] >= boxes2.as_tensor()[:, :2]
+            ).all(), f"{boxes2.as_tensor()}"
         except:
             print("boxes1", boxes1)
             print("boxes2", boxes2)
-            assert (boxes1.as_tensor()[:, 2:] >= boxes1.as_tensor()[:, :2]).all(), f"{boxes1.as_tensor()}"
-            assert (boxes2.as_tensor()[:, 2:] >= boxes2.as_tensor()[:, :2]).all(), f"{boxes2.as_tensor()}"
+            assert (
+                boxes1.as_tensor()[:, 2:] >= boxes1.as_tensor()[:, :2]
+            ).all(), f"{boxes1.as_tensor()}"
+            assert (
+                boxes2.as_tensor()[:, 2:] >= boxes2.as_tensor()[:, :2]
+            ).all(), f"{boxes2.as_tensor()}"
 
         iou, union = boxes1.iou_with(boxes2, ret_union=True)
 
@@ -700,7 +787,9 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
             cropped_boxes2d BoundingBoxes2D
         """
         if self.padded_size is not None:
-            raise Exception("Can't crop when padded size is not Note. Call fit_to_padded_size() first")
+            raise Exception(
+                "Can't crop when padded size is not Note. Call fit_to_padded_size() first"
+            )
 
         absolute = self.absolute
         frame_size = self.frame_size
@@ -730,7 +819,10 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
 
         # Put back the instance into the same state as before
         if absolute:
-            n_frame_size = ((H_crop[1] - H_crop[0]) * frame_size[0], (W_crop[1] - W_crop[0]) * frame_size[1])
+            n_frame_size = (
+                (H_crop[1] - H_crop[0]) * frame_size[0],
+                (W_crop[1] - W_crop[0]) * frame_size[1],
+            )
             cropped_boxes = cropped_boxes.abs_pos(n_frame_size)
         else:
             cropped_boxes.frame_size = None
@@ -749,7 +841,9 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
         >>> padded_boxes = boxes.fit_to_padded_size()
         """
         if self.padded_size is None:
-            raise Exception("Trying to fit to padded size without any previous stored padded_size.")
+            raise Exception(
+                "Trying to fit to padded size without any previous stored padded_size."
+            )
 
         offset_y = (self.padded_size[0][0], self.padded_size[0][1])
         offset_x = (self.padded_size[1][0], self.padded_size[1][1])
@@ -758,15 +852,22 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
             boxes = self.abs_pos((100, 100)).xcyc()
             h_shift = boxes.frame_size[0] * offset_y[0]
             w_shift = boxes.frame_size[1] * offset_x[0]
-            boxes = boxes + torch.as_tensor([[w_shift, h_shift, 0, 0]], device=boxes.device)
-            boxes.frame_size = (100 * (1.0 + offset_y[0] + offset_y[1]), 100 * (1.0 + offset_x[0] + offset_x[1]))
+            boxes = boxes + torch.as_tensor(
+                [[w_shift, h_shift, 0, 0]], device=boxes.device
+            )
+            boxes.frame_size = (
+                100 * (1.0 + offset_y[0] + offset_y[1]),
+                100 * (1.0 + offset_x[0] + offset_x[1]),
+            )
             boxes = boxes.get_with_format(self.boxes_format)
             boxes = boxes.rel_pos()
         else:
             boxes = self.xcyc()
             h_shift = boxes.frame_size[0] * offset_y[0]
             w_shift = boxes.frame_size[1] * offset_x[0]
-            boxes = boxes + torch.as_tensor([[w_shift, h_shift, 0, 0]], device=boxes.device)
+            boxes = boxes + torch.as_tensor(
+                [[w_shift, h_shift, 0, 0]], device=boxes.device
+            )
             boxes.frame_size = (
                 boxes.frame_size[0] * (1.0 + offset_y[0] + offset_y[1]),
                 boxes.frame_size[1] * (1.0 + offset_x[0] + offset_x[1]),
@@ -800,7 +901,6 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
             n_boxes = self.clone()
 
             if n_boxes.padded_size is not None:
-
                 if n_boxes.absolute:
                     pr_frame_size = self.frame_size
                 else:
@@ -809,22 +909,48 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
                 padded_size = n_boxes.padded_size
 
                 prev_padded_size = (
-                    ((padded_size[0][0] * pr_frame_size[0]), (padded_size[0][1] * pr_frame_size[0])),
-                    ((padded_size[1][0] * pr_frame_size[1]), (padded_size[1][1] * pr_frame_size[1])),
+                    (
+                        (padded_size[0][0] * pr_frame_size[0]),
+                        (padded_size[0][1] * pr_frame_size[0]),
+                    ),
+                    (
+                        (padded_size[1][0] * pr_frame_size[1]),
+                        (padded_size[1][1] * pr_frame_size[1]),
+                    ),
                 )
 
                 n_padded_size = (
                     (
                         prev_padded_size[0][0]
-                        + offset_y[0] * (prev_padded_size[0][0] + prev_padded_size[0][1] + pr_frame_size[0]),
+                        + offset_y[0]
+                        * (
+                            prev_padded_size[0][0]
+                            + prev_padded_size[0][1]
+                            + pr_frame_size[0]
+                        ),
                         prev_padded_size[0][1]
-                        + offset_y[1] * (prev_padded_size[0][0] + prev_padded_size[0][1] + pr_frame_size[0]),
+                        + offset_y[1]
+                        * (
+                            prev_padded_size[0][0]
+                            + prev_padded_size[0][1]
+                            + pr_frame_size[0]
+                        ),
                     ),
                     (
                         prev_padded_size[1][0]
-                        + offset_x[0] * (prev_padded_size[1][0] + prev_padded_size[1][1] + pr_frame_size[1]),
+                        + offset_x[0]
+                        * (
+                            prev_padded_size[1][0]
+                            + prev_padded_size[1][1]
+                            + pr_frame_size[1]
+                        ),
                         prev_padded_size[1][1]
-                        + offset_x[1] * (prev_padded_size[1][0] + prev_padded_size[1][1] + pr_frame_size[1]),
+                        + offset_x[1]
+                        * (
+                            prev_padded_size[1][0]
+                            + prev_padded_size[1][1]
+                            + pr_frame_size[1]
+                        ),
                     ),
                 )
 
@@ -858,15 +984,22 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
             boxes = self.abs_pos((100, 100)).xcyc()
             h_shift = boxes.frame_size[0] * offset_y[0]
             w_shift = boxes.frame_size[1] * offset_x[0]
-            boxes = boxes + torch.as_tensor([[w_shift, h_shift, 0, 0]], device=boxes.device)
-            boxes.frame_size = (100 * (1.0 + offset_y[0] + offset_y[1]), 100 * (1.0 + offset_x[0] + offset_x[1]))
+            boxes = boxes + torch.as_tensor(
+                [[w_shift, h_shift, 0, 0]], device=boxes.device
+            )
+            boxes.frame_size = (
+                100 * (1.0 + offset_y[0] + offset_y[1]),
+                100 * (1.0 + offset_x[0] + offset_x[1]),
+            )
             boxes = boxes.get_with_format(self.boxes_format)
             boxes = boxes.rel_pos()
         else:
             boxes = self.xcyc()
             h_shift = boxes.frame_size[0] * offset_y[0]
             w_shift = boxes.frame_size[1] * offset_x[0]
-            boxes = boxes + torch.as_tensor([[w_shift, h_shift, 0, 0]], device=boxes.device)
+            boxes = boxes + torch.as_tensor(
+                [[w_shift, h_shift, 0, 0]], device=boxes.device
+            )
             boxes.frame_size = (
                 boxes.frame_size[0] * (1.0 + offset_y[0] + offset_y[1]),
                 boxes.frame_size[1] * (1.0 + offset_x[0] + offset_x[1]),
@@ -898,14 +1031,13 @@ class BoundingBoxes2D(aloscene.tensors.AugmentedTensor):
         original_absolute = self.absolute
         frame_size = self.frame_size
 
-        n_boxes = self.clone().rel_pos().xcyc()
+        n_boxes = self.clone().rel_pos().xyxy()
 
-        n_boxes += torch.as_tensor([[shift_x, shift_y, 0, 0]])  # , device=self.device)
+        n_boxes += torch.as_tensor(
+            [[shift_x, shift_y, shift_x, shift_y]], device=self.device
+        )
 
-        max_size = torch.as_tensor([1, 1, 1, 1], dtype=torch.float32)
-
-        n_boxes = torch.min(n_boxes.rename(None), max_size)
-        n_boxes = n_boxes.clamp(min=0)
+        n_boxes = n_boxes.clamp(0, 1)
         n_boxes = n_boxes.reset_names()
         # Filter to keep only boxes with area > 0
         area = n_boxes.area()

@@ -158,8 +158,6 @@ class Mot17(BaseDataset, SequenceMixin, SplitMixin):
                 self.sequence_skip,
             )
 
-            print(list(seqs))
-
             # Update the sequence list
             self.items.update(
                 {

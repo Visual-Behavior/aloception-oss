@@ -10,13 +10,21 @@ import configparser
 from alodataset import BaseDataset, Split, SequenceMixin, SplitMixin
 
 import aloscene
+from alodataset.utils.kitti import sequence_indices
 
 
 class Mot17(BaseDataset, SequenceMixin, SplitMixin):
-
     SPLIT_FOLDERS = {Split.VAL: "train", Split.TRAIN: "train", Split.TEST: "test"}
 
-    SEQUENCES = ["MOT17-05", "MOT17-02", "MOT17-10", "MOT17-13", "MOT17-04", "MOT17-09", "MOT17-11"]
+    SEQUENCES = [
+        "MOT17-05",
+        "MOT17-02",
+        "MOT17-10",
+        "MOT17-13",
+        "MOT17-04",
+        "MOT17-09",
+        "MOT17-11",
+    ]
 
     DPM_SEQUENCES = [
         "MOT17-05-DPM",
@@ -56,6 +64,7 @@ class Mot17(BaseDataset, SequenceMixin, SplitMixin):
         all_gt: bool = False,
         random_step: int = None,
         visibility_threshold=0.0,
+        skip=0,
         **kwargs
     ):
         """Mot17 Dataset
@@ -87,7 +96,9 @@ class Mot17(BaseDataset, SequenceMixin, SplitMixin):
             raise Exception("TODO: Add the conf score label to the boxes")
 
         self.random_step = random_step
-        self.mot_folder = os.path.join(self.dataset_dir, "train" if self.split is not Split.TEST else "test")
+        self.mot_folder = os.path.join(
+            self.dataset_dir, "train" if self.split is not Split.TEST else "test"
+        )
         self.visibility_threshold = visibility_threshold
 
         self.mot_sequences = {}
@@ -104,14 +115,34 @@ class Mot17(BaseDataset, SequenceMixin, SplitMixin):
 
         if self.split == Split.TRAIN:
             if training_sequences is not None:
-                listdir = [dname for dname in listdir if any([trainseq in dname for trainseq in training_sequences])]
-            listdir = [dname for dname in listdir if not any([valseq in dname for valseq in validation_sequences])]
+                listdir = [
+                    dname
+                    for dname in listdir
+                    if any([trainseq in dname for trainseq in training_sequences])
+                ]
+            listdir = [
+                dname
+                for dname in listdir
+                if not any([valseq in dname for valseq in validation_sequences])
+            ]
         else:
-            assert len([dname for dname in listdir if any([valseq in dname for valseq in validation_sequences])]) > 0
-            listdir = [dname for dname in listdir if any([valseq in dname for valseq in validation_sequences])]
+            assert (
+                len(
+                    [
+                        dname
+                        for dname in listdir
+                        if any([valseq in dname for valseq in validation_sequences])
+                    ]
+                )
+                > 0
+            )
+            listdir = [
+                dname
+                for dname in listdir
+                if any([valseq in dname for valseq in validation_sequences])
+            ]
 
         for sequence in listdir:
-
             config = configparser.ConfigParser()
             config.read(os.path.join(self.mot_folder, sequence, "seqinfo.ini"))
 
@@ -120,13 +151,19 @@ class Mot17(BaseDataset, SequenceMixin, SplitMixin):
                     if len(line) > 0:
                         self._add_line(sequence, line, config)
 
-            seqs = more_itertools.windowed(
-                range(len(self.mot_sequences[sequence])), self.sequence_size, step=1 + self.sequence_skip
+            seqs = sequence_indices(
+                len(self.mot_sequences[sequence]),
+                self.sequence_size,
+                skip,
+                self.sequence_skip,
             )
 
             # Update the sequence list
             self.items.update(
-                {len(self.items) + idx: {"seq": seq, "mot_sequence": sequence} for idx, seq in enumerate(seqs)}
+                {
+                    len(self.items) + idx: {"seq": seq, "mot_sequence": sequence}
+                    for idx, seq in enumerate(seqs)
+                }
             )
 
     def _add_line(self, sequence: str, line: str, config: configparser.ConfigParser):
@@ -138,7 +175,17 @@ class Mot17(BaseDataset, SequenceMixin, SplitMixin):
 
         # print(line)
 
-        frame_id, object_id, box_left, box_top, box_width, box_height, conf, aa, visible = line.split(",")
+        (
+            frame_id,
+            object_id,
+            box_left,
+            box_top,
+            box_width,
+            box_height,
+            conf,
+            aa,
+            visible,
+        ) = line.split(",")
 
         frame_id = int(frame_id)
         object_id = int(object_id)
@@ -163,8 +210,10 @@ class Mot17(BaseDataset, SequenceMixin, SplitMixin):
 
         self.mot_sequences[sequence][frame_id].append(
             {
-                "xc": (box_left + (box_width / 2)) / float(config["Sequence"]["imWidth"]),
-                "yc": (box_top + (box_height / 2)) / float(config["Sequence"]["imHeight"]),
+                "xc": (box_left + (box_width / 2))
+                / float(config["Sequence"]["imWidth"]),
+                "yc": (box_top + (box_height / 2))
+                / float(config["Sequence"]["imHeight"]),
                 "width": box_width / float(config["Sequence"]["imWidth"]),
                 "height": box_height / float(config["Sequence"]["imHeight"]),
                 # "frame_size": (int(), int(config["Sequence"]["imWidth"])),
@@ -183,7 +232,10 @@ class Mot17(BaseDataset, SequenceMixin, SplitMixin):
 
         if self.random_step is not None:
             max_seq_len = len(self.mot_sequences[sequence_name]) - 2
-            random_step = min((max_seq_len - seq[0]) // self.sequence_size, np.random.randint(1, self.random_step))
+            random_step = min(
+                (max_seq_len - seq[0]) // self.sequence_size,
+                np.random.randint(1, self.random_step),
+            )
             current = seq[0]
             for n in range(1, len(seq)):
                 current += random_step
@@ -196,7 +248,11 @@ class Mot17(BaseDataset, SequenceMixin, SplitMixin):
             # print("self.SPLIT_FOLDERS", self.SPLIT_FOLDERS)
             # print("self.SPLIT_FOLDERS[]", self.SPLIT_FOLDERS[self.split])
             image_path = os.path.join(
-                self.dataset_dir, self.get_split_folder(), sequence_name, "img1", str(s).zfill(6) + ".jpg"
+                self.dataset_dir,
+                self.get_split_folder(),
+                sequence_name,
+                "img1",
+                str(s).zfill(6) + ".jpg",
             )
             n_frame = aloscene.Frame(image_path)
 
@@ -215,7 +271,9 @@ class Mot17(BaseDataset, SequenceMixin, SplitMixin):
                 boxes = np.zeros((0, 4))
             boxes = aloscene.BoundingBoxes2D(boxes, boxes_format="xcyc", absolute=False)
             # Setup boxes labels
-            objects_class = aloscene.Labels(objects_class, labels_names=["person"], encoding="id", names=("N"))
+            objects_class = aloscene.Labels(
+                objects_class, labels_names=["person"], encoding="id", names=("N")
+            )
             objects_id = aloscene.Labels(objects_id, encoding="id", names=("N"))
             # Append labels to the boxes
             boxes.append_labels(objects_class, "objects_class")

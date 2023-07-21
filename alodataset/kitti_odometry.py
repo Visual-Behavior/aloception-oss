@@ -7,6 +7,7 @@ from alodataset import BaseDataset, SplitMixin, Split
 from aloscene import Frame, Pose, CameraIntrinsic, CameraExtrinsic
 
 from alodataset.utils.kitti import load_calib_cam_to_cam, sequence_indices
+from alodataset.kitti_depth import KittiDepth
 
 
 class KittiOdometryDataset(BaseDataset, SplitMixin):
@@ -39,6 +40,40 @@ class KittiOdometryDataset(BaseDataset, SplitMixin):
     >>> dataset = KittiOdometryDataset(split=Split.TRAIN, sequences=["00", "03"], sequence_size=5, right_frame=False)
     """
 
+    """
+    KITTI Odometry Train Sequences to raw sequence name.
+    Used to get depth path.
+
+    Nr.     Sequence name     Start   End
+    ---------------------------------------
+    00: 2011_10_03_drive_0027 000000 004540
+    01: 2011_10_03_drive_0042 000000 001100
+    02: 2011_10_03_drive_0034 000000 004660
+    03: 2011_09_26_drive_0067 000000 000800
+    04: 2011_09_30_drive_0016 000000 000270
+    05: 2011_09_30_drive_0018 000000 002760
+    06: 2011_09_30_drive_0020 000000 001100
+    07: 2011_09_30_drive_0027 000000 001100
+    08: 2011_09_30_drive_0028 001100 005170
+    09: 2011_09_30_drive_0033 000000 001590
+    10: 2011_09_30_drive_0034 000000 001200
+
+    """
+
+    odo2depth = [
+        {"name": "2011_10_03_drive_0027", "start": 0, "end": 4540},
+        {"name": "2011_10_03_drive_0042", "start": 0, "end": 1100},
+        {"name": "2011_10_03_drive_0034", "start": 0, "end": 4660},
+        {"name": "2011_09_26_drive_0067", "start": 0, "end": 800},
+        {"name": "2011_09_30_drive_0016", "start": 0, "end": 270},
+        {"name": "2011_09_30_drive_0018", "start": 0, "end": 2760},
+        {"name": "2011_09_30_drive_0020", "start": 0, "end": 1100},
+        {"name": "2011_09_30_drive_0027", "start": 0, "end": 1100},
+        {"name": "2011_09_30_drive_0028", "start": 1100, "end": 5170},
+        {"name": "2011_09_30_drive_0033", "start": 0, "end": 1590},
+        {"name": "2011_09_30_drive_0034", "start": 0, "end": 1200},
+    ]
+
     def __init__(
         self,
         name="kitti_odometry",
@@ -48,6 +83,7 @@ class KittiOdometryDataset(BaseDataset, SplitMixin):
         sequence_size=3,
         skip=1,
         sequence_skip=1,
+        depth=False,
         **kwargs,
     ):
         super().__init__(name=name, **kwargs)
@@ -57,6 +93,7 @@ class KittiOdometryDataset(BaseDataset, SplitMixin):
         self.sequence_size = sequence_size
         self.skip = skip
         self.sequence_skip = sequence_skip
+        self.depth = depth
 
         if self.sample:
             raise NotImplementedError("Sample mode is not implemented for KittiOdometryDataset")
@@ -69,8 +106,12 @@ class KittiOdometryDataset(BaseDataset, SplitMixin):
 
         self.seq_params = {}
 
-        for seq in self.sequences:
+        if self.depth:
+            self.name = "Kitti_2"
+            self.depth_dir = os.path.join(self.get_dataset_dir(), "depth", "train")
+            self.name = name
 
+        for seq in self.sequences:
             # Exploit data from calib.txt
             calib = load_calib_cam_to_cam(os.path.join(self.dataset_dir, "sequences", seq, "calib.txt"))
 
@@ -189,6 +230,9 @@ class KittiOdometryDataset(BaseDataset, SplitMixin):
                 )
                 left_frame.append_pose(pose)
 
+                if self.depth:
+                    left_frame.append_depth(self.get_depth(sequence, seq, self.grayscale))
+
             left.append(left_frame.temporal())
 
             if self.right_frame:
@@ -218,6 +262,30 @@ class KittiOdometryDataset(BaseDataset, SplitMixin):
             frames["right"].timestamp = item["times"]
 
         return frames
+
+    def get_depth(self, sequence, seq, grayscale):
+        """
+        Get the corresponding depth path from the given image path.
+
+        Parameters
+        ----------
+        path: str
+            Path to drive.
+
+        Returns:
+        --------
+        path: str
+            Corresponding path to depth groud truth image.
+        """
+        depth_data = self.odo2depth[int(sequence)]
+        depth_path = os.path.join(
+            self.depth_dir,
+            depth_data["name"] + "_sync",
+            "proj_depth",
+            "groundtruth" f"image_{0 if self.grayscale else 2}",
+            f"{(seq+depth_data['start']):06d}.png",
+        )
+        return KittiDepth.depth_from_path(depth_path)
 
 
 if __name__ == "__main__":

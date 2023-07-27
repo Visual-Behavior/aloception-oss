@@ -13,13 +13,18 @@ try:
     import pycuda.driver as cuda
     import tensorrt as trt
     import onnx
+
     prod_package_error = None
 except Exception as e:
     prod_package_error = e
     pass
 
 
-from alonet.torch2trt.onnx_hack import scope_name_workaround, get_scope_names, rename_tensors_
+from alonet.torch2trt.onnx_hack import (
+    scope_name_workaround,
+    get_scope_names,
+    rename_tensors_,
+)
 from alonet.torch2trt import TRTEngineBuilder, TRTExecutor, utils
 from alonet.torch2trt.utils import get_nodes_by_op, rename_nodes_
 from contextlib import redirect_stdout, ExitStack
@@ -126,23 +131,34 @@ class BaseTRTExporter:
         self.ignore_adapt_graph = ignore_adapt_graph
 
         if dynamic_axes is not None:
-            assert opt_profiles is not None, "If dynamic_axes are to be used, opt_profiles must be provided"
+            assert (
+                opt_profiles is not None
+            ), "If dynamic_axes are to be used, opt_profiles must be provided"
             assert isinstance(dynamic_axes, dict)
-            assert opt_profiles.keys() == dynamic_axes.keys(), "dynamic_axes and opt_profiles must have same keys"
+            assert (
+                opt_profiles.keys() == dynamic_axes.keys()
+            ), "dynamic_axes and opt_profiles must have same keys"
         self.dynamic_axes = dynamic_axes
         # ===== Initiate Trt Engine builder
         onnx_dir = os.path.split(onnx_path)[0]
         onnx_file_name = os.path.split(onnx_path)[1]
         model_name = onnx_file_name.split(".")[0]
 
-        self.engine_path = os.path.join(onnx_dir, model_name + f"_{precision.lower()}.engine")
+        self.engine_path = os.path.join(
+            onnx_dir, model_name + f"_{precision.lower()}.engine"
+        )
 
         if self.verbose:
             trt_logger = trt.Logger(trt.Logger.VERBOSE)
         else:
             trt_logger = trt.Logger(trt.Logger.WARNING)
 
-        self.engine_builder = TRTEngineBuilder(self.get_onnx_path(), logger=trt_logger, opt_profiles=opt_profiles, calibrator=calibrator)
+        self.engine_builder = TRTEngineBuilder(
+            self.get_onnx_path(),
+            logger=trt_logger,
+            opt_profiles=opt_profiles,
+            calibrator=calibrator,
+        )
 
         if profiling_verbosity == 0:
             self.engine_builder.profiling_verbosity = "LAYER_NAMES_ONLY"
@@ -151,7 +167,7 @@ class BaseTRTExporter:
         elif profiling_verbosity == 2:
             self.engine_builder.profiling_verbosity = "DETAILED"
         else:
-            raise AttributeError('unknown profiling_verbosity')
+            raise AttributeError("unknown profiling_verbosity")
         if precision.lower() == "fp32":
             pass
         elif precision.lower() == "int8":
@@ -165,7 +181,7 @@ class BaseTRTExporter:
             self.engine_builder.strict_type = False
         else:
             raise Exception(f"precision {precision} not supported")
-    
+
     def get_onnx_path(self):
         # Flexibility for some engines
         return self.onnx_path
@@ -188,7 +204,7 @@ class BaseTRTExporter:
         graph: onnx_graphsurgeon.Graph
         """
         return graph
-    
+
     def _adapt_graph(self, graph, **kwargs):
         """Modify ONNX graph to ensure compability between ONNX and TensorRT
 
@@ -196,29 +212,12 @@ class BaseTRTExporter:
         -------
         graph: onnx_graphsurgeon.Graph
         """
-        clip_nodes = get_nodes_by_op("Clip", graph)
-        def handle_op_Clip(node: gs.Node):
-            max_constant = np.array(np.finfo(np.float32).max, dtype=np.float32)
-            if "value" in node.inputs[1].i().inputs[0].attrs:
-                min_constant = node.inputs[1].i().inputs[0].attrs["value"].values.astype(np.float32)
-                if len(node.inputs[2].inputs) > 0:
-                    max_constant = node.inputs[2].i().inputs[0].attrs["value"].values.astype(np.float32)
-            elif "to" in node.inputs[1].i().inputs[0].attrs:
-                min_constant = np.array(np.finfo(np.float32).min, dtype=np.float32)
-            else:
-                raise Exception("Error")
-            node.inputs.pop(1)
-            node.inputs.insert(1, gs.Constant(name=node.name + "_min", values=min_constant))
-            node.inputs.pop(2)
-            node.inputs.insert(2, gs.Constant(name=node.name + "_max", values=max_constant))
-
-        for n in clip_nodes:
-            handle_op_Clip(n)
 
         model = onnx.load(self.onnx_path)
         check = False
         if self.dynamic_axes is None:
             from onnxsim import simplify
+
             model_simp, check = simplify(model)
 
         if check:
@@ -229,12 +228,13 @@ class BaseTRTExporter:
         else:
             print("\n[INFO] ONNX model was not validated.")
 
-
         # Call the child class for specific graph adapation
         graph = self.adapt_graph(graph)
         return graph
 
-    def prepare_sample_inputs(self) -> Tuple[Tuple[torch.Tensor], Dict[str, Union[torch.Tensor, None]]]:
+    def prepare_sample_inputs(
+        self,
+    ) -> Tuple[Tuple[torch.Tensor], Dict[str, Union[torch.Tensor, None]]]:
         """
         Prepare sample inputs for future sanity check
         as well as to define input shapes for ONNX and TensorRT.
@@ -284,13 +284,22 @@ class BaseTRTExporter:
 
             # Prepare inputs for torch.export.onnx and sanity check
             np_inputs = tuple(np.array(i.cpu()) for i in inputs)
+
         inputs = (*inputs, kwargs)
 
-        onames = m_outputs._fields if hasattr(m_outputs, "_fields") else [f"out_{i}" for i in range(len(m_outputs))]
-        np_m_outputs = {key: val.cpu().numpy() for key, val in zip(onames, m_outputs) if isinstance(val, torch.Tensor)}
+        onames = (
+            m_outputs._fields
+            if hasattr(m_outputs, "_fields")
+            else [f"out_{i}" for i in range(len(m_outputs))]
+        )
+        np_m_outputs = {
+            key: val.cpu().numpy()
+            for key, val in zip(onames, m_outputs)
+            if isinstance(val, torch.Tensor)
+        }
         # print("Model input shapes:", [val.shape for val in np_inputs])
         # print("Model output keys:", np_m_outputs.keys(), "shapes:", [val.shape for val in np_m_outputs.values()])
-        
+
         # Convert to list for dynamic axese assertions
         self.input_names = list(self.input_names)
         onames = list(onames)
@@ -313,7 +322,8 @@ class BaseTRTExporter:
                 custom_opsets=self.custom_opset,
                 opset_version=self.opset_version,  # the ONNX version to export the model to
                 do_constant_folding=self.do_constant_folding,  # whether to execute constant folding for optimization
-                verbose=self.verbose or self.use_scope_names,  # verbose mandatory in scope names procedure
+                verbose=self.verbose
+                or self.use_scope_names,  # verbose mandatory in scope names procedure
                 operator_export_type=self.operator_export_type,
             )
 
@@ -370,7 +380,9 @@ class BaseTRTExporter:
         model.print_bindings_info()
         # Prepare engine inputs
         for i in range(len(sample_inputs)):
-            model.inputs[i].host = np.array(sample_inputs[i]).astype(model.inputs[i].dtype)
+            model.inputs[i].host = np.array(sample_inputs[i]).astype(
+                model.inputs[i].dtype
+            )
         # GPU warm up
         [model.execute() for i in range(3)]
         # Time engine inference
@@ -382,7 +394,7 @@ class BaseTRTExporter:
         m_outputs = model.execute()
         print("==== Absolute / relavtive error:")
         for out in m_outputs:
-            print('out', m_outputs[out])
+            print("out", m_outputs[out])
             diff = m_outputs[out].astype(float) - sample_outputs[out].astype(float)
             abs_err = np.abs(diff)
             rel_err = np.abs(diff / (sample_outputs[out] + 1e-6))  # Avoid div by zero
@@ -413,20 +425,52 @@ class BaseTRTExporter:
             default=None,
             help="/path/onnx/will/be/exported, by default set as ~/.aloception/weights/MODEL/MODEL.onnx",
         )
-        parser.add_argument("--batch_size", type=int, default=1, help="Engine batch size, default = 1")
-        parser.add_argument("--precision", type=str, default="fp32", help="fp32/fp16/mix, default FP32")
-        parser.add_argument("--verbose", action="store_true", help="Helpful when debugging")
-        parser.add_argument("--opset_version", type=int, default=13, help="Onnx version to export the model to, Default = 13")
-        parser.add_argument("--profiling_verbosity", default=0, type=int, help="Helpful when profiling the engine (default: %(default)s)")
-        parser.add_argument("--calibration_batch_size", type=int, default=8, help="Calibration data batch size (default: %(default)s)")
-        parser.add_argument("--limit_calibration_batches", type=int, default=None, help="Limits number of batches (default: %(default)s)")
-        parser.add_argument("--cache_file", type=str, default="calib.bin", help="Path to caliaration cache file (default: %(default)s)")
         parser.add_argument(
-            "--calibrator", 
-            type=str, 
-            choices=['base', 'minmax', 'entropy', 'entropy2', 'legacy'], 
-            default='minmax',
-            help="Calibrator to use with int8 precision (default: %(default)s)")
+            "--batch_size", type=int, default=1, help="Engine batch size, default = 1"
+        )
+        parser.add_argument(
+            "--precision", type=str, default="fp32", help="fp32/fp16/mix, default FP32"
+        )
+        parser.add_argument(
+            "--verbose", action="store_true", help="Helpful when debugging"
+        )
+        parser.add_argument(
+            "--opset_version",
+            type=int,
+            default=13,
+            help="Onnx version to export the model to, Default = 13",
+        )
+        parser.add_argument(
+            "--profiling_verbosity",
+            default=0,
+            type=int,
+            help="Helpful when profiling the engine (default: %(default)s)",
+        )
+        parser.add_argument(
+            "--calibration_batch_size",
+            type=int,
+            default=8,
+            help="Calibration data batch size (default: %(default)s)",
+        )
+        parser.add_argument(
+            "--limit_calibration_batches",
+            type=int,
+            default=None,
+            help="Limits number of batches (default: %(default)s)",
+        )
+        parser.add_argument(
+            "--cache_file",
+            type=str,
+            default="calib.bin",
+            help="Path to caliaration cache file (default: %(default)s)",
+        )
+        parser.add_argument(
+            "--calibrator",
+            type=str,
+            choices=["base", "minmax", "entropy", "entropy2", "legacy"],
+            default="minmax",
+            help="Calibrator to use with int8 precision (default: %(default)s)",
+        )
         parser.add_argument(
             "--use_scope_names",
             action="store_true",

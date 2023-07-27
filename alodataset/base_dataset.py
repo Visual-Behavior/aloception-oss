@@ -51,12 +51,21 @@ def stream_loader(dataset, num_workers=2):
         A generator
     """
     data_loader = torch.utils.data.DataLoader(
-        dataset, batch_size=None, collate_fn=lambda d: dataset._collate_fn(d), num_workers=num_workers
+        dataset,
+        batch_size=None,
+        collate_fn=lambda d: dataset._collate_fn(d),
+        num_workers=num_workers,
     )
     return data_loader
 
 
-def train_loader(dataset, batch_size=1, num_workers=2, sampler=torch.utils.data.RandomSampler, sampler_kwargs={}):
+def train_loader(
+    dataset,
+    batch_size=1,
+    num_workers=2,
+    sampler=torch.utils.data.RandomSampler,
+    sampler_kwargs={},
+):
     """Get training loader from the dataset
 
     Parameters
@@ -76,7 +85,7 @@ def train_loader(dataset, batch_size=1, num_workers=2, sampler=torch.utils.data.
     torch.utils.data.DataLoader
         A generator
     """
-    if sampler is not None and not(isinstance(sampler, torch.utils.data.Sampler)):
+    if sampler is not None and not (isinstance(sampler, torch.utils.data.Sampler)):
         sampler = sampler(dataset, **sampler_kwargs)
     data_loader = torch.utils.data.DataLoader(
         dataset,
@@ -123,7 +132,7 @@ class BaseDataset(torch.utils.data.Dataset):
         sample: bool = False,
         **kwargs,
     ):
-        """ Streaming dataset
+        """Streaming dataset
 
         Parameters
         ----------
@@ -192,20 +201,26 @@ class BaseDataset(torch.utils.data.Dataset):
             try:
                 data = self.getitem(idx)
                 return data
-            except InvalidSampleError as e:
+            except Exception as e:
                 if self.print_errors:
                     print(f"\n{e}\n")
                 nb_retry += 1
                 idx = (idx + self.retry_offset) % len(self)
         # max limit reached
         max_try = self.max_retry_on_error
-        raise InvalidSampleError(f"Reached the limit of {max_try} consecutive corrupted samples.")
+        raise InvalidSampleError(
+            f"Reached the limit of {max_try} consecutive corrupted samples."
+        )
 
     def __getitem__(self, idx):
         if self.sample:
             data = self.items[idx]
         else:
-            data = self.getitem_ignore_errors(idx) if self.ignore_errors else self.getitem(idx)
+            data = (
+                self.getitem_ignore_errors(idx)
+                if self.ignore_errors
+                else self.getitem(idx)
+            )
         if self.transform_fn is not None:
             data = self.transform_fn(data)
 
@@ -275,10 +290,15 @@ class BaseDataset(torch.utils.data.Dataset):
                     f"{self.name} does not exist in config file. "
                     + "Do you want to download and use a sample?: (Y)es or (N)o: "
                 )
-                if dataset_dir.lower() in ["y", "yes"]:  # Download sample and change root directory
+                if dataset_dir.lower() in [
+                    "y",
+                    "yes",
+                ]:  # Download sample and change root directory
                     self.sample = True
                     return os.path.join(self.vb_folder, "samples")
-            dataset_dir = _user_prompt(f"Please write a new root directory for {self.name} dataset: ")
+            dataset_dir = _user_prompt(
+                f"Please write a new root directory for {self.name} dataset: "
+            )
             dataset_dir = os.path.expanduser(dataset_dir)
 
         # Save the config
@@ -289,7 +309,9 @@ class BaseDataset(torch.utils.data.Dataset):
             )
             dataset_dir = os.path.expanduser(dataset_dir)
             if not os.path.exists(dataset_dir):
-                raise Exception(f"{dataset_dir} path does not exists for dataset: {self.name}")
+                raise Exception(
+                    f"{dataset_dir} path does not exists for dataset: {self.name}"
+                )
 
         content[self.name] = dataset_dir
         with open(streaming_dt_config, "w") as f:  # Save new directory
@@ -333,7 +355,13 @@ class BaseDataset(torch.utils.data.Dataset):
         """
         return stream_loader(self, num_workers=num_workers)
 
-    def train_loader(self, batch_size=1, num_workers=2, sampler=torch.utils.data.RandomSampler, sampler_kwargs={}):
+    def train_loader(
+        self,
+        batch_size=1,
+        num_workers=2,
+        sampler=torch.utils.data.RandomSampler,
+        sampler_kwargs={},
+    ):
         """Get training loader from the dataset
 
         Parameters
@@ -352,7 +380,13 @@ class BaseDataset(torch.utils.data.Dataset):
         torch.utils.data.DataLoader
             A generator
         """
-        return train_loader(self, batch_size=batch_size, num_workers=num_workers, sampler=sampler, sampler_kwargs=sampler_kwargs    )
+        return train_loader(
+            self,
+            batch_size=batch_size,
+            num_workers=num_workers,
+            sampler=sampler,
+            sampler_kwargs=sampler_kwargs,
+        )
 
     def prepare(self):
         """Prepare the dataset. Not all child class need to implement this method.
@@ -395,7 +429,9 @@ class BaseDataset(torch.utils.data.Dataset):
                         f.write(response.content)
                     else:
                         pbar = tqdm()
-                        pbar.reset(total=int(total_length))  # initialise with new `total`
+                        pbar.reset(
+                            total=int(total_length)
+                        )  # initialise with new `total`
                         for data in response.iter_content(chunk_size=4096):
                             f.write(data)
                             pbar.update(len(data))

@@ -50,6 +50,9 @@ class CocoPanopticDataset(BaseDataset, SplitMixin):
     fix_classes_len : int, optional
         Fix to a specific number the number of classes, filling the rest with "N/A" value.
         Use when the number of model outputs does not match with the number of classes in the dataset, by default 250
+    skip_crowd : bool, optional
+        Filter out images with `iscrowd` attribute, by default False
+        Images with crowd are often mislabeled for person boxes and instance segmentation.
     **kwargs : dict
         :mod:`BaseDataset <base_dataset>` optional parameters
 
@@ -61,7 +64,10 @@ class CocoPanopticDataset(BaseDataset, SplitMixin):
     """
 
     SPLIT_FOLDERS = {Split.VAL: "val2017", Split.TRAIN: "train2017"}
-    SPLIT_ANN_FOLDERS = {Split.VAL: "annotations/panoptic_val2017", Split.TRAIN: "annotations/panoptic_train2017"}
+    SPLIT_ANN_FOLDERS = {
+        Split.VAL: "annotations/panoptic_val2017",
+        Split.TRAIN: "annotations/panoptic_train2017",
+    }
     SPLIT_ANN_FILES = {
         Split.VAL: "annotations/panoptic_val2017.json",
         Split.TRAIN: "annotations/panoptic_train2017.json",
@@ -73,9 +79,10 @@ class CocoPanopticDataset(BaseDataset, SplitMixin):
         split=Split.TRAIN,
         return_masks: bool = True,
         classes: list = None,
-        ignore_classes: list=None,
-        fix_classes_len: int = None,  # Match with pre-trained weights
-        **kwargs,
+        ignore_classes: list = None,
+        fix_classes_len: int = None,
+        skip_crowd: bool = False,
+        **kwargs,  # Match with pre-trained weights
     ):
         super(CocoPanopticDataset, self).__init__(name=name, split=split, **kwargs)
         if self.sample:
@@ -99,7 +106,7 @@ class CocoPanopticDataset(BaseDataset, SplitMixin):
         if classes is not None:
             if self.label_names is None:
                 raise Exception(
-                    "'classes' attribute not support in datasets without 'categories' as attribute in annotation file"
+                    "'classes' attribute not supported in datasets without 'categories' as attribute in annotation file"
                 )
             notclass = [label for label in classes if label not in self.label_names]
             if len(notclass) > 0:  # Ignore all labels not in classes
@@ -111,7 +118,7 @@ class CocoPanopticDataset(BaseDataset, SplitMixin):
             self._ids_renamed = np.array(self._ids_renamed)
             self.label_names = classes
 
-            # Check each annotation and keep only that have at least 1 element in classes list
+            # Check each annotation and keep only that have at least 1 element in classes
             items = []
             for i, (_, _, ann_info) in enumerate(self.items):
                 target = ann_info["segments_info"]
@@ -136,6 +143,13 @@ class CocoPanopticDataset(BaseDataset, SplitMixin):
                     # Align hyperclass position with new label_names position
                     self.label_types[ltype] = [x for _, x in sorted(zip(idx_sort, self.label_types[ltype]))]
             self._ids_renamed = torch.from_numpy(self._ids_renamed)
+
+        if skip_crowd:
+            # Check each annotation and remove crowded ones.
+            for i in range(len(self.items) - 1, -1, -1):
+                target = self.items[i][2]["segments_info"]
+                if any([seg["iscrowd"] for seg in target]):
+                    del self.items[i]
 
         # Fix number of label names if desired
         if fix_classes_len is not None:
@@ -269,7 +283,12 @@ class CocoPanopticDataset(BaseDataset, SplitMixin):
 
         # Make aloscene.frame
         frame = Frame(img_path)
-        labels_2d = Labels(labels.to(torch.float32), labels_names=self.label_names, names=("N"), encoding="id")
+        labels_2d = Labels(
+            labels.to(torch.float32),
+            labels_names=self.label_names,
+            names=("N"),
+            encoding="id",
+        )
         boxes_2d = BoundingBoxes2D(
             masks_to_boxes(masks),
             boxes_format="xyxy",
@@ -291,15 +310,15 @@ class CocoPanopticDataset(BaseDataset, SplitMixin):
 
 if __name__ == "__main__":
     # coco_seg = CocoPanopticDataset(sample=True)
-    coco_seg = CocoPanopticDataset()  # test
-    for f, frames in enumerate(coco_seg.train_loader(batch_size=2)):
-        frames = Frame.batch_list(frames)
-        labels_set = "category" if isinstance(frames.boxes2d[0].labels, dict) else None
-        views = [fr.boxes2d.get_view(fr, labels_set=labels_set) for fr in frames]
-        if frames.segmentation is not None:
-            views += [fr.segmentation.get_view(fr, labels_set=labels_set) for fr in frames]
-        frames.get_view(views).render()
-        # frames.get_view(labels_set=labels_set).render()
-
-        if f > 1:
-            break
+    coco_seg = CocoPanopticDataset(classes=["person"], skip_crowd=False)  # test
+    for f, frames in enumerate(
+        coco_seg.train_loader(batch_size=1, num_workers=0, sampler=torch.utils.data.SequentialSampler(coco_seg))
+    ):
+        if f > 10:
+            frames = Frame.batch_list(frames)
+            labels_set = "category" if isinstance(frames.boxes2d[0].labels, dict) else None
+            views = [fr.boxes2d.get_view(fr, labels_set=labels_set) for fr in frames]
+            if frames.segmentation is not None:
+                views += [fr.segmentation.get_view(fr, labels_set=labels_set) for fr in frames]
+            frames.get_view(views).render()
+            # frames.get_view(labels_set=labels_set).render()

@@ -42,6 +42,9 @@ class CocoDetectionDataset(CocoBaseDataset, SplitMixin):
         Return Labels as a dictionary, with all posible categories found in annotations file, by default False
     ann_file : str
         Start from a fixe given annotation file where the path is relative to the `dataset_dir`
+    skip_crowd : bool, optional
+        Filter out images with `iscrowd` attribute, by default False
+        Images with crowd are often mislabeled with missing boxes for some persons.
     **kwargs : dict
         :mod:`BaseDataset <base_dataset>` optional parameters
 
@@ -80,6 +83,7 @@ class CocoDetectionDataset(CocoBaseDataset, SplitMixin):
         fix_classes_len: int = None,
         split=Split.TRAIN,
         ann_file=None,
+        skip_crowd: bool = False,
         **kwargs,
     ):
         SplitMixin.__init__(self, split)
@@ -143,6 +147,13 @@ class CocoDetectionDataset(CocoBaseDataset, SplitMixin):
 
                 if fix_classes_len is not None:
                     self._fix_classes(fix_classes_len)
+
+            if skip_crowd:
+                # Check each annotation and remove crowded ones.
+                for i in range(len(self.items) - 1, -1, -1):
+                    target = self.items[i][2]["segments_info"]
+                    if any([seg["iscrowd"] for seg in target]):
+                        del self.items[i]
 
         # Re-calcule encoding label types (+stuff)
         if self.label_types is not None:

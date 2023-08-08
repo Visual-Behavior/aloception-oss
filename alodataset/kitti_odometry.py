@@ -96,7 +96,9 @@ class KittiOdometryDataset(BaseDataset, SplitMixin):
         self.depth = depth
 
         if self.sample:
-            raise NotImplementedError("Sample mode is not implemented for KittiOdometryDataset")
+            raise NotImplementedError(
+                "Sample mode is not implemented for KittiOdometryDataset"
+            )
 
         self.dataset_dir = os.path.join(self.dataset_dir, "dataset")
 
@@ -110,38 +112,53 @@ class KittiOdometryDataset(BaseDataset, SplitMixin):
             self.name = "Kitti_2"
             self.depth_dir = os.path.join(self.get_dataset_dir(), "depth", "train")
             self.name = name
+            self.get_dataset_dir()
 
         for seq in self.sequences:
             # Exploit data from calib.txt
-            calib = load_calib_cam_to_cam(os.path.join(self.dataset_dir, "sequences", seq, "calib.txt"))
+            calib = load_calib_cam_to_cam(
+                os.path.join(self.dataset_dir, "sequences", seq, "calib.txt")
+            )
 
             self.seq_params[seq] = {}
 
             # Register sequence parameters
-            self.seq_params[seq]["baseline"] = calib["b_gray" if self.grayscale else "b_rgb"]
+            self.seq_params[seq]["baseline"] = calib[
+                "b_gray" if self.grayscale else "b_rgb"
+            ]
             self.seq_params[seq]["left_intrinsic"] = CameraIntrinsic(
                 np.c_[calib[f"K_cam{0 if grayscale else 2}"], np.zeros(3)]
             )
-            self.seq_params[seq]["left_extrinsic"] = CameraExtrinsic(calib[f"T_cam{0 if grayscale else 2}_rect"])
+            self.seq_params[seq]["left_extrinsic"] = CameraExtrinsic(
+                calib[f"T_cam{0 if grayscale else 2}_rect"]
+            )
             if right_frame:
                 self.seq_params[seq]["right_intrinsic"] = CameraIntrinsic(
                     np.c_[calib[f"K_cam{1 if grayscale else 3}"], np.zeros(3)]
                 )
-                self.seq_params[seq]["right_extrinsic"] = CameraExtrinsic(calib[f"T_cam{1 if grayscale else 3}_rect"])
+                self.seq_params[seq]["right_extrinsic"] = CameraExtrinsic(
+                    calib[f"T_cam{1 if grayscale else 3}_rect"]
+                )
 
-            with open(os.path.join(self.dataset_dir, "sequences", seq, "times.txt"), "r") as f:
+            with open(
+                os.path.join(self.dataset_dir, "sequences", seq, "times.txt"), "r"
+            ) as f:
                 times = [float(x) for x in f.readlines()]
 
             poses = None
             if int(seq) < 11:
-                with open(os.path.join(self.dataset_dir, "poses", f"{seq}.txt"), "r") as f:
+                with open(
+                    os.path.join(self.dataset_dir, "poses", f"{seq}.txt"), "r"
+                ) as f:
                     poses = f.readlines()
 
             # Compute all the items.
             sequence_size = len(times)
 
             # Compute sequence indices
-            temporal_sequences = sequence_indices(sequence_size, self.sequence_size, self.skip, self.sequence_skip)
+            temporal_sequences = sequence_indices(
+                sequence_size, self.sequence_size, self.skip, self.sequence_skip
+            )
             self.items.update(
                 {
                     len(self.items)
@@ -160,27 +177,41 @@ class KittiOdometryDataset(BaseDataset, SplitMixin):
 
         if sequences is None:
             for seq in sorted(os.listdir(os.path.join(self.dataset_dir, "sequences"))):
-                if (int(seq) <= 10 and self.split == Split.TRAIN) or (int(seq) >= 11 and self.split == Split.VAL):
+                if (int(seq) <= 10 and self.split == Split.TRAIN) or (
+                    int(seq) >= 11 and self.split == Split.VAL
+                ):
                     loaded_sequences.append(seq)
         elif isinstance(sequences, int):
-            if not os.path.exists(os.path.join(self.dataset_dir, "sequences", f"{sequences:02d}")):
+            if not os.path.exists(
+                os.path.join(self.dataset_dir, "sequences", f"{sequences:02d}")
+            ):
                 raise ValueError(f"Sequence {sequences:02d} does not exist")
-            if (sequences <= 10 and self.split == Split.VAL) or (sequences >= 11 and self.split == Split.TRAIN):
-                raise ValueError(f"Sequence {sequences:02d} is not in the {self.split} split")
+            if (sequences <= 10 and self.split == Split.VAL) or (
+                sequences >= 11 and self.split == Split.TRAIN
+            ):
+                raise ValueError(
+                    f"Sequence {sequences:02d} is not in the {self.split} split"
+                )
             loaded_sequences.append(f"{sequences:02d}")
         elif isinstance(sequences, str):
-            if not os.path.exists(os.path.join(self.dataset_dir, "sequences", sequences)):
+            if not os.path.exists(
+                os.path.join(self.dataset_dir, "sequences", sequences)
+            ):
                 raise ValueError(f"Sequence {sequences} does not exist")
             if (int(sequences) <= 10 and self.split == Split.VAL) or (
                 int(sequences) >= 11 and self.split == Split.TRAIN
             ):
-                raise ValueError(f"Sequence {sequences} is not in the {self.split} split")
+                raise ValueError(
+                    f"Sequence {sequences} is not in the {self.split} split"
+                )
             loaded_sequences.append(sequences)
         elif isinstance(sequences, list):
             for seq in sequences:
                 if not os.path.exists(os.path.join(self.dataset_dir, "sequences", seq)):
                     raise ValueError(f"Sequence {seq} does not exist")
-                if (int(seq) <= 10 and self.split == Split.VAL) or (int(seq) >= 11 and self.split == Split.TRAIN):
+                if (int(seq) <= 10 and self.split == Split.VAL) or (
+                    int(seq) >= 11 and self.split == Split.TRAIN
+                ):
                     raise ValueError(f"Sequence {seq} is not in the {self.split} split")
                 loaded_sequences.append(seq)
 
@@ -226,12 +257,14 @@ class KittiOdometryDataset(BaseDataset, SplitMixin):
 
             if self.split == Split.TRAIN:
                 pose = Pose(
-                    torch.Tensor([float(x) for x in item["poses"][id].split(" ")] + [0, 0, 0, 1]).reshape(4, 4)
+                    torch.Tensor(
+                        [float(x) for x in item["poses"][id].split(" ")] + [0, 0, 0, 1]
+                    ).reshape(4, 4)
                 )
                 left_frame.append_pose(pose)
 
                 if self.depth:
-                    left_frame.append_depth(self.get_depth(sequence, seq, self.grayscale))
+                    left_frame.append_depth(self.get_depth(sequence, seq))
 
             left.append(left_frame.temporal())
 
@@ -246,8 +279,12 @@ class KittiOdometryDataset(BaseDataset, SplitMixin):
                     )
                 )
                 right_frame.baseline = self.seq_params[sequence]["baseline"]
-                right_frame.append_cam_intrinsic(self.seq_params[sequence]["right_intrinsic"])
-                right_frame.append_cam_extrinsic(self.seq_params[sequence]["right_extrinsic"])
+                right_frame.append_cam_intrinsic(
+                    self.seq_params[sequence]["right_intrinsic"]
+                )
+                right_frame.append_cam_extrinsic(
+                    self.seq_params[sequence]["right_extrinsic"]
+                )
 
                 right.append(left_frame.temporal())
 
@@ -263,7 +300,7 @@ class KittiOdometryDataset(BaseDataset, SplitMixin):
 
         return frames
 
-    def get_depth(self, sequence, seq, grayscale):
+    def get_depth(self, sequence, seq, left=True):
         """
         Get the corresponding depth path from the given image path.
 
@@ -282,8 +319,9 @@ class KittiOdometryDataset(BaseDataset, SplitMixin):
             self.depth_dir,
             depth_data["name"] + "_sync",
             "proj_depth",
-            "groundtruth" f"image_{0 if self.grayscale else 2}",
-            f"{(seq+depth_data['start']):06d}.png",
+            "groundtruth",
+            f"image_0{2 if left else 3}",
+            f"{(seq+depth_data['start']):010d}.png",
         )
         return KittiDepth.depth_from_path(depth_path)
 
@@ -291,6 +329,13 @@ class KittiOdometryDataset(BaseDataset, SplitMixin):
 if __name__ == "__main__":
     from random import randint
 
-    dataset = KittiOdometryDataset(sequences=["00", "01"], sequence_skip=40, skip=28, sequence_size=5)
+    dataset = KittiOdometryDataset(
+        sequences=["00", "01"],
+        grayscale=False,
+        sequence_skip=40,
+        skip=28,
+        sequence_size=5,
+        depth=True,
+    )
     obj = dataset.getitem(randint(0, len(dataset)))
     obj["left"].get_view().render()

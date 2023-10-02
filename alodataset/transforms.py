@@ -14,7 +14,12 @@ from aloscene import Frame, Flow, Mask
 
 
 class AloTransform(object):
-    def __init__(self, same_on_sequence: bool = True, same_on_frames: bool = False, p: float = 1.0):
+    def __init__(
+        self,
+        same_on_sequence: bool = True,
+        same_on_frames: bool = False,
+        p: float = 1.0,
+    ):
         """Alo Transform. Each transform in the project should
         inhert from this class.
 
@@ -55,7 +60,9 @@ class AloTransform(object):
     def set_params(self):
         raise Exception("Must be implement by a child class")
 
-    def __call__(self, frames: Union[Mapping[str, Frame], List[Frame], Frame], **kwargs):
+    def __call__(
+        self, frames: Union[Mapping[str, Frame], List[Frame], Frame], **kwargs
+    ):
         """Iter on the given frame(s) or return the frame.
         Based on `same_on_sequence` and  `same_on_frames` parameters
         the method will return and call the `sample_params` method at different time.
@@ -76,7 +83,6 @@ class AloTransform(object):
 
         # Go through each image
         if isinstance(frames, dict):
-
             n_set = {}
 
             if same_on_sequence is None or same_on_frames is None:
@@ -86,11 +92,9 @@ class AloTransform(object):
                 )
 
             for key in frames:
-
                 # Go throguh each element of the sequence
                 # (If needed to apply save the params for each time step
                 if "T" in frames[key].names and same_on_frames and not same_on_sequence:
-
                     n_set[key] = []
                     for t in range(0, frames[key].shape[0]):
                         if t not in seqid2params:
@@ -109,8 +113,11 @@ class AloTransform(object):
                     n_set[key] = torch.cat(n_set[key], dim=0)
                 # Different for each element of the sequence, but we don't need to save
                 # the params for each image neither
-                elif "T" in frames[key].names and not same_on_frames and not same_on_sequence:
-
+                elif (
+                    "T" in frames[key].names
+                    and not same_on_frames
+                    and not same_on_sequence
+                ):
                     n_set[key] = []
 
                     for t in range(0, frames[key].shape[0]):
@@ -124,7 +131,9 @@ class AloTransform(object):
                     n_set[key] = torch.cat(n_set[key], dim=0)
                 # Same on all frames
                 elif same_on_frames:
-                    frame_params = self.sample_params() if frame_params is None else frame_params
+                    frame_params = (
+                        self.sample_params() if frame_params is None else frame_params
+                    )
                     # print('same_on_frames.....', frame_params)
                     self.set_params(*frame_params)
                     n_set[key] = self.apply(frames[key], **kwargs)
@@ -140,7 +149,9 @@ class AloTransform(object):
                 n_frames = []
                 last_size = None
                 for t in range(0, frames.shape[0]):
-                    frame_params = self.sample_params() if frame_params is None else frame_params
+                    frame_params = (
+                        self.sample_params() if frame_params is None else frame_params
+                    )
                     self.set_params(*self.sample_params())
                     result = self.apply(frames[t], **kwargs)
                     n_frames.append(result.temporal())
@@ -203,7 +214,14 @@ class Compose(AloTransform):
 
 
 class RandomSelect(AloTransform):
-    def __init__(self, transforms1: AloTransform, transforms2: AloTransform, p: float = 0.5, *args, **kwargs):
+    def __init__(
+        self,
+        transforms1: AloTransform,
+        transforms2: AloTransform,
+        p: float = 0.5,
+        *args,
+        **kwargs,
+    ):
         """Randomly selects between transforms1 and transforms2,
         with probability p for transforms1 and (1 - p) for transforms2
 
@@ -216,7 +234,7 @@ class RandomSelect(AloTransform):
         """
         self.transforms1 = transforms1
         self.transforms2 = transforms2
-        self.p = p
+        self.tp = p
         super().__init__(*args, **kwargs)
 
     def sample_params(self):
@@ -225,7 +243,11 @@ class RandomSelect(AloTransform):
         transformation is apply.
         """
         self._r = random.random()
-        return (self._r, self.transforms1.sample_params(), self.transforms2.sample_params())
+        return (
+            self._r,
+            self.transforms1.sample_params(),
+            self.transforms2.sample_params(),
+        )
 
     def set_params(self, _r, param1, param2):
         """Given predefined params, set the params on the class"""
@@ -241,7 +263,7 @@ class RandomSelect(AloTransform):
         frame: Frame
             Frame to apply the transformation on
         """
-        if self._r < self.p:
+        if self._r < self.tp:
             return self.transforms1(frame)
         return self.transforms2(frame)
 
@@ -284,7 +306,9 @@ class RandomHorizontalFlip(AloTransform):
 
 
 class RandomSizeCrop(AloTransform):
-    def __init__(self, min_size: Union[int, float], max_size: Union[int, float], *args, **kwargs):
+    def __init__(
+        self, min_size: Union[int, float], max_size: Union[int, float], *args, **kwargs
+    ):
         """Randomly crop the frame. The region will be sample
         so that the width & height of the crop will be between
         `min_size` & `max_size`.
@@ -297,7 +321,9 @@ class RandomSizeCrop(AloTransform):
             Maximun width and height of the crop. I float, will be use as a percentage
         """
         if type(min_size) != type(max_size):
-            raise Exception("Both `min_size` and `max_size` but be of the same type (float or int)")
+            raise Exception(
+                "Both `min_size` and `max_size` but be of the same type (float or int)"
+            )
         self.min_size = min_size
         self.max_size = max_size
         super().__init__(*args, **kwargs)
@@ -376,11 +402,12 @@ class RandomSizePad(AloTransform):
         self._pad_bottom = pad_bottom
 
     def __call__(self, frame):
-
         print((self._pad_top, self._pad_bottom), (self._pad_left, self._pad_right))
 
         return frame.pad(
-            offset_y=(self._pad_top, self._pad_bottom), offset_x=(self._pad_left, self._pad_right), pad_boxes=True
+            offset_y=(self._pad_top, self._pad_bottom),
+            offset_x=(self._pad_left, self._pad_right),
+            pad_boxes=True,
         )
 
 
@@ -416,7 +443,9 @@ class RandomPad(AloTransform):
 
     def __call__(self, frame):
         return frame.pad(
-            offset_y=(self._pad_top, self._pad_bottom), offset_x=(self._pad_left, self._pad_right), pad_boxes=True
+            offset_y=(self._pad_top, self._pad_bottom),
+            offset_x=(self._pad_left, self._pad_right),
+            pad_boxes=True,
         )
 
 
@@ -597,7 +626,14 @@ class Rotate(AloTransform):
 
 
 class RealisticNoise(AloTransform):
-    def __init__(self, gaussian_std: float = 0.02, shot_std: float = 0.05, same_on_sequence=False, *args, **kwargs):
+    def __init__(
+        self,
+        gaussian_std: float = 0.02,
+        shot_std: float = 0.05,
+        same_on_sequence=False,
+        *args,
+        **kwargs,
+    ):
         """Add an approximation of a realistic noise to the image.
 
         More precisely, we add a gaussian noise and a shot noise to the image.
@@ -629,8 +665,12 @@ class RealisticNoise(AloTransform):
     def apply(self, frame: Frame):
         n_frame = frame.norm01()
 
-        gaussian_noise = torch.normal(mean=0, std=self.gaussian_std, size=frame.shape, device=frame.device)
-        shot_noise = torch.normal(mean=0, std=self.shot_std, size=frame.shape, device=frame.device)
+        gaussian_noise = torch.normal(
+            mean=0, std=self.gaussian_std, size=frame.shape, device=frame.device
+        )
+        shot_noise = torch.normal(
+            mean=0, std=self.shot_std, size=frame.shape, device=frame.device
+        )
         noisy_frame = n_frame + n_frame * n_frame * shot_noise + gaussian_noise
         noisy_frame = torch.clip(noisy_frame, 0, 1)
 
@@ -641,7 +681,14 @@ class RealisticNoise(AloTransform):
 
 
 class CustomRandomColoring(AloTransform):
-    def __init__(self, gamma_r=(0.8, 1.2), brightness_r=(0.5, 2.0), colors_r=(0.5, 1.5), *args, **kwargs):
+    def __init__(
+        self,
+        gamma_r=(0.8, 1.2),
+        brightness_r=(0.5, 2.0),
+        colors_r=(0.5, 1.5),
+        *args,
+        **kwargs,
+    ):
         """
         Random modification of image colors
 
@@ -669,7 +716,9 @@ class CustomRandomColoring(AloTransform):
         self.colors = Uniform(colors_min, colors_max).sample(sample_shape=(3,))
 
     def apply(self, frame: Frame):
-        assert frame.normalization == "01", "frame should be normalized between 0 and 1 before color modification"
+        assert (
+            frame.normalization == "01"
+        ), "frame should be normalized between 0 and 1 before color modification"
 
         frame = frame**self.gamma
         frame = frame * self.brightness
@@ -747,14 +796,21 @@ class ColorJitter(AloTransform, torchvision.transforms.ColorJitter):
             How much to jitter hue. hue_factor is chosen uniformly from [-hue, hue] or the given [min, max]. Should have 0<= hue <= 0.5 or -0.5 <= min <= max <= 0.5.
         """
         torchvision.transforms.ColorJitter.__init__(
-            self, brightness=brightness, contrast=contrast, saturation=saturation, hue=hue
+            self,
+            brightness=brightness,
+            contrast=contrast,
+            saturation=saturation,
+            hue=hue,
         )
         AloTransform.__init__(self, *args, **kwargs)
 
     def sample_params(self):
         """Sample a `size` from the list of possible `sizes`"""
         return torchvision.transforms.ColorJitter.get_params(
-            brightness=self.brightness, contrast=self.contrast, saturation=self.saturation, hue=self.hue
+            brightness=self.brightness,
+            contrast=self.contrast,
+            saturation=self.saturation,
+            hue=self.hue,
         )
 
     def set_params(self, *params):
@@ -862,7 +918,10 @@ class RandomDownScaleCrop(Compose):
     """
 
     def __init__(self, size, preserve_ratio=False, *args, **kwargs):
-        transforms = [RandomDownScale(size, preserve_ratio, *args, **kwargs), RandomCrop(size, *args, **kwargs)]
+        transforms = [
+            RandomDownScale(size, preserve_ratio, *args, **kwargs),
+            RandomCrop(size, *args, **kwargs),
+        ]
         super().__init__(transforms, *args, **kwargs)
 
 
@@ -881,7 +940,11 @@ class DynamicCropTransform(AloTransform):
     def set_params(self, size):
         self.crop_size = size
 
-    def apply(self, frame: Frame, center: Union[Tuple[int, int], Tuple[float, float]] = (0.5, 0.5)):
+    def apply(
+        self,
+        frame: Frame,
+        center: Union[Tuple[int, int], Tuple[float, float]] = (0.5, 0.5),
+    ):
         """
         center: Coordinate of cropped image center. This coordinate is tuple of int or tuple of float.
                 Default: (0.5, 0.5)
@@ -910,13 +973,14 @@ class DynamicCropTransform(AloTransform):
 
 class RandomFocusBlur(AloTransform):
     """Randomly introduces motion blur.
-    
+
     Parameters
     ----------
         max_filter_size : int
             Max filter size to use, the higher the more blured the image.
-    
+
     """
+
     def __init__(self, max_filter_size=10, *args, **kwargs):
         assert isinstance(max_filter_size, int)
         self.max_filter_size = max_filter_size
@@ -937,7 +1001,7 @@ class RandomFocusBlur(AloTransform):
     def set_params(self, h_size, v_size):
         self.h_filter_size = h_size
         self.v_filter_size = v_size
-    
+
     @torch.no_grad()
     def apply(self, frame):
         c, h, w = frame.shape
@@ -953,7 +1017,9 @@ class RandomFocusBlur(AloTransform):
         frame_ = frame.clone().norm255().batch()
         frame_ = frame_.rename(None)
 
-        frame_ = torch.nn.functional.conv2d(frame_.as_tensor(), filter_v, padding="same", groups=3)
+        frame_ = torch.nn.functional.conv2d(
+            frame_.as_tensor(), filter_v, padding="same", groups=3
+        )
         frame_ = torch.nn.functional.conv2d(frame_, filter_h, padding="same", groups=3)
 
         frame_ = frame_.reset_names()[0].norm_as(frame)
@@ -963,13 +1029,14 @@ class RandomFocusBlur(AloTransform):
 
 class RandomFocusBlurV2(AloTransform):
     """Randomly introduces motion blur.
-    
+
     Parameters
     ----------
         max_filter_size : int
             Max filter size to use, the higher the more blured the image.
 
     """
+
     def __init__(self, max_filter_size=10, *args, **kwargs):
         assert isinstance(max_filter_size, int)
         self.max_filter_size = max_filter_size
@@ -987,25 +1054,37 @@ class RandomFocusBlurV2(AloTransform):
     def set_params(self, h_size, v_size):
         self.h_filter_size = h_size
         self.v_filter_size = v_size
-    
+
     @staticmethod
     def h_trans(frame, size):
         v_left_frames = [frame[:, :, i:] for i in range(1, size // 2 + 1)]
-        v_left_frames = [torch.nn.functional.pad(x, pad=(0, i + 1),  value=0) for i, x in enumerate(v_left_frames)]
-        
+        v_left_frames = [
+            torch.nn.functional.pad(x, pad=(0, i + 1), value=0)
+            for i, x in enumerate(v_left_frames)
+        ]
+
         v_right_frames = [frame[:, :, :-i] for i in range(1, size // 2 + 1)]
-        v_right_frames = [torch.nn.functional.pad(x, pad=(i + 1, 0),  value=0) for i, x in enumerate(v_right_frames)]
+        v_right_frames = [
+            torch.nn.functional.pad(x, pad=(i + 1, 0), value=0)
+            for i, x in enumerate(v_right_frames)
+        ]
 
         v_frames = [*v_left_frames, frame, *v_right_frames]
         return v_frames
-    
+
     @staticmethod
     def v_trans(frame, size):
         h_top_frames = [frame[:, i:, :] for i in range(1, size // 2 + 1)]
-        h_top_frames = [torch.nn.functional.pad(x, pad=(0, 0, 0, i + 1),  value=0) for i, x in enumerate(h_top_frames)]
-        
+        h_top_frames = [
+            torch.nn.functional.pad(x, pad=(0, 0, 0, i + 1), value=0)
+            for i, x in enumerate(h_top_frames)
+        ]
+
         h_bot_frames = [frame[:, :-i, :] for i in range(1, size // 2 + 1)]
-        h_bot_frames = [torch.nn.functional.pad(x, pad=(0, 0, i + 1, 0),  value=0) for i, x in enumerate(h_bot_frames)]
+        h_bot_frames = [
+            torch.nn.functional.pad(x, pad=(0, 0, i + 1, 0), value=0)
+            for i, x in enumerate(h_bot_frames)
+        ]
 
         h_frames = [*h_top_frames, frame, *h_bot_frames]
         return h_frames
@@ -1020,10 +1099,10 @@ class RandomFocusBlurV2(AloTransform):
 
         v_frame = sum(v_frames) / self.v_filter_size
         h_frame = sum(h_frames) / self.h_filter_size
-        
+
         blured = (h_frame + v_frame) / 2
         blured = Frame(blured)
-        
+
         blured = blured.norm_as(frame)
         blured.__dict__ = frame.__dict__.copy()
         return blured
@@ -1034,22 +1113,34 @@ class RandomFocusBlurV3(RandomFocusBlurV2):
     def h_trans(frame, size):
         c, h, _ = frame.shape
         v_left_frames = [frame[:, :, i:] for i in range(1, size // 2 + 1)]
-        v_left_frames = [torch.cat([f, torch.zeros((c, h, i + 1))], dim=2) for i, f in enumerate(v_left_frames)]
-        
+        v_left_frames = [
+            torch.cat([f, torch.zeros((c, h, i + 1))], dim=2)
+            for i, f in enumerate(v_left_frames)
+        ]
+
         v_right_frames = [frame[:, :, :-i] for i in range(1, size // 2 + 1)]
-        v_right_frames = [torch.cat([torch.zeros((c, h, i + 1)), f], dim=2) for i, f in enumerate(v_right_frames)]
+        v_right_frames = [
+            torch.cat([torch.zeros((c, h, i + 1)), f], dim=2)
+            for i, f in enumerate(v_right_frames)
+        ]
 
         v_frames = [*v_left_frames, frame, *v_right_frames]
         return v_frames
-    
+
     @staticmethod
     def v_trans(frame, size):
         c, _, w = frame.shape
         h_top_frames = [frame[:, i:, :] for i in range(1, size // 2 + 1)]
-        h_top_frames = [torch.cat([f, torch.zeros((c, i + 1, w))], dim=1) for i, f in enumerate(h_top_frames)]
-        
+        h_top_frames = [
+            torch.cat([f, torch.zeros((c, i + 1, w))], dim=1)
+            for i, f in enumerate(h_top_frames)
+        ]
+
         h_bot_frames = [frame[:, :-i, :] for i in range(1, size // 2 + 1)]
-        h_bot_frames = [torch.cat([torch.zeros((c, i + 1, w)), f], dim=1) for i, f in enumerate(h_bot_frames)]
+        h_bot_frames = [
+            torch.cat([torch.zeros((c, i + 1, w)), f], dim=1)
+            for i, f in enumerate(h_bot_frames)
+        ]
 
         h_frames = [*h_top_frames, frame, *h_bot_frames]
         return h_frames
@@ -1057,7 +1148,7 @@ class RandomFocusBlurV3(RandomFocusBlurV2):
 
 class RandomFlowMotionBlur(AloTransform):
     """Introduces motion blur from optical flow.
-    
+
     Idea : Let OpticalFlow : x, y --> x', y'
     retrive the indexes betwe x, x' and y, y'
     i.e x -> x1 ... -> x' , y -> y1 ... -> y'
@@ -1076,20 +1167,21 @@ class RandomFlowMotionBlur(AloTransform):
             Motion blur intensity. If this arg is set, the value will not be random anymore.
 
     """
+
     def __init__(
-            self,
-            subframes: int = 10,
-            flow_model=None,
-            model_kwargs={},
-            intensity=None,
-            **kwargs,
-            ):
+        self,
+        subframes: int = 10,
+        flow_model=None,
+        model_kwargs={},
+        intensity=None,
+        **kwargs,
+    ):
         if isinstance(intensity, list):
             assert all([isinstance(x, float) for x in intensity])
             assert intensity[0] < intensity[1]
             assert len(intensity) == 2
 
-        self.intensity = 1. if intensity is None else intensity
+        self.intensity = 1.0 if intensity is None else intensity
         self.model_kwargs = model_kwargs
         self.flow_model = flow_model
         self.inter_intensity = None
@@ -1116,12 +1208,12 @@ class RandomFlowMotionBlur(AloTransform):
         frame2 = Frame(frame2).norm_minmax_sym().batch()
 
         return {"frame1": frame1, "frame2": frame2, **self.model_kwargs}
-    
+
     @staticmethod
     def _adapt_model_output(output):
-        """Adapts model output to be an optical flow of size [2, H, W] where the first channel 
+        """Adapts model output to be an optical flow of size [2, H, W] where the first channel
         is the OF over X axis and the second is over Y axis
-        
+
         Example with alonet/raft/raft ... ->
 
         """
@@ -1143,16 +1235,20 @@ class RandomFlowMotionBlur(AloTransform):
             flow = flow.as_tensor()
         else:
             flow_cls = flow.__class__.__name__
-            assert isinstance(flow, torch.Tensor), f"Flow must be an instance of torch.Tensor got {flow_cls} instead"
+            assert isinstance(
+                flow, torch.Tensor
+            ), f"Flow must be an instance of torch.Tensor got {flow_cls} instead"
 
         # Resize given the blur intensity
         HW_ = frame.shape[-2:]
         HW = flow.shape[-2:]
 
         if HW != HW_:
-            flow = torch.nn.functional.interpolate(flow.unsqueeze(0), size=HW_, mode="nearest")
+            flow = torch.nn.functional.interpolate(
+                flow.unsqueeze(0), size=HW_, mode="nearest"
+            )
             flow = flow.squeeze()
-        
+
         flow = flow * self.inter_intensity
 
         # XY Coordinates
@@ -1164,18 +1260,20 @@ class RandomFlowMotionBlur(AloTransform):
         # Map coridinates of intermediate points X -> X, intemediate X points ..., X + X_displacement (same for Y)
         subcoords = [
             [
-                (coords[0] - map_coords[0]) * i / self.subframes + coords[0],   # X
-                (coords[0] - map_coords[0]) * i / self.subframes + coords[1]]   # Y
-                for i in range(self.subframes + 1)
-            ]
+                (coords[0] - map_coords[0]) * i / self.subframes + coords[0],  # X
+                (coords[0] - map_coords[0]) * i / self.subframes + coords[1],
+            ]  # Y
+            for i in range(self.subframes + 1)
+        ]
 
         # Round and clamp indexes (float -> int + Occlusion)
         subcoords = [
             [
                 torch.round(torch.clamp(s[0], min=0, max=HW_[0] - 1)).long(),
-                torch.round(torch.clamp(s[1], min=0, max=HW_[1] - 1)).long()
+                torch.round(torch.clamp(s[1], min=0, max=HW_[1] - 1)).long(),
             ]
-            for s in subcoords]
+            for s in subcoords
+        ]
 
         # Frame to indexed intermediate frames
         frame_ = [frame_[:, subcoord[0], subcoord[1]] for subcoord in subcoords]
@@ -1203,18 +1301,19 @@ class RandomCornersMask(AloTransform):
             ## p_sides = [top, bottom, right, left]
 
     """
+
     def __init__(
-            self,
-            max_mask_size: float = 0.2,
-            p_sides: List = [0.2, 0.2, 0.2, 0.2],
-            **kwargs,
-            ):
+        self,
+        max_mask_size: float = 0.2,
+        p_sides: List = [0.2, 0.2, 0.2, 0.2],
+        **kwargs,
+    ):
         assert len(p_sides) == 4
         assert isinstance(p_sides, list)
         assert isinstance(max_mask_size, float)
         assert max_mask_size >= 0 and max_mask_size < 1
         assert all([isinstance(x, float) for x in p_sides])
-        
+
         # Random var param
         self.max_mask_size = max_mask_size
         self.p_sides = p_sides

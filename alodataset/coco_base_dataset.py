@@ -16,7 +16,6 @@ from pycocotools.coco import COCO
 from typing import Dict, Union
 
 
-
 class CocoBaseDataset(BaseDataset):
     """
     Attributes
@@ -73,6 +72,8 @@ class CocoBaseDataset(BaseDataset):
         classes: list = None,
         fix_classes_len: int = None,
         return_multiple_labels: list = None,
+        ignore_classes: list = None,
+        skip_crowd: bool = True,
         **kwargs,
     ):
         super(CocoBaseDataset, self).__init__(name=name, **kwargs)
@@ -80,15 +81,20 @@ class CocoBaseDataset(BaseDataset):
             return
         else:
             assert img_folder is not None, "When sample = False, img_folder must be given."
-            assert ann_file is not None or "test" in img_folder, "When sample = False and the test split is not used, ann_file must be given."
-
+            assert (
+                ann_file is not None or "test" in img_folder
+            ), "When sample = False and the test split is not used, ann_file must be given."
 
         # Create properties
         self.img_folder = os.path.join(self.dataset_dir, img_folder)
 
         if "test" in img_folder:
-            #get a list of  indices that don't rely on the annotation file
-            self.items = [int(Path(os.path.join(self.img_folder, f)).stem) for f in os.listdir(self.img_folder) if os.path.isfile(os.path.join(self.img_folder, f))]
+            # get a list of  indices that don't rely on the annotation file
+            self.items = [
+                int(Path(os.path.join(self.img_folder, f)).stem)
+                for f in os.listdir(self.img_folder)
+                if os.path.isfile(os.path.join(self.img_folder, f))
+            ]
             return
 
         self.coco = COCO(os.path.join(self.dataset_dir, ann_file))
@@ -103,6 +109,12 @@ class CocoBaseDataset(BaseDataset):
 
         self._ids_renamed = classes
         self.label_names = label_names
+
+        if classes is not None and ignore_classes is not None:
+            raise Exception("Can't considere both classes & ignore_classes at the same time.")
+        if ignore_classes is not None:
+            classes = [l for l in self.label_names if l not in set(ignore_classes + ["N/A"])]
+
         if classes is not None:
             notclass = [label for label in classes if label not in self.label_names]
             if len(notclass) > 0:  # Ignore all labels not in classes
@@ -121,6 +133,13 @@ class CocoBaseDataset(BaseDataset):
                 if any([self._ids_renamed[bbox["category_id"]] >= 0 for bbox in target]):
                     ids.append(i)
             self.items = ids  # Remove images without bboxes with classes in classes list
+
+        if skip_crowd:
+            # Check each annotation and remove crowded ones.
+            for i in range(len(self.items) - 1, -1, -1):
+                anns = self.coco.loadAnns(self.coco.getAnnIds(self.items[i]))
+                if any([ann["iscrowd"] for ann in anns]):
+                    del self.items[i]
 
         # Fix lenght of label_names to a desired `fix_classes_len`
         if fix_classes_len is not None:
@@ -172,7 +191,12 @@ class CocoBaseDataset(BaseDataset):
 
     def _append_labels(self, element: Union[BoundingBoxes2D, Mask], target):
         def append_new_labels(element, ltensor, lnames, name):
-            label_2d = Labels(ltensor.to(torch.float32), labels_names=lnames, names=("N"), encoding="id")
+            label_2d = Labels(
+                ltensor.to(torch.float32),
+                labels_names=lnames,
+                names=("N"),
+                encoding="id",
+            )
             element.append_labels(label_2d, name=name)
 
         labels = target["labels"]
@@ -186,7 +210,10 @@ class CocoBaseDataset(BaseDataset):
         # Append supercategory labels
         for ktype in self.label_types:
             append_new_labels(
-                element, torch.as_tensor(self.label_types[ktype])[labels], self.label_types_names[ktype], ktype
+                element,
+                torch.as_tensor(self.label_types[ktype])[labels],
+                self.label_types_names[ktype],
+                ktype,
             )
 
         # Append specific labels
@@ -211,7 +238,11 @@ class CocoBaseDataset(BaseDataset):
 
         # Create and append labels to boxes
         boxes = BoundingBoxes2D(
-            target["boxes"], boxes_format="xyxy", absolute=True, frame_size=frame.HW, names=("N", None)
+            target["boxes"],
+            boxes_format="xyxy",
+            absolute=True,
+            frame_size=frame.HW,
+            names=("N", None),
         )
         self._append_labels(boxes, target)
 
@@ -241,7 +272,7 @@ class CocoBaseDataset(BaseDataset):
 
         image_id = self.items[idx]
         if "test" in self.img_folder:
-            #get the filename from image_id without relying on annotation file
+            # get the filename from image_id without relying on annotation file
             return Frame(os.path.join(self.img_folder, f"{str(image_id).zfill(12)}.jpg"))
 
         frame = Frame(os.path.join(self.img_folder, self.coco.loadImgs(image_id)[0]["file_name"]))
@@ -293,7 +324,6 @@ class ConvertCocoPolysToMask(object):
         return masks
 
     def __call__(self, image, target):
-
         w, h = image.shape[-1], image.shape[-2]
 
         image_id = target["image_id"]
@@ -356,11 +386,11 @@ class ConvertCocoPolysToMask(object):
 
 if __name__ == "__main__":
     coco_dataset = CocoBaseDataset(sample=False, img_folder="test2017")
-    #checking if regular getitem works
+    # checking if regular getitem works
     frame = coco_dataset[0]
     frame.get_view().render()
 
-    #check if dataloader works
+    # check if dataloader works
     for f, frames in enumerate(coco_dataset.train_loader(batch_size=2)):
         frames = Frame.batch_list(frames)
         frames.get_view().render()

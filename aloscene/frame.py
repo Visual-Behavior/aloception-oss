@@ -648,14 +648,14 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         if x_shift >= 1:
             frame_data[self.get_slices({"W": slice(0, x_shift)})] = n_frame_mean
         elif x_shift <= -1:
-            frame_data[self.get_slices({"W": slice(x_shift, -1)})] = n_frame_mean
+            frame_data[self.get_slices({"W": slice(x_shift, None)})] = n_frame_mean  # error
 
         frame_data = torch.roll(frame_data, y_shift, dims=self.names.index("H"))
 
         if y_shift >= 1:
             frame_data[self.get_slices({"H": slice(0, y_shift)})] = n_frame_mean
         elif y_shift <= -1:
-            frame_data[self.get_slices({"H": slice(y_shift, -1)})] = n_frame_mean
+            frame_data[self.get_slices({"H": slice(y_shift, None)})] = n_frame_mean
 
         n_frame.data = frame_data
 

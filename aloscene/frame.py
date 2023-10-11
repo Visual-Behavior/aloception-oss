@@ -568,7 +568,7 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         -------
             padded tensor
         """
-        pad_values = {"01": 0, "255": 0, "minmax_sym": -1}
+        pad_values = {"01": 0.5, "255": 127, "minmax_sym": 0}
         if self.normalization in pad_values:
             pad_value = pad_values[self.normalization]
             return super()._pad(offset_y, offset_x, fill=pad_value, **kwargs)

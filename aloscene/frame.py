@@ -630,32 +630,36 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
 
         frame_data = n_frame.as_tensor()
 
-        permute_idx = list(range(0, len(self.shape)))
-        last_current_idx = permute_idx[-1]
-        permute_idx[-1] = permute_idx[self.names.index("C")]
-        permute_idx[self.names.index("C")] = last_current_idx
+        pad_values = {"01": 0.5, "255": 127, "minmax_sym": 0}
+        if self.normalization in pad_values:
+            pad_value = pad_values[self.normalization]
+        else:
+            permute_idx = list(range(0, len(self.shape)))
+            last_current_idx = permute_idx[-1]
+            permute_idx[-1] = permute_idx[self.names.index("C")]
+            permute_idx[self.names.index("C")] = last_current_idx
 
-        n_frame_mean = frame_data.permute(permute_idx)
-        n_frame_mean = n_frame_mean.flatten(end_dim=-2)
-        n_frame_mean = torch.mean(n_frame_mean, dim=0)
-        n_shape = [1] * len(self.shape)
-        n_shape[self.names.index("C")] = 3
-        n_frame_mean = n_frame_mean.view(tuple(n_shape))
+            pad_value = frame_data.permute(permute_idx)
+            pad_value = pad_value.flatten(end_dim=-2)
+            pad_value = torch.mean(pad_value, dim=0)
+            n_shape = [1] * len(self.shape)
+            n_shape[self.names.index("C")] = 3
+            pad_value = pad_value.view(tuple(n_shape))
 
         frame_data = torch.roll(frame_data, x_shift, dims=self.names.index("W"))
         # Fillup the shifted area with the mean
 
         if x_shift >= 1:
-            frame_data[self.get_slices({"W": slice(0, x_shift)})] = n_frame_mean
+            frame_data[self.get_slices({"W": slice(0, x_shift)})] = pad_value
         elif x_shift <= -1:
-            frame_data[self.get_slices({"W": slice(x_shift, None)})] = n_frame_mean  # error
+            frame_data[self.get_slices({"W": slice(x_shift, None)})] = pad_value  # error
 
         frame_data = torch.roll(frame_data, y_shift, dims=self.names.index("H"))
 
         if y_shift >= 1:
-            frame_data[self.get_slices({"H": slice(0, y_shift)})] = n_frame_mean
+            frame_data[self.get_slices({"H": slice(0, y_shift)})] = pad_value
         elif y_shift <= -1:
-            frame_data[self.get_slices({"H": slice(y_shift, None)})] = n_frame_mean
+            frame_data[self.get_slices({"H": slice(y_shift, None)})] = pad_value
 
         n_frame.data = frame_data
 

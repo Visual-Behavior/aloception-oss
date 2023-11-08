@@ -1,4 +1,7 @@
 from argparse import ArgumentParser, ArgumentTypeError, Namespace, _ArgumentGroup
+from typing import Any
+from pytorch_lightning import Trainer
+from pytorch_lightning.cli import LightningArgumentParser, LightningCLI
 from pytorch_lightning.callbacks import ModelCheckpoint
 import pytorch_lightning as pl
 from pytorch_lightning.loggers import TensorBoardLogger, WandbLogger
@@ -11,6 +14,177 @@ import torch
 from alodataset.base_dataset import _user_prompt
 
 parser = ArgumentParser()
+
+
+class AloceptionCLI(LightningCLI):
+    def __init__(self, project: str, compile_model: bool = True, **kwargs):
+        """AloceptionCLI - CLI tool of aloception-oss which wraps LightningCLI.
+        Args:
+            project (str): Name of project. Necessary to log/load checkpoint/training log.
+            compile_model (bool): Compile model via `torch.compile` before training. Default: True.
+        """
+        super().__init__(**kwargs)
+        self.project = project
+        self.compile_model = compile_model
+
+    def add_arguments_to_parser(self, parser: LightningArgumentParser, mode: str = "training") -> None:
+        if mode not in ["training", "eval"]:
+            raise ValueError("mode must be training or eval")
+
+        if mode == "training":
+            parser.add_argument(
+                "--resume",
+                action="store_true",
+                help="Resume all the training, not only the weights.",
+            )
+            parser.add_argument(
+                "--save",
+                action="store_true",
+                help="Save every epoch and keep the top_k",
+            )
+            parser.add_argument(
+                "--save_top_k",
+                type=int,
+                default=3,
+                help="Stores up to top_k models, by default %(default)s. Use save_top_k=-1 to store all checkpoints",
+            )
+        if mode == "eval":  # Only make sense for eval
+            parser.add_argument(
+                "--checkpoint",
+                type=checkpoint_type,
+                default="last",
+                help="Load the weights from 'best', 'last' or '.ckpt' file into run_id, by default '%(default)s'",
+            )
+        parser.add_argument(
+            "--no_compile",
+            action="store_true",
+            help="Do not compile model via torch.compile.",
+        )
+        parser.add_argument(
+            "--log",
+            type=str,
+            default=None,
+            nargs="?",
+            const="wandb",
+            help="Log results, can specify logger, by default %(default)s. If set but value not provided:wandb",
+        )
+        parser.add_argument(
+            "--log_save_dir",
+            type=str,
+            default=None,
+            nargs="?",
+            help="Path to save training log, by default %(default)s. If not set, use the default value in alonet_config.json",
+        )
+        parser.add_argument(
+            "--cp_save_dir",
+            type=str,
+            default=None,
+            nargs="?",
+            help="Path to save training checkpoint, by default %(default)s. If not set, use the default value in alonet_config.json",
+        )
+        parser.add_argument("--run_id", type=str, help="Load the weights from this saved experiment")
+        parser.add_argument(
+            "--monitor",
+            type=str,
+            default="val_loss",
+            help="Metric to save/load weights, by default '%(default)s'",
+        )
+        parser.add_argument(
+            "--no_run_id",
+            action="store_true",
+            help="Skip loading form run_id when an experiment is restored.",
+        )
+        parser.add_argument("--project_run_id", type=str, help="Project related with the run ID to load")
+        parser.add_argument(
+            "--expe_name",
+            type=str,
+            default=None,
+            help="expe_name to be logged in wandb",
+        )
+        parser.add_argument(
+            "--no_suffix",
+            action="store_true",
+            help="do not add date suffix to expe_name",
+        )
+        parser.add_argument(
+            "--nostrict",
+            action="store_true",
+            help="load from checkpoint to run a model with different weights names (default False)",
+        )
+
+    def instantiate_trainer(self, **kwargs: Any) -> Trainer:
+        # get callbacks from self.model
+        callback_fn = getattr(self.model, "callbacks", None)
+        if callable(callback_fn):
+            callbacks = callback_fn(self.datamodule)
+        else:
+            callbacks = []
+
+        extra_callbacks = [self._get(self.config_init, c) for c in self._parser(self.subcommand).callback_keys]
+        trainer_config = {**self._get(self.config_init, "trainer", default={}), **kwargs}
+
+        # add extra_callbacks
+        callbacks.extend(extra_callbacks)
+
+        project_dir, expe_dir, expe_name = get_expe_infos(self.project, self.config.expe_name, None)
+        if self.config.run_id is not None:
+            strict = not self.config.nostrict
+            run_id_project_dir = (
+                project_dir
+                if self.config.project_run_id is None
+                else os.path.join(vb_folder(), f"project_{self.config.project_run_id}")
+            )
+            ckpt_path = os.path.join(run_id_project_dir, self.config.run_id, "last.ckpt")
+            if not os.path.exists(ckpt_path):
+                raise Exception(f"Impossible to load the ckpt at the following destination:{ckpt_path}")
+            if not self.config.resume:
+                kwargs_config = getattr(self.model, "_init_kwargs_config", {})
+                print(f"Loading ckpt from {self.config.run_id} at {ckpt_path}")
+                self.model = type(self.model).load_from_checkpoint(ckpt_path, strict=strict, **kwargs_config)
+            else:
+                expe_name = self.config.run_id
+                # update ckpt_path in self.config_init for Trainer.fit/validate/test
+                self.config_init["fit"]["ckpt_path"] = ckpt_path
+                expe_dir = os.path.join(run_id_project_dir, self.config.run_id)
+
+        if self.config.log is not None:
+            # get dir to save log
+            save_dir = os.path.join(get_dir_from_config(self.config, "log"), f"project_{self.project}", expe_name)
+
+            # create path
+            if self.config.log == "wandb":
+                save_dir = os.path.join(save_dir, "wandb")
+                os.makedirs(save_dir, exist_ok=True)
+                logger = WandbLogger(name=expe_name, save_dir=save_dir, project=self.project, id=expe_name)
+
+            elif self.config.log == "tensorboard":
+                save_dir = os.path.join(save_dir, "tensorboard")
+                os.makedirs(save_dir, exist_ok=True)
+                logger = TensorBoardLogger(save_dir=save_dir, name=expe_name, sub_dir=expe_name)
+            else:
+                raise ValueError("Unknown or not implemented logger")
+        else:
+            logger = None
+
+        if self.config.save:
+            monitor = getattr(self.config, "monitor", "val_loss")
+            checkpoint_callback = ModelCheckpoint(
+                dirpath=expe_dir,
+                verbose=True,
+                save_last=True,
+                save_top_k=getattr(self.config, "save_top_k", 3),
+                monitor=monitor,
+                filename="{epoch}-{step}-{" + monitor + ":.4f}",
+            )
+            callbacks.append(checkpoint_callback)
+
+        # add logger and callbacks to pl.Trainer init argument
+        trainer_config.update({"logger": logger, "callbacks": callbacks})
+
+        if self.compile_model:
+            self.model = torch.compile(self.model)
+
+        return self._instantiate_trainer(trainer_config, callbacks)
 
 
 def vb_folder(create_if_not_found=False):
@@ -38,98 +212,6 @@ def checkpoint_type(arg_value):
         raise ArgumentTypeError(f"{arg_value} is not a valid checkpoint. Use 'last','best' or '.ckpt' file")
 
 
-def add_argparse_args(parent_parser, add_pl_args=True, mode="training"):
-    """add cli argparse arguments to parent_parser
-
-    Parameters
-    ----------
-    parent_parser: argparse.ArgumentParser
-            The custom cli arguments parser, which will be extended by
-            the class's default arguments.
-    add_pl_args: bool
-            By default, this is True, and also add pl.trainer arguments
-            groups to the current parser
-    mode : str, {"training", "eval"}
-        Add args for training or eval
-
-    Returns
-    -------
-    parent_parser: argparse.ArgumentParser
-             original parent_parser with added arguments
-
-    Raises
-    ------
-    RuntimeError:
-        If ``parent_parser`` is not an ``ArgumentParser`` instance
-    """
-    if mode not in ["training", "eval"]:
-        raise ValueError(f"Unknown value for parameter `mode`: {mode}")
-    if isinstance(parent_parser, _ArgumentGroup):
-        raise RuntimeError("Please only pass an ArgumentParser instance.")
-
-    parser = parent_parser.add_argument_group("pl_helper")
-
-    if add_pl_args:
-        parent_parser = pl.Trainer.add_argparse_args(parent_parser)
-
-    if mode == "training":
-        parser.add_argument("--resume", action="store_true", help="Resume all the training, not only the weights.")
-        parser.add_argument("--save", action="store_true", help="Save every epoch and keep the top_k")
-        parser.add_argument(
-            "--save_top_k",
-            type=int,
-            default=3,
-            help="Stores up to top_k models, by default %(default)s. Use save_top_k=-1 to store all checkpoints",
-        )
-    if mode == "eval":  # Only make sense for eval
-        parser.add_argument(
-            "--checkpoint",
-            type=checkpoint_type,
-            default="last",
-            help="Load the weights from 'best', 'last' or '.ckpt' file into run_id, by default '%(default)s'",
-        )
-    parser.add_argument(
-        "--log",
-        type=str,
-        default=None,
-        nargs="?",
-        const="wandb",
-        help="Log results, can specify logger, by default %(default)s. If set but value not provided:wandb",
-    )
-    parser.add_argument(
-        "--log_save_dir",
-        type=str,
-        default=None,
-        nargs="?",
-        help="Path to save training log, by default %(default)s. If not set, use the default value in alonet_config.json",
-    )
-    parser.add_argument(
-        "--cp_save_dir",
-        type=str,
-        default=None,
-        nargs="?",
-        help="Path to save training checkpoint, by default %(default)s. If not set, use the default value in alonet_config.json",
-    )
-    parser.add_argument("--cpu", action="store_true", help="Use the CPU instead of scaling on the vaiable GPUs")
-    parser.add_argument("--run_id", type=str, help="Load the weights from this saved experiment")
-    parser.add_argument(
-        "--monitor", type=str, default="val_loss", help="Metric to save/load weights, by default '%(default)s'"
-    )
-    parser.add_argument(
-        "--no_run_id", action="store_true", help="Skip loading form run_id when an experiment is restored."
-    )
-    parser.add_argument("--project_run_id", type=str, help="Project related with the run ID to load")
-    parser.add_argument("--expe_name", type=str, default=None, help="expe_name to be logged in wandb")
-    parser.add_argument("--no_suffix", action="store_true", help="do not add date suffix to expe_name")
-    parser.add_argument(
-        "--nostrict",
-        action="store_true",
-        help="load from checkpoint to run a model with different weights names (default False)",
-    )
-
-    return parent_parser
-
-
 def checkpoint_handler(checkpoint_path, rfolder, monitor="val_loss"):
     if checkpoint_path == "last":
         return "last.ckpt"
@@ -140,7 +222,12 @@ def checkpoint_handler(checkpoint_path, rfolder, monitor="val_loss"):
         # First way: load the best model from file name
         for fpath in os.listdir(rfolder):
             try:
-                ck_props = dict(map(lambda y: y.split("="), re.findall("[-]*(.*?)(?:-|.ckpt)", fpath)))
+                ck_props = dict(
+                    map(
+                        lambda y: y.split("="),
+                        re.findall("[-]*(.*?)(?:-|.ckpt)", fpath),
+                    )
+                )
             except:  # No information in filename, skipping
                 continue
             if monitor not in ck_props:
@@ -177,7 +264,7 @@ def checkpoint_handler(checkpoint_path, rfolder, monitor="val_loss"):
 
 
 def load_training(
-    lit_model_class,
+    lit_model_class: pl.LightningModule,
     args: Namespace = None,
     run_id: str = None,
     project_run_id: str = None,
@@ -231,11 +318,11 @@ def set_save_dir_config(key):
         content = json.loads(f.read())
     key = f"{key}_save_dir"
     default_dir = vb_folder()
-    default_dir_message = f"Do you want to use the default dir {default_dir} ? (Y)es or Please write a new directory for {key}: "
+    default_dir_message = (
+        f"Do you want to use the default dir {default_dir} ? (Y)es or Please write a new directory for {key}: "
+    )
     if key not in content:
-        save_dir = _user_prompt(
-            f"{key} is not set in config file. " + default_dir_message
-        )
+        save_dir = _user_prompt(f"{key} is not set in config file. " + default_dir_message)
         if save_dir.lower() in ["y", "yes"]:
             save_dir = default_dir
     content[key] = save_dir
@@ -292,91 +379,6 @@ def get_expe_infos(project, expe_name, args=None):
     return project_dir, expe_dir, expe_name
 
 
-def run_pl_training(
-    lit_model, data_loader, callbacks: list, args=None, project: str = None, expe_name: str = None, **pl_trainer
-):
-    """Helper to run training with pytorch lightning while handling project ID and names"""
-
-    if args is None:
-        args = Namespace()
-        args.run_id = None
-        args.project_run_id = None
-        args.no_suffix = False
-        args.log = None
-        args.logger = "wandb"
-        args.save = False
-        args.cpu = False
-        args.log_save_dir = None
-        args.cp_save_dir = None
-
-    # Set the experiment name ID
-    project_dir, expe_dir, expe_name = get_expe_infos(project, expe_name, args)
-    resume_from_checkpoint = None
-
-    if args.run_id is not None:
-        strict = not args.nostrict
-        run_id_project_dir = (
-            project_dir if args.project_run_id is None else os.path.join(vb_folder(), f"project_{args.project_run_id}")
-        )
-        ckpt_path = os.path.join(run_id_project_dir, args.run_id, "last.ckpt")
-        if not os.path.exists(ckpt_path):
-            raise Exception(f"Impossible to load the ckpt at the following destination:{ckpt_path}")
-        if not args.resume:
-            kwargs_config = getattr(lit_model, "_init_kwargs_config", {})
-            print(f"Loading ckpt from {args.run_id} at {ckpt_path}")
-            lit_model = type(lit_model).load_from_checkpoint(ckpt_path, strict=strict, args=args, **kwargs_config)
-        else:
-            expe_name = args.run_id
-            resume_from_checkpoint = ckpt_path
-            expe_dir = os.path.join(run_id_project_dir, args.run_id)
-
-    if args.log is not None:
-        # get dir to save log
-        save_dir = os.path.join(get_dir_from_config(args, "log"), f"project_{project}", expe_name)
-
-        # create path
-        if args.log == "wandb":
-            save_dir = os.path.join(save_dir, "wandb")
-            os.makedirs(save_dir, exist_ok=True)
-            logger = WandbLogger(name=expe_name, save_dir=save_dir, project=project, id=expe_name)
-            logger.log_hyperparams(args)
-        elif args.log == "tensorboard":
-            save_dir = os.path.join(save_dir, "tensorboard")
-            os.makedirs(save_dir, exist_ok=True)
-            logger = TensorBoardLogger(save_dir=save_dir, name=expe_name, sub_dir=expe_name)
-        else:
-            raise ValueError("Unknown or not implemented logger")
-    else:
-        logger = None
-
-    if args.save:
-        monitor = getattr(args, "monitor", "val_loss")
-        checkpoint_callback = ModelCheckpoint(
-            dirpath=expe_dir,
-            verbose=True,
-            save_last=True,
-            save_top_k=getattr(args, "save_top_k", 3),
-            monitor=monitor,
-            filename="{epoch}-{step}-{" + monitor + ":.4f}",
-        )
-        callbacks.append(checkpoint_callback)
-
-    # Init trainer and run training
-    trainer = pl.Trainer.from_argparse_args(
-        args,
-        accelerator="gpu" if not args.cpu else "cpu",
-        auto_select_gpus=not args.cpu,
-        logger=logger,
-        callbacks=callbacks,
-        resume_from_checkpoint=resume_from_checkpoint,
-        strategy="ddp" if torch.cuda.device_count() >= 2 else None,
-        **pl_trainer,
-    )
-
-    # Runing training
-    trainer.fit(lit_model, data_loader)
-
-
 def params_update(self, args: Namespace = None, kwargs: dict = {}):
     """Update attributes of one class
 
@@ -415,31 +417,6 @@ def params_update(self, args: Namespace = None, kwargs: dict = {}):
     # Attributes update
     for var in defargs:
         self.__dict__[var] = args[var] if var in args else defargs[var]
-
-
-def run_pl_validate(
-    lit_model, data_loader, callbacks: list, args, project: str = None, expe_name: str = None, **pl_trainer
-):
-    """
-    Helper to run a validation epoch with pytorch lightning while handling project ID and names
-    """
-    # Set the experiment name ID
-    expe_name = get_expe_infos(project, expe_name, args)[-1]
-    lit_model = load_training(type(lit_model), args, no_exception=True)
-
-    # Init trainer
-    trainer = pl.Trainer.from_argparse_args(
-        args,
-        # default_root_dir=expe_dir,
-        gpus=-1 if not args.cpu else 0,
-        auto_select_gpus=not args.cpu,
-        logger=WandbLogger(name=expe_name, project=project, config=vars(args)) if args.log else None,
-        callbacks=callbacks,
-        **pl_trainer,
-    )
-
-    # validate
-    trainer.validate(lit_model, data_loader.val_dataloader())
 
 
 def _int_or_float_type(x):

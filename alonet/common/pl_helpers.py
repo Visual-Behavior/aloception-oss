@@ -17,7 +17,7 @@ parser = ArgumentParser()
 
 
 class AloceptionCLI(LightningCLI):
-    def __init__(self, project: str, compile_model: bool = True, **kwargs):
+    def __init__(self, project: str, **kwargs):
         """AloceptionCLI - CLI tool of aloception-oss which wraps LightningCLI.
         Args:
             project (str): Name of project. Necessary to log/load checkpoint/training log.
@@ -25,7 +25,6 @@ class AloceptionCLI(LightningCLI):
         """
         super().__init__(**kwargs)
         self.project = project
-        self.compile_model = compile_model
 
     def add_arguments_to_parser(self, parser: LightningArgumentParser, mode: str = "training") -> None:
         if mode not in ["training", "eval"]:
@@ -181,8 +180,9 @@ class AloceptionCLI(LightningCLI):
         # add logger and callbacks to pl.Trainer init argument
         trainer_config.update({"logger": logger, "callbacks": callbacks})
 
-        if self.compile_model:
+        if not self.config.no_compile:
             self.model = torch.compile(self.model)
+            print("[INFO] Compile model succsesfully !")
 
         return self._instantiate_trainer(trainer_config, callbacks)
 

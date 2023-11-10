@@ -23,37 +23,32 @@ class AloceptionCLI(LightningCLI):
             project (str): Name of project. Necessary to log/load checkpoint/training log.
             compile_model (bool): Compile model via `torch.compile` before training. Default: True.
         """
-        super().__init__(**kwargs)
         self.project = project
+        super().__init__(**kwargs)
 
-    def add_arguments_to_parser(self, parser: LightningArgumentParser, mode: str = "training") -> None:
-        if mode not in ["training", "eval"]:
-            raise ValueError("mode must be training or eval")
-
-        if mode == "training":
-            parser.add_argument(
-                "--resume",
-                action="store_true",
-                help="Resume all the training, not only the weights.",
-            )
-            parser.add_argument(
-                "--save",
-                action="store_true",
-                help="Save every epoch and keep the top_k",
-            )
-            parser.add_argument(
-                "--save_top_k",
-                type=int,
-                default=3,
-                help="Stores up to top_k models, by default %(default)s. Use save_top_k=-1 to store all checkpoints",
-            )
-        if mode == "eval":  # Only make sense for eval
-            parser.add_argument(
-                "--checkpoint",
-                type=checkpoint_type,
-                default="last",
-                help="Load the weights from 'best', 'last' or '.ckpt' file into run_id, by default '%(default)s'",
-            )
+    def add_arguments_to_parser(self, parser: LightningArgumentParser) -> None:
+        parser.add_argument(
+            "--resume",
+            action="store_true",
+            help="Resume all the training, not only the weights.",
+        )
+        parser.add_argument(
+            "--save",
+            action="store_true",
+            help="Save every epoch and keep the top_k",
+        )
+        parser.add_argument(
+            "--save_top_k",
+            type=int,
+            default=3,
+            help="Stores up to top_k models, by default %(default)s. Use save_top_k=-1 to store all checkpoints",
+        )
+        parser.add_argument(
+            "--checkpoint",
+            type=checkpoint_type,
+            default="last",
+            help="Load the weights from 'best', 'last' or '.ckpt' file into run_id, by default '%(default)s'",
+        )
         parser.add_argument(
             "--no_compile",
             action="store_true",
@@ -125,38 +120,43 @@ class AloceptionCLI(LightningCLI):
         # add extra_callbacks
         callbacks.extend(extra_callbacks)
 
-        project_dir, expe_dir, expe_name = get_expe_infos(self.project, self.config.expe_name, None)
-        if self.config.run_id is not None:
-            strict = not self.config.nostrict
+        # get config from subcommand (fit, evaluate, predict)
+        config_subcommand = self.config[self.subcommand]
+
+        project_dir, expe_dir, expe_name = get_expe_infos(self.project, config_subcommand.expe_name, config_subcommand)
+        if config_subcommand.run_id is not None:
+            strict = not config_subcommand.nostrict
             run_id_project_dir = (
                 project_dir
-                if self.config.project_run_id is None
-                else os.path.join(vb_folder(), f"project_{self.config.project_run_id}")
+                if config_subcommand.project_run_id is None
+                else os.path.join(vb_folder(), f"project_{config_subcommand.project_run_id}")
             )
-            ckpt_path = os.path.join(run_id_project_dir, self.config.run_id, "last.ckpt")
+            ckpt_path = os.path.join(run_id_project_dir, config_subcommand.run_id, "last.ckpt")
             if not os.path.exists(ckpt_path):
                 raise Exception(f"Impossible to load the ckpt at the following destination:{ckpt_path}")
-            if not self.config.resume:
+            if not config_subcommand.resume:
                 kwargs_config = getattr(self.model, "_init_kwargs_config", {})
-                print(f"Loading ckpt from {self.config.run_id} at {ckpt_path}")
+                print(f"Loading ckpt from {config_subcommand.run_id} at {ckpt_path}")
                 self.model = type(self.model).load_from_checkpoint(ckpt_path, strict=strict, **kwargs_config)
             else:
-                expe_name = self.config.run_id
+                expe_name = config_subcommand.run_id
                 # update ckpt_path in self.config_init for Trainer.fit/validate/test
                 self.config_init["fit"]["ckpt_path"] = ckpt_path
-                expe_dir = os.path.join(run_id_project_dir, self.config.run_id)
+                expe_dir = os.path.join(run_id_project_dir, config_subcommand.run_id)
 
-        if self.config.log is not None:
+        if config_subcommand.log is not None:
             # get dir to save log
-            save_dir = os.path.join(get_dir_from_config(self.config, "log"), f"project_{self.project}", expe_name)
+            save_dir = os.path.join(
+                get_dir_from_config(config_subcommand, "log"), f"project_{self.project}", expe_name
+            )
 
             # create path
-            if self.config.log == "wandb":
+            if config_subcommand.log == "wandb":
                 save_dir = os.path.join(save_dir, "wandb")
                 os.makedirs(save_dir, exist_ok=True)
                 logger = WandbLogger(name=expe_name, save_dir=save_dir, project=self.project, id=expe_name)
 
-            elif self.config.log == "tensorboard":
+            elif config_subcommand.log == "tensorboard":
                 save_dir = os.path.join(save_dir, "tensorboard")
                 os.makedirs(save_dir, exist_ok=True)
                 logger = TensorBoardLogger(save_dir=save_dir, name=expe_name, sub_dir=expe_name)
@@ -165,24 +165,23 @@ class AloceptionCLI(LightningCLI):
         else:
             logger = None
 
-        if self.config.save:
-            monitor = getattr(self.config, "monitor", "val_loss")
+        if config_subcommand.save:
+            monitor = getattr(config_subcommand, "monitor", "val_loss")
             checkpoint_callback = ModelCheckpoint(
                 dirpath=expe_dir,
                 verbose=True,
                 save_last=True,
-                save_top_k=getattr(self.config, "save_top_k", 3),
+                save_top_k=getattr(config_subcommand, "save_top_k", 3),
                 monitor=monitor,
                 filename="{epoch}-{step}-{" + monitor + ":.4f}",
             )
             callbacks.append(checkpoint_callback)
 
-        # add logger and callbacks to pl.Trainer init argument
-        trainer_config.update({"logger": logger, "callbacks": callbacks})
+        trainer_config.update({"logger": logger})
 
-        if not self.config.no_compile:
+        if not config_subcommand.no_compile:
             self.model = torch.compile(self.model)
-            print("[INFO] Compile model succsesfully !")
+            print("[INFO] Model is compiled succsesfully !")
 
         return self._instantiate_trainer(trainer_config, callbacks)
 

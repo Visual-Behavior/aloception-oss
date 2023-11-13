@@ -227,7 +227,7 @@ class MetricsCallback(pl.Callback):
                 )
 
     @rank_zero_only
-    def on_validation_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx):
+    def on_validation_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx=0):
         """Method called after each validation batch. This class is a Pytorch Lightning callback, therefore
         this method will by automatically called by Pytorch Lightning.
 

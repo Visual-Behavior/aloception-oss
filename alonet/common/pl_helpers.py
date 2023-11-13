@@ -182,6 +182,8 @@ class AloceptionCLI(LightningCLI):
         if not config_subcommand.no_compile:
             self.model = torch.compile(self.model)
             print("[INFO] Model is compiled succsesfully !")
+            # only compile one time
+            config_subcommand.no_compile = True
 
         return self._instantiate_trainer(trainer_config, callbacks)
 

@@ -4,8 +4,9 @@ import warnings
 import numpy as np
 from PIL import Image
 from typing import List, Dict, Union
-from aloscene import Frame, Depth
+from aloscene import Frame, Depth, CameraIntrinsic, AugmentedTensor
 from alodataset import BaseDataset
+from alodataset.utils.kitti import load_calib_cam_to_cam
 
 
 class KittiDepth(BaseDataset):
@@ -65,6 +66,7 @@ class KittiDepth(BaseDataset):
         self,
         subset: str = "all",
         return_depth: bool = True,
+        return_ground: bool = False,
         custom_drives: Union[Dict[str, List[str]], None] = None,
         name: str = "kitti",
         main_folder: str = "image_02",
@@ -80,6 +82,7 @@ class KittiDepth(BaseDataset):
 
         self.main_folder = main_folder
         self.return_depth = return_depth
+        self.return_ground = return_ground
         self.drives = list()
         self.drives_folders = list()
         self.subset = subset
@@ -143,8 +146,39 @@ class KittiDepth(BaseDataset):
                 print(f"ground truth images not found for {lost_items} images")
                 self.items = replace_items
 
+        self.calibs = self._get_calibrations()
+
         if self.custom_drives and not self.items:
             raise AttributeError("Could not read any images from the given custom drives")
+
+    def _get_calibrations(self):
+        calibs = {}
+        calibs_dir = os.path.join(self.dataset_dir, "calibs")
+        for folder in os.listdir(calibs_dir):
+            path = os.path.join(calibs_dir, folder, folder[:10])
+            data = load_calib_cam_to_cam(
+                os.path.join(path, "calib_cam_to_cam.txt"),
+                os.path.join(path, "calib_velo_to_cam.txt"),
+            )
+            Tr_velo_to_cam = self._get_velo_to_cam(
+                os.path.join(path, "calib_velo_to_cam.txt"),
+            )
+            calibs[folder[:10]] = {
+                "intrinsic": np.c_[data["K_cam2"], [0, 0, 0]],
+                "extrinsic": data["T_cam2_rect"],
+                "ground_matrix": data["P_rect_20"] @ data["R_rect_00"] @ Tr_velo_to_cam,
+            }
+        return calibs
+
+    def _get_velo_to_cam(self, path):
+        with open(path, "r") as f:
+            calib_velo_to_cam = f.readlines()
+        velo_to_cam_R = np.matrix([float(x) for x in calib_velo_to_cam[1].strip("\n").split(" ")[1:]]).reshape(3, 3)
+        Tr_velo_to_cam = np.insert(
+            velo_to_cam_R, 3, values=np.array(calib_velo_to_cam[2].strip("\n").split(" ")[1:]), axis=1
+        )
+        Tr_velo_to_cam = np.insert(Tr_velo_to_cam, 3, values=[0, 0, 0, 1], axis=0)
+        return Tr_velo_to_cam
 
     @classmethod
     def from_yaml(cls, path: str, **kwargs):
@@ -201,12 +235,22 @@ class KittiDepth(BaseDataset):
             return BaseDataset.__getitem__(self, idx)
 
         image_path = self.items[idx]
-        frame = Frame(image_path)
+
+        # add calibrations
+        sequence = image_path.split(os.sep)[-4]
+        intrinsic = CameraIntrinsic(self.calibs[sequence[:10]]["intrinsic"])
+
+        frame = Frame(image_path, cam_intrinsic=intrinsic)
 
         if self.return_depth:
             depth_path = self.get_corresponding_depth(image_path)
             depth = self.depth_from_path(depth_path)
             frame.append_depth(depth)
+
+        if self.return_ground:
+            frame.add_child(
+                "ground_matrix", AugmentedTensor(self.calibs[sequence[:10]]["ground_matrix"], names=(None, None))
+            )
 
         return frame
 
@@ -294,17 +338,19 @@ class KittiDepth(BaseDataset):
 
 
 if __name__ == "__main__":
-    date = "2011_09_26"
-    idsOfDrives = [
-        "0001",  # sample from training subset
-        "0002",  # sample from validation subset
-    ]
-    custom_drives = {date: idsOfDrives}
+    # date = "2011_09_26"
+    # idsOfDrives = [
+    #     "0001",  # sample from training subset
+    #     "0002",  # sample from validation subset
+    # ]
+    # custom_drives = {date: idsOfDrives}
     kitti_ds = KittiDepth(
-        subset="all",
-        return_depth=True,
-        custom_drives=custom_drives,
+        # subset="all",
+        # return_depth=True,
+        # custom_drives=custom_drives,
     )
+    # print(kitti_ds[0].cam_intrinsic)
 
     for f, frames in enumerate(kitti_ds.train_loader(batch_size=2)):
         frames = Frame.batch_list(frames)
+        frames.get_view().render()

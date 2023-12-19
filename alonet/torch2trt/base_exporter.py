@@ -59,7 +59,6 @@ class BaseTRTExporter:
         max_workspace_size: int = 1,
         opset_version: int = 13,
         ignore_adapt_graph: bool = False,
-        ignore_handle_clip: bool = False,
         **kwargs,
     ):
         """
@@ -126,7 +125,6 @@ class BaseTRTExporter:
         self.do_constant_folding = do_constant_folding
         self.operator_export_type = operator_export_type
         self.ignore_adapt_graph = ignore_adapt_graph
-        self.ignore_handle_clip = ignore_handle_clip
 
         if dynamic_axes is not None:
             assert opt_profiles is not None, "If dynamic_axes are to be used, opt_profiles must be provided"
@@ -201,7 +199,7 @@ class BaseTRTExporter:
         -------
         graph: onnx_graphsurgeon.Graph
         """
-        if not self.ignore_handle_clip:
+        try:
             clip_nodes = get_nodes_by_op("Clip", graph)
 
             def handle_op_Clip(node: gs.Node):
@@ -221,6 +219,9 @@ class BaseTRTExporter:
 
             for n in clip_nodes:
                 handle_op_Clip(n)
+        except:
+            print("[INFO] BaseExporter: Cannot handle clip. Clip handling will be ignored")
+            pass
 
         model = onnx.load(self.onnx_path)
         check = False
@@ -459,9 +460,5 @@ class BaseTRTExporter:
         parser.add_argument(
             "--ignore_adapt_graph", action="store_true", help="Ignores onnx graph adaptation while exporting"
         )
-        parser.add_argument(
-            "--ignore_handle_clip",
-            action="store_true",
-            help="Ignore the conversion of clip max & min to float32. Useful for certain model using ReLU6 ",
-        )
+
         return parent_parser

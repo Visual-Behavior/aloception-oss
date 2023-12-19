@@ -8,12 +8,15 @@ def load_depth(path):
     Parameters
     ----------
     path: str
-        path to the disparity file. Supported format: {".npy"}. If your file is stored differently, as an
+        path to the disparity file. Supported format: {".npy",".npz"}. If your file is stored differently, as an
         alternative, you can open the file yourself and then create the Depth augmented Tensor from the depth
         data.
     """
     if path.endswith(".npy"):
         return np.load(path)
+    elif path.endswith(".npz"):
+        content = np.load(path)
+        return content[content.keys()[0]]
     else:
         raise ValueError(
             f"Unknown extension for depth file: {path}. As an alternative you can load the file manually\

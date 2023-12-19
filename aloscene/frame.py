@@ -426,7 +426,7 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         >>> new_frame = frame.norm_as(target_frame)
         """
         if target_frame.normalization == "01":
-            return self.norm01
+            return self.norm01()
         elif target_frame.normalization == "255":
             return self.norm255()
         elif target_frame.normalization == "minmax_sym":
@@ -510,7 +510,7 @@ class Frame(aloscene.tensors.SpatialAugmentedTensor):
         tensor = self
 
         mean_tensor, std_tensor = self._get_mean_std_tensor(
-            tensor.shape, tensor.names, (mean,std), device=tensor.device
+            tensor.shape, tensor.names, (mean, std), device=tensor.device
         )
         if tensor.normalization == "01":
             tensor = tensor - mean_tensor

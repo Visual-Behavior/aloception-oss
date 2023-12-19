@@ -13,6 +13,7 @@ try:
     import pycuda.driver as cuda
     import tensorrt as trt
     import onnx
+
     prod_package_error = None
 except Exception as e:
     prod_package_error = e
@@ -142,7 +143,9 @@ class BaseTRTExporter:
         else:
             trt_logger = trt.Logger(trt.Logger.WARNING)
 
-        self.engine_builder = TRTEngineBuilder(self.get_onnx_path(), logger=trt_logger, opt_profiles=opt_profiles, calibrator=calibrator)
+        self.engine_builder = TRTEngineBuilder(
+            self.get_onnx_path(), logger=trt_logger, opt_profiles=opt_profiles, calibrator=calibrator
+        )
 
         if profiling_verbosity == 0:
             self.engine_builder.profiling_verbosity = "LAYER_NAMES_ONLY"
@@ -151,7 +154,7 @@ class BaseTRTExporter:
         elif profiling_verbosity == 2:
             self.engine_builder.profiling_verbosity = "DETAILED"
         else:
-            raise AttributeError('unknown profiling_verbosity')
+            raise AttributeError("unknown profiling_verbosity")
         if precision.lower() == "fp32":
             pass
         elif precision.lower() == "int8":
@@ -165,7 +168,7 @@ class BaseTRTExporter:
             self.engine_builder.strict_type = False
         else:
             raise Exception(f"precision {precision} not supported")
-    
+
     def get_onnx_path(self):
         # Flexibility for some engines
         return self.onnx_path
@@ -188,7 +191,7 @@ class BaseTRTExporter:
         graph: onnx_graphsurgeon.Graph
         """
         return graph
-    
+
     def _adapt_graph(self, graph, **kwargs):
         """Modify ONNX graph to ensure compability between ONNX and TensorRT
 
@@ -196,29 +199,35 @@ class BaseTRTExporter:
         -------
         graph: onnx_graphsurgeon.Graph
         """
-        clip_nodes = get_nodes_by_op("Clip", graph)
-        def handle_op_Clip(node: gs.Node):
-            max_constant = np.array(np.finfo(np.float32).max, dtype=np.float32)
-            if "value" in node.inputs[1].i().inputs[0].attrs:
-                min_constant = node.inputs[1].i().inputs[0].attrs["value"].values.astype(np.float32)
-                if len(node.inputs[2].inputs) > 0:
-                    max_constant = node.inputs[2].i().inputs[0].attrs["value"].values.astype(np.float32)
-            elif "to" in node.inputs[1].i().inputs[0].attrs:
-                min_constant = np.array(np.finfo(np.float32).min, dtype=np.float32)
-            else:
-                raise Exception("Error")
-            node.inputs.pop(1)
-            node.inputs.insert(1, gs.Constant(name=node.name + "_min", values=min_constant))
-            node.inputs.pop(2)
-            node.inputs.insert(2, gs.Constant(name=node.name + "_max", values=max_constant))
+        try:
+            clip_nodes = get_nodes_by_op("Clip", graph)
 
-        for n in clip_nodes:
-            handle_op_Clip(n)
+            def handle_op_Clip(node: gs.Node):
+                max_constant = np.array(np.finfo(np.float32).max, dtype=np.float32)
+                if "value" in node.inputs[1].i().inputs[0].attrs:
+                    min_constant = node.inputs[1].i().inputs[0].attrs["value"].values.astype(np.float32)
+                    if len(node.inputs[2].inputs) > 0:
+                        max_constant = node.inputs[2].i().inputs[0].attrs["value"].values.astype(np.float32)
+                elif "to" in node.inputs[1].i().inputs[0].attrs:
+                    min_constant = np.array(np.finfo(np.float32).min, dtype=np.float32)
+                else:
+                    raise Exception("Error")
+                node.inputs.pop(1)
+                node.inputs.insert(1, gs.Constant(name=node.name + "_min", values=min_constant))
+                node.inputs.pop(2)
+                node.inputs.insert(2, gs.Constant(name=node.name + "_max", values=max_constant))
+
+            for n in clip_nodes:
+                handle_op_Clip(n)
+        except:
+            print("[INFO] BaseExporter: Cannot handle clip. Clip handling will be ignored")
+            pass
 
         model = onnx.load(self.onnx_path)
         check = False
         if self.dynamic_axes is None:
             from onnxsim import simplify
+
             model_simp, check = simplify(model)
 
         if check:
@@ -228,7 +237,6 @@ class BaseTRTExporter:
             graph.cleanup()
         else:
             print("\n[INFO] ONNX model was not validated.")
-
 
         # Call the child class for specific graph adapation
         graph = self.adapt_graph(graph)
@@ -290,7 +298,7 @@ class BaseTRTExporter:
         np_m_outputs = {key: val.cpu().numpy() for key, val in zip(onames, m_outputs) if isinstance(val, torch.Tensor)}
         # print("Model input shapes:", [val.shape for val in np_inputs])
         # print("Model output keys:", np_m_outputs.keys(), "shapes:", [val.shape for val in np_m_outputs.values()])
-        
+
         # Convert to list for dynamic axese assertions
         self.input_names = list(self.input_names)
         onames = list(onames)
@@ -382,7 +390,7 @@ class BaseTRTExporter:
         m_outputs = model.execute()
         print("==== Absolute / relavtive error:")
         for out in m_outputs:
-            print('out', m_outputs[out])
+            print("out", m_outputs[out])
             diff = m_outputs[out].astype(float) - sample_outputs[out].astype(float)
             abs_err = np.abs(diff)
             rel_err = np.abs(diff / (sample_outputs[out] + 1e-6))  # Avoid div by zero
@@ -416,25 +424,41 @@ class BaseTRTExporter:
         parser.add_argument("--batch_size", type=int, default=1, help="Engine batch size, default = 1")
         parser.add_argument("--precision", type=str, default="fp32", help="fp32/fp16/mix, default FP32")
         parser.add_argument("--verbose", action="store_true", help="Helpful when debugging")
-        parser.add_argument("--opset_version", type=int, default=13, help="Onnx version to export the model to, Default = 13")
-        parser.add_argument("--profiling_verbosity", default=0, type=int, help="Helpful when profiling the engine (default: %(default)s)")
-        parser.add_argument("--calibration_batch_size", type=int, default=8, help="Calibration data batch size (default: %(default)s)")
-        parser.add_argument("--limit_calibration_batches", type=int, default=None, help="Limits number of batches (default: %(default)s)")
-        parser.add_argument("--cache_file", type=str, default="calib.bin", help="Path to caliaration cache file (default: %(default)s)")
         parser.add_argument(
-            "--calibrator", 
-            type=str, 
-            choices=['base', 'minmax', 'entropy', 'entropy2', 'legacy'], 
-            default='minmax',
-            help="Calibrator to use with int8 precision (default: %(default)s)")
+            "--opset_version", type=int, default=13, help="Onnx version to export the model to, Default = 13"
+        )
+        parser.add_argument(
+            "--profiling_verbosity",
+            default=0,
+            type=int,
+            help="Helpful when profiling the engine (default: %(default)s)",
+        )
+        parser.add_argument(
+            "--calibration_batch_size", type=int, default=8, help="Calibration data batch size (default: %(default)s)"
+        )
+        parser.add_argument(
+            "--limit_calibration_batches",
+            type=int,
+            default=None,
+            help="Limits number of batches (default: %(default)s)",
+        )
+        parser.add_argument(
+            "--cache_file", type=str, default="calib.bin", help="Path to caliaration cache file (default: %(default)s)"
+        )
+        parser.add_argument(
+            "--calibrator",
+            type=str,
+            choices=["base", "minmax", "entropy", "entropy2", "legacy"],
+            default="minmax",
+            help="Calibrator to use with int8 precision (default: %(default)s)",
+        )
         parser.add_argument(
             "--use_scope_names",
             action="store_true",
             help="Save scope names in onnx, to get profiles in inference by default %(default)s",
         )
         parser.add_argument(
-            "--ignore_adapt_graph",
-            action="store_true",
-            help="Ignores onnx graph adaptation while exporting",
+            "--ignore_adapt_graph", action="store_true", help="Ignores onnx graph adaptation while exporting"
         )
+
         return parent_parser

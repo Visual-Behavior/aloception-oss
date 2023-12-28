@@ -11,7 +11,7 @@ ARG pytorch=1.13.1
 ARG torchvision=0.14.1
 ARG torchaudio=0.13.1
 ARG pytorch_lightning=1.9.3
-ARG pycyda=11.7
+ARG pycuda=11.7
 
 
 ARG HOME=/home/aloception

@@ -213,8 +213,7 @@ class RandomSelect(AloTransform):
         """
         self.transforms1 = transforms1
         self.transforms2 = transforms2
-        self.p = p
-        super().__init__(*args, **kwargs)
+        super().__init__(p=p, *args, **kwargs)
 
     def sample_params(self):
         """Sample a `number` between and 1. The first transformation
@@ -253,8 +252,7 @@ class RandomHorizontalFlip(AloTransform):
         p: float
             Probability to apply the transformation
         """
-        self.p = p
-        super().__init__(*args, **kwargs)
+        super().__init__(p=p, *args, **kwargs)
 
     def sample_params(self):
         """Sample a `number` between and 1. The transformation
@@ -449,53 +447,39 @@ class RandomCrop(AloTransform):
 
 
 class RandomResizeWithAspectRatio(AloTransform):
-    def __init__(self, sizes: list, max_size: int = None, *args, **kwargs):
-        """Reszie the given given frame to a sampled `size` from the list of
-        given `sizes` so that the largest side is equal to `size` and always < to
-        `max_size` (if given).
+    def __init__(self, sizes: list, *args, **kwargs):
+        """Resize the given frame to a sampled `size` from the list of
+        given `sizes` so that the largest side is equal to `size`.
 
         Parameters
         ----------
         sizes: list
-            List of int. Possible size to sample from
+            List of int. Possible sizes to sample from
         """
-        assert isinstance(sizes, list) or max_size == None
+        assert isinstance(sizes, list)
         self.sizes = sizes
-        self.max_size = max_size
         super().__init__(*args, **kwargs)
 
     @staticmethod
-    def get_size_with_aspect_ratio(frame: Frame, size: int, max_size: int = None):
-        """Given a `frame` and a `size` this method compute a new size  so that the largest
-        side is equal to `size` and always < to `max_size` (if given).
+    def get_size_with_aspect_ratio(frame: Frame, size: int):
+        """Given a `frame` and a `size` this method compute a new size so that the largest
+        side is equal to `size`.
 
         Parameters
         ----------
         frame : Frame
             Frame to resize. Used only to get the width and the height of the target frame to resize.
         size: int
-            Desired size
-        max_size: int
-            Maximum size of the largest side.
+            Desired max size
         """
         h, w = frame.H, frame.W
 
-        if max_size is not None:
-            min_original_size = float(min((w, h)))
-            max_original_size = float(max((w, h)))
-            if max_original_size / min_original_size * size > max_size:
-                size = int(round(max_size * min_original_size / max_original_size))
-
-        if (w <= h and w == size) or (h <= w and h == size):
-            return (h, w)
-
-        if w < h:
+        if w > h:
             ow = size
-            oh = int(size * h / w)
+            oh = round(size * h / w)
         else:
             oh = size
-            ow = int(size * w / h)
-
+            ow = round(size * w / h)
         return (oh, ow)
 
     def sample_params(self):
@@ -517,7 +501,7 @@ class RandomResizeWithAspectRatio(AloTransform):
             Frame to apply the transformation on
         """
         # Sample one frame size
-        size = self.get_size_with_aspect_ratio(frame, self._size, self.max_size)
+        size = self.get_size_with_aspect_ratio(frame, self._size)
         # Resize frame
         frame = frame.resize(size)
         return frame

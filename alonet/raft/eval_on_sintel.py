@@ -3,7 +3,7 @@ import numpy as np
 import argparse
 import torch
 
-from alonet.common.pl_helpers import load_training
+from alonet.common.helpers import load_training
 from alodataset import SintelDataset, Split
 from alonet.raft.utils import Padder
 from alonet.raft import LitRAFT
@@ -15,12 +15,20 @@ def sintel_transform_fn(frame):
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Raft evaluation on Sintel training set")
-    parser.add_argument("--weights", default="raft-things", help="name or path to weights file")
-    parser.add_argument(
-        "--project_run_id", default="raft", help="project run_id (if loading weights from a previous training)"
+    parser = argparse.ArgumentParser(
+        description="Raft evaluation on Sintel training set"
     )
-    parser.add_argument("--run_id", help="load weights from previous training with this run_id")
+    parser.add_argument(
+        "--weights", default="raft-things", help="name or path to weights file"
+    )
+    parser.add_argument(
+        "--project_run_id",
+        default="raft",
+        help="project run_id (if loading weights from a previous training)",
+    )
+    parser.add_argument(
+        "--run_id", help="load weights from previous training with this run_id"
+    )
     args = parser.parse_args()
     if args.run_id is not None:
         args.weights = None
@@ -47,7 +55,9 @@ if __name__ == "__main__":
 
     with torch.no_grad():
         epe_list = []
-        for idx, frames in enumerate(dataset.train_loader(batch_size=1, sampler=SequentialSampler)):
+        for idx, frames in enumerate(
+            dataset.train_loader(batch_size=1, sampler=SequentialSampler)
+        ):
             if idx % 10 == 0:
                 print(f"{idx+1:04d}/{len(dataset)}", end="\r")
 

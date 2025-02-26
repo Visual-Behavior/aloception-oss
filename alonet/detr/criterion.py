@@ -3,16 +3,17 @@
 1) We compute hungarian assignment between ground truth boxes and the outputs of the model
 2) We supervise each pair of matched ground-truth / prediction (supervise class and box).
 """
+
 import torch
 from torch import nn
 
-from alonet.multi_gpu import get_world_size, is_dist_avail_and_initialized
+from alonet.common.multi_gpu import get_world_size, is_dist_avail_and_initialized
 import torch.nn.functional as F
 import aloscene
 
 
 class DetrCriterion(nn.Module):
-    """ Create the criterion.
+    """Create the criterion.
 
     Parameters
     ----------

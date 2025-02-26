@@ -1,8 +1,12 @@
 import pytorch_lightning as pl
 
 import alodataset.transforms as T
-from alonet.raft.raft_transforms import SpatialTransform, EraserTransform, ColorTransform
-from alonet.common.pl_helpers import _int_or_float_type
+from alonet.raft.raft_transforms import (
+    SpatialTransform,
+    EraserTransform,
+    ColorTransform,
+)
+from alonet.common.helpers import _int_or_float_type
 
 
 class Data2RAFT(pl.LightningDataModule):
@@ -19,14 +23,27 @@ class Data2RAFT(pl.LightningDataModule):
     def add_argparse_args(parent_parser):
         parser = parent_parser.add_argument_group("Data2RAFT")
         parser.add_argument("--batch_size", type=int, default=5, help="Batch size")
-        parser.add_argument("--accumulate_grad_batches", type=int, default=2, help="Accumulate gradient")
+        parser.add_argument(
+            "--accumulate_grad_batches", type=int, default=2, help="Accumulate gradient"
+        )
         parser.add_argument("--max_steps", type=int, default=200000)
         parser.add_argument("--train_on_val", action="store_true")
-        parser.add_argument("--num_workers", type=int, default=8, help="num_workers to use on the dataset")
-        parser.add_argument("--limit_val_batches", type=_int_or_float_type, default=100)
-        parser.add_argument("--sequential_sampler", action="store_true", help="sample data sequentially (no shuffle)")
         parser.add_argument(
-            "--sample", action="store_true", help="Download a sample for train/val process (Default: %(default)s)"
+            "--num_workers",
+            type=int,
+            default=8,
+            help="num_workers to use on the dataset",
+        )
+        parser.add_argument("--limit_val_batches", type=_int_or_float_type, default=100)
+        parser.add_argument(
+            "--sequential_sampler",
+            action="store_true",
+            help="sample data sequentially (no shuffle)",
+        )
+        parser.add_argument(
+            "--sample",
+            action="store_true",
+            help="Download a sample for train/val process (Default: %(default)s)",
         )
         return parent_parser
 

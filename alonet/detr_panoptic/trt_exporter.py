@@ -29,7 +29,9 @@ class PanopticTRTExporter(BaseTRTExporter):
                     "bb_lvl3_src_outputs",
                     "bb_lvl3_mask_outputs",
                 )
-                kwargs["dynamic_axes"] = kwargs.get("dynamic_axes", None) or {"dec_outputs": {2: "num_queries"}}
+                kwargs["dynamic_axes"] = kwargs.get("dynamic_axes", None) or {
+                    "dec_outputs": {2: "num_queries"}
+                }
 
         super().__init__(*args, **kwargs)
         self.custom_opset = None
@@ -46,7 +48,9 @@ class PanopticTRTExporter(BaseTRTExporter):
             model_simp, check = simplify(
                 model,
                 dynamic_input_shape=True,  # Choose optimal values for simplify
-                input_shapes={key: val[1] for key, val in self.engine_builder.opt_profiles.items()},
+                input_shapes={
+                    key: val[1] for key, val in self.engine_builder.opt_profiles.items()
+                },
             )
         else:
             model_simp, check = simplify(model)
@@ -77,12 +81,14 @@ class PanopticTRTExporter(BaseTRTExporter):
             with torch.no_grad():
                 tensor_input = self.model.detr_forward(x)  # Get Detr outputs expected
 
-            tensor_input = {iname: tensor_input[iname].contiguous() for iname in self.input_names}
+            tensor_input = {
+                iname: tensor_input[iname].contiguous() for iname in self.input_names
+            }
         return tensor_input, {"is_export_onnx": None}
 
 
 if __name__ == "__main__":
-    from alonet.common.pl_helpers import vb_folder
+    from alonet.common.helpers import vb_folder
     from alonet.detr_panoptic import PanopticHead
     from alonet.detr import DetrR50
     from alonet.detr.trt_exporter import DetrTRTExporter
@@ -90,9 +96,17 @@ if __name__ == "__main__":
     # test script
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--HW", type=int, nargs=2, default=[1280, 1920], help="Height and width of input image, by default %(default)s"
+        "--HW",
+        type=int,
+        nargs=2,
+        default=[1280, 1920],
+        help="Height and width of input image, by default %(default)s",
     )
-    parser.add_argument("--cpu", action="store_true", help="Compile model in CPU, by default %(default)s")
+    parser.add_argument(
+        "--cpu",
+        action="store_true",
+        help="Compile model in CPU, by default %(default)s",
+    )
     parser.add_argument(
         "--split_engines",
         action="store_true",
@@ -124,7 +138,11 @@ if __name__ == "__main__":
         print("\n[INFO] Exporting DETR engine...")
         args.onnx_path = os.path.join(os.path.split(pan_onnx_path)[0], "detr-r50.onnx")
         exporter = DetrTRTExporter(
-            model=model.detr, input_shapes=(input_shape,), input_names=["img"], device=device, **vars(args)
+            model=model.detr,
+            input_shapes=(input_shape,),
+            input_names=["img"],
+            device=device,
+            **vars(args),
         )
         exporter.export_engine()
 
@@ -132,7 +150,11 @@ if __name__ == "__main__":
 
     # 2. Export PanopticHead engine
     args.onnx_path = pan_onnx_path
-    profile = {"dec_outputs": [(6, 1, 1, 256), (6, 1, 10, 256), (6, 1, 100, 256)]} if args.split_engines else None
+    profile = (
+        {"dec_outputs": [(6, 1, 1, 256), (6, 1, 10, 256), (6, 1, 100, 256)]}
+        if args.split_engines
+        else None
+    )
     exporter = PanopticTRTExporter(
         model=model,
         input_shapes=(input_shape,),

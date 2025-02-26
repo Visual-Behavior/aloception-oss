@@ -50,19 +50,29 @@ class DetrTRTExporter(BaseTRTExporter):
 
 
 if __name__ == "__main__":
-    from alonet.common.pl_helpers import vb_folder
+    from alonet.common.helpers import vb_folder
 
     # test script
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--HW", type=int, nargs=2, default=[1280, 1920], help="Height and width of input image, by default %(default)s"
+        "--HW",
+        type=int,
+        nargs=2,
+        default=[1280, 1920],
+        help="Height and width of input image, by default %(default)s",
     )
-    parser.add_argument("--cpu", action="store_true", help="Compile model in CPU, by default %(default)s")
+    parser.add_argument(
+        "--cpu",
+        action="store_true",
+        help="Compile model in CPU, by default %(default)s",
+    )
     BaseTRTExporter.add_argparse_args(parser)
     # parser.add_argument("--image_chw")
     args = parser.parse_args()
     if args.onnx_path is None:
-        args.onnx_path = os.path.join(vb_folder(), "weights", "detr-r50", "detr-r50.onnx")
+        args.onnx_path = os.path.join(
+            vb_folder(), "weights", "detr-r50", "detr-r50.onnx"
+        )
     device = torch.device("cpu") if args.cpu else torch.device("cuda")
 
     input_shape = [3] + list(args.HW)
@@ -76,7 +86,11 @@ if __name__ == "__main__":
     )
     model = model.eval().to(device)
     exporter = DetrTRTExporter(
-        model=model, input_shapes=(input_shape,), input_names=["img"], device=device, **vars(args)
+        model=model,
+        input_shapes=(input_shape,),
+        input_names=["img"],
+        device=device,
+        **vars(args)
     )
 
     exporter.export_engine()

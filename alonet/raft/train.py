@@ -3,7 +3,11 @@ import torch.optim as optim
 
 from alonet.callbacks import MetricsCallback
 from alonet.raft.criterion import RAFTCriterion
-from alonet.raft.callbacks import RAFTFlowImagesCallback, RAFTEPECallback, FlowVideoCallback
+from alonet.raft.callbacks import (
+    RAFTFlowImagesCallback,
+    RAFTEPECallback,
+    FlowVideoCallback,
+)
 from aloscene import Frame
 import alonet
 
@@ -21,7 +25,12 @@ class LitRAFT(pl.LightningModule):
         parser = parent_parser.add_argument_group("LitRAFT")
         parser.add_argument("--weights", type=str, help="for example raft-things")
         # override pl.Trainer gradient_clip default value
-        parser.add_argument("--gradient_clip_val", type=float, default=1.0, help="Gradient clipping value")
+        parser.add_argument(
+            "--gradient_clip_val",
+            type=float,
+            default=1.0,
+            help="Gradient clipping value",
+        )
         return parent_parser
 
     def forward(self, frames, only_last=True):
@@ -60,8 +69,14 @@ class LitRAFT(pl.LightningModule):
         frame2 = frames[:, 1, ...]
         # run forward pass model
         m_outputs = self.model(frame1, frame2, only_last=False)
-        flow_loss, metrics, epe_per_iter = self.criterion(m_outputs, frame1, compute_per_iter=True)
-        outputs = {"val_loss": flow_loss, "metrics": metrics, "epe_per_iter": epe_per_iter}
+        flow_loss, metrics, epe_per_iter = self.criterion(
+            m_outputs, frame1, compute_per_iter=True
+        )
+        outputs = {
+            "val_loss": flow_loss,
+            "metrics": metrics,
+            "epe_per_iter": epe_per_iter,
+        }
         return outputs
 
     def build_criterion(self):
@@ -70,7 +85,9 @@ class LitRAFT(pl.LightningModule):
     def build_model(self, weights=None, device="cpu", dropout=0):
         return alonet.raft.RAFT(weights=weights, device=device, dropout=dropout)
 
-    def configure_optimizers(self, lr=4e-4, weight_decay=1e-4, epsilon=1e-8, numsteps=100000):
+    def configure_optimizers(
+        self, lr=4e-4, weight_decay=1e-4, epsilon=1e-8, numsteps=100000
+    ):
         params = self.model.parameters()
         optimizer = optim.AdamW(params, lr=lr, weight_decay=weight_decay, eps=epsilon)
         if self.args.max_steps is None:
@@ -114,12 +131,19 @@ class LitRAFT(pl.LightningModule):
         flow_epe_callback = RAFTEPECallback(data_loader)
         return [metrics_callback, flow_images_callback, flow_epe_callback]
 
-    def run_train(self, data_loader, args, project="raft", expe_name="raft", callbacks: list = None):
+    def run_train(
+        self,
+        data_loader,
+        args,
+        project="raft",
+        expe_name="raft",
+        callbacks: list = None,
+    ):
         """Train the model using pytorch lightning"""
         # Set the default callbacks if not provide.
         callbacks = callbacks if callbacks is not None else self.callbacks(data_loader)
 
-        alonet.common.pl_helpers.run_pl_training(
+        alonet.common.helpers.run_pl_training(
             # Trainer, data & callbacks
             lit_model=self,
             data_loader=data_loader,
@@ -130,12 +154,19 @@ class LitRAFT(pl.LightningModule):
             expe_name=expe_name,
         )
 
-    def run_validation(self, data_loader, args, project="raft", expe_name="raft", callbacks: list = None):
+    def run_validation(
+        self,
+        data_loader,
+        args,
+        project="raft",
+        expe_name="raft",
+        callbacks: list = None,
+    ):
         """Validate the model using pytorch lightning"""
         # Set the default callbacks if not provide.
         callbacks = callbacks if callbacks is not None else self.callbacks(data_loader)
 
-        alonet.common.pl_helpers.run_pl_validate(
+        alonet.common.helpers.run_pl_validate(
             # Trainer, data & callbacks
             lit_model=self,
             data_loader=data_loader,

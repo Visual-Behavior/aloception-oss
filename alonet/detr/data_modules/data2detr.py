@@ -51,7 +51,7 @@ class Data2Detr(pl.LightningDataModule):
     def __init__(self, args: Namespace = None, **kwargs):
         # Update class attributes with args and kwargs inputs
         super().__init__()
-        alonet.common.pl_helpers.params_update(self, args, kwargs)
+        alonet.common.helpers.params_update(self, args, kwargs)
 
         self.size = list(self.size)
         if len(self.size) == 1:
@@ -101,8 +101,15 @@ class Data2Detr(pl.LightningDataModule):
         ArgumentParser
             Arguments updated
         """
-        parser = parent_parser.add_argument_group("DataModule") if parser is None else parser
-        parser.add_argument("--batch_size", type=int, default=2, help="Batch size to use (default %(default)s)")
+        parser = (
+            parent_parser.add_argument_group("DataModule") if parser is None else parser
+        )
+        parser.add_argument(
+            "--batch_size",
+            type=int,
+            default=2,
+            help="Batch size to use (default %(default)s)",
+        )
         parser.add_argument("--train_on_val", action="store_true")
         parser.add_argument(
             "--num_workers",
@@ -111,7 +118,9 @@ class Data2Detr(pl.LightningDataModule):
             help="num_workers to use on the CocoBaseDataset (default %(default)s)",
         )
         parser.add_argument(
-            "--no_augmentation", action="store_true", help="Do not use augmentation to train the model"
+            "--no_augmentation",
+            action="store_true",
+            help="Do not use augmentation to train the model",
         )
         parser.add_argument(
             "--size",
@@ -121,14 +130,23 @@ class Data2Detr(pl.LightningDataModule):
             help="If no augmentation (--no_augmentation) is used, --size can be used to resize all the frame.",
         )
         parser.add_argument(
-            "--sample", action="store_true", help="Download a sample for train/val process (Default: %(default)s)"
+            "--sample",
+            action="store_true",
+            help="Download a sample for train/val process (Default: %(default)s)",
         )
         parser.add_argument(
-            "--sequential", action="store_true", help="Use sequential loading for train (Default: %(default)s)"
+            "--sequential",
+            action="store_true",
+            help="Use sequential loading for train (Default: %(default)s)",
         )
         return parent_parser
 
-    def train_transform(self, frame: aloscene.Frame, same_on_sequence: bool = True, same_on_frames: bool = False):
+    def train_transform(
+        self,
+        frame: aloscene.Frame,
+        same_on_sequence: bool = True,
+        same_on_frames: bool = False,
+    ):
         """Transorm requered to train on each frame
 
         Parameters
@@ -172,7 +190,10 @@ class Data2Detr(pl.LightningDataModule):
         return frame.norm_resnet()
 
     def val_transform(
-        self, frame: aloscene.Frame, same_on_sequence: bool = True, same_on_frames: bool = False,
+        self,
+        frame: aloscene.Frame,
+        same_on_sequence: bool = True,
+        same_on_frames: bool = False,
     ):
         """Transform requered to valid on each frame
 
@@ -197,7 +218,10 @@ class Data2Detr(pl.LightningDataModule):
 
         # Reszie keeping aspect ratio
         frame = T.RandomResizeWithAspectRatio(
-            [800], max_size=1333, same_on_sequence=same_on_sequence, same_on_frames=same_on_frames
+            [800],
+            max_size=1333,
+            same_on_sequence=same_on_sequence,
+            same_on_frames=same_on_frames,
         )(frame)
 
         return frame.norm_resnet()
@@ -211,7 +235,9 @@ class Data2Detr(pl.LightningDataModule):
         stage : str, optional
             Stage either `fit`, `validate`, `test` or `predict`, by default None
         """
-        raise Exception("This class must be inhert and set ``train_dataset`` and ``val_dataset`` class attributes")
+        raise Exception(
+            "This class must be inhert and set ``train_dataset`` and ``val_dataset`` class attributes"
+        )
 
     def train_dataloader(self):
         """Get train dataloader
@@ -224,7 +250,8 @@ class Data2Detr(pl.LightningDataModule):
         return self.train_dataset.train_loader(
             batch_size=self.batch_size,
             num_workers=self.num_workers,
-            sampler=SequentialSampler if self.sequential else RandomSampler)
+            sampler=SequentialSampler if self.sequential else RandomSampler,
+        )
 
     def val_dataloader(self, sampler: torch.utils.data = None):
         """Get val dataloader
@@ -239,4 +266,6 @@ class Data2Detr(pl.LightningDataModule):
         torch.utils.data.DataLoader
             Dataloader for validation process
         """
-        return self.val_dataset.train_loader(batch_size=self.batch_size, num_workers=self.num_workers, sampler=sampler)
+        return self.val_dataset.train_loader(
+            batch_size=self.batch_size, num_workers=self.num_workers, sampler=sampler
+        )

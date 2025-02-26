@@ -39,7 +39,7 @@ class LitDetr(pl.LightningModule):
     def __init__(self, args: Namespace = None, model: torch.nn = None, **kwargs):
         super().__init__()
         # Update class attributes with args and kwargs inputs
-        alonet.common.pl_helpers.params_update(self, args, kwargs)
+        alonet.common.helpers.params_update(self, args, kwargs)
         self._init_kwargs_config.update({"model": model})
 
         # Load model
@@ -50,7 +50,9 @@ class LitDetr(pl.LightningModule):
             elif self.weights is None:
                 self.model = model
             else:
-                raise Exception(f"Weights of custom model doesnt match with {self.weights} weights")
+                raise Exception(
+                    f"Weights of custom model doesnt match with {self.weights} weights"
+                )
         else:
             self.model = self.build_model()
         # Buld matcher
@@ -74,11 +76,23 @@ class LitDetr(pl.LightningModule):
         ArgumentParser
             Object with new arguments concatenated
         """
-        parser = parent_parser.add_argument_group("LitDetr") if parser is None else parser
-        parser.add_argument("--weights", type=str, default=None, help="One of (detr-r50). Default: None")
-        parser.add_argument("--gradient_clip_val", type=float, default=0.1, help="Gradient clipping norm (default 0.1")
+        parser = (
+            parent_parser.add_argument_group("LitDetr") if parser is None else parser
+        )
         parser.add_argument(
-            "--accumulate_grad_batches", type=int, default=4, help="Number of gradient accumulation steps (default 4)"
+            "--weights", type=str, default=None, help="One of (detr-r50). Default: None"
+        )
+        parser.add_argument(
+            "--gradient_clip_val",
+            type=float,
+            default=0.1,
+            help="Gradient clipping norm (default 0.1",
+        )
+        parser.add_argument(
+            "--accumulate_grad_batches",
+            type=int,
+            default=4,
+            help="Number of gradient accumulation steps (default 4)",
         )
         parser.add_argument(
             "--model_name",
@@ -149,7 +163,9 @@ class LitDetr(pl.LightningModule):
         self.assert_input(frames)
         m_outputs = self.model(frames)
 
-        total_loss, losses = self.criterion(m_outputs, frames, compute_statistical_metrics=batch_idx < 100)
+        total_loss, losses = self.criterion(
+            m_outputs, frames, compute_statistical_metrics=batch_idx < 100
+        )
 
         def detach_all(var):
             if isinstance(var, torch.Tensor):
@@ -190,7 +206,9 @@ class LitDetr(pl.LightningModule):
         self.assert_input(frames)
         m_outputs = self.model(frames)
 
-        total_loss, losses = self.criterion(m_outputs, frames, compute_statistical_metrics=batch_idx < 100)
+        total_loss, losses = self.criterion(
+            m_outputs, frames, compute_statistical_metrics=batch_idx < 100
+        )
 
         self.log("val_loss", total_loss)
         outputs = {"val_loss": total_loss}
@@ -208,16 +226,28 @@ class LitDetr(pl.LightningModule):
             `AdamW <https://pytorch.org/docs/stable/generated/torch.optim.AdamW.html>`_ optimizer to update weights
         """
         param_dicts = [
-            {"params": [p for n, p in self.model.named_parameters() if "backbone" not in n and p.requires_grad]},
             {
-                "params": [p for n, p in self.model.named_parameters() if "backbone" in n and p.requires_grad],
+                "params": [
+                    p
+                    for n, p in self.model.named_parameters()
+                    if "backbone" not in n and p.requires_grad
+                ]
+            },
+            {
+                "params": [
+                    p
+                    for n, p in self.model.named_parameters()
+                    if "backbone" in n and p.requires_grad
+                ],
                 "lr": 1e-5,
             },
         ]
         optimizer = torch.optim.AdamW(param_dicts, lr=1e-4, weight_decay=1e-4)
         return optimizer
 
-    def build_model(self, num_classes: int = 91, aux_loss: bool = True, weights: str = None):
+    def build_model(
+        self, num_classes: int = 91, aux_loss: bool = True, weights: str = None
+    ):
         """Build the default model
 
         Parameters
@@ -240,11 +270,15 @@ class LitDetr(pl.LightningModule):
             Only :attr:`detr-r50` models are supported yet.
         """
         if self.model_name == "detr-r50":
-            return alonet.detr.DetrR50(num_classes=num_classes, aux_loss=aux_loss, weights=self.weights)
+            return alonet.detr.DetrR50(
+                num_classes=num_classes, aux_loss=aux_loss, weights=self.weights
+            )
         else:
             raise Exception(f"Unsupported base model {self.model_name}")
 
-    def build_matcher(self, cost_class: float = 1, cost_boxes: float = 5, cost_giou: float = 2):
+    def build_matcher(
+        self, cost_class: float = 1, cost_boxes: float = 5, cost_giou: float = 2
+    ):
         """Build the default matcher
 
         Parameters
@@ -261,7 +295,9 @@ class LitDetr(pl.LightningModule):
         :mod:`DetrHungarianMatcher <alonet.detr.matcher>`
             Hungarian Matcher, as a Pytorch model
         """
-        return alonet.detr.DetrHungarianMatcher(cost_class=cost_class, cost_boxes=cost_boxes, cost_giou=cost_giou)
+        return alonet.detr.DetrHungarianMatcher(
+            cost_class=cost_class, cost_boxes=cost_boxes, cost_giou=cost_giou
+        )
 
     def build_criterion(
         self,
@@ -375,7 +411,7 @@ class LitDetr(pl.LightningModule):
         # Set the default callbacks if not provide.
         callbacks = callbacks if callbacks is not None else self.callbacks(data_loader)
 
-        alonet.common.pl_helpers.run_pl_training(
+        alonet.common.helpers.run_pl_training(
             # Trainer, data & callbacks
             lit_model=self,
             data_loader=data_loader,
@@ -392,7 +428,9 @@ if __name__ == "__main__":
 
     # Logger config
     logging.basicConfig(
-        level=logging.INFO, format="[%(asctime)s][%(levelname)s] %(message)s", datefmt="%d-%m-%y %H:%M:%S"
+        level=logging.INFO,
+        format="[%(asctime)s][%(levelname)s] %(message)s",
+        datefmt="%d-%m-%y %H:%M:%S",
     )
     logger = logging.getLogger("aloception")
 

@@ -40,13 +40,15 @@ class BaseTrainer(ABC):
         self.current_step = 0
         self.checkpoint_infos = []
 
+        # Setup the working directory
+        self.setup_workdir()
+
     def setup_workdir(self) -> None:
         """
         Setup the working directory
         """
         if (is_dist_avail_and_initialized() and is_main_rank()) or not is_dist_avail_and_initialized():
-            vb_base_folder = vb_folder()
-            os.makedirs(os.path.join(vb_base_folder, self.project_name), exist_ok=True)
+            vb_base_folder = vb_folder(create_if_not_found=True)
             if os.path.exists(os.path.join(vb_base_folder, self.project_name, self.experiment_name)):
                 warnings.warn(
                     f"Experiment {os.path.join(vb_base_folder, self.project_name, self.experiment_name)} already exists!."
@@ -62,6 +64,7 @@ class BaseTrainer(ABC):
             else:
                 _, expe_dir, expe_name = get_expe_infos(self.project_name, self.experiment_name, self.no_suffix)
                 self.experiment_name = expe_name
+                print(f"Experiment {expe_dir} created.")
                 os.makedirs(expe_dir)
 
     def get_latest_checkpoint_name(self, step: int = None) -> str:

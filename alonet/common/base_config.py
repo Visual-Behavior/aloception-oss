@@ -1,101 +1,110 @@
 import argparse
 import yaml
-import os
-from dataclasses import dataclass, fields
-from typing import Optional
+from dataclasses import dataclass, fields, field
+from typing import Optional, Union, Literal, get_origin, get_args, Tuple
+
+
+def parse_tuple(value: str, types: Tuple) -> Tuple:
+    """Parse a space-separated string into a tuple of specified types."""
+    values = value.split()
+    if len(values) != len(types):
+        raise argparse.ArgumentTypeError(f"Expected {len(types)} values, got {len(values)}")
+    return tuple(type_(val) for type_, val in zip(types, values))
 
 
 @dataclass
-class TrainingConfig:
-    batch_size: int = 24
-    epochs: int = 20
-    learning_rate: float = 1e-4
-    scheduler_step_size: int = 15
-    run_name: str = None
-    checkpoint_metric: str = "delta_1"
-    load_run: str = None
-    load_best: bool = False
-    project_path: str = "/home/aloception/.aloception/s2d2/"
-    no_compile: bool = False
-    overfit: bool = False
+class BaseConfig:
+    """Base configuration class.
 
-    data_path: str = "/data"
-    dataset: str = "kitti"
-    height: int = 192
-    width: int = 640
-    sources: tuple[str] = ("prev", "next")
-    num_scales: int = 4
-    num_workers: int = 8
-    no_inv: bool = False
-    distribution: str = "gaussian"
-    components: int = 2
-    alpha_entropy: float = 0.0
-    alpha_smooth: float = 0.0
-    sigma_entropy: float = 1e-3
-    sigma_loss: float = 1.0
-    smoothness: float = 0.0
-    crop: bool = False
-    alpha_loss: str = "ce"  # "ce", "mse", "mae", "attn"
-    enc_name: str = "resnet18"
-    loss: str = "analytic"  # "analytic", "ssim_mc", "component_mc", "mixture_mc"
-    color_depth_grad_w: bool = False
-    filter_min: str = "default"  # "default", "global", "alpha"
-    car_mask: str = None  # None, "per_pixel", or "per_instance"
-    car_mask_weight: float = 0.0
-    eigen_old: bool = False
-    logger: str = "tensorboard"  # "tensorboard", "mlflow"
+    Extend this class to create a new configuration class.
 
-    config: Optional[str] = None
+    Attributes can be parsed from command line arguments or config file.
 
-    def __post_init__(self):
-        # Expand any environment variables in the path strings.
-        self.project_path = os.path.expandvars(self.project_path)
-        self.data_path = os.path.expandvars(self.data_path)
+    Normal attributes:
+    ```python
+    attribute_name: type = default_value
+    attribute_name: type = field(default=default_value, help="help message")
+    ```
+
+    Selectable attributes:
+    ```python
+    attribute_name: Literal["choice1", "choice2"] = "choice1"
+    attribute_name: Literal["choice1", "choice2"] = field(default="choice1",help="help message")
+    ```
+
+    Tuple attributes:
+    ```python
+    attribute_name: Tuple[type1, type2] = (type1_default_value, type2_default_value)
+    attribute_name: Tuple[type1, type2] = field(default=(type1_default_value, type2_default_value),help="help message")
+    ```
+
+    Args:
+        project_name: Name of the project
+        experiment_name: Name of the experiment
+        val_interval: Validation interval
+        log_interval: Logging interval
+        save_best_k_cp: Number of best checkpoints to save
+        no_suffix: Whether to use no suffix for the checkpoint files
+    """
+
+    project_name: str = "default"
+    experiment_name: str = "default"
+    val_interval: Union[int, float] = 1.0
+    log_interval: int = 50
+    save_best_k_cp: int = field(default=3, metadata={"help": "Number of best checkpoints to save"})
+    no_suffix: bool = field(
+        default=False,
+        metadata={"help": "Whether to use no suffix for the checkpoint files"},
+    )
+
+    batch_size: int = field(default=16, metadata={"help": "Batch size"})
+    num_workers: int = field(default=4, metadata={"help": "Number of workers"})
+
+    config: Optional[str] = field(default=None, metadata={"help": "Path to config YAML file"})
 
     @classmethod
-    def from_args(cls, args=None) -> "TrainingConfig":
-        """Create a TrainingConfig instance from command line arguments and/or config file.
+    def from_args(cls, args=None) -> "BaseConfig":
+        """Create a BaseConfig instance from command line arguments and/or config file.
 
         Returns:
-            TrainingConfig: Configuration instance with parsed values
+            BaseConfig: Configuration instance with parsed values
         """
-        parser = argparse.ArgumentParser(description="Training configuration")
+        parser = argparse.ArgumentParser(description="Configuration")
 
-        # Add argument for config file
-        parser.add_argument("--config", type=str, help="Path to config YAML file")
-
-        # Add arguments for all fields in the dataclass, excluding the config field
+        # Dynamically add arguments for all fields in the dataclass
         for field in fields(cls):
-            if field.name != "config":  # Skip config field
-                if field.type == bool:
-                    parser.add_argument(
-                        f"--{field.name}",
-                        action="store_true",
-                        default=field.default,
-                        help=f'{field.name.replace("_", " ").title()}',
-                    )
-                elif field.name == "sources":
-                    # Special handling for sources tuple
-                    parser.add_argument(
-                        "--sources",
-                        nargs="+",  # Accept one or more arguments
-                        type=str,
-                        default=field.default,
-                        help="Source types (e.g., 'prev next' or 'stereo')",
-                    )
-                else:
-                    parser.add_argument(
-                        f"--{field.name}",
-                        type=field.type,
-                        default=field.default,
-                        help=f'{field.name.replace("_", " ").title()}',
-                    )
+            help_msg = field.metadata.get("help", "")
+            if get_origin(field.type) is Literal:
+                choices = get_args(field.type)
+                parser.add_argument(
+                    f"--{field.name}",
+                    type=str,
+                    choices=choices,
+                    default=field.default,
+                    help=help_msg,
+                )
+            elif field.type is bool:
+                # Use store_true for boolean fields
+                parser.add_argument(f"--{field.name}", action="store_true", help=help_msg)
+            elif get_origin(field.type) is tuple:
+                # Use custom parser for tuple fields
+                types = get_args(field.type)
+                parser.add_argument(
+                    f"--{field.name}",
+                    type=lambda x: parse_tuple(x, types),
+                    nargs="+",
+                    default=field.default,
+                    help=help_msg,
+                )
+            else:
+                parser.add_argument(
+                    f"--{field.name}",
+                    type=field.type,
+                    default=field.default,
+                    help=help_msg,
+                )
 
         args = parser.parse_args(args)
-
-        # Convert sources list to tuple
-        if isinstance(args.sources, list):
-            args.sources = tuple(args.sources)
 
         # If config file is provided, update args with config file values
         if args.config:
@@ -109,15 +118,8 @@ class TrainingConfig:
 
         return cls(**vars(args))
 
-    @property
-    def HW(self):
-        return self.height, self.width
-
-    def to_dict(self):
+    def to_dict(self) -> dict:
         return {k: v for k, v in vars(self).items() if v is not None and k != "config"}
-
-    def __str__(self) -> str:
-        return str(self.to_dict())
 
     def save(self, filepath: str) -> None:
         """Save the configuration to a YAML file.
@@ -132,7 +134,5 @@ class TrainingConfig:
         with open(filepath, "w") as f:
             yaml.safe_dump(config_dict, f, default_flow_style=False)
 
-
-if __name__ == "__main__":
-    config = TrainingConfig()
-    print(config.cls)
+    def __str__(self) -> str:
+        return str(self.to_dict())

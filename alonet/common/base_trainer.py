@@ -247,7 +247,14 @@ class BaseTrainer(ABC):
             )
 
     @abstractmethod
-    def train(self):
+    def training_step(self, *args, **kwargs):
+        """
+        One step of training
+        """
+        pass
+
+    @abstractmethod
+    def train(self, *args, **kwargs):
         """
         Train the model
         """
@@ -260,9 +267,9 @@ class BaseTrainer(ABC):
         """
         pass
 
-    def test(self):
+    @abstractmethod
+    def validation_step(self):
         """
-        Test the model
+        One step of validation
         """
-        warnings.warn("Test is not implemented for this trainer")
         pass

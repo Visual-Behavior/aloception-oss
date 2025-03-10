@@ -1,8 +1,6 @@
 from abc import ABC, abstractmethod
 import warnings
 from torch.utils.data import DataLoader
-from typing import Union
-import yaml
 
 
 class BaseDataModule(ABC):

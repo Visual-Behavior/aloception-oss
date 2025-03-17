@@ -3,10 +3,13 @@ PyYAML==6.0.2
 chardet==4.0.0
 idna==2.10
 
-scipy==1.10.0
+numpy==2.2.2
+matplotlib==3.10.1
+
+scipy==1.15.2
 
 more_itertools==8.8.0
-opencv-python==4.7.0.68
+opencv-python==4.11.0.86
 
 python-dateutil==2.8.2
 urllib3==1.26.6

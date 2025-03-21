@@ -13,7 +13,7 @@ class BaseDataModule(ABC):
         self.batch_size = batch_size
         self.num_workers = num_workers
 
-    def setup(self, stage: str = None):
+    def setup(self, stage: str):
         """
         :attr:`train_dataloader`, :attr:`val_dataloader`, attr:`test_dataloader` dataloaders setup
         Parameters
@@ -25,8 +25,7 @@ class BaseDataModule(ABC):
             "training",
             "validation",
             "testing",
-            None,
-        ], "Stage must be one of: training, validation, testing or None"
+        ], "Stage must be one of: training, validation, testing"
 
         if stage == "training":
             self.train_dataloader = self.setup_train_dataloader()

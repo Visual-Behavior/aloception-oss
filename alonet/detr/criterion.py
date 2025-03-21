@@ -7,7 +7,7 @@
 import torch
 from torch import nn
 
-from alonet.common.multi_gpu import get_world_size, is_dist_avail_and_initialized
+from alonet.common import get_world_size, is_dist_avail_and_initialized
 import torch.nn.functional as F
 import aloscene
 

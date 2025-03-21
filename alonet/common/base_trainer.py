@@ -26,6 +26,7 @@ class BaseTrainer(ABC):
         self,
         project_name: str,
         experiment_name: str,
+        accumulate_grad_batches: int,
         val_interval: Union[int, float] = 1.0,
         log_interval: int = 50,
         save_best_k_cp: int = 3,
@@ -33,6 +34,7 @@ class BaseTrainer(ABC):
     ):
         self.project_name = project_name
         self.experiment_name = experiment_name
+        self.accumulate_grad_batches = accumulate_grad_batches
         self.val_interval = val_interval
         self.log_interval = log_interval
         self.no_suffix = no_suffix
@@ -210,7 +212,8 @@ class BaseTrainer(ABC):
                 The keys are the names of the state_dicts, and the values are the state_dicts.
                 The state_dicts will be saved as `{key}.pth` in the checkpoint directory.
         """
-        assert os.path.exists(cp_path), f"{cp_path} does not exist"
+        if not os.path.exists(cp_path):
+            os.makedirs(cp_path)
 
         for key, state_dict in state_dicts.items():
             torch.save(state_dict, os.path.join(cp_path, f"{key}.pth"))
@@ -245,6 +248,24 @@ class BaseTrainer(ABC):
             state_dicts[key].load_state_dict(
                 torch.load(os.path.join(cp_path, f"{key}.pth"), map_location=device), strict=strict_loading
             )
+
+    def should_launch_validation(self, dataloader_length: int) -> bool:
+        """
+        Check if the validation should be launched
+
+        Args:
+            dataloader_length (int): length of the dataloader
+            accumulate_grad_batches (int): number of accumulate grad batches
+
+        Returns:
+            bool: True if the validation should be launched, False otherwise
+        """
+        eval_every_n_step = (
+            self.val_interval
+            if isinstance(self.val_interval, int)
+            else dataloader_length // self.accumulate_grad_batches * self.val_interval
+        )
+        return (self.current_step + 1) % eval_every_n_step == 0
 
     @abstractmethod
     def training_step(self, *args, **kwargs):

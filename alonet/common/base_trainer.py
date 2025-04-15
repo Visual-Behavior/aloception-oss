@@ -21,6 +21,7 @@ from .helpers import (
     get_best_checkpoint_from_dir,
     latest_cp_name,
     topk_cp_name,
+    only_main_rank,
 )
 from .base_config import BaseConfig
 from ..loggers import WandbLogger, TensorboardLogger, BaseLogger
@@ -46,8 +47,14 @@ class BaseTrainer(ABC):
         assert logger is None or logger in ["wandb", "tensorboard"], "Only support `wandb` and `tensorboard`"
         assert num_epochs is not None or num_steps != -1, "Either `num_epochs` or `num_steps` must be set"
 
-        self._project_name = project_name
-        self._experiment_name = experiment_name
+        if is_main_rank():
+            self._project_name, self._experiment_name = self.create_project_expe_name(
+                project_name, experiment_name, no_suffix
+            )
+        else:
+            self._project_name = None
+            self._experiment_name = None
+
         self._accumulate_grad_batches = accumulate_grad_batches
         self._num_epochs = num_epochs
         self._num_steps = num_steps
@@ -178,29 +185,39 @@ class BaseTrainer(ABC):
         # If num_steps is not set, check if the current epoch is greater than num_epochs
         return self._current_epoch >= self._num_epochs
 
+    @only_main_rank
+    def create_project_expe_name(self, project_name: str, experiment_name: str, no_suffix: bool) -> Tuple[str, str]:
+        """
+        Create the project name and experiment name
+
+        Args:
+            project_name (str): project name
+            experiment_name (str): experiment name
+            no_suffix (bool): if True, do not add a suffix to the experiment name
+
+        Returns:
+            Tuple[str, str]: project name and experiment name
+        """
+        project_dir, _, expe_name = get_expe_infos(project_name, experiment_name, no_suffix)
+        return os.path.basename(project_dir), expe_name
+
+    @only_main_rank
     def setup_workdir(self) -> None:
         """
         Setup the working directory
         """
-        if (is_dist_avail_and_initialized() and is_main_rank()) or not is_dist_avail_and_initialized():
-            vb_base_folder = vb_folder(create_if_not_found=True)
-            if os.path.exists(os.path.join(vb_base_folder, self._project_name, self._experiment_name)):
-                warnings.warn(
-                    f"Experiment {os.path.join(vb_base_folder, self._project_name, self._experiment_name)} exists!."
-                )
-                warnings.warn(
-                    "You may overwrite existing experiments. Ignore this message if you are resuming the run."
-                )
-                user_input = _user_prompt("Do you want to overwrite the existing experiment? (Y)es or (N)o: ")
-                if user_input.lower() in ["y", "yes"]:
-                    pass
-                else:
-                    raise ValueError("Experiment already exists. Please use a different name.")
+        expe_dir = os.path.join(vb_folder(), self._project_name, self._experiment_name)
+        if os.path.exists(expe_dir):
+            warnings.warn(f"Experiment {expe_dir} exists!.")
+            warnings.warn("You may overwrite existing experiments. Ignore this message if you are resuming the run.")
+            user_input = _user_prompt("Do you want to overwrite the existing experiment? (Y)es or (N)o: ")
+            if user_input.lower() in ["y", "yes"]:
+                pass
             else:
-                _, expe_dir, expe_name = get_expe_infos(self._project_name, self._experiment_name, self._no_suffix)
-                self._experiment_name = expe_name
-                print(f"Experiment {expe_dir} created.")
-                os.makedirs(expe_dir)
+                raise ValueError("Experiment already exists. Please use a different name.")
+        else:
+            print(f"Experiment {expe_dir} created.")
+            os.makedirs(expe_dir)
 
         # Save config & command
         if self._config is not None:
@@ -208,6 +225,7 @@ class BaseTrainer(ABC):
         with open(os.path.join(expe_dir, "command.txt"), "w") as f:
             f.write(" ".join(sys.argv))
 
+    @only_main_rank
     def build_logger(self, logger: Optional[str]) -> Optional[BaseLogger]:
         if logger is None:
             warnings.warn("No logger is chosen.")
@@ -388,6 +406,7 @@ class BaseTrainer(ABC):
         self._checkpoint_infos = sorted(state["checkpoint_infos"], key=lambda x: x["metric"])
         self._current_step = state["current_step"]
 
+    @only_main_rank
     def save_checkpoint(
         self,
         cp_path: str,

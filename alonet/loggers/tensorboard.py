@@ -4,10 +4,11 @@ from torch.utils.tensorboard import SummaryWriter
 import torch
 import numpy as np
 
-from .base_logger import BaseLogger, rank_zero_only
+from .base_logger import BaseLogger
+from alonet.common.helpers import only_main_rank
 
 
-class Tensorboard(BaseLogger):
+class TensorboardLogger(BaseLogger):
     """TensorBoard logger."""
 
     def __init__(
@@ -42,7 +43,7 @@ class Tensorboard(BaseLogger):
         # Initialize TensorBoard writer
         self.writer = SummaryWriter(log_dir=log_dir, purge_step=None if resume else 0)
 
-    @rank_zero_only
+    @only_main_rank
     def log_scalar(self, step: int, key: str, obj: Any):
         """Log a scalar to TensorBoard.
 
@@ -57,7 +58,7 @@ class Tensorboard(BaseLogger):
         """
         self.writer.add_scalar(key, obj, step)
 
-    @rank_zero_only
+    @only_main_rank
     def log_image(self, step: int, key: str, image: Any):
         """Log an image to TensorBoard.
 
@@ -72,7 +73,7 @@ class Tensorboard(BaseLogger):
         """
         self.writer.add_image(key, image, step)
 
-    @rank_zero_only
+    @only_main_rank
     def log_scatter(self, step: int, key: str, values: Any, column_names: List[str]):
         """Log a scatter plot to TensorBoard.
 
@@ -105,7 +106,7 @@ class Tensorboard(BaseLogger):
         self.writer.add_figure(key, fig, step)
         plt.close(fig)
 
-    @rank_zero_only
+    @only_main_rank
     def log_hist(self, step: int, key: str, hist: Any):
         """Log a histogram to TensorBoard.
 

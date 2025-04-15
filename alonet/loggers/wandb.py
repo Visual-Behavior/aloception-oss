@@ -3,10 +3,11 @@ import wandb
 from typing import Optional, Any, List
 import json
 
-from .base_logger import BaseLogger, rank_zero_only
+from alonet.common.helpers import only_main_rank
+from .base_logger import BaseLogger
 
 
-class Wandb(BaseLogger):
+class WandbLogger(BaseLogger):
     """Wandb logger."""
 
     def __init__(
@@ -62,7 +63,7 @@ class Wandb(BaseLogger):
         wandb.define_metric("train/*", step_metric="train/global_step")
         wandb.define_metric("val/*", step_metric="train/global_step")
 
-    @rank_zero_only
+    @only_main_rank
     def log_scalar(self, step: int, key: str, obj: Any):
         """Log a scalar to the current logger
 
@@ -77,7 +78,7 @@ class Wandb(BaseLogger):
         """
         self.runner.log({key: obj, "train/global_step": step})
 
-    @rank_zero_only
+    @only_main_rank
     def log_image(self, step: int, key: str, image: Any):
         """Log an image to the current logger
 
@@ -92,7 +93,7 @@ class Wandb(BaseLogger):
         """
         self.runner.log({key: wandb.Image(image), "train/global_step": step})
 
-    @rank_zero_only
+    @only_main_rank
     def log_scatter(self, step: int, key: str, values: Any, column_names: List[str]):
         """Log a scatter graph to the current logger
 
@@ -116,7 +117,7 @@ class Wandb(BaseLogger):
             }
         )
 
-    @rank_zero_only
+    @only_main_rank
     def log_hist(self, step: int, key: str, hist: Any):
         """Log a histogram graph to the current logger
 

@@ -36,6 +36,7 @@ class BaseTrainer(ABC):
         num_epochs: int = None,
         num_steps: int = -1,
         val_interval: Union[int, float] = 1.0,
+        val_every_n_steps: int = None,
         log_interval: int = 50,
         save_best_k_cp: int = 3,
         logger: Optional[str] = "wandb",
@@ -59,6 +60,7 @@ class BaseTrainer(ABC):
         self._num_epochs = num_epochs
         self._num_steps = num_steps
         self._val_interval = val_interval
+        self._val_every_n_steps = val_every_n_steps
         self._log_interval = log_interval
         self._no_suffix = no_suffix
         self._save_best_k_cp = save_best_k_cp
@@ -109,6 +111,16 @@ class BaseTrainer(ABC):
     @property
     def val_interval(self) -> Union[int, float]:
         return self._val_interval
+
+    @property
+    def val_every_n_steps(self) -> int:
+        """
+        Run evaluation every n steps
+
+        Returns:
+            int: Number of steps to run evaluation
+        """
+        return self._val_every_n_steps
 
     @property
     def log_interval(self) -> int:
@@ -261,7 +273,9 @@ class BaseTrainer(ABC):
         step = step if step is not None else self._current_step
         return latest_cp_name(step)
 
-    def format_topk_checkpoint_name(self, metric_name: str, metric: float, step: int) -> str:
+    def format_topk_checkpoint_name(
+        self, metric_name: str, metric: float, step: int, epoch: Optional[int] = None
+    ) -> str:
         """
         Get the topk checkpoint name from the current step
 
@@ -273,7 +287,8 @@ class BaseTrainer(ABC):
         Returns:
             str: checkpoint path
         """
-        return topk_cp_name(metric_name, metric, step, self._current_epoch)
+        epoch = epoch if epoch is not None else self._current_epoch
+        return topk_cp_name(metric_name, metric, step, epoch)
 
     def get_best_checkpoint_path(self, condition: str = "max"):
         """
@@ -309,8 +324,7 @@ class BaseTrainer(ABC):
         cp = get_latest_checkpoint_from_dir(expe_dir)
         if cp is None:
             raise FileNotFoundError(
-                f"No latest checkpoint found. \
-                 Latest checkpoint must have the format `latest_steps-<steps>` in {expe_dir}"
+                f"No latest checkpoint found. Latest checkpoint must have the format `latest_steps-<steps>` in {expe_dir}"
             )
         return cp
 
@@ -368,7 +382,8 @@ class BaseTrainer(ABC):
                 }
             )
             self._checkpoint_infos = sorted(self._checkpoint_infos, key=lambda x: x["metric"])
-            new_cp_dir = self.format_topk_checkpoint_name(metric_name, metric, self._current_step, self._current_epoch)
+            new_cp_dir = self.format_topk_checkpoint_name(metric_name, metric, self._current_step)
+            new_cp_dir = os.path.join(vb_folder(), self._project_name, self._experiment_name, new_cp_dir)
         else:
             replaced_cp = None
             # Replace the worst checkpoint if the new checkpoint is better
@@ -387,9 +402,11 @@ class BaseTrainer(ABC):
                 )
                 self._checkpoint_infos = sorted(self._checkpoint_infos, key=lambda x: x["metric"])
                 new_cp_dir = self.format_topk_checkpoint_name(metric_name, metric, self._current_step)
+                new_cp_dir = os.path.join(vb_folder(), self._project_name, self._experiment_name, new_cp_dir)
                 replaced_cp_dir = self.format_topk_checkpoint_name(
-                    replaced_cp["metric_name"], replaced_cp["metric"], replaced_cp["epoch"], replaced_cp["step"]
+                    replaced_cp["metric_name"], replaced_cp["metric"], replaced_cp["step"], replaced_cp["epoch"]
                 )
+                replaced_cp_dir = os.path.join(vb_folder(), self._project_name, self._experiment_name, replaced_cp_dir)
 
         return new_cp_dir, replaced_cp_dir
 
@@ -478,6 +495,11 @@ class BaseTrainer(ABC):
         Returns:
             bool: True if the validation should be launched, False otherwise
         """
+        # If val_every_n_steps is set, run evaluation every n steps
+        if self._val_every_n_steps is not None:
+            return (self._current_step + 1) % self._val_every_n_steps == 0
+
+        # If val_every_n_steps is not set, run evaluation every val_interval
         eval_every_n_step = (
             self._val_interval
             if isinstance(self._val_interval, int)

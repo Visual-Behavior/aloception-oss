@@ -7,7 +7,6 @@ import os
 from collections import OrderedDict
 from typing import Optional, Union, Type, TypeVar, Tuple, Any, Iterator
 import yaml
-from rich.progress import Progress, Task
 
 parser = ArgumentParser()
 
@@ -21,7 +20,8 @@ def vb_folder(create_if_not_found=False):
             os.mkdir(alofolder)
         else:
             raise Exception(
-                f"{alofolder} do not exist. Please, create the folder with the appropriate files. (Checkout documentation)"
+                f"{alofolder} do not exist. Please, create the folder with the appropriate files.\
+                    (Checkout documentation)"
             )
     return alofolder
 
@@ -190,7 +190,7 @@ def topk_cp_name(metric_name: str, metric_value: float, step: int, epoch: int) -
     """
     Get the topk checkpoint name from the step
     """
-    return f"epoch={epoch}_step={step}_{metric_name}={metric_value}"
+    return f"epoch={epoch}_step={step}_{metric_name}={metric_value:.5f}"
 
 
 def get_model_state_dict(model: torch.nn.Module) -> OrderedDict:
@@ -234,29 +234,6 @@ def init_from_config(cls: Type[TYPE_CLS], config: Union[str, dict]) -> TYPE_CLS:
         with open(config, "r") as f:
             config = yaml.safe_load(f)
     return cls(**config)
-
-
-def setup_progress_bar(num_items: int, task_name: str) -> Tuple[Progress, Task]:
-    """
-    Setup the progress bars
-
-    Parameters
-    ----------
-    num_items : List[int]
-        The number of items to track for each task
-    task_names : List[str]
-        The names of the tasks to track
-
-    Returns
-    -------
-    progress : Progress
-        The progress bar
-    task : Task
-        The task to track
-    """
-    progress = Progress()
-    task = progress.add_task(task_name, total=num_items)
-    return progress, task
 
 
 def setup_data_fetcher(dataloader: DataLoader) -> Iterator[Any]:

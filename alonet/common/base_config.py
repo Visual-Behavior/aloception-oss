@@ -135,6 +135,7 @@ class BaseTrainerConfig(BaseConfig):
     num_epochs: int = field(default=None, metadata={"help": "Number of epochs to train"})
     num_steps: int = field(default=-1, metadata={"help": "Number of steps to train"})
     val_interval: Union[int, float] = field(default=1.0, metadata={"help": "Validation interval"})
+    val_every_n_steps: int = field(default=None, metadata={"help": "Validation interval in steps"})
     log_interval: int = field(default=50, metadata={"help": "Logging interval"})
     save_best_k_cp: int = field(default=3, metadata={"help": "Number of best checkpoints to save"})
     logger: str = field(default=None, metadata={"help": "Logger to use"})

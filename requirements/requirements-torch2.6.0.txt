@@ -13,7 +13,6 @@ opencv-python==4.11.0.86
 
 python-dateutil==2.8.2
 urllib3==1.26.6
-rich==14.0.0
 
 protobuf==4.21.12
 wandb==0.17.9

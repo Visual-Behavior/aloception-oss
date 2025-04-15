@@ -69,9 +69,10 @@ class TensorboardLogger(BaseLogger):
         key : str
             Tag name of the log
         image : Any
-            The image to log (should be a tensor, numpy array, or PIL image)
+            The image to log (should be a tensor, numpy array, or PIL image).
+            The image must be in the shape of (H, W, C).
         """
-        self.writer.add_image(key, image, step)
+        self.writer.add_image(key, image, step, dataformats="HWC")
 
     @only_main_rank
     def log_scatter(self, step: int, key: str, values: Any, column_names: List[str]):

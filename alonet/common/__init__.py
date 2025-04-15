@@ -17,6 +17,5 @@ from .helpers import (
     get_best_checkpoint_from_dir,
     latest_cp_name,
     topk_cp_name,
-    setup_progress_bar,
     setup_data_fetcher,
 )

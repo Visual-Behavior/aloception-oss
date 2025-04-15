@@ -1,11 +1,13 @@
 from argparse import ArgumentParser, Namespace
 import torch
+from torch.utils.data import DataLoader
 import torch.distributed as dist
 import datetime
 import os
 from collections import OrderedDict
-from typing import Optional, Union, Type, TypeVar
+from typing import Optional, Union, Type, TypeVar, Tuple, Any, Iterator
 import yaml
+from rich.progress import Progress, Task
 
 parser = ArgumentParser()
 
@@ -131,7 +133,11 @@ def get_rank():
     return dist.get_rank()
 
 
-def is_main_rank(func):
+def is_main_rank():
+    return (is_dist_avail_and_initialized() and get_rank() == 0) or not is_dist_avail_and_initialized()
+
+
+def only_main_rank(func):
     def _method(*args, **kwargs):
         if get_rank() == 0:
             return func(*args, **kwargs)
@@ -228,3 +234,45 @@ def init_from_config(cls: Type[TYPE_CLS], config: Union[str, dict]) -> TYPE_CLS:
         with open(config, "r") as f:
             config = yaml.safe_load(f)
     return cls(**config)
+
+
+def setup_progress_bar(num_items: int, task_name: str) -> Tuple[Progress, Task]:
+    """
+    Setup the progress bars
+
+    Parameters
+    ----------
+    num_items : List[int]
+        The number of items to track for each task
+    task_names : List[str]
+        The names of the tasks to track
+
+    Returns
+    -------
+    progress : Progress
+        The progress bar
+    task : Task
+        The task to track
+    """
+    progress = Progress()
+    task = progress.add_task(task_name, total=num_items)
+    return progress, task
+
+
+def setup_data_fetcher(dataloader: DataLoader) -> Iterator[Any]:
+    """
+    Fetch a minibatch from the dataloader
+
+    Parameters
+    ----------
+    dataloader : DataLoader
+        The dataloader to fetch the batch from
+
+    Returns
+    -------
+    batch : Any
+        The batch fetched from the dataloader
+    """
+    while True:
+        for batch in dataloader:
+            yield batch

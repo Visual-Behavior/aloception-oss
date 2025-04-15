@@ -12,6 +12,9 @@ class BaseDataModule(ABC):
         super().__init__()
         self.batch_size = batch_size
         self.num_workers = num_workers
+        self.train_dataloader = None
+        self.val_dataloader = None
+        self.test_dataloader = None
 
     def setup(self, stage: str):
         """

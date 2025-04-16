@@ -5,7 +5,7 @@ import torch.distributed as dist
 import datetime
 import os
 from collections import OrderedDict
-from typing import Optional, Union, Type, TypeVar, Tuple, Any, Iterator
+from typing import Optional, Union, Type, TypeVar, Any, Iterator
 import yaml
 
 parser = ArgumentParser()
@@ -64,6 +64,16 @@ def get_expe_infos(project, expe_name, no_suffix: bool = False):
         expe_name = "{}_{:%B-%d-%Y-%Hh-%M}".format(expe_name, datetime.datetime.now())
     project_dir = os.path.join(vb_folder(), f"project_{project}")
     expe_dir = os.path.join(project_dir, expe_name)
+    return project_dir, expe_dir, expe_name
+
+
+def get_expe_infos_from_checkpoint_path(checkpoint_path: str):
+    """
+    Get the directories for the project and the experimentation from the checkpoint path
+    """
+    expe_dir = os.path.dirname(checkpoint_path)
+    expe_name = os.path.basename(expe_dir)
+    project_dir = os.path.dirname(expe_dir)
     return project_dir, expe_dir, expe_name
 
 

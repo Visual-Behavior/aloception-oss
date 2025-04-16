@@ -6,6 +6,7 @@ from .helpers import (
     vb_folder,
     add_common_training_args,
     get_expe_infos,
+    get_expe_infos_from_checkpoint_path,
     params_update,
     _int_or_float_type,
     get_world_size,

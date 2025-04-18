@@ -1,5 +1,5 @@
 import argparse
-from argparse import Namespace, ArgumentParser
+from argparse import Namespace, ArgumentParser, BooleanOptionalAction
 import yaml
 from dataclasses import dataclass, fields, field, Field
 from typing import Optional, Union, get_origin, get_args, Literal
@@ -7,11 +7,13 @@ from typing import Optional, Union, get_origin, get_args, Literal
 
 def add_argument(parser: argparse.ArgumentParser, field_args: Field, prefix: str = None) -> None:
     help_msg = field_args.metadata.get("help", "")
+    help_msg = help_msg + f". Default: {field_args.default}"
     arg_name = field_args.name if prefix is None else f"{prefix}.{field_args.name}"
 
     if field_args.type is bool:
         # Use store_true for boolean fields
-        parser.add_argument(f"--{arg_name}", action="store_true", help=help_msg)
+        help_msg = help_msg + f". Use --no-{arg_name} to get False as value."
+        parser.add_argument(f"--{arg_name}", action=BooleanOptionalAction, help=help_msg)
     elif get_origin(field_args.type) is tuple:
         # Use custom parser for tuple fields
         parser.add_argument(

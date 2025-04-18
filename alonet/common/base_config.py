@@ -13,7 +13,7 @@ def add_argument(parser: argparse.ArgumentParser, field_args: Field, prefix: str
     if field_args.type is bool:
         # Use store_true for boolean fields
         help_msg = help_msg + f". Use --no-{arg_name} to get False as value."
-        parser.add_argument(f"--{arg_name}", action=BooleanOptionalAction, help=help_msg)
+        parser.add_argument(f"--{arg_name}", action=BooleanOptionalAction, help=help_msg, default=field_args.default)
     elif get_origin(field_args.type) is tuple:
         # Use custom parser for tuple fields
         parser.add_argument(

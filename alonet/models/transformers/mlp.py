@@ -1,6 +1,5 @@
 import torch.nn.functional as F
 from torch import nn
-import torch
 
 
 class MLP(nn.Module):

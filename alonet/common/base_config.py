@@ -73,6 +73,9 @@ class BaseConfig:
         """Create a BaseConfig instance from command line arguments and/or config file."""
         arg_dict = vars(args)
 
+        parser = ArgumentParser()
+        cls.add_argparse_args(parser)
+
         # If config file is provided, update args with config file values
         config = None
         if args.config_file:
@@ -85,6 +88,7 @@ class BaseConfig:
             if hasattr(field_args.type, "from_args"):
                 sub_args = {}
                 for arg_key in arg_dict:
+                    # Check if the prefix exists in the arg_key
                     if field_args.name not in arg_key:
                         continue
                     keywords = arg_key.split(".")
@@ -104,7 +108,16 @@ class BaseConfig:
                 sub_args = Namespace(**sub_args)
                 parameters[field_args.name] = field_args.type.from_args(sub_args)
             else:
-                parameters[field_args.name] = getattr(args, field_args.name)
+                # If the value is defined in the config file and the default value is the same as the command
+                # line arg, use the config file value. Else, do not override the command line arg.
+                if (
+                    config is not None
+                    and field_args.name in config
+                    and arg_dict[field_args.name] == parser.get_default(field_args.name)
+                ):
+                    parameters[field_args.name] = config[field_args.name]
+                else:
+                    parameters[field_args.name] = getattr(args, field_args.name)
 
         return cls(**parameters)
 

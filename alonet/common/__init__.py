@@ -19,4 +19,5 @@ from .helpers import (
     latest_cp_name,
     topk_cp_name,
     setup_data_fetcher,
+    get_model_state_dict,
 )

@@ -2,6 +2,7 @@ import torch
 import requests
 import os
 from typing import Optional
+from safetensors.torch import load_file
 
 from alonet.common.helpers import vb_folder
 
@@ -62,6 +63,12 @@ def load_weights(
             checkpoint = checkpoint["model"]
     elif os.path.splitext(weights.lower())[1] == ".ckpt":
         checkpoint = torch.load(weights, map_location=device)["state_dict"]
+    elif os.path.splitext(weights.lower())[1] == ".safetensors":
+        if device == torch.device("cpu"):
+            device_str = "cpu"
+        else:
+            device_str = "cuda"
+        checkpoint = load_file(weights, device=device_str)
     elif weights in WEIGHT_NAME_TO_FILES:
         weights_dir = os.path.join(vb_folder(create_if_not_found=True), "weights", weights)
         if not os.path.exists(weights_dir):

@@ -33,8 +33,8 @@ class BaseTrainer(ABC):
         project_name: str,
         experiment_name: str,
         accumulate_grad_batches: int = 1,
-        num_epochs: int = None,
-        num_steps: int = -1,
+        num_epochs: Optional[int] = None,
+        num_steps: Optional[int] = None,
         val_interval: Union[int, float] = 1.0,
         val_every_n_steps: int = None,
         log_interval: int = 50,
@@ -45,8 +45,42 @@ class BaseTrainer(ABC):
         no_suffix: bool = False,
         config: Optional[BaseConfig] = None,
     ):
+        """
+        BaseTrainer
+
+        Parameters
+        ----------
+        project_name : str
+            Name of the project
+        experiment_name : str
+            Name of the experiment
+        accumulate_grad_batches : int
+            Number of gradient accumulation steps
+        num_epochs : int
+            Number of epochs to train
+        num_steps : int
+            Number of steps to train
+        val_interval : Union[int, float]
+            Validation interval
+        val_every_n_steps : int
+            Run evaluation every n steps
+        log_interval : int
+            Log interval: number of steps between logging during training
+        save_best_k_cp : int
+            Number of best checkpoints to save
+        logger : Optional[str]
+            Logger to use
+        resume : bool
+            Resume training from the checkpoint
+        checkpoint : Optional[str]
+            Path to checkpoint file
+        no_suffix : bool
+            Whether to use no suffix for the experiment name
+        config : Optional[BaseConfig]
+            Configuration to log in experiment directory
+        """
         assert logger is None or logger in ["wandb", "tensorboard"], "Only support `wandb` and `tensorboard`"
-        assert num_epochs is not None or num_steps != -1, "Either `num_epochs` or `num_steps` must be set"
+        assert num_epochs is not None or num_steps is not None, "Either `num_epochs` or `num_steps` must be set"
 
         self._accumulate_grad_batches = accumulate_grad_batches
         self._num_epochs = num_epochs
@@ -191,6 +225,8 @@ class BaseTrainer(ABC):
         Returns:
             int: Number of epochs to train
         """
+        if self._num_epochs is None or self._num_epochs <= 0:
+            Warning("num_epochs is not set for this training.")
         return self._num_epochs
 
     @num_epochs.setter
@@ -211,6 +247,8 @@ class BaseTrainer(ABC):
         Returns:
             int: Number of steps to train
         """
+        if self._num_steps is None or self._num_steps <= 0:
+            Warning("num_steps is not set for this training.")
         return self._num_steps
 
     @property
@@ -282,7 +320,7 @@ class BaseTrainer(ABC):
             bool: True if the training reaches the end, False otherwise
         """
         # If num_steps is set, check if the current step is greater than num_steps
-        if self._num_steps != -1:
+        if self._num_steps is not None and self._num_steps > 0:
             return self._current_step >= self._num_steps
 
         # If num_steps is not set, check if the current epoch is greater than num_epochs
@@ -528,6 +566,7 @@ class BaseTrainer(ABC):
             state = json.load(f)
         self._checkpoint_infos = sorted(state["checkpoint_infos"], key=lambda x: x["metric"])
         self._current_step = state["current_step"]
+        self._current_epoch = state["current_epoch"]
 
     @only_main_rank
     def save_checkpoint(
@@ -563,7 +602,14 @@ class BaseTrainer(ABC):
                 torch.save(state_dict, os.path.join(cp_path, f"{key}.pth"))
 
         with open(os.path.join(cp_path, "state.json"), "w") as f:
-            json.dump({"current_step": self._current_step, "checkpoint_infos": self._checkpoint_infos}, f)
+            json.dump(
+                {
+                    "current_step": self._current_step,
+                    "checkpoint_infos": self._checkpoint_infos,
+                    "current_epoch": self._current_epoch,
+                },
+                f,
+            )
 
     def resume_from_checkpoint(
         self,

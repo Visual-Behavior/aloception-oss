@@ -22,6 +22,30 @@ class WandbLogger(BaseLogger):
         config: Optional[dict] = None,
         resume: bool = False,
     ):
+        """
+        Initialize the WandbLogger.
+
+        Parameters
+        ----------
+        name: str
+            Name of the run
+        project: str
+            Name of the project
+        save_dir: str
+            Directory to save the logs
+        id: Optional[str]
+            ID of the run
+        group_name: Optional[str]
+            Group name of the run
+        tags: Optional[list]
+            Tags of the run
+        notes: Optional[str]
+            Notes of the run
+        config: Optional[dict]
+            Config of the run
+        resume: bool
+            Whether to resume the run
+        """
         self.name = name
         self.project = project
         self.group_name = group_name

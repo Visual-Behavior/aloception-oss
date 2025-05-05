@@ -124,12 +124,18 @@ def _int_or_float_type(x):
 
 
 def get_world_size():
+    """
+    Get the world size
+    """
     if not is_dist_avail_and_initialized():
         return 1
     return dist.get_world_size()
 
 
 def is_dist_avail_and_initialized():
+    """
+    Check if distributed training is available and initialized
+    """
     if not dist.is_available():
         return False
     if not dist.is_initialized():
@@ -138,16 +144,26 @@ def is_dist_avail_and_initialized():
 
 
 def get_rank():
+    """
+    Get the rank of the current process
+    """
     if not is_dist_avail_and_initialized():
         return 0
     return dist.get_rank()
 
 
 def is_main_rank():
+    """
+    Check if the current process is the main process
+    """
     return (is_dist_avail_and_initialized() and get_rank() == 0) or not is_dist_avail_and_initialized()
 
 
 def only_main_rank(func):
+    """
+    Decorator to run a function only on the main process
+    """
+
     def _method(*args, **kwargs):
         if get_rank() == 0:
             return func(*args, **kwargs)

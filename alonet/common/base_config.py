@@ -49,6 +49,13 @@ class BaseConfig:
     Attributes:
         config_file: Path to the configuration file
         Other attributes are classes derived from BaseConfig.
+
+    Methods:
+        add_argparse_args: Add arguments to the argument parser
+        from_args: Create a BaseConfig instance from command line arguments and/or config file
+        to_dict: Convert the BaseConfig instance to a dictionary
+        save: Save the BaseConfig instance to a file
+        __str__: Convert the BaseConfig instance to a string
     """
 
     @classmethod
@@ -148,8 +155,8 @@ class BaseTrainerConfig(BaseConfig):
     experiment_name: str = field(default="default", metadata={"help": "Name of the experiment"})
     accumulate_grad_batches: int = field(default=1, metadata={"help": "Number of batches to accumulate gradients"})
     num_epochs: int = field(default=None, metadata={"help": "Number of epochs to train"})
-    num_steps: int = field(default=-1, metadata={"help": "Number of steps to train"})
-    val_interval: Union[int, float] = field(default=1.0, metadata={"help": "Validation interval"})
+    num_steps: int = field(default=None, metadata={"help": "Number of steps to train"})
+    val_interval: float = field(default=1.0, metadata={"help": "Validation interval"})
     val_every_n_steps: int = field(default=None, metadata={"help": "Validation interval in steps"})
     log_interval: int = field(default=50, metadata={"help": "Logging interval"})
     save_best_k_cp: int = field(default=3, metadata={"help": "Number of best checkpoints to save"})

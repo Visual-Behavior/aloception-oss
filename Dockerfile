@@ -37,8 +37,8 @@ COPY --from=conda /opt/conda /opt/conda
 # Install pytorch
 RUN /opt/conda/bin/pip install --no-cache-dir torch==${PYTORCH_VERSION} torchvision==${TORCHVISION_VERSION} torchaudio==${TORCHAUDIO_VERSION} --index-url https://download.pytorch.org/whl/cu126 && /opt/conda/bin/conda clean -ya
 # Install requirement
-COPY requirements/requirements-torch2.7.0.txt /home/aloception/install/requirements-torch2.7.0.txt
-RUN /opt/conda/bin/pip install --no-cache-dir -r /home/aloception/install/requirements-torch2.7.0.txt
+COPY requirements/requirements.txt /home/aloception/install/requirements.txt
+RUN /opt/conda/bin/pip install --no-cache-dir -r /home/aloception/install/requirements.txt
 
 # Stage 4: Official image
 FROM ${BASE_IMAGE} as official

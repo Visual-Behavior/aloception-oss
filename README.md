@@ -173,7 +173,7 @@ data_module.setup("training")
 ### Configuration
 [BaseConfig](./alonet/common/base_config.py) provides a flexible approach to configuring the training pipeline. All the parameters required to initialize **Model**/**Data Module**/**Trainer** objects are defined within **Configuration** (checkout [BaseTrainerConfig](./alonet/common/base_config.py) and [BaseDataModuleConfig](./alonet/common/base_config.py) for examples). These parameters can be specified when launching the training either via command line argument or by a YAML file.
 
-**BaseConfig** is extendable through subclassing and nesting, allowing fore complex configurations. More examples can be found at [DETR config](./alonet/models/detr/config).
+**BaseConfig** is extendable through subclassing and nesting, enabling complex configurations. More examples can be found at [DETR config](./alonet/models/detr/config).
 
 Each training configuration is saved as an artifact in the training directory.
 

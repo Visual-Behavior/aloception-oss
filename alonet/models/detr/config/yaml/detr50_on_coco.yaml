@@ -1,0 +1,37 @@
+data_module:
+  batch_size: 6
+  classes: null
+  name: coco
+  num_workers: 4
+  return_masks: false
+  train_ann: annotations/instances_train2017.json
+  train_folder: train2017
+  train_on_val: false
+  val_ann: annotations/instances_val2017.json
+  val_folder: val2017
+model:
+  aux_loss: true
+  background_class: 91
+  num_classes: 91
+  return_bb_outputs: false
+  return_dec_outputs: false
+  return_enc_outputs: false
+  strict_load_weights: true
+  tracing: false
+trainer:
+  accumulate_grad_batches: 1
+  checkpoint: null
+  experiment_name: default
+  log_interval: 50
+  logger: wandb
+  model_name: detr-r50
+  no_suffix: false
+  num_epochs: 50
+  num_steps: null
+  project_name: object-detection
+  resume: false
+  save_best_k_cp: 3
+  val_every_n_steps: null
+  val_interval: 1.0
+  viz_interval: 500
+  weights: null

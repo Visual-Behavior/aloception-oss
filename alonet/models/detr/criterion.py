@@ -1,4 +1,4 @@
-"""This class computes the loss for :mod:`DETR <alonet.detr.detr>`. The process happens in two steps:
+"""This class computes the loss for :mod:`DETR <alonet.models.detr.models.detr>`. The process happens in two steps:
 
 1) We compute hungarian assignment between ground truth boxes and the outputs of the model
 2) We supervise each pair of matched ground-truth / prediction (supervise class and box).

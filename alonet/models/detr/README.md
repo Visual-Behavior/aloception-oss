@@ -5,7 +5,7 @@ the scripts described bellow.
 
 ```python
 # Load model
-model = alonet.detr.DetrR50(num_classes=91, weights="detr-r50").eval()
+model = alonet.detr.models.DetrR50(num_classes=91, weights="detr-r50").eval()
 
 # Open and normalized frame
 frame = aloscene.Frame("/path/to/image.jpg").norm_resnet()
@@ -22,18 +22,18 @@ frame.get_view().render()
 ### Running inference with detr_r50
 
 ```
-python alonet/detr/detr_r50.py /path/to/image.jpg
+python alonet/models/detr/models/detr_r50.py /path/to/image.jpg
 ```
 
 ### Training Detr from scratch
 ```
-python alonet/detr/train_on_coco.py
+python alonet/models/detr/scripts/train_detr50_on_coco.py --config_file config/yaml/detr50_on_coco.yaml --trainer.experiment_name detr50-coco
 ```
 
 ### Running evaluation of detr-r50
 
 ```
-python alonet/detr/eval_on_coco.py --weights detr-r50 --batch_size 1
+python alonet/models/detr/scripts/eval_on_coco.py --config_file ../config/yaml/detr50_on_coco.yaml --model.weights PATH_TO_WEIGHTS
 ```
 
 ```

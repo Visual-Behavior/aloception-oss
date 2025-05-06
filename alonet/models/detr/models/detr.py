@@ -7,12 +7,12 @@ import torch.nn.functional as F
 from torch import nn
 from collections import namedtuple
 
-from alonet.detr.transformer import Transformer
-from alonet.transformers import MLP, PositionEmbeddingSine
-from alonet.detr.backbone import Backbone
+from alonet.models.detr.models.transformer import Transformer, TransformerDecoderLayer, TransformerDecoder
+from alonet.models.transformers import MLP, PositionEmbeddingSine
+from alonet.models.detr.models.backbone import Backbone
 import alonet
 import aloscene
-from alonet.detr.misc import assert_and_export_onnx
+from alonet.models.detr.misc import assert_and_export_onnx
 
 INPUT_MEAN_STD = ((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
 
@@ -105,8 +105,8 @@ class Detr(nn.Module):
             self.to(device)
 
         if weights is not None:
-            if weights == "detr-r50" or ".pth" in weights or ".ckpt" in weights:
-                alonet.common.load_weights(self, weights, device, strict_load_weights=strict_load_weights)
+            if weights == "detr-r50" or ".pth" in weights or ".ckpt" in weights or ".safetensors" in weights:
+                alonet.common.load_weights(self, weights, device=device, strict_load_weights=strict_load_weights)
             else:
                 raise ValueError(f"Unknown weights: '{weights}'")
 
@@ -151,11 +151,7 @@ class Detr(nn.Module):
         """
         features, pos = self.backbone(frames, **kwargs)
         src, mask = features[-1][0], features[-1][1]
-        # assert len(mask.shape) == 4
-        # assert mask.shape[1] == 1
-        # mask = torch.squeeze(mask, dim=1)
-        # Pytorch will complicate the Squeeze op when exporting to ONNX
-        # So  we should use slicing instead of Squeeze
+
         mask = mask.to(torch.float32)  # TensorRT doesn't support slicing/gathering on bool
         mask = mask[:, 0]
         mask = mask.to(torch.bool)
@@ -471,7 +467,7 @@ class Detr(nn.Module):
         :class:`TransformerDecoderLayer <alonet.detr.transformer.TransformerDecoderLayer>`
             Transformer decoder layer
         """
-        return alonet.detr.transformer.TransformerDecoderLayer(
+        return TransformerDecoderLayer(
             d_model=hidden_dim,
             n_heads=nheads,
             dim_feedforward=dim_feedforward,
@@ -501,7 +497,7 @@ class Detr(nn.Module):
         """
         decoder_layer = self.build_decoder_layer()
 
-        return alonet.detr.transformer.TransformerDecoder(
+        return TransformerDecoder(
             decoder_layer, num_decoder_layers, nn.LayerNorm(hidden_dim), return_intermediate=True
         )
 

@@ -1,8 +1,5 @@
-from argparse import ArgumentParser, Namespace
-from typing import Optional
-
-from alonet.detr.data_modules import Data2Detr
 import alodataset
+from alonet.models.detr.data_modules.data2detr import Data2Detr
 
 
 class CocoDetection2Detr(Data2Detr):
@@ -37,7 +34,6 @@ class CocoDetection2Detr(Data2Detr):
 
     def __init__(
         self,
-        args: Namespace = None,
         name: str = "coco",
         classes: list = None,
         train_folder: str = "train2017",
@@ -45,8 +41,10 @@ class CocoDetection2Detr(Data2Detr):
         val_folder: str = "val2017",
         val_ann: str = "annotations/instances_val2017.json",
         return_masks: bool = False,
+        train_on_val: bool = False,
         **kwargs
     ):
+        super().__init__(**kwargs)
         # Update class attributes with args and kwargs inputs
         self.train_loader_kwargs = dict(
             img_folder=train_folder,
@@ -64,30 +62,28 @@ class CocoDetection2Detr(Data2Detr):
             name=name,
             return_masks=return_masks,
         )
-
-        super().__init__(args=args, **kwargs)
+        self.train_on_val = train_on_val
 
         if self.train_on_val:
             self.train_loader_kwargs["img_folder"] = val_folder
             self.train_loader_kwargs["ann_file"] = val_ann
 
-    def setup(self, stage: Optional[str] = None):
-        if stage == "fit" or stage is None:
-            # Setup train/val loaders
-            self.train_dataset = alodataset.CocoBaseDataset(
-                transform_fn=self.train_transform, sample=self.sample, **self.train_loader_kwargs
-            )
-            self.sample = self.train_dataset.sample or self.sample  # Update sample if user prompt is given
-            self.val_dataset = alodataset.CocoBaseDataset(
-                transform_fn=self.val_transform, sample=self.sample, **self.val_loader_kwargs
-            )
-            self.sample = self.val_dataset.sample or self.sample  # Update sample if user prompt is given
-            self.label_names = self.val_dataset.label_names if hasattr(self.val_dataset, "label_names") else None
+    def setup_train_dataset(self) -> alodataset.CocoBaseDataset:
+        return alodataset.CocoBaseDataset(
+            transform_fn=self.train_transform, sample=self.sample, **self.train_loader_kwargs
+        )
+
+    def setup_val_dataset(self) -> alodataset.CocoBaseDataset:
+        return alodataset.CocoBaseDataset(
+            transform_fn=self.val_transform, sample=self.sample, **self.val_loader_kwargs
+        )
 
 
 if __name__ == "__main__":
     # setup data
     loader_kwargs = dict(
+        batch_size=1,
+        num_workers=1,
         name="coco",
         train_folder="train2017",
         train_ann="annotations/instances_train2017.json",
@@ -95,11 +91,9 @@ if __name__ == "__main__":
         val_ann="annotations/instances_val2017.json",
     )
 
-    args = CocoDetection2Detr.add_argparse_args(ArgumentParser()).parse_args()  # Help provider
-    coco = CocoDetection2Detr(args, **loader_kwargs)
-    coco.prepare_data()
-    coco.setup()
-    iterator = iter(coco.train_dataloader())
+    coco = CocoDetection2Detr(**loader_kwargs)
+    coco.setup(stage="training")
+    iterator = iter(coco.train_dataloader)
     for i in range(2):
         samples = next(iterator)
         samples[0].get_view().render()

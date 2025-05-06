@@ -1,11 +1,12 @@
 """DETR model, that use the parameters of original DETR-R50 architecture."""
+
 import time
 import argparse
 import torch
 
-from alonet.detr import Detr
+from alonet.models.detr.models.detr import Detr
+from alonet.models.detr.models.backbone import Joiner
 import aloscene
-import alonet
 
 
 class DetrR50(Detr):
@@ -23,13 +24,18 @@ class DetrR50(Detr):
         Additional parameters (see `Detr <detr>` class)
     """
 
-    def __init__(self, *args, num_classes=91, background_class=91, **kwargs):
+    def __init__(self, num_classes=91, background_class=91, **kwargs):
         # Positional encoding
         position_embedding = self.build_positional_encoding(hidden_dim=256, position_embedding="sin")
         # Backbone
-        backbone = self.build_backbone("resnet50", train_backbone=True, return_interm_layers=True, dilation=False,)
+        backbone = self.build_backbone(
+            "resnet50",
+            train_backbone=True,
+            return_interm_layers=True,
+            dilation=False,
+        )
         num_channels = backbone.num_channels
-        backbone = alonet.detr.backbone.Joiner(backbone, position_embedding)
+        backbone = Joiner(backbone, position_embedding)
         backbone.num_channels = num_channels
         # Build transformer
         transformer = self.build_transformer(
@@ -44,7 +50,6 @@ class DetrR50(Detr):
         super().__init__(
             backbone,
             transformer,
-            *args,
             num_classes=num_classes,
             num_queries=100,
             background_class=background_class,
@@ -52,11 +57,11 @@ class DetrR50(Detr):
         )
 
 
-def main(image_path):
+def main(image_path: str, weights: str):
     device = torch.device("cuda")
 
     # Load model
-    model = DetrR50(num_classes=91, weights="detr-r50", device=device).eval()
+    model = DetrR50(num_classes=91, weights=weights, device=device).eval()
 
     # Open and prepare a batch for the model
     frame = aloscene.Frame(image_path).norm_resnet()
@@ -81,6 +86,7 @@ def main(image_path):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Detr R50 inference on image")
-    parser.add_argument("image_path", type=str, help="Path to the image for inference")
+    parser.add_argument("--image_path", type=str, help="Path to the image for inference")
+    parser.add_argument("--weights", type=str, help="Path to the weights for inference")
     args = parser.parse_args()
-    main(args.image_path)
+    main(args.image_path, args.weights)

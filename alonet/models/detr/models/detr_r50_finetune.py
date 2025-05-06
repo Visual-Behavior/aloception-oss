@@ -2,7 +2,7 @@
 weights and change the `class_embed` layer in order to train custom classes.
 """
 
-from alonet.detr import DetrR50
+from alonet.models.detr.models.detr_r50 import DetrR50
 from alonet.common import load_weights
 from torch import nn
 

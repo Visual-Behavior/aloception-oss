@@ -1,50 +1,14 @@
-# Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
-"""
-Backbone modules.
-"""
-from collections import OrderedDict
-
 import torch
-import torch.nn.functional as F
-from torch import Tensor
 import torchvision.transforms.functional as tvF
 import torchvision
 from torch import nn
 from torchvision.models._utils import IntermediateLayerGetter
-from typing import Dict, List, Union
+from typing import Dict
 
-
-from alonet.transformers.position_encoding import build_position_encoding
 import aloscene
-from alonet.detr.misc import assert_and_export_onnx
-
-# Bellow some usefull distributed method
-# to move something else
-import torch.distributed as dist
-
-
-def is_dist_avail_and_initialized():
-    if not dist.is_available():
-        return False
-    if not dist.is_initialized():
-        return False
-    return True
-
-
-def get_world_size():
-    if not is_dist_avail_and_initialized():
-        return 1
-    return dist.get_world_size()
-
-
-def get_rank():
-    if not is_dist_avail_and_initialized():
-        return 0
-    return dist.get_rank()
-
-
-def is_main_process():
-    return get_rank() == 0
+from alonet.common import is_main_rank
+from alonet.models.transformers.position_encoding import build_position_encoding
+from alonet.models.detr.misc import assert_and_export_onnx
 
 
 class FrozenBatchNorm2d(torch.nn.Module):
@@ -88,8 +52,7 @@ class FrozenBatchNorm2d(torch.nn.Module):
 
 
 class BackboneBase(nn.Module):
-    """Base class to define behavior of backbone
-    """
+    """Base class to define behavior of backbone"""
 
     def __init__(
         self,
@@ -136,7 +99,7 @@ class Backbone(BackboneBase):
     def __init__(self, name: str, train_backbone: bool, return_interm_layers: bool, dilation: bool, **kwargs):
         backbone = getattr(torchvision.models, name)(
             replace_stride_with_dilation=[False, False, dilation],
-            pretrained=is_main_process(),
+            pretrained=is_main_rank(),
             norm_layer=FrozenBatchNorm2d,
         )
         num_channels = 512 if name in ("resnet18", "resnet34") else 2048

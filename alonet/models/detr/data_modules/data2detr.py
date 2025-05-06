@@ -1,25 +1,16 @@
-"""LightningDataModule base to use dataset in Detr trainer models.
-
-See Also
---------
-`LightningDataModule <https://pytorch-lightning.readthedocs.io/en/latest/extensions/datamodules.html>`_ for more
-information about to create data modules from
-`Dataset and Dataloader <https://pytorch.org/tutorials/beginner/basics/data_tutorial.html>`_
-"""
-
+from abc import abstractmethod
+import warnings
 import torch
-from argparse import Namespace, ArgumentParser, _ArgumentGroup
-from typing import Optional
+from torch.utils.data import Dataset, DataLoader
 
-from alodataset import transforms as T  # , Split
-import pytorch_lightning as pl
+from alodataset import transforms as T
 
-import alonet
+from alonet.common import BaseDataModule
 import aloscene
 from torch.utils.data.sampler import RandomSampler, SequentialSampler
 
 
-class Data2Detr(pl.LightningDataModule):
+class Data2Detr(BaseDataModule):
     """
     Parameters
     ----------
@@ -48,12 +39,28 @@ class Data2Detr(pl.LightningDataModule):
     Arguments entered by the user (kwargs) will replace those stored in args attribute
     """
 
-    def __init__(self, args: Namespace = None, **kwargs):
+    def __init__(
+        self,
+        no_augmentation: bool = False,
+        size: tuple = (None, None),
+        sample: bool = False,
+        sequential: bool = False,
+        **kwargs
+    ):
+        """
+        Data module to use for training and validation of DETR model.
+        Parameters
+        ----------
+        no_augmentation : bool, optional
+            Do not use augmentation to train the model
+        size : tuple, optional
+            If no augmentation (--no_augmentation) is used, --size can be used to resize all the frame.
+        sample : bool, optional
+        """
         # Update class attributes with args and kwargs inputs
-        super().__init__()
-        alonet.common.helpers.params_update(self, args, kwargs)
+        super().__init__(**kwargs)
 
-        self.size = list(self.size)
+        self.size = list(size)
         if len(self.size) == 1:
             self.size[0] = self.size[0] if self.size[0] is None else int(self.size[0])
             self.size = (self.size[0], self.size[0])
@@ -63,7 +70,9 @@ class Data2Detr(pl.LightningDataModule):
         else:
             raise Exception("Must be provided one or two elements in size argument.")
 
-        self.args = args
+        self.no_augmentation = no_augmentation
+        self.sample = sample
+        self.sequential = sequential
 
     @property
     def train_dataset(self):
@@ -84,62 +93,6 @@ class Data2Detr(pl.LightningDataModule):
     @val_dataset.setter
     def val_dataset(self, new_dataset):
         self._val_dataset = new_dataset
-
-    @staticmethod
-    def add_argparse_args(parent_parser: ArgumentParser, parser: _ArgumentGroup = None):
-        """Append the respect arguments to parser object
-
-        Parameters
-        ----------
-        parent_parser : ArgumentParser
-            Object with previous arguments to append
-        parser : ArgumentParser._ArgumentGroup, optional
-            Argument group to append the parameters, by default None
-
-        Returns
-        -------
-        ArgumentParser
-            Arguments updated
-        """
-        parser = (
-            parent_parser.add_argument_group("DataModule") if parser is None else parser
-        )
-        parser.add_argument(
-            "--batch_size",
-            type=int,
-            default=2,
-            help="Batch size to use (default %(default)s)",
-        )
-        parser.add_argument("--train_on_val", action="store_true")
-        parser.add_argument(
-            "--num_workers",
-            type=int,
-            default=8,
-            help="num_workers to use on the CocoBaseDataset (default %(default)s)",
-        )
-        parser.add_argument(
-            "--no_augmentation",
-            action="store_true",
-            help="Do not use augmentation to train the model",
-        )
-        parser.add_argument(
-            "--size",
-            type=int,
-            default=(None, None),
-            nargs="+",
-            help="If no augmentation (--no_augmentation) is used, --size can be used to resize all the frame.",
-        )
-        parser.add_argument(
-            "--sample",
-            action="store_true",
-            help="Download a sample for train/val process (Default: %(default)s)",
-        )
-        parser.add_argument(
-            "--sequential",
-            action="store_true",
-            help="Use sequential loading for train (Default: %(default)s)",
-        )
-        return parent_parser
 
     def train_transform(
         self,
@@ -226,20 +179,27 @@ class Data2Detr(pl.LightningDataModule):
 
         return frame.norm_resnet()
 
-    def setup(self, stage: Optional[str] = None):
-        """:attr:`train_dataset` and :attr:`val_dataset` datasets setup, follow the parameters used
-        in class declaration.
+    @abstractmethod
+    def setup_train_dataset(self) -> Dataset:
+        """Get train dataset
 
-        Parameters
-        ----------
-        stage : str, optional
-            Stage either `fit`, `validate`, `test` or `predict`, by default None
+        Returns
+        -------
+        torch.utils.data.Dataset
         """
-        raise Exception(
-            "This class must be inhert and set ``train_dataset`` and ``val_dataset`` class attributes"
-        )
+        warnings.warn("Must be implemented in child class")
 
-    def train_dataloader(self):
+    @abstractmethod
+    def setup_val_dataset(self) -> Dataset:
+        """Get val dataset
+
+        Returns
+        -------
+        torch.utils.data.Dataset
+        """
+        warnings.warn("Must be implemented in child class")
+
+    def setup_train_dataloader(self) -> DataLoader:
         """Get train dataloader
 
         Returns
@@ -247,13 +207,14 @@ class Data2Detr(pl.LightningDataModule):
         torch.utils.data.DataLoader
             Dataloader for training process
         """
+        self.train_dataset = self.setup_train_dataset()
         return self.train_dataset.train_loader(
             batch_size=self.batch_size,
             num_workers=self.num_workers,
             sampler=SequentialSampler if self.sequential else RandomSampler,
         )
 
-    def val_dataloader(self, sampler: torch.utils.data = None):
+    def setup_val_dataloader(self, sampler: torch.utils.data = None) -> DataLoader:
         """Get val dataloader
 
         Parameters
@@ -266,6 +227,5 @@ class Data2Detr(pl.LightningDataModule):
         torch.utils.data.DataLoader
             Dataloader for validation process
         """
-        return self.val_dataset.train_loader(
-            batch_size=self.batch_size, num_workers=self.num_workers, sampler=sampler
-        )
+        self.val_dataset = self.setup_val_dataset()
+        return self.val_dataset.train_loader(batch_size=self.batch_size, num_workers=self.num_workers, sampler=sampler)

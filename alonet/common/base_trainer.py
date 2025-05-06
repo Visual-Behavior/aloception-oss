@@ -234,8 +234,10 @@ class BaseTrainer(ABC):
         """
         Set the number of epochs to train
 
-        Args:
-            new_num_epochs (int): Number of epochs to train
+        Parameters
+        ----------
+        new_num_epochs : int
+            Number of epochs to train
         """
         self._num_epochs = new_num_epochs
 
@@ -266,8 +268,10 @@ class BaseTrainer(ABC):
         """
         Set the current epoch
 
-        Args:
-            new_current_epoch (int): Current epoch
+        Parameters
+        ----------
+        new_current_epoch : int
+            Current epoch
         """
         self._current_epoch = new_current_epoch
 
@@ -286,8 +290,10 @@ class BaseTrainer(ABC):
         """
         Set the current step
 
-        Args:
-            new_step (int): Current step
+        Parameters
+        ----------
+        new_step : int
+            Current step
         """
         self._current_step = new_step
 
@@ -306,8 +312,10 @@ class BaseTrainer(ABC):
         """
         Set the checkpoint path
 
-        Args:
-            new_checkpoint (str): Checkpoint path
+        Parameters
+        ----------
+        new_checkpoint : str
+            Checkpoint path
         """
         self._checkpoint = new_checkpoint
 
@@ -331,10 +339,14 @@ class BaseTrainer(ABC):
         """
         Create the project name and experiment name
 
-        Args:
-            project_name (str): project name
-            experiment_name (str): experiment name
-            no_suffix (bool): if True, do not add a suffix to the experiment name
+        Parameters
+        ----------
+        project_name : str
+            Project name
+        experiment_name : str
+            Experiment name
+        no_suffix : bool
+            If True, do not add a suffix to the experiment name
 
         Returns:
             Tuple[str, str]: project name and experiment name
@@ -376,8 +388,10 @@ class BaseTrainer(ABC):
         """
         Build the logger
 
-        Args:
-            logger (Optional[str]): Logger to use
+        Parameters
+        ----------
+        logger : Optional[str]
+            Logger to use
 
         Returns:
             Optional[BaseLogger]: Logger
@@ -407,8 +421,10 @@ class BaseTrainer(ABC):
         """
         Get the latest checkpoint name from the current step
 
-        Args:
-            step (int): step of the checkpoint
+        Parameters
+        ----------
+        step : int
+            Step of the checkpoint
 
         Returns:
             str: latest checkpoint path
@@ -422,10 +438,14 @@ class BaseTrainer(ABC):
         """
         Get the topk checkpoint name from the current step
 
-        Args:
-            metric_name (str): name of the metric
-            metric (float): value of the metric
-            step (int): step of the checkpoint
+        Parameters
+        ----------
+        metric_name : str
+            Name of the metric
+        metric : float
+            Value of the metric
+        step : int
+            Step of the checkpoint
 
         Returns:
             str: checkpoint path
@@ -437,9 +457,10 @@ class BaseTrainer(ABC):
         """
         Get the best checkpoint from the directory
 
-        Args:
-            dir_path (str): path to the directory
-            condition (str): condition to select the best checkpoint. `max` or `min`. Defaults to `max`
+        Parameters
+        ----------
+        condition : str
+            Condition to select the best checkpoint. `max` or `min`. Defaults to `max`
 
         Returns:
             str: path to the best checkpoint
@@ -476,9 +497,12 @@ class BaseTrainer(ABC):
         """
         Check if the checkpoint is in topk best checkpoints.
 
-        Args:
-            metric (float): value of the metric
-            condition (str): condition to select the best checkpoitn. `max` or `min`. Defaults to `min`
+        Parameters
+        ----------
+        metric : float
+            Value of the metric
+        condition : str
+            Condition to select the best checkpoint. `max` or `min`. Defaults to `min`
 
         Returns:
             bool: True if the checkpoint is bestk
@@ -500,11 +524,16 @@ class BaseTrainer(ABC):
         """
         Update checkpoint information state and return the dir to save checkpoint and the dir of replaced checkpoint.
 
-        Args:
-            epoch (int): epoch of the checkpoint
-            metric_name (str): name of the metric
-            metric (float): value of the metric
-            condition (str): condition to select the best checkpoint. `max` or `min`. Defaults to `min`
+        Parameters
+        ----------
+        epoch : int
+            Epoch of the checkpoint
+        metric_name : str
+            Name of the metric
+        metric : float
+            Value of the metric
+        condition : str
+            Condition to select the best checkpoint. `max` or `min`. Defaults to `min`
         Returns:
             Tuple[bool, Optional[str], Optional[str]]:
                 - is current checkpoint in topK best checkpoints
@@ -558,8 +587,10 @@ class BaseTrainer(ABC):
         """
         Load state of Trainer
 
-        Args:
-            cp_path (str): path to the checkpoint
+        Parameters
+        ----------
+        cp_path : str
+            Path to the checkpoint
         """
         assert os.path.exists(cp_path), f"{cp_path} does not exist"
         with open(os.path.join(cp_path, "state.json"), "r") as f:
@@ -578,16 +609,19 @@ class BaseTrainer(ABC):
         """
         Save the checkpoint and the checkpoint_info.json file in the checkpoint directory
 
-        Args:
-            cp_path (str): path to the checkpoint
-            state_dicts (dict[str, OrderedDict]): state_dicts to save.
+        Parameters
+        ----------
+        cp_path : str
+            Path to the checkpoint
+        state_dicts : dict[str, OrderedDict]
+            State_dicts to save.
                 The keys are the names of the modules, and the values are the state_dicts.
                 The state_dicts will be saved as `{key}.pth` in the checkpoint directory.
-            use_safetensors (dict[str, bool]): Use safetensors to save the state_dicts.
-                The keys are the names of the modules, and the values are the boolean values.
-                If True, the state_dicts will be saved as `{key}.safetensors` in the checkpoint directory.
-                If False, use torch.save to save the state_dicts (pickle format).
-                If `use_safetensors` is None, use torch.save to save the state_dicts (pickle format).
+        use_safetensors (dict[str, bool]): Use safetensors to save the state_dicts.
+            The keys are the names of the modules, and the values are the boolean values.
+            If True, the state_dicts will be saved as `{key}.safetensors` in the checkpoint directory.
+            If False, use torch.save to save the state_dicts (pickle format).
+            If `use_safetensors` is None, use torch.save to save the state_dicts (pickle format).
         """
         if not os.path.exists(cp_path):
             os.makedirs(cp_path)
@@ -621,14 +655,18 @@ class BaseTrainer(ABC):
         """
         Resume the trainer state and model/optimizer/lr_scheduler from the checkpoint
 
-        Args:
-            module (dict[str, Any]): module to resume.
+        Parameters
+        ----------
+        module : dict[str, Any]
+            Module to resume.
                 The keys are the names of the module, and the values are the objects (model, optimizer,
                 lr_scheduler, etc.) to resume.
                 The module will be loaded from `{key}.pth` in the checkpoint directory.
-            strict_loading (bool): if True, the module will be loaded with strict=True.
-                If False, the module will be loaded with strict=False.
-            device (torch.device): device to load the module.
+        strict_loading : bool
+            If True, the module will be loaded with strict=True.
+            If False, the module will be loaded with strict=False.
+        device : torch.device
+            Device to load the module.
         """
         assert self._checkpoint is not None, "Checkpoint path is not set"
         assert self._resume, "Resume is not set"
@@ -674,9 +712,12 @@ class BaseTrainer(ABC):
         """
         Check if the current step reaches validation step
 
-        Args:
-            dataloader_length (int): length of the dataloader
-            accumulate_grad_batches (int): number of accumulate grad batches
+        Parameters
+        ----------
+        dataloader_length : int
+            Length of the dataloader
+        accumulate_grad_batches : int
+            Number of accumulate grad batches
 
         Returns:
             bool: True if the validation should be launched, False otherwise
@@ -697,13 +738,14 @@ class BaseTrainer(ABC):
         """
         Check if the current step reaches the end of the epoch
 
-        Args:
-            dataloader_length (int): length of the dataloader
-
+        Parameters
+        ----------
+        dataloader_length : int
+            Length of the dataloader
         Returns:
             bool: True if the current step reaches the end of the epoch, False otherwise
         """
-        return (self._current_step + 1) * self._accumulate_grad_batches % dataloader_length == 0
+        return (self._current_step + 1) * self._accumulate_grad_batches >= (dataloader_length * self._current_epoch)
 
     @abstractmethod
     def build_criterion(self) -> nn.Module:

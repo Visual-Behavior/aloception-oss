@@ -4,7 +4,6 @@ from .base_datamodule import BaseDataModule
 from .base_config import BaseConfig, BaseTrainerConfig, BaseDataModuleConfig
 from .helpers import (
     vb_folder,
-    add_common_training_args,
     get_expe_infos,
     get_expe_infos_from_checkpoint_path,
     params_update,

@@ -2,10 +2,22 @@ import argparse
 from argparse import Namespace, ArgumentParser, BooleanOptionalAction
 import yaml
 from dataclasses import dataclass, fields, field, Field
-from typing import Optional, Union, get_origin, get_args, Literal
+from typing import Optional, get_origin, get_args, Literal
 
 
 def add_argument(parser: argparse.ArgumentParser, field_args: Field, prefix: str = None) -> None:
+    """
+    Add an argument to the argument parser
+
+    Parameters
+    ----------
+    parser : argparse.ArgumentParser
+        Argument parser
+    field_args : Field
+        Field to add to the argument parser
+    prefix : str
+        Prefix for the argument
+    """
     help_msg = field_args.metadata.get("help", "")
     help_msg = help_msg + f". Default: {field_args.default}"
     arg_name = field_args.name if prefix is None else f"{prefix}.{field_args.name}"
@@ -59,7 +71,22 @@ class BaseConfig:
     """
 
     @classmethod
-    def add_argparse_args(cls, parent_parser: Optional[ArgumentParser] = None, prefix: str = None):
+    def add_argparse_args(cls, parent_parser: Optional[ArgumentParser] = None, prefix: str = None) -> ArgumentParser:
+        """
+        Add arguments to the argument parser
+
+        Parameters
+        ----------
+        parent_parser : Optional[ArgumentParser]
+            Parent argument parser
+        prefix : str
+            Prefix for the arguments
+
+        Returns
+        -------
+        ArgumentParser
+            Argument parser
+        """
         if parent_parser is None:
             parent_parser = ArgumentParser(description="Configuration")
         # Dynamically add arguments for all fields in the dataclass
@@ -77,9 +104,15 @@ class BaseConfig:
 
     @classmethod
     def from_args(cls, args: Namespace) -> "BaseConfig":
-        """Create a BaseConfig instance from command line arguments and/or config file."""
-        arg_dict = vars(args)
+        """
+        Create a BaseConfig instance from command line arguments and/or config file.
 
+        Parameters
+        ----------
+        args : Namespace
+            Command line arguments
+        """
+        arg_dict = vars(args)
         parser = ArgumentParser()
         cls.add_argparse_args(parser)
 
@@ -129,6 +162,13 @@ class BaseConfig:
         return cls(**parameters)
 
     def to_dict(self) -> dict:
+        """
+        Convert the BaseConfig instance to a dictionary.
+
+        Returns
+        -------
+        dict
+        """
         data = {}
         for field_args in fields(self):
             if hasattr(field_args.type, "to_dict"):
@@ -138,6 +178,14 @@ class BaseConfig:
         return data
 
     def save(self, filepath: str) -> None:
+        """
+        Save the BaseConfig instance to a file.
+
+        Parameters
+        ----------
+        filepath : str
+            Filepath to save the BaseConfig instance
+        """
         data = self.to_dict()
         with open(filepath, "w") as f:
             yaml.safe_dump(data, f, default_flow_style=False)

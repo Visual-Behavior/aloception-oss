@@ -1,4 +1,4 @@
 nvidia-pyindex==1.0.9
-onnx_graphsurgeon==0.3.14
-nvidia-tensorrt==8.2.0.6
+onnx_graphsurgeon
+nvidia-tensorrt
 pycuda==2020.1

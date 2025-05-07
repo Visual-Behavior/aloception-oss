@@ -126,6 +126,9 @@ Each component's parameters can be configured by **Config**, which can be specif
 
 For a concrete example, refer to [DETR training script](./alonet/models/detr/scripts/train_detr50_on_coco.py).
 
+For launching distributed training (multi-node or multi-worker), refer to [torchrun documentation](https://docs.pytorch.org/docs/stable/elastic/run.html).
+
+
 ### Model
 The model is implemented by subclassing `torch.nn.Module` as usual.
 ```python

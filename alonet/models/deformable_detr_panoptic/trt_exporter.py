@@ -1,5 +1,4 @@
-"""Helper class for exporting PyTorch model to TensorRT engine
-"""
+"""Helper class for exporting PyTorch model to TensorRT engine"""
 
 import argparse
 import os
@@ -7,8 +6,8 @@ import torch
 import onnx
 import onnx_graphsurgeon as gs
 
-from alonet.torch2trt.onnx_hack import rename_nodes_
-from alonet.torch2trt import BaseTRTExporter
+from alonet.exporter.onnx_hack import rename_nodes_
+from alonet.exporter import BaseTRTExporter
 from aloscene import Frame
 
 

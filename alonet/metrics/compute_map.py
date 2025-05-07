@@ -1,4 +1,3 @@
-# import matplotlib.pyplot as plt
 import numpy as np
 import torch
 
@@ -310,11 +309,7 @@ class ApMetrics(object):
                                 # All this crowd code so that we can make sure that our eval code gives the
                                 # same result as COCOEval. There aren't even that many crowd annotations to
                                 # begin with, but accuracy is of the utmost importance.
-                                if (
-                                    not matched_crowd
-                                    and p_bbox_area[i] >= lower_size
-                                    and p_bbox_area[i] < upper_size
-                                ):
+                                if not matched_crowd and p_bbox_area[i] >= lower_size and p_bbox_area[i] < upper_size:
                                     ap_obj.push(score_func(i), False)
 
         for _class in set(list(classes) + list(gt_classes)):

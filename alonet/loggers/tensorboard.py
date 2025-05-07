@@ -1,5 +1,5 @@
 import os
-from typing import Optional, Any, List
+from typing import Any, List
 from torch.utils.tensorboard import SummaryWriter
 import torch
 import numpy as np

@@ -35,10 +35,10 @@ ARG TORCHVISION_VERSION=0.22.0
 ARG TORCHAUDIO_VERSION=2.7.0
 COPY --from=conda /opt/conda /opt/conda
 # Install pytorch
-RUN /opt/conda/bin/pip install --no-cache-dir torch==${PYTORCH_VERSION} torchvision==${TORCHVISION_VERSION} torchaudio==${TORCHAUDIO_VERSION} --index-url https://download.pytorch.org/whl/cu126 && /opt/conda/bin/conda clean -ya
+RUN /opt/conda/bin/pip install --no-cache-dir torch==${PYTORCH_VERSION} torchvision==${TORCHVISION_VERSION} torchaudio==${TORCHAUDIO_VERSION} --index-url https://download.pytorch.org/whl/cu126
 # Install requirement
 COPY requirements/requirements.txt /home/aloception/install/requirements.txt
-RUN /opt/conda/bin/pip install --no-cache-dir -r /home/aloception/install/requirements.txt
+RUN /opt/conda/bin/pip install --no-cache-dir -r /home/aloception/install/requirements.txt && /opt/conda/bin/conda clean -ya
 
 # Stage 4: Official image
 FROM ${BASE_IMAGE} as official

@@ -1,5 +1,4 @@
-"""Helper class for exporting PyTorch model to TensorRT engine
-"""
+"""Helper class for exporting PyTorch model to TensorRT engine"""
 
 import argparse
 import os
@@ -7,13 +6,13 @@ import onnx
 import torch
 import numpy as np
 import onnx_graphsurgeon as gs
-from alonet.torch2trt import utils
+from alonet.exporter import utils
 
 
 from aloscene import Frame
-from alonet.torch2trt import BaseTRTExporter
-from alonet.torch2trt.utils import get_nodes_by_op
-from alonet.torch2trt.onnx_hack import _add_grid_sampler_to_opset13
+from alonet.exporter import BaseTRTExporter
+from alonet.exporter.utils import get_nodes_by_op
+from alonet.exporter.onnx_hack import _add_grid_sampler_to_opset13
 from alonet.deformable_detr import DeformableDetrR50, DeformableDetrR50Refinement
 
 
@@ -31,9 +30,7 @@ class DeformableDetrTRTExporter(BaseTRTExporter):
         self.weights = weights
         self.do_constant_folding = False
         self.include_preprocessing = include_preprocessing
-        self.adapted_onnx_path = (
-            self.onnx_path.replace(".onnx", "_TRTadapted") + ".onnx"
-        )
+        self.adapted_onnx_path = self.onnx_path.replace(".onnx", "_TRTadapted") + ".onnx"
 
     def get_onnx_path(self):
         return self.onnx_path.replace(".onnx", "_TRTadapted") + ".onnx"
@@ -74,33 +71,17 @@ class DeformableDetrTRTExporter(BaseTRTExporter):
         def handle_op_Clip(node: gs.Node):
             max_constant = np.array(np.finfo(np.float32).max, dtype=np.float32)
             if "value" in node.inputs[1].i().inputs[0].attrs:
-                min_constant = (
-                    node.inputs[1]
-                    .i()
-                    .inputs[0]
-                    .attrs["value"]
-                    .values.astype(np.float32)
-                )
+                min_constant = node.inputs[1].i().inputs[0].attrs["value"].values.astype(np.float32)
                 if len(node.inputs[2].inputs) > 0:
-                    max_constant = (
-                        node.inputs[2]
-                        .i()
-                        .inputs[0]
-                        .attrs["value"]
-                        .values.astype(np.float32)
-                    )
+                    max_constant = node.inputs[2].i().inputs[0].attrs["value"].values.astype(np.float32)
             elif "to" in node.inputs[1].i().inputs[0].attrs:
                 min_constant = np.array(np.finfo(np.float32).min, dtype=np.float32)
             else:
                 raise Exception("Error")
             node.inputs.pop(1)
-            node.inputs.insert(
-                1, gs.Constant(name=node.name + "_min", values=min_constant)
-            )
+            node.inputs.insert(1, gs.Constant(name=node.name + "_min", values=min_constant))
             node.inputs.pop(2)
-            node.inputs.insert(
-                2, gs.Constant(name=node.name + "_max", values=max_constant)
-            )
+            node.inputs.insert(2, gs.Constant(name=node.name + "_max", values=max_constant))
 
         for n in clip_nodes:
             handle_op_Clip(n)
@@ -114,9 +95,7 @@ class DeformableDetrTRTExporter(BaseTRTExporter):
             if axes_input.op == "Unsqueeze":
                 axes_constant = node.inputs[3].i().inputs[0].attrs["value"].values
                 node.inputs.pop(3)
-                node.inputs.insert(
-                    3, gs.Constant(name=node.name + "_axes", values=axes_constant)
-                )
+                node.inputs.insert(3, gs.Constant(name=node.name + "_axes", values=axes_constant))
 
         for n in slice_nodes:
             handle_op_Slice(n)
@@ -152,9 +131,7 @@ class DeformableDetrTRTExporter(BaseTRTExporter):
         assert len(self.input_shapes) == 1, "DETR takes only 1 input"
         shape = self.input_shapes[0]
         if self.include_preprocessing:
-            tensor_input = torch.rand(
-                [1 * self.batch_size] + shape, dtype=torch.float32
-            ).to(self.device)
+            tensor_input = torch.rand([1 * self.batch_size] + shape, dtype=torch.float32).to(self.device)
             tensor_input = tensor_input * 255
         else:
             x = torch.rand(shape, dtype=torch.float32)
@@ -172,9 +149,7 @@ if __name__ == "__main__":
     device = torch.device("cuda")
 
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--refinement", action="store_true", help="If set, use box refinement"
-    )
+    parser.add_argument("--refinement", action="store_true", help="If set, use box refinement")
     parser.add_argument(
         "--include_preprocessing",
         action="store_true",
@@ -201,14 +176,10 @@ if __name__ == "__main__":
         ).eval()
     else:
         model_name = "deformable-detr-r50"
-        model = DeformableDetrR50(
-            weights=model_name, tracing=True, aux_loss=False
-        ).eval()
+        model = DeformableDetrR50(weights=model_name, tracing=True, aux_loss=False).eval()
 
     if args.onnx_path is None:
-        args.onnx_path = os.path.join(
-            vb_folder(), "weights", model_name, model_name + ".onnx"
-        )
+        args.onnx_path = os.path.join(vb_folder(), "weights", model_name, model_name + ".onnx")
 
     if args.include_preprocessing:
         input_shape = list(args.HW) + [3]
@@ -216,11 +187,6 @@ if __name__ == "__main__":
         input_shape = [3] + list(args.HW)
 
     exporter = DeformableDetrTRTExporter(
-        model=model,
-        weights=model_name,
-        input_shapes=(input_shape,),
-        input_names=["img"],
-        device=device,
-        **vars(args)
+        model=model, weights=model_name, input_shapes=(input_shape,), input_names=["img"], device=device, **vars(args)
     )
     exporter.export_engine()

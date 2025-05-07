@@ -9,7 +9,7 @@ import ctypes
 import re
 import time
 
-from alonet.torch2trt.TRTExecutor import TRTExecutor
+from alonet.exporter.TRTExecutor import TRTExecutor
 from alonet.deformable_detr.ops.functions.ms_deform_attn_func import ms_deform_attn_core_pytorch, MSDeformAttnFunction
 
 TRT_LOGGER = trt.Logger(trt.Logger.WARNING)

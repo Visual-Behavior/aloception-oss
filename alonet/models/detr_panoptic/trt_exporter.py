@@ -1,5 +1,4 @@
-"""Helper class for exporting PyTorch model to TensorRT engine
-"""
+"""Helper class for exporting PyTorch model to TensorRT engine"""
 
 import argparse
 import os
@@ -7,8 +6,8 @@ import torch
 import onnx
 import onnx_graphsurgeon as gs
 
-from alonet.torch2trt.onnx_hack import rename_nodes_
-from alonet.torch2trt import BaseTRTExporter
+from alonet.exporter.onnx_hack import rename_nodes_
+from alonet.exporter import BaseTRTExporter
 from aloscene import Frame
 
 
@@ -29,9 +28,7 @@ class PanopticTRTExporter(BaseTRTExporter):
                     "bb_lvl3_src_outputs",
                     "bb_lvl3_mask_outputs",
                 )
-                kwargs["dynamic_axes"] = kwargs.get("dynamic_axes", None) or {
-                    "dec_outputs": {2: "num_queries"}
-                }
+                kwargs["dynamic_axes"] = kwargs.get("dynamic_axes", None) or {"dec_outputs": {2: "num_queries"}}
 
         super().__init__(*args, **kwargs)
         self.custom_opset = None
@@ -48,9 +45,7 @@ class PanopticTRTExporter(BaseTRTExporter):
             model_simp, check = simplify(
                 model,
                 dynamic_input_shape=True,  # Choose optimal values for simplify
-                input_shapes={
-                    key: val[1] for key, val in self.engine_builder.opt_profiles.items()
-                },
+                input_shapes={key: val[1] for key, val in self.engine_builder.opt_profiles.items()},
             )
         else:
             model_simp, check = simplify(model)
@@ -81,9 +76,7 @@ class PanopticTRTExporter(BaseTRTExporter):
             with torch.no_grad():
                 tensor_input = self.model.detr_forward(x)  # Get Detr outputs expected
 
-            tensor_input = {
-                iname: tensor_input[iname].contiguous() for iname in self.input_names
-            }
+            tensor_input = {iname: tensor_input[iname].contiguous() for iname in self.input_names}
         return tensor_input, {"is_export_onnx": None}
 
 
@@ -150,11 +143,7 @@ if __name__ == "__main__":
 
     # 2. Export PanopticHead engine
     args.onnx_path = pan_onnx_path
-    profile = (
-        {"dec_outputs": [(6, 1, 1, 256), (6, 1, 10, 256), (6, 1, 100, 256)]}
-        if args.split_engines
-        else None
-    )
+    profile = {"dec_outputs": [(6, 1, 1, 256), (6, 1, 10, 256), (6, 1, 100, 256)]} if args.split_engines else None
     exporter = PanopticTRTExporter(
         model=model,
         input_shapes=(input_shape,),

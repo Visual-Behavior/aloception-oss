@@ -5,8 +5,7 @@ import torch.distributed as dist
 import datetime
 import os
 from collections import OrderedDict
-from typing import Optional, Union, Type, TypeVar, Any, Iterator, Tuple
-import yaml
+from typing import Optional, Any, Iterator, Tuple
 
 parser = ArgumentParser()
 

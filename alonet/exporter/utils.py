@@ -1,43 +1,18 @@
-from alonet import ALONET_ROOT
-from alonet.torch2trt.calibrator import (
-    LegacyCalibrator, 
-    MinMaxCalibrator,
-    EntropyCalibrator,
-    EntropyCalibrator2,
-)
-
 import os
 import ctypes
+import onnx_graphsurgeon as gs
+import warnings
+
 
 try:
     import pycuda.driver as cuda
-    import onnx_graphsurgeon as gs
     import tensorrt as trt
 
     prod_package_error = None
 except Exception as prod_package_error:
-    pass
+    warnings.warn("pycuda and tensorrt are not available. Utils for TRT and memory allocation cannot be used.")
 
-
-def create_calibrator(name: str, *args, **kwargs):
-    """Creates calibrator from name
-
-    Parameters
-    ----------
-        name : str
-            Calibrator name
-    """
-    CALIBS = ["minmax", "entropy", "entropy2", "legacy"]
-    if name == "entropy2":
-        return EntropyCalibrator2(*args, **kwargs)
-    elif name == "entropy":
-        return EntropyCalibrator(*args, **kwargs)
-    elif name == "minmax":
-        return MinMaxCalibrator(*args, **kwargs)
-    elif name == "legacy":
-        return LegacyCalibrator(*args, **kwargs)
-    else:
-        raise AttributeError(f"Unknown calibrator name, should be one of {' '.join(CALIBS)}")
+from alonet import ALONET_ROOT
 
 
 def load_trt_custom_plugins(lib_path: str):
@@ -70,8 +45,6 @@ def print_graph_io(graph):
     ----------
     graph: gs.Graph
     """
-    if prod_package_error is not None:
-        raise prod_package_error
     # Print inputs:
     print("\n=====ONNX graph inputs =====")
     for i in graph.inputs:
@@ -276,7 +249,7 @@ def allocate_buffers(context, stream=None, sync_mode=True, shared_mem={}):
                     host_mem = cuda.pagelocked_empty(size, dtype)
                     device_mem = cuda.mem_alloc(host_mem.nbytes)
                 out_pointer += 1
-                
+
             else:
                 host_mem = cuda.pagelocked_empty(size, dtype)
                 device_mem = cuda.mem_alloc(host_mem.nbytes)
@@ -374,7 +347,11 @@ def execute_async(context, bindings, inputs, outputs, stream, shared_mem, inputs
         [cuda.memcpy_htod_async(inp.device, inp.host, stream) for inp in inputs]
     else:
         # Reload all inputs from "inputs" except the ones with shared memory.
-        [cuda.memcpy_htod_async(inp.device, inp.host, stream) for i, inp in enumerate(inputs) if i not in shared_mem.keys()]
+        [
+            cuda.memcpy_htod_async(inp.device, inp.host, stream)
+            for i, inp in enumerate(inputs)
+            if i not in shared_mem.keys()
+        ]
 
     # Run inference.
     check = context.execute_async(bindings=bindings, stream_handle=stream.handle)
@@ -385,7 +362,11 @@ def execute_async(context, bindings, inputs, outputs, stream, shared_mem, inputs
         [cuda.memcpy_dtoh(out.host, out.device) for out in outputs]
     else:
         # only outputs with no memory shared
-        [cuda.memcpy_dtoh_async(out.host, out.device, stream) for i, out in enumerate(outputs) if i not in shared_mem.values()]
+        [
+            cuda.memcpy_dtoh_async(out.host, out.device, stream)
+            for i, out in enumerate(outputs)
+            if i not in shared_mem.values()
+        ]
     # Synchronize the stream
     stream.synchronize()
     # Return only the host outputs.

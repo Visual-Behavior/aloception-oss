@@ -1,52 +1,57 @@
-from typing import Dict, List, Tuple, Union
-import time
+import sys
+import subprocess
 import os
+from typing import Dict, List, Tuple, Union
+from abc import ABC, abstractmethod
 import io
 import numpy as np
 import torch
 import warnings
 
-try:
-    import onnx_graphsurgeon as gs
-    import pycuda.driver as cuda
-    import tensorrt as trt
-    import onnx
-
-    prod_package_error = None
-except Exception as e:
-    prod_package_error = e
-    pass
+import onnx_graphsurgeon as gs
+import onnx
 
 
-from alonet.torch2trt.onnx_hack import scope_name_workaround, get_scope_names, rename_tensors_
-from alonet.torch2trt import TRTEngineBuilder, TRTExecutor, utils
-from alonet.torch2trt.utils import get_nodes_by_op, rename_nodes_
+from alonet.exporter.onnx_hack import scope_name_workaround, get_scope_names, rename_tensors_
+
+from alonet.exporter.utils import get_nodes_by_op, rename_nodes_, print_graph_io
 from contextlib import redirect_stdout, ExitStack
 
 
-class BaseTRTExporter:
-    """
-    Base class for exporting PyTorch model to TensorRT engine.
-    Child class must implement the following methods/attributes:
-    - adapt_graph()
-    - prepare_sample_inputs()
-    - custom_opset
+class BaseExporter(ABC):
+    def __init__(self, save_path: str):
+        """
+        BaseExporter
 
-    Workflow:
-    ---------
-    PyTorch model ----> ONNX -----(necessary graph modification)-----> TensorRT engine
-    """
+        Parameters
+        ----------
 
-    PROFILING_TIME = 20
+        save_path: str
+            Path to save output model
+        """
+        self._save_path = save_path
 
+    @property
+    def save_path(self) -> str:
+        return self._save_path
+
+    @save_path.setter
+    def save_path(self, new_path: str) -> None:
+        self._save_path = new_path
+
+    @abstractmethod
+    def export(self):
+        raise NotImplementedError("This method must be implemented in child class.")
+
+
+class BaseONNXExporter(BaseExporter):
     def __init__(
         self,
         model: torch.nn.Module,
-        onnx_path: str,
+        save_path: str,
         input_shapes: tuple = ([3, 1280, 1920]),
         input_names: list = None,
         batch_size: int = 1,
-        precision: str = "fp32",
         do_constant_folding: bool = True,
         device: torch.device = torch.device("cpu"),
         verbose: bool = False,
@@ -54,8 +59,6 @@ class BaseTRTExporter:
         operator_export_type=None,
         dynamic_axes: Union[Dict[str, Dict[int, str]], Dict[str, List[int]]] = None,
         opt_profiles: Dict[str, Tuple[List[int]]] = None,
-        profiling_verbosity: int = 0,
-        calibrator=None,
         opset_version: int = 13,
         ignore_adapt_graph: bool = False,
     ):
@@ -64,36 +67,27 @@ class BaseTRTExporter:
         ----------
         model : torch.nn.Module
             a model loaded with trained weights
-        onnx_path : str
+        save_path : str
             Onnx file path which will be exported.
             Example: /abc/xyz/my_model.onnx
         input_shapes : tuple of tuple/list, default ([3, 1280, 1920], )
             input shape must be specified when export model
         input_names : list of str
-        batch_size : int, default 1
-        precision : str
-            TRT engine precision, either fp32, fp16, mix
-            mix precision between fp32 and fp16 allow TensorRT more liberty
-            to find the best combination optimization in term of execution time.
-        do_constant_folding : bool, default True
+            Name of inputs to onnx
+        batch_size : int
+            Batch size of inputs. Default: 1
+        do_constant_folding : bool
             Optimized ONNX graph if True. Sometimes this optimization will make
-            the ONNX graph modification more complicated.
-        verbose : bool, default False
-            Print out everything. Good for debugging.
-        dynamic_axes : Union[Dict[str, Dict[int, str]], Dict[str, List[int]]], by default None
-            Axes of tensors that will be dynamics (not shape specified), by default None. See
-            `https://pytorch.org/docs/stable/onnx.html#functions <torch.onnx.export>`_.
-        opt_profiles : Dict[str, Tuple[List[int]]], by default None
-            Optimization profiles (one by each dynamic axis).
+            the ONNX graph modification more complicated. Default True
+        verbose : bool
+            Print out everything. Good for debugging. Default False.
+        dynamic_axes : Union[Dict[str, Dict[int, str]], Dict[str, List[int]]].
+            Axes of tensors that will be dynamics (not shape specified). Default None.
+            See `https://pytorch.org/docs/stable/onnx.html#functions <torch.onnx.export>`_.
+        opt_profiles : Dict[str, Tuple[List[int]]]
+            Optimization profiles (one by each dynamic axis). Default None
         operator_export_type: torch.onnx.OperatorExportTypes
-        calibrator : torch2trt.calibrator.BaseCalibrator
-            Quantization calibrator.
-        profiling_verbosity : int
-            Profiling verbosity in NVTX annotations and the engine inspector (Default 0)
-                0 : LAYER_NAMES_ONLY (Print only the layer names. This is the default setting).
-                1 : NONE (Do not print any layer information).
-                2 : DETAILED : (Print detailed layer information including layer names and layer parameters).
-            Set to 2 for more layers details (preicision, type, kernel ...) when calling the EngineInspector
+            Type of operator export of torch.onnx. Default None.
         opset_version : int
                 ONNX version (Default 13).
 
@@ -104,15 +98,12 @@ class BaseTRTExporter:
             * If :attr:`dynamic_axes` is desired, :attr:`opt_profiles` must be provided with sames keys as
               :attr:`dynamic_axes`.
         """
-        if prod_package_error is not None:
-            raise prod_package_error
+        super().__init__(save_path)
         self._opset_version = opset_version
         self._model = model
         self._device = device
         self._verbose = verbose
         self._custom_opset = None  # to be redefine in child class if needed
-        self._onnx_path = onnx_path
-        self._precision = precision
         self._batch_size = batch_size
         self._input_names = input_names
         self._input_shapes = input_shapes
@@ -126,49 +117,6 @@ class BaseTRTExporter:
             assert isinstance(dynamic_axes, dict)
             assert opt_profiles.keys() == dynamic_axes.keys(), "dynamic_axes and opt_profiles must have same keys"
         self._dynamic_axes = dynamic_axes
-
-        # Initiate Trt Engine builder
-        onnx_dir = os.path.split(onnx_path)[0]
-        onnx_file_name = os.path.split(onnx_path)[1]
-        model_name = onnx_file_name.split(".")[0]
-
-        self._engine_path = os.path.join(onnx_dir, model_name + f"_{precision.lower()}.engine")
-
-        if self._verbose:
-            trt_logger = trt.Logger(trt.Logger.VERBOSE)
-        else:
-            trt_logger = trt.Logger(trt.Logger.WARNING)
-
-        self._engine_builder = TRTEngineBuilder(
-            self._onnx_path, logger=trt_logger, opt_profiles=opt_profiles, calibrator=calibrator
-        )
-
-        if profiling_verbosity == 0:
-            self._engine_builder.profiling_verbosity = "LAYER_NAMES_ONLY"
-        elif profiling_verbosity == 1:
-            self._engine_builder.profiling_verbosity = "NONE"
-        elif profiling_verbosity == 2:
-            self._engine_builder.profiling_verbosity = "DETAILED"
-        else:
-            raise AttributeError("unknown profiling_verbosity")
-        if precision.lower() == "fp32":
-            pass
-        elif precision.lower() == "int8":
-            self._engine_builder.INT8_allowed = True
-            self._engine_builder.strict_type = True
-        elif precision.lower() == "fp16":
-            self._engine_builder.FP16_allowed = True
-            self._engine_builder.strict_type = True
-        elif precision.lower() == "mix":
-            self._engine_builder.FP16_allowed = True
-            self._engine_builder.strict_type = False
-        else:
-            raise Exception(f"precision {precision} not supported")
-
-    @property
-    def onnx_path(self) -> str:
-        # Flexibility for some engines
-        return self._onnx_path
 
     @property
     def model(self) -> torch.nn.Module:
@@ -302,7 +250,7 @@ class BaseTRTExporter:
             print("[INFO] BaseExporter: Cannot handle clip. Clip handling will be ignored")
             pass
 
-        model = onnx.load(self._onnx_path)
+        model = onnx.load(self.save_path)
         check = False
         if self._dynamic_axes is None:
             from onnxsim import simplify
@@ -339,7 +287,7 @@ class BaseTRTExporter:
         pass
         raise Exception("Child class should implement this method")
 
-    def _torch2onnx(self) -> Tuple[Tuple[np.ndarray], Dict[str, np.ndarray]]:
+    def export(self) -> Tuple[Tuple[np.ndarray], Dict[str, np.ndarray]]:
         """Export PyTorch model to ONNX file.
         Return sample inputs/outputs for sanity check
 
@@ -352,9 +300,6 @@ class BaseTRTExporter:
         sample_outputs: dict[str: np.ndarray]
 
         """
-        if prod_package_error is not None:
-            raise prod_package_error
-
         # Prepare dummy input for tracing
         inputs, kwargs = self.prepare_sample_inputs()
 
@@ -391,7 +336,7 @@ class BaseTRTExporter:
             torch.onnx.export(
                 self._model,  # model being run
                 inputs,  # model input (or a tuple for multiple inputs)
-                self._onnx_path,  # where to save the model
+                self.save_path,  # where to save the model
                 export_params=True,  # store the trained parameter weights inside the model file
                 output_names=onames,
                 input_names=self._input_names,  # the model's input names
@@ -406,32 +351,125 @@ class BaseTRTExporter:
             if self._use_scope_names:
                 onnx_export_log = buffer.getvalue()
 
-        graph = gs.import_onnx(onnx.load(self._onnx_path))
+        graph = gs.import_onnx(onnx.load(self.save_path))
         if not self._ignore_adapt_graph:
             graph.toposort()
 
             # Modify ONNX graph for TensorRT compability
             graph = self._adapt_graph(graph, **kwargs)
-            utils.print_graph_io(graph)
+            print_graph_io(graph)
             # Export adapted onnx for TRT engine
-            onnx.save(gs.export_onnx(graph), self._onnx_path)
+            onnx.save(gs.export_onnx(graph), self.save_path)
 
         # rewrite onnx graph with new scope names
         if self._use_scope_names:
             number2scope = get_scope_names(onnx_export_log, strict=False)
-            graph = gs.import_onnx(onnx.load(self._onnx_path))
+            graph = gs.import_onnx(onnx.load(self.save_path))
             graph = rename_tensors_(graph, number2scope, verbose=True)
             graph = rename_nodes_(graph, True)
-            onnx.save(gs.export_onnx(graph), self._onnx_path)
+            onnx.save(gs.export_onnx(graph), self.save_path)
 
-        print("Saved ONNX at:", self._onnx_path)
+        print("Saved ONNX at:", self.save_path)
 
-        # empty GPU memory for later TensorRT optimization
         torch.cuda.empty_cache()
 
         return np_inputs, np_m_outputs
 
-    def _onnx2engine(self, **kwargs) -> trt.ICudaEngine:
+
+class BaseTRTExporter(BaseExporter):
+    def __init__(
+        self,
+        onnx_path: str,
+        precision: str = "fp32",
+        verbose: bool = False,
+        opt_profiles: Dict[str, Tuple[List[int]]] = None,
+        profiling_verbosity: int = 0,
+        calibrator=None,
+    ):
+        """
+        Parameters
+        ----------
+        onnx_path: str
+            Path to the onnx file to compile to TensorRT.
+        precision : str
+            TRT engine precision, either fp32, fp16, mix
+            mix precision between fp32 and fp16 allow TensorRT more liberty
+            to find the best combination optimization in term of execution time.
+        verbose : bool
+            Print out everything. Default False
+        opt_profiles : Dict[str, Tuple[List[int]]].
+            Optimization profiles (one by each dynamic axis). Default None
+        profiling_verbosity : int
+            Profiling verbosity in NVTX annotations and the engine inspector (Default 0)
+                0 : LAYER_NAMES_ONLY (Print only the layer names. This is the default setting).
+                1 : NONE (Do not print any layer information).
+                2 : DETAILED : (Print detailed layer information including layer names and layer parameters).
+            Set to 2 for more layers details (preicision, type, kernel ...) when calling the EngineInspector
+        calibrator : torch2trt.calibrator.BaseCalibrator
+            Quantization calibrator.
+
+        Raises
+        ------
+        Exception
+            * Model must be instantiated with attr:`tracing` = True
+            * If :attr:`dynamic_axes` is desired, :attr:`opt_profiles` must be provided with sames keys as
+              :attr:`dynamic_axes`.
+        """
+
+        try:
+            # import pycuda and tensorrt
+            import pycuda.driver as cuda
+            import tensorrt as trt
+            from alonet.exporter import TRTEngineBuilder
+        except Exception as e:
+            raise ImportError(
+                "pycuda and tensorrt are not installed."
+                "Please install using the requirement file at alonet/torch2trt/requirements.txt"
+            )
+
+        # Initiate Trt Engine builder
+        onnx_dir = os.path.split(onnx_path)[0]
+        onnx_file_name = os.path.split(onnx_path)[1]
+        model_name = onnx_file_name.split(".")[0]
+        engine_path = os.path.join(onnx_dir, model_name + f"_{precision.lower()}.engine")
+        super().__init__(engine_path)
+
+        self._verbose = verbose
+        self._onnx_path = onnx_path
+        self._precision = precision
+
+        if self._verbose:
+            trt_logger = trt.Logger(trt.Logger.VERBOSE)
+        else:
+            trt_logger = trt.Logger(trt.Logger.WARNING)
+
+        self._engine_builder = TRTEngineBuilder(
+            self._onnx_path, logger=trt_logger, opt_profiles=opt_profiles, calibrator=calibrator
+        )
+
+        if profiling_verbosity == 0:
+            self._engine_builder.profiling_verbosity = "LAYER_NAMES_ONLY"
+        elif profiling_verbosity == 1:
+            self._engine_builder.profiling_verbosity = "NONE"
+        elif profiling_verbosity == 2:
+            self._engine_builder.profiling_verbosity = "DETAILED"
+        else:
+            raise AttributeError("unknown profiling_verbosity")
+        if precision.lower() == "fp32":
+            pass
+        elif precision.lower() == "int8":
+            self._engine_builder.INT8_allowed = True
+            self._engine_builder.strict_type = True
+        elif precision.lower() == "fp16":
+            self._engine_builder.FP16_allowed = True
+            self._engine_builder.strict_type = True
+        elif precision.lower() == "mix":
+            self._engine_builder.FP16_allowed = True
+            self._engine_builder.strict_type = False
+        else:
+            raise Exception(f"precision {precision} not supported")
+
+    def export(self, **kwargs):
         """
         Export TensorRT engine from an ONNX file
 
@@ -439,70 +477,7 @@ class BaseTRTExporter:
         -------
         engine: tensorrt.ICudaEngine
         """
-        if prod_package_error is not None:
-            raise prod_package_error
 
         # Build engine
-        self._engine_builder.export_engine(self._engine_path)
+        self._engine_builder.export_engine(self.save_path)
         return self._engine_builder.engine
-
-    def _sanity_check(
-        self, engine: trt.ICudaEngine, sample_inputs: Tuple[np.ndarray], sample_outputs: Dict[str, np.ndarray]
-    ) -> bool:
-        """
-        Perform a sanity check on the TensorRT engine
-
-        Returns
-        -------
-        bool
-        """
-        if self._precision.lower() == "fp32":
-            threshold = 1e-4
-        else:
-            threshold = 1e-1
-        check = True
-
-        # Get engine info
-        model = TRTExecutor(engine, stream=cuda.Stream())
-        model.print_bindings_info()
-
-        # Prepare engine inputs
-        for i in range(len(sample_inputs)):
-            model.inputs[i].host = np.array(sample_inputs[i]).astype(model.inputs[i].dtype)
-
-        # GPU warm up
-        [model.execute() for i in range(3)]
-
-        # Time engine inference
-        tic = time.time()
-        [model.execute() for i in range(self.PROFILING_TIME)]
-        toc = time.time()
-
-        # Check engine outputs with sample outputs
-        m_outputs = model.execute()
-        print("Absolute / relavtive error:")
-        for out in m_outputs:
-            print("out", m_outputs[out])
-            diff = m_outputs[out].astype(float) - sample_outputs[out].astype(float)
-            abs_err = np.abs(diff)
-            rel_err = np.abs(diff / (sample_outputs[out] + 1e-6))  # Avoid div by zero
-            print(out)
-            print(f"\tmean: {abs_err.mean():.2e}\t{rel_err.mean():.2e}")
-            print(f"\tmax: {abs_err.max():.2e}\t{rel_err.max():.2e}")
-            print(f"\tstd: {abs_err.std():.2e}\t{rel_err.std():.2e}")
-            check = check & (rel_err.mean() < threshold)
-
-        print(f"Engine execution time: {(toc - tic)/self.PROFILING_TIME*1000:.2f} ms")
-        return check
-
-    def export_engine(self) -> trt.ICudaEngine:
-        """
-        Export TensorRT engine from PyTorch model
-
-        Returns
-        -------
-        engine: tensorrt.ICudaEngine
-        """
-        sample_inputs, sample_outputs = self._torch2onnx()
-        engine = self._onnx2engine()
-        self._sanity_check(engine, sample_inputs, sample_outputs)

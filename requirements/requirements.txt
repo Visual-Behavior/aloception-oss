@@ -16,8 +16,8 @@ setuptools==59.5.0
 safetensors==0.5.3
 tensorboard==2.19.0
 wandb==0.17.9
-onnx==1.12.0
-onnx-graphsurgeon==0.3.14
+onnx==1.17.0
+onnx-graphsurgeon==0.5.8
 onnxsim==0.4.36
 pycuda==2025.1
 tensorrt==10.10.0.31

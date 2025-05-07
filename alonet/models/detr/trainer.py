@@ -5,7 +5,6 @@ import torch.distributed as dist
 import shutil
 from typing import Union, Tuple, List
 from tqdm import tqdm
-import cv2
 import numpy as np
 
 import aloscene
@@ -31,6 +30,7 @@ class DetrTrainer(BaseTrainer):
         self.weights = weights
         self.viz_interval = viz_interval
         self.model: nn.Module = self.build_model()
+        self.input_mean_std = self.model.INPUT_MEAN_STD
         self.criterion = self.build_criterion()
         self.optimizer = self.build_optimizer()
         self.device = torch.device(f"cuda:{get_rank()}" if torch.cuda.is_available() else "cpu")
@@ -58,7 +58,7 @@ class DetrTrainer(BaseTrainer):
             Only :attr:`detr-r50` models are supported yet.
         """
         if self.model_name == "detr-r50":
-            return DetrR50(num_classes=num_classes, aux_loss=aux_loss, weights=self.weights)
+            return DetrR50(num_classes=num_classes, aux_loss=aux_loss, weights=self.weights).cuda()
         else:
             raise Exception(f"Unsupported base model {self.model_name}")
 
@@ -158,8 +158,8 @@ class DetrTrainer(BaseTrainer):
         """
         assert isinstance(frames, aloscene.Frame)
         assert frames.normalization == "resnet", f"{frames.normalization}"
-        assert frames.mean_std[0] == self.model.INPUT_MEAN_STD[0]
-        assert frames.mean_std[1] == self.model.INPUT_MEAN_STD[1]
+        assert frames.mean_std[0] == self.input_mean_std[0]
+        assert frames.mean_std[1] == self.input_mean_std[1]
         assert frames.names == ("B", "C", "H", "W"), f"{frames.names}"
         if not inference:
             assert frames.boxes2d is not None
@@ -202,6 +202,8 @@ class DetrTrainer(BaseTrainer):
         List[:mod:`BoundingBoxes2D <aloscene.bounding_boxes_2d>`]
             Set of boxes for each batch
         """
+        if is_dist_avail_and_initialized():
+            return self.model.module.inference(m_outputs, **kwargs)
         return self.model.inference(m_outputs, **kwargs)
 
     def common_step(self, frames: Union[list, Frame], compute_statistical_metrics: bool) -> Tuple[torch.Tensor, dict]:

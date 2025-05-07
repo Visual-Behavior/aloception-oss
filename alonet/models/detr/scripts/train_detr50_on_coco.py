@@ -5,7 +5,7 @@ import torch
 import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel as DDP
 
-from alonet.common import BaseConfig
+from alonet.common import BaseConfig, get_rank
 
 from alonet.models.detr.data_modules.coco_detection2detr import CocoDetection2Detr
 from alonet.models.detr.trainer import DetrTrainer
@@ -53,9 +53,7 @@ def main(args: Namespace):
     trainer = DetrTrainer(**training_config.trainer.to_dict())
 
     if with_ddp:
-        trainer.model = DDP(trainer.model, device_ids=[torch.cuda.current_device()])
-    else:
-        trainer.model = trainer.model.cuda()
+        trainer.model = DDP(trainer.model, device_ids=[get_rank()])
 
     if args.compile:
         trainer.model = torch.compile(trainer.model)

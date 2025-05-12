@@ -35,6 +35,14 @@ class DetrTrainer(BaseTrainer):
         self.optimizer = self.build_optimizer()
         self.device = torch.device(f"cuda:{get_rank()}" if torch.cuda.is_available() else "cpu")
 
+        if self.resume:
+            self.resume_from_checkpoint(
+                {"model": self.model, "optimizer": self.optimizer},
+                use_safetensors={"model": True, "optimizer": False},
+                load_args={"model": {"strict": True}},
+                device=self.device,
+            )
+
     def build_model(self, num_classes: int = 91, aux_loss: bool = True, weights: str = None) -> nn.Module:
         """Build the default model
 
@@ -394,6 +402,11 @@ class DetrTrainer(BaseTrainer):
                 if main_rank:
                     metrics = self.validate(val_dataloader)
                     self.save_checkpoint_if_topk(metrics["val/total_loss"])
+                    self.save_checkpoint(
+                        self.get_latest_checkpoint_dir(),
+                        {"model": get_model_state_dict(self.model), "optimizer": self.optimizer.state_dict()},
+                        use_safetensors=True,
+                    )
                     self.log_metrics(metrics)
                     self.model.train()
 
@@ -405,7 +418,7 @@ class DetrTrainer(BaseTrainer):
         # Save last checkpoint
         print("Training is done ! Saving last checkpoint")
         self.save_checkpoint(
-            self.get_latest_checkpoint_path(),
-            {"model": self.model.state_dict(), "optimizer": self.optimizer.state_dict()},
+            self.get_latest_checkpoint_dir(),
+            {"model": get_model_state_dict(self.model), "optimizer": self.optimizer.state_dict()},
             use_safetensors=True,
         )

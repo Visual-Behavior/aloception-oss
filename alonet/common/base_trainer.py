@@ -16,10 +16,8 @@ from .helpers import (
     vb_folder,
     is_main_rank,
     get_expe_infos,
-    get_latest_checkpoint_from_dir,
     get_expe_infos_from_checkpoint_path,
     get_best_checkpoint_from_dir,
-    latest_cp_name,
     topk_cp_name,
     only_main_rank,
 )
@@ -417,26 +415,11 @@ class BaseTrainer(ABC):
         else:
             raise NotImplementedError(f"{logger} is not supported.")
 
-    def get_latest_checkpoint_name(self, step: int = None) -> str:
-        """
-        Get the latest checkpoint name from the current step
-
-        Parameters
-        ----------
-        step : int
-            Step of the checkpoint
-
-        Returns:
-            str: latest checkpoint path
-        """
-        step = step if step is not None else self._current_step
-        return latest_cp_name(step)
-
     def format_topk_checkpoint_name(
         self, metric_name: str, metric: float, step: int, epoch: Optional[int] = None
     ) -> str:
         """
-        Get the topk checkpoint name from the current step
+        Create the name of the intermidiate (topk) checkpoint from the current step
 
         Parameters
         ----------
@@ -453,9 +436,9 @@ class BaseTrainer(ABC):
         epoch = epoch if epoch is not None else self._current_epoch
         return topk_cp_name(metric_name, metric, step, epoch)
 
-    def get_best_checkpoint_path(self, condition: str = "max"):
+    def find_best_checkpoint_path(self, condition: str = "max"):
         """
-        Get the best checkpoint from the directory
+        Find the best checkpoint from the directory
 
         Parameters
         ----------
@@ -475,21 +458,6 @@ class BaseTrainer(ABC):
         if cp is None:
             raise FileNotFoundError(
                 f"No checkpoint of format `epoch=<epoch>_step=<step>_<metric>=<value>` found in {expe_dir}"
-            )
-        return cp
-
-    def get_latest_checkpoint_path(self) -> str:
-        """
-        Get the latest checkpoint from the experiment directory
-        """
-        expe_dir = os.path.join(vb_folder(), self._project_name, self._experiment_name)
-        if not os.path.exists(expe_dir):
-            raise FileNotFoundError(f"Experiment {expe_dir} does not exist.")
-        cp = get_latest_checkpoint_from_dir(expe_dir)
-        if cp is None:
-            raise FileNotFoundError(
-                "No latest checkpoint found."
-                f"Latest checkpoint must have the format `latest_steps-<steps>` in {expe_dir}"
             )
         return cp
 
@@ -522,7 +490,8 @@ class BaseTrainer(ABC):
         self, metric_name: str, metric: float, condition: str = "min"
     ) -> Tuple[Optional[str], Optional[str]]:
         """
-        Update checkpoint information state and return the dir to save checkpoint and the dir of replaced checkpoint.
+        Update checkpoint information state and return the dir to save intermidiate (topk) checkpoint and the dir of
+        checkpoint to replace.
 
         Parameters
         ----------
@@ -535,8 +504,7 @@ class BaseTrainer(ABC):
         condition : str
             Condition to select the best checkpoint. `max` or `min`. Defaults to `min`
         Returns:
-            Tuple[bool, Optional[str], Optional[str]]:
-                - is current checkpoint in topK best checkpoints
+            Tuple[Optional[str], Optional[str]]:
                 - new checkpoint path to save
                 - old checkpoint path to replace
         """
@@ -582,6 +550,16 @@ class BaseTrainer(ABC):
                 replaced_cp_dir = os.path.join(vb_folder(), self._project_name, self._experiment_name, replaced_cp_dir)
 
         return new_cp_dir, replaced_cp_dir
+
+    def get_latest_checkpoint_dir(self) -> str:
+        """
+        Get the dir to save latest checkpoint
+
+        Returns
+        -------
+            str: Path to directory to save latest checkpoint.
+        """
+        return os.path.join(vb_folder(), self._project_name, self._experiment_name, "latest")
 
     def load_trainer_state(self, cp_path: str) -> None:
         """

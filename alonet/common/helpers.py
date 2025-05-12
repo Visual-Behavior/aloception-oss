@@ -201,29 +201,6 @@ def only_main_rank(func):
     return _method
 
 
-def get_latest_checkpoint_from_dir(dir_path: str) -> Optional[str]:
-    """
-    Get the latest checkpoint from the directory.
-    The latest checkpoint must have the format `latest_steps-<steps>`
-
-    Parameters
-    ----------
-    dir_path : str
-        The directory path
-
-    Returns
-    -------
-    Optional[str]
-        The latest checkpoint path
-    """
-    assert os.path.isdir(dir_path), f"{dir_path} is not a directory"
-    checkpoints = [f for f in os.listdir(dir_path) if os.path.isdir(os.path.join(dir_path, f))]
-    for cp in checkpoints:
-        if "latest" in cp:
-            return os.path.join(dir_path, cp)
-    return None
-
-
 def get_best_checkpoint_from_dir(dir_path: str, condition: str = "max") -> Optional[str]:
     """
     Get the best checkpoint from the directory based on the condition
@@ -252,23 +229,6 @@ def get_best_checkpoint_from_dir(dir_path: str, condition: str = "max") -> Optio
         return os.path.join(dir_path, checkpoints[-1])
     else:
         return os.path.join(dir_path, checkpoints[0])
-
-
-def latest_cp_name(step: int) -> str:
-    """
-    Get the latest checkpoint name from the step
-
-    Parameters
-    ----------
-    step : int
-        The step
-
-    Returns
-    -------
-    str
-        The latest checkpoint name
-    """
-    return f"latest_step={step}"
 
 
 def topk_cp_name(metric_name: str, metric_value: float, step: int, epoch: int) -> str:

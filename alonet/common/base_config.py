@@ -51,6 +51,23 @@ def add_argument(parser: argparse.ArgumentParser, field_args: Field, prefix: str
         )
 
 
+def nested_to_flat_dict(nested_dict: dict, prefix: Optional[str] = None) -> dict:
+    """
+    Convert a nested dictionary to a flat dictionary.
+    """
+    flat_dict = {}
+    for key, value in nested_dict.items():
+        if prefix is not None:
+            key = f"{prefix}.{key}"
+        else:
+            key = f"{key}"
+        if isinstance(value, dict):
+            flat_dict.update(nested_to_flat_dict(value, prefix=key))
+        else:
+            flat_dict[key] = value
+    return flat_dict
+
+
 @dataclass
 class BaseConfig:
     """Base configuration class for composite configurations.
@@ -117,10 +134,15 @@ class BaseConfig:
         cls.add_argparse_args(parser)
 
         # If config file is provided, update args with config file values
-        config = None
+        config = {}
         if args.config_file:
             with open(args.config_file, "r") as f:
                 config = yaml.safe_load(f)
+                config = nested_to_flat_dict(config)
+
+        for arg_key in arg_dict:
+            if arg_key in config and arg_dict[arg_key] == parser.get_default(arg_key):
+                arg_dict[arg_key] = config[arg_key]
 
         # Initialize the dataclass with the parsed arguments
         parameters = {}
@@ -136,13 +158,8 @@ class BaseConfig:
                     if key == field_args.name:
                         # If the value is defined in the config file and the default value is the same as the command
                         # line arg, use the config file value. Else, do not override the command line arg.
-                        if (
-                            config is not None
-                            and key in config
-                            and sub_key in config[key]
-                            and arg_dict[arg_key] == parser.get_default(arg_key)
-                        ):
-                            sub_args[sub_key] = config[key][sub_key]
+                        if arg_key in config and arg_dict[arg_key] == parser.get_default(arg_key):
+                            sub_args[sub_key] = config[arg_key]
                         else:
                             sub_args[sub_key] = arg_dict[arg_key]
                 sub_args = Namespace(**sub_args)
@@ -150,11 +167,7 @@ class BaseConfig:
             else:
                 # If the value is defined in the config file and the default value is the same as the command
                 # line arg, use the config file value. Else, do not override the command line arg.
-                if (
-                    config is not None
-                    and field_args.name in config
-                    and arg_dict[field_args.name] == parser.get_default(field_args.name)
-                ):
+                if field_args.name in config and arg_dict[field_args.name] == parser.get_default(field_args.name):
                     parameters[field_args.name] = config[field_args.name]
                 else:
                     parameters[field_args.name] = getattr(args, field_args.name)

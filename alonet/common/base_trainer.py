@@ -723,7 +723,7 @@ class BaseTrainer(ABC):
         Returns:
             bool: True if the current step reaches the end of the epoch, False otherwise
         """
-        return (self._current_step + 1) * self._accumulate_grad_batches >= (dataloader_length * self._current_epoch)
+        return (self._current_step + 1) * self._accumulate_grad_batches >= (dataloader_length * (self._current_epoch + 1))
 
     @abstractmethod
     def build_criterion(self) -> nn.Module:

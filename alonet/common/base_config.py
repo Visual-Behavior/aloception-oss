@@ -5,7 +5,7 @@ from dataclasses import dataclass, fields, field, Field
 from typing import Optional, get_origin, get_args, Literal
 
 
-def add_argument(parser: argparse.ArgumentParser, field_args: Field, prefix: str = None) -> None:
+def add_argument(parser: argparse.ArgumentParser, field_args: Field, prefix: Optional[str] = None) -> None:
     """
     Add an argument to the argument parser
 
@@ -85,10 +85,37 @@ class BaseConfig:
         to_dict: Convert the BaseConfig instance to a dictionary
         save: Save the BaseConfig instance to a file
         __str__: Convert the BaseConfig instance to a string
+
+    Example:
+        :py:code:
+
+        from argparse import ArgumentParser
+        from dataclasses import dataclass, field
+        from typing import Optional
+        from base_config import BaseConfig
+
+
+        @dataclass
+        class MyConfig(BaseConfig):
+            param1: int = field(default=0, metadata={"help": "Parameter 1"})
+            param2: str = field(default="default", metadata={"help": "Parameter 2"})
+
+        args = ArgumentParser()
+        MyConfig.add_argparse_args(args)
+        args = args.parse_args()
+
+        config = MyConfig.from_args(args)
+        print(config)
+        config.save("config.yaml")
+        config_dict = config.to_dict()
+        print(config_dict)
+
     """
 
     @classmethod
-    def add_argparse_args(cls, parent_parser: Optional[ArgumentParser] = None, prefix: str = None) -> ArgumentParser:
+    def add_argparse_args(
+        cls, parent_parser: Optional[ArgumentParser] = None, prefix: Optional[str] = None
+    ) -> ArgumentParser:
         """
         Add arguments to the argument parser
 

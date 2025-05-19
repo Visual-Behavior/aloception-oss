@@ -7,9 +7,8 @@ import os
 import warnings
 import json
 from collections import OrderedDict
-from typing import Tuple, Optional, Any, List, Dict
+from typing import Tuple, Optional, Any, List, Dict, Union
 from safetensors.torch import save_file, load_file
-from typing import Union
 
 from alodataset.base_dataset import _user_prompt
 from .helpers import (
@@ -34,7 +33,7 @@ class BaseTrainer(ABC):
         num_epochs: Optional[int] = None,
         num_steps: Optional[int] = None,
         val_interval: Union[int, float] = 1.0,
-        val_every_n_steps: int = None,
+        val_every_n_steps: Optional[int] = None,
         log_interval: int = 50,
         save_best_k_cp: int = 3,
         logger: Optional[str] = "wandb",
@@ -582,7 +581,7 @@ class BaseTrainer(ABC):
         self,
         cp_path: str,
         state_dicts: dict[str, OrderedDict],
-        use_safetensors: dict[str, bool] = None,
+        use_safetensors: Optional[dict[str, bool]] = None,
     ) -> None:
         """
         Save the checkpoint and the checkpoint_info.json file in the checkpoint directory
@@ -626,8 +625,8 @@ class BaseTrainer(ABC):
     def resume_from_checkpoint(
         self,
         module: dict[str, Any],
-        use_safetensors: dict[str, bool] = None,
-        load_args: dict[str, dict[str, Any]] = None,
+        use_safetensors: Optional[dict[str, bool]] = None,
+        load_args: Optional[dict[str, dict[str, Any]]] = None,
         device: torch.device = torch.device("cpu"),
     ) -> None:
         """
@@ -723,7 +722,9 @@ class BaseTrainer(ABC):
         Returns:
             bool: True if the current step reaches the end of the epoch, False otherwise
         """
-        return (self._current_step + 1) * self._accumulate_grad_batches >= (dataloader_length * (self._current_epoch + 1))
+        return (self._current_step + 1) * self._accumulate_grad_batches >= (
+            dataloader_length * (self._current_epoch + 1)
+        )
 
     @abstractmethod
     def build_criterion(self) -> nn.Module:

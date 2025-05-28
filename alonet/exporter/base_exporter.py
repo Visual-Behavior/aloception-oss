@@ -9,6 +9,7 @@ import torch
 import warnings
 
 import onnx_graphsurgeon as gs
+from onnxsim import simplify
 import onnx
 
 
@@ -57,7 +58,6 @@ class BaseONNXExporter(BaseExporter):
         verbose: bool = False,
         use_scope_names: bool = False,
         operator_export_type=None,
-        dynamic_axes: Union[Dict[str, Dict[int, str]], Dict[str, List[int]]] = None,
         opt_profiles: Dict[str, Tuple[List[int]]] = None,
         opset_version: int = 13,
         ignore_adapt_graph: bool = False,
@@ -81,9 +81,6 @@ class BaseONNXExporter(BaseExporter):
             the ONNX graph modification more complicated. Default True
         verbose : bool
             Print out everything. Good for debugging. Default False.
-        dynamic_axes : Union[Dict[str, Dict[int, str]], Dict[str, List[int]]].
-            Axes of tensors that will be dynamics (not shape specified). Default None.
-            See `https://pytorch.org/docs/stable/onnx.html#functions <torch.onnx.export>`_.
         opt_profiles : Dict[str, Tuple[List[int]]]
             Optimization profiles (one by each dynamic axis). Default None
         operator_export_type: torch.onnx.OperatorExportTypes
@@ -111,12 +108,6 @@ class BaseONNXExporter(BaseExporter):
         self._do_constant_folding = do_constant_folding
         self._operator_export_type = operator_export_type
         self._ignore_adapt_graph = ignore_adapt_graph
-
-        if dynamic_axes is not None:
-            assert opt_profiles is not None, "If dynamic_axes are to be used, opt_profiles must be provided"
-            assert isinstance(dynamic_axes, dict)
-            assert opt_profiles.keys() == dynamic_axes.keys(), "dynamic_axes and opt_profiles must have same keys"
-        self._dynamic_axes = dynamic_axes
 
     @property
     def model(self) -> torch.nn.Module:
@@ -226,36 +217,9 @@ class BaseONNXExporter(BaseExporter):
         -------
         graph: onnx_graphsurgeon.Graph
         """
-        try:
-            clip_nodes = get_nodes_by_op("Clip", graph)
-
-            def handle_op_Clip(node: gs.Node):
-                max_constant = np.array(np.finfo(np.float32).max, dtype=np.float32)
-                if "value" in node.inputs[1].i().inputs[0].attrs:
-                    min_constant = node.inputs[1].i().inputs[0].attrs["value"].values.astype(np.float32)
-                    if len(node.inputs[2].inputs) > 0:
-                        max_constant = node.inputs[2].i().inputs[0].attrs["value"].values.astype(np.float32)
-                elif "to" in node.inputs[1].i().inputs[0].attrs:
-                    min_constant = np.array(np.finfo(np.float32).min, dtype=np.float32)
-                else:
-                    raise Exception("Error")
-                node.inputs.pop(1)
-                node.inputs.insert(1, gs.Constant(name=node.name + "_min", values=min_constant))
-                node.inputs.pop(2)
-                node.inputs.insert(2, gs.Constant(name=node.name + "_max", values=max_constant))
-
-            for n in clip_nodes:
-                handle_op_Clip(n)
-        except:
-            print("[INFO] BaseExporter: Cannot handle clip. Clip handling will be ignored")
-            pass
-
         model = onnx.load(self.save_path)
         check = False
-        if self._dynamic_axes is None:
-            from onnxsim import simplify
-
-            model_simp, check = simplify(model)
+        model_simp, check = simplify(model)
 
         if check:
             print("\n[INFO] Simplified ONNX model validated. Graph optimized...")
@@ -340,7 +304,6 @@ class BaseONNXExporter(BaseExporter):
                 export_params=True,  # store the trained parameter weights inside the model file
                 output_names=onames,
                 input_names=self._input_names,  # the model's input names
-                dynamic_axes=self._dynamic_axes,
                 custom_opsets=self._custom_opset,
                 opset_version=self._opset_version,  # the ONNX version to export the model to
                 do_constant_folding=self._do_constant_folding,  # whether to execute constant folding for optimization
@@ -420,7 +383,7 @@ class BaseTRTExporter(BaseExporter):
             # import pycuda and tensorrt
             import pycuda.driver as cuda
             import tensorrt as trt
-            from alonet.exporter import TRTEngineBuilder
+            from alonet.exporter import trt_engine_builder
         except Exception as e:
             raise ImportError(
                 "pycuda and tensorrt are not installed."
@@ -443,7 +406,7 @@ class BaseTRTExporter(BaseExporter):
         else:
             trt_logger = trt.Logger(trt.Logger.WARNING)
 
-        self._engine_builder = TRTEngineBuilder(
+        self._engine_builder = trt_engine_builder(
             self._onnx_path, logger=trt_logger, opt_profiles=opt_profiles, calibrator=calibrator
         )
 

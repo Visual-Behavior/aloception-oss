@@ -743,11 +743,12 @@ class GrayScale(AloTransform):
         -------
         n_frame: aloscene.Frame
         """
-        frame_data = frame.norm01().as_tensor()
+        n_frame = frame.norm01()
+        frame_data = n_frame.data.as_tensor()
         frame_data = F.rgb_to_grayscale(frame_data, num_output_channels=3)
-        n_frame = Frame(frame_data, names=frame.names, normalization="01")
-        children = frame.drop_children()
-        n_frame.set_children(children)
+        n_frame.data = frame_data
+        n_frame.names = frame.names
+        n_frame.normalization = "01"
         if n_frame.normalization != frame.normalization:
             n_frame = n_frame.norm_as(frame)
         return n_frame
@@ -808,7 +809,9 @@ class ColorJitter(AloTransform, torchvision.transforms.ColorJitter):
         -------
         n_frame: aloscene.Frame
         """
-        frame_data = frame.norm01().as_tensor()
+        n_frame = frame.norm01()
+
+        frame_data = n_frame.data.as_tensor()
 
         for fn_id in self.params[0]:
             if fn_id == 0:
@@ -820,10 +823,9 @@ class ColorJitter(AloTransform, torchvision.transforms.ColorJitter):
             elif fn_id == 3:
                 frame_data = F.adjust_hue(frame_data, self.params[4])
 
-        # n_frame.data = frame_data
-        n_frame = Frame(frame_data, names=frame.names, normalization="01")
-        children = frame.drop_children()
-        n_frame.set_children(children)
+        n_frame.data = frame_data
+        n_frame.names = frame.names
+        n_frame.normalization = "01"
 
         if n_frame.normalization != frame.normalization:
             n_frame = n_frame.norm_as(frame)

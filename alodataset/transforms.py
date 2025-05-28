@@ -1,6 +1,6 @@
 """Transformation and data augmentation for Frames class from the aloception.scene package"""
 
-from typing import *
+from typing import Union, List, Dict, Tuple, Optional, Mapping
 import random
 import numpy as np
 
@@ -170,7 +170,7 @@ class Compose(AloTransform):
             params.append(t.sample_params())
         return (params,)
 
-    def set_params(self, params):
+    def set_params(self, params: Dict):
         """Given predefined params, set the params to all the  child
         transformations.
         """
@@ -224,7 +224,7 @@ class RandomSelect(AloTransform):
         self._r = random.random()
         return (self._r, self.transforms1.sample_params(), self.transforms2.sample_params())
 
-    def set_params(self, _r, param1, param2):
+    def set_params(self, _r, param1: List, param2: List):
         """Given predefined params, set the params on the class"""
         self._r = _r
         self.transforms1.set_params(*param1)
@@ -263,7 +263,7 @@ class RandomHorizontalFlip(AloTransform):
         self._r = random.random()
         return (self._r,)
 
-    def set_params(self, _r):
+    def set_params(self, _r: float):
         """Given predefined params, set the params on the class"""
         self._r = _r
 
@@ -311,7 +311,7 @@ class RandomSizeCrop(AloTransform):
             self._h = np.random.uniform(self.min_size, self.max_size)
         return (self._w, self._h)
 
-    def set_params(self, _w, _h):
+    def set_params(self, _w: int, _h: int):
         """Given predefined params, set the params on the class"""
         self._w = _w
         self._h = _h
@@ -340,7 +340,26 @@ class RandomSizeCrop(AloTransform):
 
 
 class RandomSizePad(AloTransform):
-    def __init__(self, max_size, frame_size, **kwargs):
+    def __init__(self, max_size: int, frame_size: Tuple[int, int], **kwargs):
+        """
+        Pad randomly the frame. The padding will be sampled without symmetry
+        so that the left, right, top and bottom padding can be different.
+
+        Parameters
+        ----------
+        max_size: int or tuple of int
+            Maximum size of the padding. If int, will be used for both height and width.
+            If tuple, should be (max_height, max_width).
+        frame_size: tuple of int
+            Size of the frame to pad. Should be (height, width).
+        kwargs: dict
+            Additional keyword arguments to pass to the parent class.
+
+        Notes
+        -----
+        If the frame size is larger than the max_size, no padding will be applied.
+
+        """
         if isinstance(max_size, int):
             max_size = (max_size, max_size)
         self.frame_size = frame_size
@@ -351,37 +370,42 @@ class RandomSizePad(AloTransform):
     def sample_params(self):
         """ """
         h, w = self.frame_size
-        # print("hw", h, w, self.max_size)
         pad_width = random.randint(0, max(self.max_size[1] - w, 0))
         pad_height = random.randint(0, max(self.max_size[0] - h, 0))
-        # print("pad_width, pad_height", pad_width, pad_height)
         pad_left = random.randint(0, pad_width)
         pad_right = pad_width - pad_left
-        print("pad_left", pad_left)
-        print("pad_right", pad_right)
         pad_top = random.randint(0, pad_height)
         pad_bottom = pad_height - pad_top
-        print("pad_top", pad_top)
-        print("pad_bottom", pad_bottom)
         return (pad_left, pad_right, pad_top, pad_bottom)
 
-    def set_params(self, pad_left, pad_right, pad_top, pad_bottom):
+    def set_params(self, pad_left: int, pad_right: int, pad_top: int, pad_bottom: int):
         """ """
         self._pad_left = pad_left
         self._pad_right = pad_right
         self._pad_top = pad_top
         self._pad_bottom = pad_bottom
 
-    def __call__(self, frame):
-        print((self._pad_top, self._pad_bottom), (self._pad_left, self._pad_right))
-
+    def __call__(self, frame: Frame):
         return frame.pad(
             offset_y=(self._pad_top, self._pad_bottom), offset_x=(self._pad_left, self._pad_right), pad_boxes=True
         )
 
 
 class RandomPad(AloTransform):
-    def __init__(self, max_size, frame_size, **kwargs):
+    def __init__(self, max_size: int, frame_size: Tuple[int, int], **kwargs):
+        """
+        Pad randomly the frame. The padding will be sampled with symmetry
+
+        Parameters
+        ----------
+        max_size: int or tuple of int
+            Maximum size of the padding. If int, will be used for both height and width.
+            If tuple, should be (max_height, max_width).
+        frame_size: tuple of int
+            Size of the frame to pad. Should be (height, width).
+        kwargs: dict
+            Additional keyword arguments to pass to the parent class.
+        """
         if isinstance(max_size, int):
             max_size = (max_size, max_size)
         self.frame_size = frame_size
@@ -403,21 +427,21 @@ class RandomPad(AloTransform):
 
         return (pad_left, pad_right, pad_top, pad_bottom)
 
-    def set_params(self, pad_left, pad_right, pad_top, pad_bottom):
+    def set_params(self, pad_left: int, pad_right: int, pad_top: int, pad_bottom: int):
         """ """
         self._pad_left = pad_left
         self._pad_right = pad_right
         self._pad_top = pad_top
         self._pad_bottom = pad_bottom
 
-    def __call__(self, frame):
+    def __call__(self, frame: Frame):
         return frame.pad(
             offset_y=(self._pad_top, self._pad_bottom), offset_x=(self._pad_left, self._pad_right), pad_boxes=True
         )
 
 
 class RandomCrop(AloTransform):
-    def __init__(self, size, *args, **kwargs):
+    def __init__(self, size: Tuple[int, int], *args, **kwargs):
         """Randomly crop the frame.
 
         Parameters
@@ -434,7 +458,7 @@ class RandomCrop(AloTransform):
         self.left = np.random.uniform()
         return (self.top, self.left)
 
-    def set_params(self, top, left):
+    def set_params(self, top: int, left: int):
         """ """
         self.top = top
         self.left = left
@@ -449,7 +473,7 @@ class RandomCrop(AloTransform):
 
 
 class RandomResizeWithAspectRatio(AloTransform):
-    def __init__(self, sizes: list, max_size: int = None, *args, **kwargs):
+    def __init__(self, sizes: List[int], max_size: int = None, *args, **kwargs):
         """Reszie the given given frame to a sampled `size` from the list of
         given `sizes` so that the largest side is equal to `size` and always < to
         `max_size` (if given).
@@ -504,7 +528,7 @@ class RandomResizeWithAspectRatio(AloTransform):
         self._size = random.choice(self.sizes)
         return (self._size,)
 
-    def set_params(self, _size):
+    def set_params(self, _size: Tuple[int, int]):
         """Given predefined params, set the params on the class"""
         self._size = _size
 
@@ -524,7 +548,7 @@ class RandomResizeWithAspectRatio(AloTransform):
 
 
 class Resize(AloTransform):
-    def __init__(self, size: tuple, antialias=False, *args, **kwargs):
+    def __init__(self, size: Tuple[int, int], antialias=False, *args, **kwargs):
         """Reszie the given frame to the target frame size.
 
         Parameters
@@ -541,7 +565,7 @@ class Resize(AloTransform):
         """Sample a `size` from the list of possible `sizes`"""
         return (self.size,)
 
-    def set_params(self, size):
+    def set_params(self, size: Tuple[int, int]):
         """Given predefined params, set the params on the class"""
         self.size = size
 
@@ -576,7 +600,7 @@ class Rotate(AloTransform):
         """Sample an `angle` from the list of possible `angles`"""
         return (self.angle, self.center)
 
-    def set_params(self, angle, center):
+    def set_params(self, angle: float, center: Tuple[int, int]):
         """Given predefined params, set the params on the class"""
         self.angle = angle
         self.center = center
@@ -638,7 +662,14 @@ class RealisticNoise(AloTransform):
 
 
 class CustomRandomColoring(AloTransform):
-    def __init__(self, gamma_r=(0.8, 1.2), brightness_r=(0.5, 2.0), colors_r=(0.5, 1.5), *args, **kwargs):
+    def __init__(
+        self,
+        gamma_r: Tuple[float, float] = (0.8, 1.2),
+        brightness_r: Tuple[float, float] = (0.5, 2.0),
+        colors_r: Tuple[float, float] = (0.5, 1.5),
+        *args,
+        **kwargs,
+    ):
         """
         Random modification of image colors
 
@@ -682,7 +713,7 @@ class CustomRandomColoring(AloTransform):
 
 
 class SpatialShift(AloTransform):
-    def __init__(self, size: tuple, *args, **kwargs):
+    def __init__(self, size: Tuple[int, int], *args, **kwargs):
         """Reszie the given frame to the target frame size.
 
         Parameters
@@ -698,7 +729,7 @@ class SpatialShift(AloTransform):
         """Sample a `size` from the list of possible `sizes`"""
         return (np.random.uniform(self.size[0], self.size[1], 2),)
 
-    def set_params(self, percentage):
+    def set_params(self, percentage: float):
         """Given predefined params, set the params on the class"""
         self.percentage = percentage
 
@@ -758,10 +789,10 @@ class ColorJitter(AloTransform, torchvision.transforms.ColorJitter):
     def __init__(
         self,
         *args,
-        brightness: tuple = 0.2,
-        contrast: tuple = 0.2,
-        saturation: tuple = 0.2,
-        hue: tuple = 0.2,
+        brightness: Union[tuple, float] = 0.2,
+        contrast: Union[tuple, float] = 0.2,
+        saturation: Union[tuple, float] = 0.2,
+        hue: Union[tuple, float] = 0.2,
         **kwargs,
     ):
         """Reszie the given frame to the target frame size.
@@ -794,7 +825,7 @@ class ColorJitter(AloTransform, torchvision.transforms.ColorJitter):
             brightness=self.brightness, contrast=self.contrast, saturation=self.saturation, hue=self.hue
         )
 
-    def set_params(self, *params):
+    def set_params(self, *params: List):
         """Given predefined params, set the params on the class"""
         self.params = params
 
@@ -845,7 +876,7 @@ class RandomDownScale(AloTransform):
         if true, the aspect ratio of downsample image will be the same as the original.
     """
 
-    def __init__(self, min_size, preserve_ratio=False, *args, **kwargs):
+    def __init__(self, min_size: Tuple[int, int], preserve_ratio: bool = False, *args, **kwargs):
         self.min_size = min_size
         self.preserve_ratio = preserve_ratio
         super().__init__(*args, **kwargs)
@@ -855,7 +886,7 @@ class RandomDownScale(AloTransform):
         self.w_coef = self.h_coef if self.preserve_ratio else np.random.uniform()
         return (self.h_coef, self.w_coef)
 
-    def set_params(self, h_coef, w_coef):
+    def set_params(self, h_coef: float, w_coef: float):
         """Given predefined params, set the params on the class"""
         self.h_coef = h_coef
         self.w_coef = w_coef
@@ -900,7 +931,7 @@ class RandomDownScaleCrop(Compose):
         if true, the aspect ratio of downsample image will be the same as the original.
     """
 
-    def __init__(self, size, preserve_ratio=False, *args, **kwargs):
+    def __init__(self, size: Tuple[int, int], preserve_ratio: bool = False, *args, **kwargs):
         transforms = [RandomDownScale(size, preserve_ratio, *args, **kwargs), RandomCrop(size, *args, **kwargs)]
         super().__init__(transforms, *args, **kwargs)
 
@@ -908,7 +939,7 @@ class RandomDownScaleCrop(Compose):
 class DynamicCropTransform(AloTransform):
     """Crop image to target crop size at chosen position."""
 
-    def __init__(self, crop_size, *args, **kwargs):
+    def __init__(self, crop_size: Tuple[int, int], *args, **kwargs):
         assert all([isinstance(s, int) for s in crop_size])
         self.crop_size = crop_size
 
@@ -917,7 +948,7 @@ class DynamicCropTransform(AloTransform):
     def sample_params(self):
         return (self.crop_size,)
 
-    def set_params(self, size):
+    def set_params(self, size: Tuple[int, int]):
         self.crop_size = size
 
     def apply(self, frame: Frame, center: Union[Tuple[int, int], Tuple[float, float]] = (0.5, 0.5)):
@@ -957,7 +988,7 @@ class RandomFocusBlur(AloTransform):
 
     """
 
-    def __init__(self, max_filter_size=10, *args, **kwargs):
+    def __init__(self, max_filter_size: int = 10, *args, **kwargs):
         assert isinstance(max_filter_size, int)
         self.max_filter_size = max_filter_size
         self.v_filter_size = 2
@@ -979,7 +1010,7 @@ class RandomFocusBlur(AloTransform):
         self.v_filter_size = v_size
 
     @torch.no_grad()
-    def apply(self, frame):
+    def apply(self, frame: Frame):
         c, h, w = frame.shape
         mid_v = torch.ones((1, self.v_filter_size))
         mid_h = torch.ones((1, self.h_filter_size))
@@ -1011,7 +1042,7 @@ class RandomFocusBlurV2(AloTransform):
 
     """
 
-    def __init__(self, max_filter_size=10, *args, **kwargs):
+    def __init__(self, max_filter_size: int = 10, *args, **kwargs):
         assert isinstance(max_filter_size, int)
         self.max_filter_size = max_filter_size
         self.v_filter_size = 2
@@ -1025,12 +1056,12 @@ class RandomFocusBlurV2(AloTransform):
 
         return (h_filter_size, v_filter_size)
 
-    def set_params(self, h_size, v_size):
+    def set_params(self, h_size: float, v_size: float):
         self.h_filter_size = h_size
         self.v_filter_size = v_size
 
     @staticmethod
-    def h_trans(frame, size):
+    def h_trans(frame, size: Tuple[int, int]):
         v_left_frames = [frame[:, :, i:] for i in range(1, size // 2 + 1)]
         v_left_frames = [torch.nn.functional.pad(x, pad=(0, i + 1), value=0) for i, x in enumerate(v_left_frames)]
 
@@ -1041,7 +1072,7 @@ class RandomFocusBlurV2(AloTransform):
         return v_frames
 
     @staticmethod
-    def v_trans(frame, size):
+    def v_trans(frame, size: Tuple[int, int]):
         h_top_frames = [frame[:, i:, :] for i in range(1, size // 2 + 1)]
         h_top_frames = [torch.nn.functional.pad(x, pad=(0, 0, 0, i + 1), value=0) for i, x in enumerate(h_top_frames)]
 
@@ -1052,7 +1083,7 @@ class RandomFocusBlurV2(AloTransform):
         return h_frames
 
     @torch.no_grad()
-    def apply(self, frame):
+    def apply(self, frame: Frame):
         # NORM 255 IS MANDATORY, CUDA ERRORS OCCUR OTHERWISE
         blured = frame.clone().norm255().as_tensor()
 
@@ -1072,7 +1103,7 @@ class RandomFocusBlurV2(AloTransform):
 
 class RandomFocusBlurV3(RandomFocusBlurV2):
     @staticmethod
-    def h_trans(frame, size):
+    def h_trans(frame, size: Tuple[int, int]):
         c, h, _ = frame.shape
         v_left_frames = [frame[:, :, i:] for i in range(1, size // 2 + 1)]
         v_left_frames = [torch.cat([f, torch.zeros((c, h, i + 1))], dim=2) for i, f in enumerate(v_left_frames)]
@@ -1084,7 +1115,7 @@ class RandomFocusBlurV3(RandomFocusBlurV2):
         return v_frames
 
     @staticmethod
-    def v_trans(frame, size):
+    def v_trans(frame, size: Tuple[int, int]):
         c, _, w = frame.shape
         h_top_frames = [frame[:, i:, :] for i in range(1, size // 2 + 1)]
         h_top_frames = [torch.cat([f, torch.zeros((c, i + 1, w))], dim=1) for i, f in enumerate(h_top_frames)]
@@ -1121,8 +1152,8 @@ class RandomFlowMotionBlur(AloTransform):
     def __init__(
         self,
         subframes: int = 10,
-        flow_model=None,
-        model_kwargs={},
+        flow_model: Optional[torch.nn.Module] = None,
+        model_kwargs: Optional[dict] = None,
         intensity=None,
         **kwargs,
     ):
@@ -1132,7 +1163,7 @@ class RandomFlowMotionBlur(AloTransform):
             assert len(intensity) == 2
 
         self.intensity = 1.0 if intensity is None else intensity
-        self.model_kwargs = model_kwargs
+        self.model_kwargs = model_kwargs if model_kwargs is not None else {}
         self.flow_model = flow_model
         self.inter_intensity = None
         self.subframes = subframes
@@ -1149,10 +1180,10 @@ class RandomFlowMotionBlur(AloTransform):
         else:
             raise RuntimeError("Unknown intensity type")
 
-    def set_params(self, intensity):
+    def set_params(self, intensity: float):
         self.inter_intensity = intensity
 
-    def _get_flow_model_kwargs(self, frame1, frame2):
+    def _get_flow_model_kwargs(self, frame1: Frame, frame2: Frame):
         """Can be overrided to adapt the model's kwargs"""
         frame1 = Frame(frame1).norm_minmax_sym().batch()
         frame2 = Frame(frame2).norm_minmax_sym().batch()
@@ -1160,7 +1191,7 @@ class RandomFlowMotionBlur(AloTransform):
         return {"frame1": frame1, "frame2": frame2, **self.model_kwargs}
 
     @staticmethod
-    def _adapt_model_output(output):
+    def _adapt_model_output(output: List[Dict]):
         """Adapts model output to be an optical flow of size [2, H, W] where the first channel
         is the OF over X axis and the second is over Y axis
 
@@ -1170,7 +1201,7 @@ class RandomFlowMotionBlur(AloTransform):
         return output[-1]["up_flow"].squeeze()
 
     @torch.no_grad()
-    def apply(self, frame, flow=None, p_frame=None):
+    def apply(self, frame: Frame, flow: Optional[torch.nn.Module] = None, p_frame: Optional[Frame] = None):
         # NORM 255 MANDATORY TO AVOID CUDA ERRORS
         frame_ = frame.clone().norm255().as_tensor()
         if p_frame is not None:
@@ -1281,7 +1312,7 @@ class RandomCornersMask(AloTransform):
         self.mask_side = mask_side
 
     @torch.no_grad()
-    def apply(self, frame):
+    def apply(self, frame: Frame):
         top_bottom_mask_size = int(frame.shape[-2] * self.mask_size)
         left_right_mask_size = int(frame.shape[-1] * self.mask_size)
 
@@ -1322,7 +1353,7 @@ class IRAugmentation(AloTransform):
         self._h = 1.0
         return (self._w, self._h)
 
-    def set_params(self, _w, _h):
+    def set_params(self, _w: int, _h: int):
         """Given predefined params, set the params on the class"""
         self._w = _w
         self._h = _h
@@ -1348,7 +1379,7 @@ class IRAugmentation(AloTransform):
         return new_aloframe
 
     @staticmethod
-    def ir_normalize_image(image):
+    def ir_normalize_image(image: np.ndarray):
         # Convert the image to grayscale
         gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
         # Apply histogram equalization to the grayscale image

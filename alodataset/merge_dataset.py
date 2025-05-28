@@ -1,7 +1,7 @@
 import torch
 
-from alodataset.base_dataset import rename_data_to_none
-from alodataset.base_dataset import stream_loader, train_loader
+from alodataset.base_dataset import rename_data_to_none, stream_loader, train_loader, BaseDataset
+from typing import List, Callable, Optional, Any
 
 
 class MergeDataset(torch.utils.data.Dataset):
@@ -25,13 +25,15 @@ class MergeDataset(torch.utils.data.Dataset):
         The samples from a dataset with weight `w` will appear `w` times in the MergeDataset.
     """
 
-    def __init__(self, datasets, transform_fn=None, weights=None):
+    def __init__(
+        self, datasets: List[BaseDataset], transform_fn: Optional[Callable] = None, weights: Optional[List[int]] = None
+    ):
         self.datasets = datasets
         self.weights = self._init_weights(weights)
         self.indices = self._init_indices()
         self.transform_fn = transform_fn
 
-    def _init_weights(self, weights):
+    def _init_weights(self, weights: Optional[List[int]] = None):
         n_datasets = len(self.datasets)
         if weights is None:
             return [1] * n_datasets
@@ -39,7 +41,7 @@ class MergeDataset(torch.utils.data.Dataset):
         if len(weights) != n_datasets:
             raise RuntimeError("The number of weights should be equal to the number of datasets.")
 
-        if any(type(w) != int for w in weights):
+        if not all([isinstance(w, int) for w in weights]):
             raise RuntimeError("weights should be a list of int.")
         return weights
 
@@ -54,7 +56,7 @@ class MergeDataset(torch.utils.data.Dataset):
     def __len__(self):
         return len(self.indices)
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx: int) -> Any:
         dset_idx, sample_idx = self.indices[idx]
         data = self.datasets[dset_idx][sample_idx]
         if self.transform_fn is not None:
@@ -66,7 +68,7 @@ class MergeDataset(torch.utils.data.Dataset):
         """data loader collate_fn"""
         return batch_data
 
-    def stream_loader(self, num_workers=2):
+    def stream_loader(self, num_workers=2) -> torch.utils.data.DataLoader:
         """Get a stream loader from the dataset. Compared to the :func:`train_loader`
         the :func:`stream_loader` do not have batch dimension and do not shuffle the dataset.
 
@@ -84,22 +86,8 @@ class MergeDataset(torch.utils.data.Dataset):
         """
         return stream_loader(self, num_workers=num_workers)
 
-    def train_loader(self, batch_size=1, num_workers=2, sampler=torch.utils.data.RandomSampler):
+    def train_loader(
+        self, batch_size=1, num_workers=2, sampler=torch.utils.data.RandomSampler
+    ) -> torch.utils.data.DataLoader:
         """Get training loader from the dataset"""
         return train_loader(self, batch_size=batch_size, num_workers=num_workers, sampler=sampler)
-
-
-if __name__ == "__main__":
-    from alodataset import ChairsSDHomDataset, FlyingThings3DSubsetDataset, Split
-
-    chairs = ChairsSDHomDataset(sample=True)
-    flying = FlyingThings3DSubsetDataset(sample=True, transform_fn=lambda f: f["left"])
-
-    multi = MergeDataset([chairs, flying])
-
-    # after shuffling a mergedataset, a batch can contain samples from different datasets
-    batch_size = 4
-    for frame in multi.train_loader(batch_size=batch_size):
-        for i in range(batch_size):
-            frame[i].get_view().render()
-        break

@@ -1,0 +1,3 @@
+nvidia-pyindex==1.0.9
+pycuda==2025.1
+tensorrt==10.10.0.31

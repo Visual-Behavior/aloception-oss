@@ -24,20 +24,18 @@ def _print_body(average_pq: Dict, pq_per_class: Dict, clm_size: int = 9, **kwarg
         for cat, metrics in pq_per_class.items():
             print(
                 make_row(
-                    [cat[:clm_size * 2 - 1] if len(cat) > clm_size * 2 else cat + " " * (clm_size * 2 - 1 - len(cat))] +
-                    ["%.3f" % metrics[k] for k in metrics.keys()]
+                    [cat[: clm_size * 2 - 1] if len(cat) > clm_size * 2 else cat + " " * (clm_size * 2 - 1 - len(cat))]
+                    + ["%.3f" % metrics[k] for k in metrics.keys()]
                 )
             )
         print(make_sep(len(metrics) + 1))
-
 
     if average_pq is not None:
         n = "%d" % average_pq.pop("n")
         print(
             make_row(
-                ["total = %s" % n + " " * (clm_size * 2 - 9 - len(n))] +
-                ["%.3f" % average_pq[k] for k in average_pq.keys()]
+                ["total = %s" % n + " " * (clm_size * 2 - 9 - len(n))]
+                + ["%.3f" % average_pq[k] for k in average_pq.keys()]
             )
         )
         print(make_sep(len(average_pq) + 1))
-

@@ -4,7 +4,6 @@
 import numpy as np
 import torch
 from collections import defaultdict
-from typing import Dict
 
 import aloscene
 from alodataset.utils.panoptic_utils import VOID_CLASS_ID, OFFSET
@@ -142,7 +141,10 @@ class PQMetrics(object):
         return result, per_class_results
 
     def add_sample(
-        self, p_mask: aloscene.Mask, t_mask: aloscene.Mask, **kwargs,
+        self,
+        p_mask: aloscene.Mask,
+        t_mask: aloscene.Mask,
+        **kwargs,
     ):
         """Add a new prediction and target masks to PQ metrics estimation process
 
@@ -292,7 +294,7 @@ class PQMetrics(object):
                     clm_size=9,
                     head_elm=["PQ", "SQ", "RQ"],
                     recall_precision=recall_precision,
-                    )
+                )
             else:
                 all_maps[key], all_maps_per_class[key] = self.pq_average(cat, recall_precision=recall_precision)
 

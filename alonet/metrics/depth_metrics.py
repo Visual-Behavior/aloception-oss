@@ -15,63 +15,62 @@ class DepthMetrics:
             Permissivety levels. Default [1, 2, 3].
         alpha : float
             Permissivety percentage. Default 1.25 (25%).
-    
+
     Raises
     ------
         AssertionError
             x not in [1, 2, 3]
-    
+
     """
-    def __init__(
-            self,
-            x: List[int] = [1, 2, 3],
-            alpha: float = 1.25
-            ):
+
+    def __init__(self, x: List[int] = [1, 2, 3], alpha: float = 1.25):
         assert isinstance(x, list)
         for xi in x:
             assert isinstance(xi, int)
-        
+
         self.x = sorted(x)
         self.alpha = alpha
         self.metrics = {"RMSE": [], "RMSE_log": [], "Log10": [], "AbsRel": []}
 
         dx = {f"d{i}": [] for i in x}
         self.metrics.update(dx)
-    
+
     def __getitem__(self, idx):
         return {k: v[idx] for k, v in self.metrics.items()}
-    
+
     def __iadd__(self, di):
         if not all(k in self.metrics.keys() for k in di.keys()):
             raise KeyError
 
-        assert all(isinstance(i, type(list(di.values())[0])) or i == np.inf for i in di.values()), "Values instances are not the same"
+        assert all(
+            isinstance(i, type(list(di.values())[0])) or i == np.inf for i in di.values()
+        ), "Values instances are not the same"
         if isinstance(list(di.values())[0], list):
             assert all(len(i) == len(list(di.values())[0]) for i in di.values()), "values lengths are not the same"
-        
+
         for k, v in di.items():
             if isinstance(v, float):
                 self.metrics[k].append(v)
             elif isinstance(v, list):
-                self.metrics[k] +=  v
+                self.metrics[k] += v
             else:
                 raise Exception(f"Expected values to be list or float, got {v.__class__.__name__} instead")
-        
+
         max_ = max([len(i) for i in self.metrics.values()])
         for k, v in self.metrics.items():
             if len(v) < max_:
                 self.metrics[k] += [np.nan] * (max_ - len(v))
-        
+
     def __len__(self):
         return len(self.metrics["RMSE"])
-        
+
     def add_sample(
-            self,
-            p_depth: aloscene.Depth,
-            t_depth: aloscene.Depth,
-            epsilon: float = 1e-5,
-            mask: Union[aloscene.Mask, np.ndarray] = None,
-            ):
+        self,
+        p_depth: aloscene.Depth,
+        t_depth: aloscene.Depth,
+        epsilon: float = 1e-5,
+        mask: Union[aloscene.Mask, np.ndarray] = None,
+    ):
         """Computes sample depth metrics
 
         Parameters
@@ -84,7 +83,7 @@ class DepthMetrics:
                 mask.
             epsilon : float
                 Value to avoid zero division.
-        
+
         """
         metrics = {}
         assert isinstance(p_depth, aloscene.Depth)
@@ -110,7 +109,7 @@ class DepthMetrics:
             if isinstance(mask, aloscene.Mask):
                 mask = mask.as_numpy().astype(int)
 
-            # FIXME : MASK WITH PR #194            
+            # FIXME : MASK WITH PR #194
             assert all(i in [0, 1] for i in np.unique(mask)), "unvalid mask"
 
             t_depth = t_depth * mask
@@ -120,10 +119,10 @@ class DepthMetrics:
         ratio = np.maximum(p_depth / (t_depth + epsilon), t_depth / (p_depth + epsilon))
 
         for xi in self.x:
-            th = self.alpha ** xi
+            th = self.alpha**xi
             dx = (ratio < th).mean()
             metrics[f"d{xi}"] = float(dx)
-        
+
         # RMSE
         rmse = (p_depth - t_depth) ** 2
         rmse = np.sqrt(rmse.mean())
@@ -145,25 +144,23 @@ class DepthMetrics:
         self += metrics
 
     @staticmethod
-    def set_values(depth: np.ndarray, fillnan: float = 0., fillinf: float = 0.):
+    def set_values(depth: np.ndarray, fillnan: float = 0.0, fillinf: float = 0.0):
         """Sets inf and Nan values to custom value
-        
+
         Parameters
         ----------
             fillnan:
                 Value to replace Nan.
             fillinf:
                 value to replace Inf.
-        
+
         """
         depth[np.isnan(depth)] = fillnan
         depth[np.isinf(depth)] = fillinf
         return depth
-    
+
     def calc_map(self, print_result: bool = False):
-        """Prints depth metrics
-        
-        """
+        """Prints depth metrics"""
         for k, v in self.metrics.items():
             v_ = [i for i in v if not np.isnan(i)]
             self.metrics[k] = v_

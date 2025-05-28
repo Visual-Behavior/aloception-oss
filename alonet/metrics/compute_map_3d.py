@@ -4,7 +4,7 @@ from matplotlib import pyplot as plt
 from collections import OrderedDict
 
 import aloscene
-from aloscene import BoundingBoxes2D, BoundingBoxes3D, OrientedBoxes2D
+from aloscene import BoundingBoxes3D
 
 NB_RECALL_POINTS = 101
 

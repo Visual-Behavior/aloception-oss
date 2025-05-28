@@ -1,0 +1,192 @@
+"""Helper class for exporting PyTorch model to TensorRT engine"""
+
+import argparse
+import os
+import onnx
+import torch
+import numpy as np
+import onnx_graphsurgeon as gs
+from alonet.exporter import utils
+
+
+from aloscene import Frame
+from alonet.exporter import BaseTRTExporter
+from alonet.exporter.utils import get_nodes_by_op
+from alonet.exporter.onnx_hack import _add_grid_sampler_to_opset13
+from alonet.deformable_detr import DeformableDetrR50, DeformableDetrR50Refinement
+
+
+class DeformableDetrTRTExporter(BaseTRTExporter):
+    def __init__(
+        self,
+        model_name="deformable-detr-r50",
+        weights="deformable-detr-r50",
+        include_preprocessing=False,
+        *args,
+        **kwargs
+    ):
+        _add_grid_sampler_to_opset13()
+        super().__init__(*args, **kwargs)
+        self.weights = weights
+        self.do_constant_folding = False
+        self.include_preprocessing = include_preprocessing
+        self.adapted_onnx_path = self.onnx_path.replace(".onnx", "_TRTadapted") + ".onnx"
+
+    def get_onnx_path(self):
+        return self.onnx_path.replace(".onnx", "_TRTadapted") + ".onnx"
+
+    def _adapt_graph(self, graph, **kwargs):
+        return self.adapt_graph(graph, **kwargs)
+
+    def adapt_graph(self, graph, **kwargs):
+        # batch_size = graph.inputs[0].shape[0] # test
+
+        # ======= Add nodes for MsDeformIm2ColTRT ===========
+        # Replace ms_deform_attn_forward nodes by MsDeformIm2ColTRT
+        # which is the custom plugin in TensorRT
+        im2col_nodes = get_nodes_by_op("ms_deform_attn_forward", graph)
+
+        def handle_ops_MsDeformIm2ColTRT(graph: gs.Graph, node: gs.Node):
+            inputs = node.inputs
+            inputs.pop()  # The last input is im2col_step = 64 (constant), our TRT plugin doesn't fully support it
+            outputs = node.outputs
+            graph.layer(
+                op="MsDeformIm2ColTRT",
+                name=node.name + "_trt",
+                inputs=inputs,
+                outputs=outputs,
+            )
+
+        for n in im2col_nodes:
+            handle_ops_MsDeformIm2ColTRT(graph, n)
+            # Detach old node from graph
+            n.inputs.clear()
+            n.outputs.clear()
+            graph.nodes.remove(n)
+
+        # ====== Handle Clip ops =======
+        # min, max input in Clip must be Constant while parsing ONNX to TensorRT
+        clip_nodes = get_nodes_by_op("Clip", graph)
+
+        def handle_op_Clip(node: gs.Node):
+            max_constant = np.array(np.finfo(np.float32).max, dtype=np.float32)
+            if "value" in node.inputs[1].i().inputs[0].attrs:
+                min_constant = node.inputs[1].i().inputs[0].attrs["value"].values.astype(np.float32)
+                if len(node.inputs[2].inputs) > 0:
+                    max_constant = node.inputs[2].i().inputs[0].attrs["value"].values.astype(np.float32)
+            elif "to" in node.inputs[1].i().inputs[0].attrs:
+                min_constant = np.array(np.finfo(np.float32).min, dtype=np.float32)
+            else:
+                raise Exception("Error")
+            node.inputs.pop(1)
+            node.inputs.insert(1, gs.Constant(name=node.name + "_min", values=min_constant))
+            node.inputs.pop(2)
+            node.inputs.insert(2, gs.Constant(name=node.name + "_max", values=max_constant))
+
+        for n in clip_nodes:
+            handle_op_Clip(n)
+
+        # ===== Handle Slice ops ======
+        # axes input must be Constant
+        slice_nodes = get_nodes_by_op("Slice", graph)
+
+        def handle_op_Slice(node: gs.Node):
+            axes_input = node.inputs[3].inputs[0]
+            if axes_input.op == "Unsqueeze":
+                axes_constant = node.inputs[3].i().inputs[0].attrs["value"].values
+                node.inputs.pop(3)
+                node.inputs.insert(3, gs.Constant(name=node.name + "_axes", values=axes_constant))
+
+        for n in slice_nodes:
+            handle_op_Slice(n)
+
+        graph.toposort()
+        graph.cleanup()
+        return graph
+
+    def _onnx2engine(self, **kwargs):
+        """
+        Export TensorRT engine from an ONNX file
+        Returns
+        -------
+        engine: tensorrt.ICudaEngine
+        """
+        # MANDATORY DETR PREPROCESSING BEFORE EXPORTATION
+        graph = gs.import_onnx(onnx.load(self.onnx_path))
+        graph.toposort()
+
+        # === Modify ONNX graph for TensorRT compability
+        # Adaptation no more needed after explicitly fixing operators
+        # graph = self.adapt_graph(graph, **kwargs)
+        utils.print_graph_io(graph)
+
+        # === Export adapted onnx for TRT engine
+        onnx.save(gs.export_onnx(graph), self.adapted_onnx_path)
+
+        # === Build engine
+        self.engine_builder.export_engine(self.engine_path)
+        return self.engine_builder.engine
+
+    def prepare_sample_inputs(self):
+        assert len(self.input_shapes) == 1, "DETR takes only 1 input"
+        shape = self.input_shapes[0]
+        if self.include_preprocessing:
+            tensor_input = torch.rand([1 * self.batch_size] + shape, dtype=torch.float32).to(self.device)
+            tensor_input = tensor_input * 255
+        else:
+            x = torch.rand(shape, dtype=torch.float32)
+            x = Frame(x, names=["C", "H", "W"]).norm_resnet()
+            x = Frame.batch_list([x] * self.batch_size).to(self.device)
+            tensor_input = (x.as_tensor(), x.mask.as_tensor())
+            tensor_input = torch.cat(tensor_input, dim=1)  # [b, 4, H, W]
+        return (tensor_input,), {"is_export_onnx": None}
+
+
+if __name__ == "__main__":
+    from alonet.common.helpers import vb_folder
+
+    # load_trt_plugins_for_deformable_detr()
+    device = torch.device("cuda")
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--refinement", action="store_true", help="If set, use box refinement")
+    parser.add_argument(
+        "--include_preprocessing",
+        action="store_true",
+        help="Includes image preprocessing in the graph",
+    )
+    parser.add_argument(
+        "--HW",
+        type=int,
+        nargs=2,
+        default=[1280, 1920],
+        help="Height and width of input image, default 1280 1920",
+    )
+    BaseTRTExporter.add_argparse_args(parser)
+    parser.add_argument("--image_chw")
+    args = parser.parse_args()
+
+    if args.refinement:
+        model_name = "deformable-detr-r50-refinement"
+        model = DeformableDetrR50Refinement(
+            weights=model_name,
+            tracing=True,
+            aux_loss=False,
+            include_preprocessing=args.include_preprocessing,
+        ).eval()
+    else:
+        model_name = "deformable-detr-r50"
+        model = DeformableDetrR50(weights=model_name, tracing=True, aux_loss=False).eval()
+
+    if args.onnx_path is None:
+        args.onnx_path = os.path.join(vb_folder(), "weights", model_name, model_name + ".onnx")
+
+    if args.include_preprocessing:
+        input_shape = list(args.HW) + [3]
+    else:
+        input_shape = [3] + list(args.HW)
+
+    exporter = DeformableDetrTRTExporter(
+        model=model, weights=model_name, input_shapes=(input_shape,), input_names=["img"], device=device, **vars(args)
+    )
+    exporter.export_engine()

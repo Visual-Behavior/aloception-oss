@@ -68,8 +68,9 @@ def add_colorbar(data, vmin, vmax, colormap):
     pos.set_clim(vmin=vmin, vmax=vmax)
     fig.tight_layout(pad=0)
     fig.canvas.draw()
-    data = np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)
-    data = data.reshape(fig.canvas.get_width_height()[::-1] + (3,)) / 255.0
+    data = np.frombuffer(fig.canvas.tostring_argb(), dtype=np.uint8)
+    data = data.reshape(fig.canvas.get_width_height()[::-1] + (4,)) / 255.0
+    data = data[:, :, :3]
     plt.close(fig)
 
     return data

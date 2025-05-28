@@ -1,7 +1,11 @@
 import torch
 import requests
 import os
-from alonet.common.pl_helpers import vb_folder, checkpoint_handler
+from typing import Optional
+from safetensors.torch import load_file
+
+from alonet.common.helpers import vb_folder
+
 
 WEIGHT_NAME_TO_FILES = {
     "detr-r50": ["https://storage.googleapis.com/visualbehavior-publicweights/detr-r50/detr-r50.pth"],
@@ -27,56 +31,44 @@ WEIGHT_NAME_TO_FILES = {
     ],
     "detr-r50-things-stuffs": [
         "https://storage.googleapis.com/visualbehavior-publicweights/detr-r50-things-stuffs/detr-r50-things-stuffs.pth"
-    ]
+    ],
 }
 
 
 def load_weights(
-        model,
-        weights=None,
-        run_id=None,
-        project_run_id=None,
-        checkpoint="best",
-        monitor="val_loss",
-        device=torch.device("cpu"),
-        strict_load_weights=True,
-    ):
+    model: torch.nn.Module,
+    weights: str,
+    prefix_to_remove: Optional[str] = None,
+    device: torch.device = torch.device("cpu"),
+    strict_load_weights: bool = True,
+) -> None:
     """Load and/or download weights from public cloud
 
     Parameters
     ----------
-    model: torch.model
+    model: torch.nn.Module
         The torch model to load the weights into
     weights: str
         Weights names. Must be set into WEIGHT_NAME_TO_FILES
+    prefix_to_remove: Optional[str]
+        Prefix to remove from the weights keys
     device: torch.device
         Device to load the weights into
+    strict_load_weights: bool
+        If True, the weights are loaded with strict=True
     """
-    assert run_id is not None or weights is not None, "run_id or weights must be set."
-
-    if weights is None:
-        if project_run_id is None:
-            Exception(
-                "project_run_id need to be set if we load model from run_id."
-            )
-        run_id_project_dir = os.path.join(vb_folder(), f"project_{project_run_id}", run_id)
-        ckpt_path = checkpoint_handler(checkpoint, run_id_project_dir, monitor)
-        weights = os.path.join(run_id_project_dir, ckpt_path)
-        if not os.path.exists(weights):
-            raise Exception(f"Impossible to load the ckpt at the following destination:{weights}")
-        print(f"Loading ckpt from {run_id} at {weights}")
-
     if os.path.splitext(weights.lower())[1] == ".pth":
         checkpoint = torch.load(weights, map_location=device)
         if "model" in checkpoint:
             checkpoint = checkpoint["model"]
-        model.load_state_dict(checkpoint, strict=strict_load_weights)
-        print(f"Weights loaded from {weights}")
     elif os.path.splitext(weights.lower())[1] == ".ckpt":
         checkpoint = torch.load(weights, map_location=device)["state_dict"]
-        checkpoint = {k.replace("model.", "") if "model." in k else k: v for k, v in checkpoint.items()}
-        model.load_state_dict(checkpoint, strict=strict_load_weights)
-        print(f"Weights loaded from {weights}")
+    elif os.path.splitext(weights.lower())[1] == ".safetensors":
+        if device == torch.device("cpu"):
+            device_str = "cpu"
+        else:
+            device_str = "cuda"
+        checkpoint = load_file(weights, device=device_str)
     elif weights in WEIGHT_NAME_TO_FILES:
         weights_dir = os.path.join(vb_folder(create_if_not_found=True), "weights", weights)
         if not os.path.exists(weights_dir):
@@ -92,6 +84,19 @@ def load_weights(
         print("Load weights from", wfile)
         checkpoint = torch.load(wfile, map_location=device)
         checkpoint = checkpoint["model"] if "model" in checkpoint else checkpoint
-        model.load_state_dict(checkpoint, strict=strict_load_weights)
     else:
         raise Exception(f"Cant load the weights: {weights}")
+
+    processed_checkpoint = {}
+    # Remove prefix if provided
+    if prefix_to_remove is not None:
+        for k, v in checkpoint.items():
+            if k.startswith(prefix_to_remove):
+                processed_checkpoint[k[len(prefix_to_remove) :]] = v
+            else:
+                processed_checkpoint[k] = v
+    else:
+        processed_checkpoint = checkpoint
+
+    model.load_state_dict(processed_checkpoint, strict=strict_load_weights)
+    print(f"Weights loaded from {weights}")

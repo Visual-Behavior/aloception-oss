@@ -1,177 +1,153 @@
-import pytorch_lightning as pl
-import alonet
-import torch
-from torch.utils.data.sampler import RandomSampler, SequentialSampler
+from abc import ABC, abstractmethod
+import warnings
+from torch.utils.data import DataLoader
 
 
-class BaseDataModule(pl.LightningDataModule):
+class BaseDataModule(ABC):
     """
     Base class for all data modules.
     """
 
-    def __init__(
-        self, args, **kwargs,
-    ):
+    def __init__(self, batch_size: int, num_workers: int = 8):
+        """
+        Initialize the data module
+
+        Parameters
+        ----------
+        batch_size : int
+            Batch size for the dataloader
+        num_workers : int
+            Number of workers for the dataloader
+        """
         super().__init__()
-        alonet.common.pl_helpers.params_update(self, args, kwargs)
-
-    @staticmethod
-    def add_argparse_args(parent_parser):
-        parser = parent_parser.add_argument_group("BaseDataModule")
-        parser.add_argument("--batch_size", type=int, default=5, help="Batch size (Default: %(default)s)")
-        parser.add_argument(
-            "--num_workers", type=int, default=8, help="num_workers to use on the dataset (Default: %(default)s)"
-        )
-        parser.add_argument("--sequential_sampler", action="store_true", help="sample data sequentially (no shuffle)")
-        parser.add_argument(
-            "--sample", action="store_true", help="Download a sample for train/val process (Default: %(default)s)"
-        )
-        parser.add_argument("--train_on_val", action="store_true", help="Train on validation set (Default: %(default)s)")
-
-        parser.add_argument("--no_aug", action="store_true", help="Disable data augmentation (Default: %(default)s)")
-        return parent_parser
+        self._batch_size = batch_size
+        self._num_workers = num_workers
+        self._train_dataloader = None
+        self._val_dataloader = None
+        self._test_dataloader = None
 
     @property
-    def train_dataset(self):
-        if not hasattr(self, "_train_dataset"):
-            self.setup()
-        return self._train_dataset
-
-    @train_dataset.setter
-    def train_dataset(self, new_dataset):
-        self._train_dataset = new_dataset
+    def batch_size(self) -> int:
+        """
+        Batch size for the dataloader
+        """
+        return self._batch_size
 
     @property
-    def val_dataset(self):
-        if not hasattr(self, "_val_dataset"):
-            self.setup()
-        return self._val_dataset
-
-    @val_dataset.setter
-    def val_dataset(self, new_dataset):
-        self._val_dataset = new_dataset
+    def num_workers(self) -> int:
+        """
+        Number of workers for the dataloader
+        """
+        return self._num_workers
 
     @property
-    def test_dataset(self):
-        if not hasattr(self, "_test_dataset"):
-            self.setup()
-        return self._test_dataset
-
-    @test_dataset.setter
-    def test_dataset(self, new_dataset):
-        self._test_dataset = new_dataset
-
-    def train_transform(self, frames, **kwargs):
+    def train_dataloader(self) -> DataLoader:
         """
-        A structure to select the train transform function.
+        Train dataloader
+        """
+        return self._train_dataloader
+
+    @property
+    def val_dataloader(self) -> DataLoader:
+        """
+        Validation dataloader
+        """
+        return self._val_dataloader
+
+    @property
+    def test_dataloader(self) -> DataLoader:
+        """
+        Test dataloader
+        """
+        return self._test_dataloader
+
+    @batch_size.setter
+    def batch_size(self, value: int):
+        """
+        Set batch size
+
         Parameters
         ----------
-        frames : aloscene.Frame
-            Input frames
-        Returns
-        -------
-        aloscene.Frame
+        value : int
+            Batch size
         """
-        if self.no_aug:
-            return self._train_transform_no_aug(frames)
-        else:
-            return self._train_transform_aug(frames, **kwargs)
+        self._batch_size = value
 
-    def _train_transform_no_aug(self, frames):
+    @num_workers.setter
+    def num_workers(self, value: int):
         """
-        Train_transform with no data augmentation.
+        Set number of workers
+
         Parameters
         ----------
-        frames : aloscene.Frame
-            Input frames
-        Returns
-        -------
-        aloscene.Frame
+        value : int
+            Number of workers
         """
+        self._num_workers = value
 
-        raise NotImplementedError("Should be implemented in child class.")
-
-    def _train_transform_aug(self, frames):
+    @train_dataloader.setter
+    def train_dataloader(self, value: DataLoader):
         """
-        Train_transform with data augmentation.
+        Set train dataloader
+
         Parameters
         ----------
-        frames : aloscene.Frame
-            Input frames
-        Returns
-        -------
-        aloscene.Frame
+        value : DataLoader
+            Train dataloader
         """
+        self._train_dataloader = value
 
-        raise NotImplementedError("Should be implemented in child class.")
-
-    def val_transform(self, frames, **kwargs):
+    @val_dataloader.setter
+    def val_dataloader(self, value: DataLoader):
         """
-        Val transform.
+        Set validation dataloader
+
         Parameters
         ----------
-        frames : aloscene.Frame
-            Input frames
-        Returns
-        -------
-        aloscene.Frame
+        value : DataLoader
+            Validation dataloader
         """
+        self._val_dataloader = value
 
-        raise NotImplementedError("Should be implemented in child class.")
-
-    def setup(self, stage=None):
-        """:attr:`train_dataset`, :attr:`val_dataset`, attr:`test_dataset` datasets setup
+    def setup(self, stage: str):
+        """
+        :attr:`train_dataloader`, :attr:`val_dataloader`, attr:`test_dataloader` dataloaders setup
         Parameters
         ----------
         stage : str, optional
-            Stage either `fit`, `validate`, `test` or `predict`, by default None"""
-
-        raise NotImplementedError("Should be implemented in child class.")
-
-    def train_dataloader(self, sampler: torch.utils.data = None):
-        """Get train dataloader
-        Parameters
-        ----------
-        sampler : torch.utils.data, optional
-            Sampler to load batches, by default None
-        Returns
-        -------
-        torch.utils.data.DataLoader
-            Dataloader for training process
+            Stage either `training`, `validation`, `testing`, by default None
         """
-        if sampler is None:
-            sampler = RandomSampler if not self.sequential_sampler else SequentialSampler
+        assert stage in [
+            "training",
+            "validation",
+            "testing",
+        ], "Stage must be one of: training, validation, testing"
 
-        return self.train_dataset.train_loader(batch_size=self.batch_size, num_workers=self.num_workers, sampler=sampler)
+        if stage == "training":
+            self.train_dataloader = self.setup_train_dataloader()
+            self.val_dataloader = self.setup_val_dataloader()
+        elif stage == "validation":
+            self.val_dataloader = self.setup_val_dataloader()
+        elif stage == "testing":
+            self.test_dataloader = self.setup_test_dataloader()
 
-    def val_dataloader(self, sampler: torch.utils.data = None):
-        """Get val dataloader
-        Parameters
-        ----------
-        sampler : torch.utils.data, optional
-            Sampler to load batches, by default None
-        Returns
-        -------
-        torch.utils.data.DataLoader
-            Dataloader for validation process
+    @abstractmethod
+    def setup_train_dataloader(self) -> DataLoader:
         """
-        if sampler is None:
-            sampler = SequentialSampler
-
-        return self.val_dataset.train_loader(batch_size=self.batch_size, num_workers=self.num_workers, sampler=sampler)
-
-    def test_dataloader(self, sampler: torch.utils.data = None):
-        """Get test dataloader
-        Parameters
-        ----------
-        sampler : torch.utils.data, optional
-            Sampler to load batches, by default None
-        Returns
-        -------
-        torch.utils.data.DataLoader
-            Dataloader for inference process
+        Setup train dataloader
         """
-        if sampler is None:
-            sampler = SequentialSampler
+        pass
 
-        return self.test_dataset.train_loader(batch_size=self.batch_size, num_workers=self.num_workers, sampler=sampler)
+    @abstractmethod
+    def setup_val_dataloader(self) -> DataLoader:
+        """
+        Setup val dataloader
+        """
+        pass
+
+    def setup_test_dataloader(self) -> DataLoader:
+        """
+        Setup test dataloader
+        """
+        warnings.warn("Test dataloader is not implemented in the base class.")
+        pass

@@ -3,9 +3,10 @@ import pickle
 import requests
 import shutil
 import torch
+from torch.utils.data import Dataset, DataLoader
 import json
 from tqdm import tqdm
-from typing import List, Callable, Dict
+from typing import List, Callable, Dict, Any
 from enum import Enum
 
 from aloscene.io.utils.errors import InvalidSampleError
@@ -34,7 +35,7 @@ class Split(Enum):
     Type: List[str] = ["train", "val", "test"]
 
 
-def stream_loader(dataset, num_workers=2):
+def stream_loader(dataset: Dataset, num_workers: int = 2) -> DataLoader:
     """Get a stream loader from the dataset. Compared to the :func:`train_loader`
     the :func:`stream_loader` do not have batch dimension and do not shuffle the dataset.
 
@@ -59,7 +60,13 @@ def stream_loader(dataset, num_workers=2):
     return data_loader
 
 
-def train_loader(dataset, batch_size=1, num_workers=2, sampler=torch.utils.data.RandomSampler, sampler_kwargs={}):
+def train_loader(
+    dataset: Dataset,
+    batch_size: int = 1,
+    num_workers: int = 2,
+    sampler=torch.utils.data.RandomSampler,
+    sampler_kwargs: Dict = {},
+) -> DataLoader:
     """Get training loader from the dataset
 
     Parameters
@@ -94,7 +101,7 @@ def train_loader(dataset, batch_size=1, num_workers=2, sampler=torch.utils.data.
     return data_loader
 
 
-def rename_data_to_none(data):
+def rename_data_to_none(data: Any) -> Any:
     """
     Temporarily remove data names until next call to `names` property.
     Necessary for pytorch operations that don't support named tensors
@@ -108,7 +115,17 @@ def rename_data_to_none(data):
     return data
 
 
-def _user_prompt(message):
+def _user_prompt(message: str) -> str:
+    """Prompt the user for input with a message and return the response.
+    Parameters
+    ----------
+    message: str
+        The message to display to the user.
+    Returns
+    -------
+    str
+        The user's response.
+    """
     res = input(message + "\033[93m")
     print("\033[0m", end="")  # Color reset
     return res
@@ -119,10 +136,10 @@ class BaseDataset(torch.utils.data.Dataset):
         self,
         name,
         transform_fn: Callable = None,
-        ignore_errors=False,
-        print_errors=True,
-        max_retry_on_error=3,
-        retry_offset=20,
+        ignore_errors: bool = False,
+        print_errors: bool = True,
+        max_retry_on_error: int = 3,
+        retry_offset: int = 20,
         sample: bool = False,
         **kwargs,
     ):
@@ -184,7 +201,7 @@ class BaseDataset(torch.utils.data.Dataset):
         lines = [head] + [" " * 4 + line for line in body]
         return "\n".join(lines)
 
-    def getitem_ignore_errors(self, idx):
+    def getitem_ignore_errors(self, idx: int) -> Any:
         """
         Try to get item at index idx.
         If data is invalid, retry at a shifted index.
@@ -204,7 +221,7 @@ class BaseDataset(torch.utils.data.Dataset):
         max_try = self.max_retry_on_error
         raise InvalidSampleError(f"Reached the limit of {max_try} consecutive corrupted samples.")
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx: int):
         if self.sample:
             data = self.items[idx]
         else:
@@ -255,7 +272,7 @@ class BaseDataset(torch.utils.data.Dataset):
             dataset_dir = content[self.name]
         return dataset_dir
 
-    def set_dataset_dir(self, dataset_dir: str):
+    def set_dataset_dir(self, dataset_dir: str) -> str:
         """Set the dataset_dir into the config file. This method will
         write the  path into /home/USER/.aloception/alodataset_config.json by replacing the current one
         (if any)
@@ -310,7 +327,7 @@ class BaseDataset(torch.utils.data.Dataset):
         return len(self.items)
 
     @property
-    def vb_folder(self):
+    def vb_folder(self) -> str:
         home = os.getenv("HOME")
         alofolder = os.path.join(home, ".aloception")
         if not os.path.exists(alofolder):  # Folder creates if doesnt exist
@@ -321,7 +338,7 @@ class BaseDataset(torch.utils.data.Dataset):
         """Streamer collat fn"""
         return batch_data
 
-    def stream_loader(self, num_workers=2):
+    def stream_loader(self, num_workers=2) -> DataLoader:
         """Get a stream loader from the dataset. Compared to the :func:`train_loader`
         the :func:`stream_loader` do not have batch dimension and do not shuffle the dataset.
 
@@ -339,7 +356,9 @@ class BaseDataset(torch.utils.data.Dataset):
         """
         return stream_loader(self, num_workers=num_workers)
 
-    def train_loader(self, batch_size=1, num_workers=2, sampler=torch.utils.data.RandomSampler, sampler_kwargs={}):
+    def train_loader(
+        self, batch_size=1, num_workers=2, sampler=torch.utils.data.RandomSampler, sampler_kwargs={}
+    ) -> DataLoader:
         """Get training loader from the dataset
 
         Parameters

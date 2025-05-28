@@ -20,5 +20,4 @@ from .from_directory_dataset import FromDirectoryDataset
 from .woodScape_dataset import WooodScapeDataset
 from .woodScape_split_dataset import WoodScapeSplitDataset
 
-import pkg_resources
-__version__ = pkg_resources.get_distribution("aloception").version
+from __version__ import __version__

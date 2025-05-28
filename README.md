@@ -8,8 +8,8 @@
 
 # Aloception open source software
 
-**Aloception-oss** is a set of packages for computer vision built on top of popular deep learning libraries:
-[pytorch](<https://pytorch.org/>)  and  [pytorch lightning](https://www.pytorchlightning.ai/).
+**Aloception-oss** is a set of packages for computer vision built on top of popular deep learning library:
+[pytorch](<https://pytorch.org/>).
 
 
 ### Aloscene
@@ -27,7 +27,7 @@ frame.get_view().render()
 
 ### Alodataset
 
-**Alodataset** implement ready-to-use datasets for computer vision with the help of **aloscene** and **augmented tensors** to make it easier to transform and display your vision data.
+**Alodataset** implements ready-to-use datasets for computer vision with the help of **aloscene** and **augmented tensors** to make it easier to transform and display your vision data.
 
 ```python
 coco_dataset = alodataset.CocoBaseDataset(sample=True)
@@ -37,37 +37,9 @@ for frame in coco_dataset.stream_loader():
 
 ### Alonet
 
-**Alonet** integrates several promising computer vision architectures. You can use it for research purposes or to finetune and deploy your model using TensorRT. Alonet is mainly built on top  of [lightning](https://www.pytorchlightning.ai/) with the help of
-  **aloscene** and **alodataset**.
+**Alonet** offers a suite of tools designed to facilitate the creation of efficient training pipelines and model deployment using TensorRT. Built primarily with [pytorch](<https://pytorch.org/>), **alonet** provides extensive flexibility to extend and customize training pipelines and models. It works seamlessly with **aloscene** and **alodataset** to enhance its capabilities.
 
-**Training**
-
-```python
-# Init the training pipeline
-detr = alonet.detr.LitDetr()
-# Init the data module
-coco_loader = alonet.detr.CocoDetection2Detr()
-# Run the training using the two components
-detr.run_train(data_loader=coco_loader, project="detr", expe_name="test_experiment")
-```
-
-**Inference**
-
-```python
-# Load model
-model = alonet.detr.DetrR50(num_classes=91, weights="detr-r50").eval()
-
-# Open and normalized frame
-frame = aloscene.Frame("/path/to/image.jpg").norm_resnet()
-
-# Run inference
-pred_boxes = model.inference(model([frame]))
-
-# Add and display the predicted boxes
-frame.append_boxes2d(pred_boxes[0], "pred_boxes")
-frame.get_view().render()
-```
-
+For a standard training pipeling utilizing **alonet**, **alodataset** and **aloscene**, you can explore the [DETR model](./alonet/models/detr/).
 
 ### Note
 One can use **aloscene** independently than the two other packages to handle computer vision data, or to improve its
@@ -77,25 +49,27 @@ training pipelines with **augmented tensors**.
 
 ### Docker install
 
-```
-docker build -t aloception-oss:cuda-11.3-pytorch1.13.1-lightning1.9.3 .
-```
-
-```
-docker run  -e LOCAL_USER_ID=$(id -u)  --gpus all -it -v /YOUR/WORKSPACE/:/workspace --privileged -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix aloception-oss:cuda-11.3-pytorch1.13.1-lightning1.9.3
+- The default docker image is based on **Ubuntu 20.04**, **cuda 12.6.3**, **python 3.10** and **pytorch 2.7**.
+```bash
+docker build -t aloception-oss:cuda-12.6-pytorch-2.7 .
 ```
 
-Or without building the image
-
+- For building your own version
+```bash
+docker build -t TAG --build-arg BASE_IMAGE=base_image --build-arg PYTHON_VERSION=python_version --build-arg PYTORCH_VERSION=pytorch_version --build-arg TORCHVISION_VERSION=torchvision_version --build-arg TORCHAUDIO_VERSION=torchaudio_version
 ```
-docker run -e LOCAL_USER_ID=$(id -u)  --gpus all -it -v /YOUR/WORKSPACE/:/workspace --privileged -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix visualbehaviorofficial/aloception-oss:cuda-11.3-pytorch1.13.1-lightning1.9.3
-```
+`base_image` can be found at [Nvidia cuda's Dockerhub](https://hub.docker.com/r/nvidia/cuda/tags).
 
+
+- Launch docker container
+```
+docker run  -e LOCAL_USER_ID=$(id -u)  --gpus all -it -v /YOUR/WORKSPACE/:/home/aloception --privileged -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix aloception-oss:cuda-12.6-pytorch-2.7
+```
 
 
 ### Pip install
 
-You first need to install PyTorch 1.10.1 based on your hardware and environment
+You first need to install PyTorch based on your hardware and environment
 configuration. Please refer to the [pytorch website](https://pytorch.org/get-started/locally/) for this installation.
 
 Once this is done, you can run:
@@ -142,14 +116,80 @@ pip install -r requirements.txt
 
 # Alonet
 
+## Pipeline
+A pipeline in **alonet** is composed of 3 key components:
+- **Model**: Define model architecture.
+- **Trainer**: Manages the training loop.
+- **Data module**: Configures the  data loaders for training/validation/test.
+
+Each component's parameters can be configured by **Config**, which can be specified via command line arguments when launching the training or through a configuration YAML file.
+
+For a concrete example, refer to [DETR training script](./alonet/models/detr/scripts/train_detr50_on_coco.py).
+
+For launching distributed training (multi-node or multi-worker), refer to [torchrun documentation](https://docs.pytorch.org/docs/stable/elastic/run.html).
+
+
+### Model
+The model is implemented by subclassing `torch.nn.Module` as usual.
+```python
+class Detr(nn.Module):
+    def __init__(
+        self,
+        backbone,
+        transformer,
+    ):
+      ...
+
+    def forward(x: torch.Tensor):
+      ...
+```
+
+### Trainer
+The [BaseTrainer](./alonet/common/base_trainer.py) can be subclassed to create custom training loops. It provides several utility functions to setup the directory for saving checkpoint and logs, format the name of checkpoints, save necessary state dict and to resume training sessions.
+
+Unlike [pytorch-lightning](https://lightning.ai/docs/pytorch/stable/), **BaseTrainer** does not include a pre-implemented training loop. This means you need to implement the training loop yourself (forward, backward, optimizer step, logging, validation, ect ...) using the provided utility functions. While this approach may slow down development, it offers greater flexibility and control over your training pipeline.
+
+In your subclass, you need to implement the following methods:
+- `build_criterion`: Initialize loss function
+- `build_optimizer`: Initialize optimizer
+- `build_lr_scheduler`: Initialize learning rate scheduler (if you need)
+- `training_step`: Implement single training step
+- `train`: Implement the training loop with pytorch
+- `validation_step`: Single validtion step
+- `validate`: Implement the validation loop during training.
+
+For a complete example of **Trainer**, please look at [DERT's trainer](./alonet/models/detr/trainer.py).
+
+### Data module
+Data module serves as a container of data loaders used for training, validation, testing.
+
+The [BaseDatamodule](./alonet/common/base_datamodule.py) can be subclassed.
+You need to implement `setup_train_dataloader` and `setup_val_dataloader` to create dataloaders used for training and validation. `setup_test_dataloader` can also be implemented if needed.
+
+Below is a simple example of how to set up data loaders.
+```python
+# Initialize data module
+data_module = CocoDetection2Detr(**training_config.data_module.to_dict())
+data_module.setup("training")
+```
+
+### Configuration
+[BaseConfig](./alonet/common/base_config.py) provides a flexible approach to configuring the training pipeline. All the parameters required to initialize **Model**/**Data Module**/**Trainer** objects are defined within **Configuration** (checkout [BaseTrainerConfig](./alonet/common/base_config.py) and [BaseDataModuleConfig](./alonet/common/base_config.py) for examples). These parameters can be specified when launching the training either via command line argument or by a YAML file.
+
+**BaseConfig** is extendable through subclassing and nesting, enabling complex configurations. More examples can be found at [DETR config](./alonet/models/detr/config).
+
+Each training configuration is saved as an artifact in the training directory.
+
+
+
 ## Models
 
 | Model name  | Link    | alonet location  | Learn more
 |---|---|---|---|
-| detr-r50  | https://arxiv.org/abs/2005.12872   | alonet.detr.DetrR50 | <a href="#detr">Detr</a>
-| deformable-detr  | https://arxiv.org/abs/2010.04159  | alonet.deformable_detr.DeformableDETR  | <a href="#deformable-detr">Deformable detr</a>
-| RAFT | https://arxiv.org/abs/2003.12039 | alonet.raft.RAFT  | <a href="#raft">  RAFT </a> |   |
-| detr-r50-panoptic  | https://arxiv.org/abs/2005.12872   | alonet.detr_panoptic.PanopticHead | <a href="#detr-panoptic">DetrPanoptic</a>
+| detr-r50  | https://arxiv.org/abs/2005.12872   | alonet.models.detr.models.DetrR50 | <a href="#detr">Detr</a>
+| deformable-detr  | https://arxiv.org/abs/2010.04159  | alonet.models (training pipeline not supported in this version)  | <a href="#deformable-detr">Deformable detr</a>
+| RAFT | https://arxiv.org/abs/2003.12039 | alonet.models (training pipeline not supported in this version)  | <a href="#raft">  RAFT </a> |   |
+| detr-r50-panoptic  | https://arxiv.org/abs/2005.12872   | alonet.models (training pipeline not supported in this version) | <a href="#detr-panoptic">DetrPanoptic</a>
 
 ## Detr
 
@@ -170,64 +210,6 @@ frame.append_boxes2d(pred_boxes[0], "pred_boxes")
 frame.get_view().render()
 ```
 
-## Deformable Detr
-
-Here is a simple example to get started with **Deformable Detr** and aloception. To learn more about Deformable, you can checkout the <a href="#tutorials">Tutorials<a/> or the <a href="./alonet/deformable_detr">deformable detr README</a>.
-
-```python
-# Loading Deformable model
-model = alonet.deformable_detr.DeformableDetrR50(num_classes=91, weights="deformable-detr-r50").eval()
-
-# Open, normalize frame and send frame on the device
-frame = aloscene.Frame("/home/thibault/Desktop/yoga.jpg").norm_resnet().to(torch.device("cuda"))
-
-# Run inference
-pred_boxes = model.inference(model([frame]))
-
-# Add and display the predicted boxes
-frame.append_boxes2d(pred_boxes[0], "pred_boxes")
-frame.get_view().render()
-```
-
-## RAFT
-
-Here is a simple example to get started with **RAFT** and aloception. To learn more about RAFT, you can checkout the <a href="./alonet/raft">raft README</a>.
-
-```python
-# Use the left frame from the  Sintel Flow dataset and normalize the frame for the RAFT Model
-frame = alodataset.SintelFlowDataset(sample=True).getitem(0)["left"].norm_minmax_sym()
-
-# Load the model using the sintel weights
-raft = alonet.raft.RAFT(weights="raft-sintel")
-
-# Compute optical flow
-padder = alonet.raft.utils.Padder()
-flow = raft.inference(raft(padder.pad(frame[0:1]), padder.pad(frame[1:2])))
-
-# Render the flow along with the first frame
-flow[0].get_view().render()
-```
-
-## Detr Panoptic
-
-Here is a simple example to get started with **PanopticHead** and aloception. To learn more about PanopticHead, you can checkout the <a href="./alonet/detr_panoptic">panoptic README</a>.
-
-```python
-# Open and normalized frame
-frame = aloscene.Frame("/path/to/image.jpg").norm_resnet()
-
-# Load the model using pre-trained weights
-detr_model = alonet.detr.DetrR50(num_classes=250, background_class=250)
-model = alonet.detr_panoptic.PanopticHead(DETR_module=detr_model, weights="detr-r50-panoptic")
-
-# Run inference
-pred_boxes, pred_masks = model.inference(model([frame]))
-
-# Add and display the boxes/masks predicted
-frame.append_boxes2d(pred_boxes[0], "pred_boxes")
-frame.append_segmentation(pred_masks[0], "pred_masks")
-frame.get_view().render()
-```
 
 # Alodataset
 
